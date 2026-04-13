@@ -1,82 +1,95 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body { font-family: Arial; background:#111; color:#fff; text-align:center; }
-button { padding:10px; margin:5px; }
-.card { background:#222; margin:10px; padding:10px; border-radius:10px; }
-</style>
-</head>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: Arial;
+        background: #111;
+        color: #fff;
+        text-align: center;
+      }
+      button {
+        padding: 10px;
+        margin: 5px;
+      }
+      .card {
+        background: #222;
+        margin: 10px;
+        padding: 10px;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
 
-<body>
+  <body>
+    <h1>🍕 Pizzeria</h1>
 
-<h1>🍕 Pizzeria</h1>
+    <input id="user" placeholder="user" />
+    <input id="pass" placeholder="pass" />
+    <button onclick="login()">Login</button>
 
-<input id="user" placeholder="user">
-<input id="pass" placeholder="pass">
-<button onclick="login()">Login</button>
+    <div id="app" style="display: none">
+      <input id="customer" placeholder="Nome cliente" />
+      <button onclick="addOrder()">+ Margherita</button>
 
-<div id="app" style="display:none">
+      <div id="orders"></div>
+    </div>
 
-<input id="customer" placeholder="Nome cliente">
-<button onclick="addOrder()">+ Margherita</button>
+    <script>
+      const API = "https://mucho-gusto-mg5y.onrender.com/";
 
-<div id="orders"></div>
+      async function login() {
+        const res = await fetch(API + "/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user.value, password: pass.value }),
+        });
 
-</div>
+        if (!res.ok) return alert("Errore");
 
-<script>
-const API = "http://localhost:3000";
+        app.style.display = "block";
+        load();
+        setInterval(load, 2000);
+      }
 
-async function login(){
-  const res = await fetch(API+"/login",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({username:user.value,password:pass.value})
-  });
+      async function load() {
+        const res = await fetch(API + "/orders");
+        const data = await res.json();
 
-  if(!res.ok) return alert("Errore");
-
-  app.style.display="block";
-  load();
-  setInterval(load,2000);
-}
-
-async function load(){
-  const res = await fetch(API+"/orders");
-  const data = await res.json();
-
-  orders.innerHTML = data.map(o=>`
+        orders.innerHTML = data
+          .map(
+            (o) => `
     <div class="card">
-      ${o.customer} (${o.phone||''})<br>
-      ${o.items.map(i=>i.name).join(", ")}<br>
+      ${o.customer} (${o.phone || ""})<br>
+      ${o.items.map((i) => i.name).join(", ")}<br>
       ${o.status}<br>
       <button onclick="upd(${o.id},'ready')">Ready</button>
       <button onclick="upd(${o.id},'done')">Done</button>
     </div>
-  `).join('');
-}
+  `,
+          )
+          .join("");
+      }
 
-async function addOrder(){
-  await fetch(API+"/orders",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      customer: customer.value,
-      items:[{name:"Margherita",qty:1}]
-    })
-  });
-}
+      async function addOrder() {
+        await fetch(API + "/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customer: customer.value,
+            items: [{ name: "Margherita", qty: 1 }],
+          }),
+        });
+      }
 
-async function upd(id,status){
-  await fetch(API+"/orders/"+id,{
-    method:"PUT",
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({status})
-  });
-}
-</script>
-
-</body>
+      async function upd(id, status) {
+        await fetch(API + "/orders/" + id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+      }
+    </script>
+  </body>
 </html>

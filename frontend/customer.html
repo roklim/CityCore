@@ -1,42 +1,40 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<body>
+  <body>
+    <h1>🍕 Ordina Pizza</h1>
 
-<h1>🍕 Ordina Pizza</h1>
+    <input id="name" placeholder="Nome" /><br />
+    <input id="phone" placeholder="Telefono" /><br />
 
-<input id="name" placeholder="Nome"><br>
-<input id="phone" placeholder="Telefono"><br>
+    <button onclick="add('Margherita')">Margherita</button>
+    <button onclick="add('Diavola')">Diavola</button>
 
-<button onclick="add('Margherita')">Margherita</button>
-<button onclick="add('Diavola')">Diavola</button>
+    <br /><br />
+    <button onclick="send()">Invia</button>
 
-<br><br>
-<button onclick="send()">Invia</button>
+    <p id="msg"></p>
 
-<p id="msg"></p>
+    <script>
+      const API = "https://mucho-gusto-mg5y.onrender.com/";
+      let cart = [];
 
-<script>
-const API = "http://localhost:3000";
-let cart=[];
+      function add(p) {
+        cart.push({ name: p, qty: 1 });
+      }
 
-function add(p){
-  cart.push({name:p,qty:1});
-}
-
-async function send(){
-  await fetch(API+"/orders",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      customer:name.value,
-      phone:phone.value,
-      items:cart
-    })
-  });
-  msg.innerText="Ordine inviato!";
-  cart=[];
-}
-</script>
-
-</body>
+      async function send() {
+        await fetch(API + "/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customer: name.value,
+            phone: phone.value,
+            items: cart,
+          }),
+        });
+        msg.innerText = "Ordine inviato!";
+        cart = [];
+      }
+    </script>
+  </body>
 </html>
