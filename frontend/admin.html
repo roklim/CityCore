@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin</title>
+
+    <!-- STRIPE-STYLE CSS ARCHITECTURE -->
+    <link rel="stylesheet" href="/css/tokens.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/components.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+
+  <body>
+    <!-- LOGIN -->
+    <div id="login" class="page-center">
+      <div class="card" style="width: 320px; padding: 20px">
+        <h3>Admin Login</h3>
+
+        <input id="u" class="input" placeholder="username" />
+        <input id="p" class="input" type="password" placeholder="password" />
+
+        <button class="btn btn-primary" onclick="login()">Accedi</button>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app" class="page" style="display: none">
+      <!-- HEADER -->
+      <div class="card header">
+        <div>Pizzeria Admin</div>
+        <button class="btn" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div class="card">Ordini: <span id="tot"></span></div>
+        <div class="card">Prep: <span id="prep"></span></div>
+        <div class="card">Ready: <span id="ready"></span></div>
+      </div>
+
+      <!-- BOARD -->
+      <div id="board" class="order-board"></div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast"></div>
+
+    <script>
+      const API = "https://mucho-gusto-mg5y.onrender.com/api";
+
+      let token = localStorage.getItem("token") || "";
+      let orders = [];
+
+      /* LOGIN */
+      async function login() {
+        const res = await fetch(`${API}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: u.value,
+            password: p.value,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) return alert(data.error);
+
+        token = data.token;
+        localStorage.setItem("token", token);
+        start();
+      }
+
+      function start() {
+        loginEl.style.display = "none";
+        app.style.display = "block";
+
+        load();
+        setInterval(load, 4000);
+      }
+
+      /* LOAD */
+      async function load() {
+        const res = await fetch(`${API}/orders`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.status === 401) return logout();
+
+        const data = await res.json();
+        orders = data.orders || [];
+
+        render();
+        stats();
+      }
+
+      /* STATS */
+      function stats() {
+        tot.innerText = orders.length;
+        prep.innerText = orders.filter((o) => o.status === "preparing").length;
+        ready.innerText = orders.filter((o) => o.status === "ready").length;
+      }
+
+      /* RENDER */
+      function render() {
+        board.innerHTML = orders
+          .map(
+            (o) => `
+          <div class="card order-card">
+
+            <div>
+              <b>${o.customer}</b>
+              <span class="badge ${o.status}">${o.status}</span>
+            </div>
+
+            <div class="muted">
+              ${o.items.map((i) => `${i.qty}x ${i.name}`).join(", ")}
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:10px">
+              <button class="btn" onclick="upd('${o._id}','preparing')">
+                Prep
+              </button>
+
+              <button class="btn btn-primary" onclick="upd('${o._id}','ready')">
+                Ready
+              </button>
+
+              <button class="btn" onclick="upd('${o._id}','done')">
+                Done
+              </button>
+            </div>
+
+          </div>
+        `,
+          )
+          .join("");
+      }
+
+      /* UPDATE */
+      async function upd(id, status) {
+        await fetch(`${API}/orders/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status }),
+        });
+
+        load();
+        toast("Aggiornato");
+      }
+
+      /* LOGOUT */
+      function logout() {
+        localStorage.removeItem("token");
+        location.reload();
+      }
+
+      /* TOAST */
+      const toastEl = document.getElementById("toast");
+
+      function toast(msg) {
+        toastEl.innerText = msg;
+        toastEl.classList.add("show");
+
+        setTimeout(() => {
+          toastEl.classList.remove("show");
+        }, 2000);
+      }
+
+      const loginEl = document.getElementById("login");
+      const app = document.getElementById("app");
+
+      /* AUTO START */
+      if (token) start();
+    </script>
+  </body>
+</html>

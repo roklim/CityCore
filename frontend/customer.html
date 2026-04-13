@@ -1,97 +1,131 @@
 <!doctype html>
-<html>
+<html lang="it">
   <head>
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <style>
-      body {
-        font-family: Arial;
-        text-align: center;
-        padding: 20px;
-      }
-
-      button {
-        padding: 10px;
-        margin: 5px;
-        border: none;
-        border-radius: 6px;
-        background: #e63946;
-        color: white;
-        cursor: pointer;
-      }
-
-      input {
-        padding: 10px;
-        margin: 5px;
-        width: 80%;
-      }
-
-      #msg {
-        margin-top: 10px;
-        font-weight: bold;
-      }
-    </style>
+    <title>Ordina — Pizzeria</title>
+    <!-- STRIPE-STYLE CSS ARCHITECTURE -->
+    <link rel="stylesheet" href="/css/tokens.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/components.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/customer.css" />
   </head>
 
   <body>
-    <h1>🍕 Ordina Pizza</h1>
+    <header class="hero">
+      <div class="hero-eyebrow">Ordina al banco</div>
+      <h1>La nostra cucina a tua disposizione</h1>
+      <p>Scegli e invia in pochi secondi</p>
+    </header>
 
-    <input id="name" placeholder="Nome" /><br />
-    <input id="phone" placeholder="Telefono" /><br />
+    <div class="layout">
+      <!-- MENU -->
+      <div class="menu-col" id="menu-col">
+        <p>Caricamento...</p>
+      </div>
 
-    <h3>Menu</h3>
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <h2>Ordine</h2>
 
-    <button onclick="add('Margherita')">Margherita</button>
-    <button onclick="add('Diavola')">Diavola</button>
+        <div class="field">
+          <label>Nome *</label>
+          <input id="f-name" />
+        </div>
 
-    <br /><br />
-    <button onclick="send()">Invia ordine</button>
+        <div class="field">
+          <label>Telefono</label>
+          <input id="f-phone" />
+        </div>
 
-    <p id="msg"></p>
+        <div class="field">
+          <label>Note</label>
+          <textarea id="f-notes"></textarea>
+        </div>
+
+        <div class="cart-list" id="cart-list"></div>
+
+        <div class="total-row">
+          <span>Totale</span>
+          <span id="total-val">€ 0,00</span>
+        </div>
+
+        <button class="submit" onclick="submitOrder()">Invia ordine</button>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <!-- overlay -->
+    <div id="overlay">
+      <div class="confirm-box">
+        <h2>Ordine ricevuto 🍕</h2>
+        <p id="oid-label"></p>
+        <button onclick="resetAll()">Nuovo ordine</button>
+      </div>
+    </div>
 
     <script>
-      const API = "https://mucho-gusto-mg5y.onrender.com"; // ❗ NO slash finale
+      const API = "https://mucho-gusto-mg5y.onrender.com/api";
 
+      let menu = [];
       let cart = [];
-      let sending = false;
 
-      // aggiungi pizza
-      function add(p) {
-        cart.push({ name: p, qty: 1 });
-        document.getElementById("msg").innerText = p + " aggiunta ✔️";
+      const money = (v) => `€ ${v.toFixed(2).replace(".", ",")}`;
+
+      function toast(msg) {
+        const t = document.getElementById("toast");
+        t.innerText = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2000);
       }
 
-      // invia ordine
-      async function send() {
-        if (sending) return; // evita spam
-        if (cart.length === 0) {
-          msg.innerText = "Seleziona almeno una pizza";
-          return;
-        }
-
-        sending = true;
-        msg.innerText = "Invio ordine... ⏳";
-
-        try {
-          await fetch(API + "/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              customer: document.getElementById("name").value,
-              phone: document.getElementById("phone").value,
-              items: cart,
-            }),
-          });
-
-          msg.innerText = "✅ Ordine inviato!";
-          cart = [];
-        } catch (err) {
-          console.error(err);
-          msg.innerText = "❌ Errore invio ordine";
-        }
-
-        sending = false;
+      async function boot() {
+        const res = await fetch(`${API}/menu`);
+        menu = await res.json();
+        renderMenu();
       }
+
+      function renderMenu() {
+        document.getElementById("menu-col").innerHTML = menu
+          .map(
+            (m) => `
+      <div class="card">
+        <div>${m.emoji || "🍕"}</div>
+        <b>${m.name}</b>
+        <p>${money(m.price)}</p>
+        <button onclick="add('${m._id}')">+</button>
+      </div>
+    `,
+          )
+          .join("");
+      }
+
+      function add(id) {
+        const item = menu.find((m) => m._id === id);
+        const ex = cart.find((c) => c.id === id);
+
+        if (ex) ex.qty++;
+        else cart.push({ id, name: item.name, price: item.price, qty: 1 });
+
+        renderCart();
+      }
+
+      function renderCart() {
+        let total = 0;
+
+        document.getElementById("cart-list").innerHTML = cart
+          .map((c) => {
+            total += c.price * c.qty;
+            return `<div>${c.name} x${c.qty}</div>`;
+          })
+          .join("");
+
+        document.getElementById("total-val").innerText = money(total);
+      }
+
+      boot();
     </script>
   </body>
 </html>

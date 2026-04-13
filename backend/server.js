@@ -1,75 +1,139 @@
+// server.js
+// Entry point — avvio backend Pizzeria (Render-ready)
+
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+
+const config = require("./config");
+const { connect, seedMenu } = require("./db");
+const { errorHandler } = require("./middleware/errorHandler");
+
+const authRouter = require("./routes/auth");
+const ordersRouter = require("./routes/orders");
+const menuRouter = require("./routes/menu");
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// ─────────────────────────────────────────────
+// SECURITY
+// ─────────────────────────────────────────────
 
-// 👇 LOG DEBUG (importantissimo su Render)
-app.use((req, res, next) => {
-  console.log(req.method, req.url, req.body);
-  next();
+app.use(helmet());
+
+app.use(
+  cors({
+    origin: config.cors.origin || "*",
+    credentials: true,
+  }),
+);
+
+// Rate limit (anti spam / brute force)
+app.use(
+  rateLimit({
+    windowMs: config.rateLimit.windowMs || 15 * 60 * 1000,
+    max: config.rateLimit.max || 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Troppe richieste, riprova più tardi." },
+  }),
+);
+
+// ─────────────────────────────────────────────
+// MIDDLEWARE BASE
+// ─────────────────────────────────────────────
+
+app.use(express.json({ limit: "100kb" }));
+
+app.use(
+  morgan(config.isProd ? "combined" : "dev", {
+    skip: (req) => req.url === "/health",
+  }),
+);
+
+// ─────────────────────────────────────────────
+// HEALTH CHECK (Render friendly)
+// ─────────────────────────────────────────────
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "pizzeria-api",
+    time: new Date().toISOString(),
+    env: config.nodeEnv,
+  });
 });
 
-// USERS (demo)
-const users = [{ username: "admin", password: "1234" }];
+// ─────────────────────────────────────────────
+// ROUTES
+// ─────────────────────────────────────────────
 
-// ORDERS (RAM - poi si migliora con DB)
-let orders = [];
+app.use("/api/auth", authRouter);
+app.use("/api/orders", ordersRouter);
+app.use("/api/menu", menuRouter);
 
-// -------------------- LOGIN --------------------
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+// ─────────────────────────────────────────────
+// 404 HANDLER
+// ─────────────────────────────────────────────
 
-  const user = users.find(
-    (u) => u.username === username && u.password === password,
-  );
-
-  if (!user) return res.status(401).json({ error: "Invalid login" });
-
-  res.json({ username: user.username });
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Endpoint non trovato",
+    path: req.originalUrl,
+  });
 });
 
-// -------------------- GET ORDERS --------------------
-app.get("/orders", (req, res) => {
-  res.json(orders);
-});
+// ─────────────────────────────────────────────
+// ERROR HANDLER CENTRALIZZATO
+// ─────────────────────────────────────────────
 
-// -------------------- CREATE ORDER --------------------
-app.post("/orders", (req, res) => {
-  const { customer, phone, items } = req.body;
+app.use(errorHandler);
 
-  // VALIDAZIONE BASE
-  if (!customer || !items || items.length === 0) {
-    return res.status(400).json({ error: "Missing data" });
+// ─────────────────────────────────────────────
+// START SERVER
+// ─────────────────────────────────────────────
+
+async function start() {
+  try {
+    console.log("[server] Avvio backend...");
+
+    await connect();
+    console.log("[db] Connessione completata");
+
+    await seedMenu();
+    console.log("[db] Seed menu verificato");
+
+    const server = app.listen(config.port, () => {
+      console.log(
+        `[server] 🚀 Online su porta ${config.port} (${config.nodeEnv})`,
+      );
+    });
+
+    // ─────────────────────────────────────────────
+    // Graceful shutdown (IMPORTANTISSIMO su Render)
+    // ─────────────────────────────────────────────
+
+    process.on("SIGTERM", () => {
+      console.log("[server] SIGTERM ricevuto, chiusura server...");
+      server.close(() => {
+        console.log("[server] Server chiuso correttamente");
+        process.exit(0);
+      });
+    });
+
+    process.on("uncaughtException", (err) => {
+      console.error("[server] Uncaught Exception:", err);
+    });
+
+    process.on("unhandledRejection", (err) => {
+      console.error("[server] Unhandled Rejection:", err);
+    });
+  } catch (err) {
+    console.error("[server] ❌ Avvio fallito:", err.message);
+    process.exit(1);
   }
+}
 
-  const order = {
-    id: Date.now(),
-    customer,
-    phone: phone || "",
-    items,
-    status: "preparing",
-    createdAt: new Date(),
-  };
-
-  orders.push(order);
-
-  res.json(order);
-});
-
-// -------------------- UPDATE STATUS --------------------
-app.put("/orders/:id", (req, res) => {
-  const { status } = req.body;
-
-  if (!status) return res.status(400).send("Missing status");
-
-  orders = orders.map((o) => (o.id == req.params.id ? { ...o, status } : o));
-
-  res.sendStatus(200);
-});
-
-// -------------------- START --------------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on " + PORT));
+start();
