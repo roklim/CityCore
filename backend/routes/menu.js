@@ -4,7 +4,6 @@ const { MenuItem } = require("../db");
 const requireAuth = require("../middleware/auth");
 const asyncHandler = require("../middleware/asyncHandler");
 
-// ── GET MENU PUBBLICO ──
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -16,7 +15,6 @@ router.get(
   }),
 );
 
-// ── GET MENU ADMIN ──
 router.get(
   "/all",
   requireAuth,
@@ -26,7 +24,6 @@ router.get(
   }),
 );
 
-// ── TOGGLE ──
 router.put(
   "/:id/toggle",
   requireAuth,
