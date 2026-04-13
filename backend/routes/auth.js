@@ -2,15 +2,16 @@ const router = require("express").Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const config = require("../config");
-const { asyncHandler } = require("../middleware/errorHandler");
+
 const asyncHandler = require("../middleware/asyncHandler");
-// demo user (poi puoi spostarlo su Mongo users)
+
+// demo user
 const ADMIN = {
   username: "admin",
   password: bcrypt.hashSync("admin123", 10),
 };
 
-// ── LOGIN ─────────────────────────────────────
+// LOGIN
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
