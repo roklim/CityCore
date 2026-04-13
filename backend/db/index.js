@@ -1,5 +1,15 @@
 const mongoose = require("mongoose");
 
+// ── SCHEMAS ─────────────────────────────
+
+const MenuItemSchema = new mongoose.Schema({
+  name: String,
+  price: Number,
+  category: String,
+  emoji: String,
+  available: { type: Boolean, default: true },
+});
+
 const OrderSchema = new mongoose.Schema(
   {
     customer: String,
@@ -15,50 +25,33 @@ const OrderSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-const router = require("express").Router();
-const { models } = require("../db");
-const { requireAuth } = require("../middleware/auth");
-const asyncHandler = require("../middleware/asyncHandler");
+// ── FIX OVERWRITE ERROR ────────────────
 
-const { MenuItem } = models;
+const MenuItem =
+  mongoose.models.MenuItem || mongoose.model("MenuItem", MenuItemSchema);
 
-// ── GET MENU PUBBLICO (frontend clienti) ───────
-router.get(
-  "/",
-  asyncHandler(async (req, res) => {
-    const items = await MenuItem.find({ available: true }).sort({
-      category: 1,
-    });
-    res.json(items);
-  }),
-);
+const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 
-// ── GET MENU ADMIN (tutto) ─────────────────────
-router.get(
-  "/all",
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const items = await MenuItem.find();
-    res.json(items);
-  }),
-);
+// ── CONNECT ─────────────────────────────
 
-// ── TOGGLE DISPONIBILITÀ ───────────────────────
-router.put(
-  "/:id/toggle",
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const item = await MenuItem.findById(req.params.id);
+async function connect() {
+  const uri = process.env.MONGODB_URI;
 
-    if (!item) {
-      return res.status(404).json({ error: "Item non trovato" });
-    }
+  if (!uri) {
+    throw new Error("MONGODB_URI mancante");
+  }
 
-    item.available = !item.available;
-    await item.save();
+  mongoose.set("strictQuery", true);
 
-    res.json(item);
-  }),
-);
+  await mongoose.connect(uri);
 
-module.exports = router;
+  console.log("🟢 MongoDB connesso");
+}
+
+// ── EXPORT CORRETTO ─────────────────────
+
+module.exports = {
+  connect,
+  MenuItem,
+  Order,
+};
