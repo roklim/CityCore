@@ -173,7 +173,6 @@ router.get(
 router.put(
   "/:id",
   requireAuth,
-  validate(schemas.updateStatus),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status, handledBy } = req.body;
