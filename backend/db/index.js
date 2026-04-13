@@ -3,9 +3,7 @@ const mongoose = require("mongoose");
 async function connect() {
   const uri = process.env.MONGODB_URI;
 
-  if (!uri) {
-    throw new Error("❌ MONGODB_URI mancante");
-  }
+  if (!uri) throw new Error("MONGODB_URI mancante");
 
   mongoose.set("strictQuery", true);
 
@@ -14,9 +12,6 @@ async function connect() {
   console.log("🟢 MongoDB connesso");
 }
 
-/* ────────────────
-   ORDER MODEL
-──────────────── */
 const OrderSchema = new mongoose.Schema({
   customer: String,
   phone: String,
@@ -33,7 +28,8 @@ const OrderSchema = new mongoose.Schema({
   },
 });
 
-const Order = mongoose.model("Order", OrderSchema);
+// 🔥 FIX IMPORTANTE
+const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 
 module.exports = {
   connect,
