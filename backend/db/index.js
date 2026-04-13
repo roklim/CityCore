@@ -1,30 +1,41 @@
-// db/index.js
-// Connessione MongoDB (Render-ready)
-
 const mongoose = require("mongoose");
 
 async function connect() {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    throw new Error("❌ MONGODB_URI mancante nelle variabili ambiente");
+    throw new Error("❌ MONGODB_URI mancante");
   }
 
   mongoose.set("strictQuery", true);
 
-  mongoose.connection.on("connected", () => console.log("🟢 MongoDB connesso"));
+  await mongoose.connect(uri);
 
-  mongoose.connection.on("error", (err) =>
-    console.error("🔴 Errore MongoDB:", err.message),
-  );
-
-  mongoose.connection.on("disconnected", () =>
-    console.warn("🟡 MongoDB disconnesso"),
-  );
-
-  await mongoose.connect(uri, {
-    serverSelectionTimeoutMS: 8000,
-  });
+  console.log("🟢 MongoDB connesso");
 }
 
-module.exports = { connect };
+/* ────────────────
+   ORDER MODEL
+──────────────── */
+const OrderSchema = new mongoose.Schema({
+  customer: String,
+  phone: String,
+  notes: String,
+  items: Array,
+  total: Number,
+  status: {
+    type: String,
+    default: "pending",
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const Order = mongoose.model("Order", OrderSchema);
+
+module.exports = {
+  connect,
+  Order,
+};

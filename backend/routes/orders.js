@@ -2,7 +2,7 @@
 const router = require("express").Router();
 const mongoose = require("mongoose");
 
-const { Order } = require("../db").models;
+const { Order } = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { validate, schemas } = require("../middleware/asyncHandler");
 const { asyncHandler } = require("../middleware/errorHandler");
