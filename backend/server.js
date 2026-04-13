@@ -78,12 +78,7 @@ app.use("/api/menu", menuRouter);
 // 404 HANDLER
 // ─────────────────────────────────────────────
 
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Endpoint non trovato",
-    path: req.originalUrl,
-  });
-});
+app.use(errorHandler);
 
 // ─────────────────────────────────────────────
 // ERROR HANDLER CENTRALIZZATO
