@@ -1,22 +1,22 @@
 const router = require("express").Router();
-const { models } = require("../db");
-const { requireAuth } = require("../middleware/auth");
+
+const { MenuItem } = require("../db");
+const requireAuth = require("../middleware/auth");
 const asyncHandler = require("../middleware/asyncHandler");
 
-const { MenuItem } = models;
-
-// ── GET MENU PUBBLICO (frontend clienti) ───────
+// ── GET MENU PUBBLICO ──
 router.get(
   "/",
   asyncHandler(async (req, res) => {
     const items = await MenuItem.find({ available: true }).sort({
       category: 1,
     });
+
     res.json(items);
   }),
 );
 
-// ── GET MENU ADMIN (tutto) ─────────────────────
+// ── GET MENU ADMIN ──
 router.get(
   "/all",
   requireAuth,
@@ -26,7 +26,7 @@ router.get(
   }),
 );
 
-// ── TOGGLE DISPONIBILITÀ ───────────────────────
+// ── TOGGLE ──
 router.put(
   "/:id/toggle",
   requireAuth,
