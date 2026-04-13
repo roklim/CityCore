@@ -1,39 +1,96 @@
 <!doctype html>
 <html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+      body {
+        font-family: Arial;
+        text-align: center;
+        padding: 20px;
+      }
+
+      button {
+        padding: 10px;
+        margin: 5px;
+        border: none;
+        border-radius: 6px;
+        background: #e63946;
+        color: white;
+        cursor: pointer;
+      }
+
+      input {
+        padding: 10px;
+        margin: 5px;
+        width: 80%;
+      }
+
+      #msg {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
   <body>
     <h1>🍕 Ordina Pizza</h1>
 
     <input id="name" placeholder="Nome" /><br />
     <input id="phone" placeholder="Telefono" /><br />
 
+    <h3>Menu</h3>
+
     <button onclick="add('Margherita')">Margherita</button>
     <button onclick="add('Diavola')">Diavola</button>
 
     <br /><br />
-    <button onclick="send()">Invia</button>
+    <button onclick="send()">Invia ordine</button>
 
     <p id="msg"></p>
 
     <script>
-      const API = "https://mucho-gusto-mg5y.onrender.com/";
-      let cart = [];
+      const API = "https://mucho-gusto-mg5y.onrender.com"; // ❗ NO slash finale
 
+      let cart = [];
+      let sending = false;
+
+      // aggiungi pizza
       function add(p) {
         cart.push({ name: p, qty: 1 });
+        document.getElementById("msg").innerText = p + " aggiunta ✔️";
       }
 
+      // invia ordine
       async function send() {
-        await fetch(API + "/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customer: name.value,
-            phone: phone.value,
-            items: cart,
-          }),
-        });
-        msg.innerText = "Ordine inviato!";
-        cart = [];
+        if (sending) return; // evita spam
+        if (cart.length === 0) {
+          msg.innerText = "Seleziona almeno una pizza";
+          return;
+        }
+
+        sending = true;
+        msg.innerText = "Invio ordine... ⏳";
+
+        try {
+          await fetch(API + "/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customer: document.getElementById("name").value,
+              phone: document.getElementById("phone").value,
+              items: cart,
+            }),
+          });
+
+          msg.innerText = "✅ Ordine inviato!";
+          cart = [];
+        } catch (err) {
+          console.error(err);
+          msg.innerText = "❌ Errore invio ordine";
+        }
+
+        sending = false;
       }
     </script>
   </body>
