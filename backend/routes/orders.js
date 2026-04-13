@@ -124,7 +124,6 @@ router.get(
 // ─────────────────────────────────────────────
 router.post(
   "/",
-  validate(schemas.createOrder),
   asyncHandler(async (req, res) => {
     const { customer, phone = "", notes = "", items } = req.body;
 
