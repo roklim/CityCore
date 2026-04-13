@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const { Order } = require("../db");
 const { requireAuth } = require("../middleware/auth");
 
-const { asyncHandler } = require("../middleware/errorHandler");
+const asyncHandler = require("../middleware/asyncHandler");
 
 // ─────────────────────────────────────────────
 // GET ALL ORDERS (ADMIN)

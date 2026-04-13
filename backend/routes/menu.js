@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const { models } = require("../db");
 const { requireAuth } = require("../middleware/auth");
-const { asyncHandler } = require("../middleware/errorHandler");
+const asyncHandler = require("../middleware/asyncHandler");
 
 const { MenuItem } = models;
 
