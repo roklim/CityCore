@@ -1,4 +1,4 @@
-const API = "https://mucho-gusto-mg5y.onrender.com/api";
+const API = "https://mucho-gusto-61vk.vercel.app/api";
 
 export async function getMenu() {
   const res = await fetch(`${API}/menu`);
