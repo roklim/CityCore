@@ -16,7 +16,9 @@ const config = {
   port: Number(optional("PORT", "3000")),
 
   mongo: {
-    uri: required("MONGODB_URI"),
+    uri: required(
+      "mongodb+srv://marcorossiuniinf_db_user:HKEc53J2nCw7Sbyg@pizzaapp.ff6uhze.mongodb.net/?",
+    ),
   },
 
   jwt: {
