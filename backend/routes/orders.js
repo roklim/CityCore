@@ -1,14 +1,15 @@
-// routes/orders.js
+"use strict";
+
 const router = require("express").Router();
 const mongoose = require("mongoose");
-
 const { Order } = require("../db");
 const { requireAuth } = require("../middleware/auth");
-
 const asyncHandler = require("../middleware/asyncHandler");
 
+const VALID_STATUSES = ["preparing", "ready", "done", "cancelled"];
+
 // ─────────────────────────────────────────────
-// GET ALL ORDERS (ADMIN)
+// GET /api/orders — admin con filtri e paginazione
 // ─────────────────────────────────────────────
 router.get(
   "/",
@@ -17,11 +18,9 @@ router.get(
     const { status, limit = 50, page = 1, from, to } = req.query;
 
     const filter = {};
-
-    if (status && status !== "all") {
+    if (status && status !== "all" && VALID_STATUSES.includes(status)) {
       filter.status = status;
     }
-
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);
@@ -38,7 +37,6 @@ router.get(
         .limit(safeLimit)
         .skip(skip)
         .lean(),
-
       Order.countDocuments(filter),
     ]);
 
@@ -52,7 +50,7 @@ router.get(
 );
 
 // ─────────────────────────────────────────────
-// STATS (ADMIN DASHBOARD)
+// GET /api/orders/stats — admin dashboard
 // ─────────────────────────────────────────────
 router.get(
   "/stats",
@@ -69,14 +67,8 @@ router.get(
             status: { $ne: "cancelled" },
           },
         },
-        {
-          $group: {
-            _id: "$status",
-            count: { $sum: 1 },
-          },
-        },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
       ]),
-
       Order.aggregate([
         {
           $match: {
@@ -94,43 +86,41 @@ router.get(
       ]),
     ]);
 
-    const counts = {
-      preparing: 0,
-      ready: 0,
-      done: 0,
-    };
-
-    for (const s of statusAgg) {
-      counts[s._id] = s.count;
-    }
-
-    const revenue = revenueAgg?.[0]?.revenue || 0;
-    const totalOrders = revenueAgg?.[0]?.orders || 0;
+    const counts = { preparing: 0, ready: 0, done: 0 };
+    for (const s of statusAgg)
+      if (counts[s._id] !== undefined) counts[s._id] = s.count;
 
     res.json({
       today: {
-        total: totalOrders,
-        revenue: Number(revenue.toFixed(2)),
-        preparing: counts.preparing,
-        ready: counts.ready,
-        done: counts.done,
+        total: revenueAgg[0]?.orders || 0,
+        revenue: Number((revenueAgg[0]?.revenue || 0).toFixed(2)),
+        ...counts,
       },
     });
   }),
 );
 
 // ─────────────────────────────────────────────
-// CREATE ORDER (PUBLIC)
+// POST /api/orders — pubblico: crea ordine
 // ─────────────────────────────────────────────
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const { customer, phone = "", notes = "", items } = req.body;
+    const { customer, phone = "", notes = "", items } = req.body || {};
 
-    const total = items.reduce((sum, item) => {
-      const price = Number(item.price) || 0;
-      const qty = Number(item.qty) || 1;
-      return sum + price * qty;
+    if (!customer?.trim()) {
+      return res
+        .status(400)
+        .json({ error: "Il campo customer è obbligatorio" });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "Almeno un articolo è obbligatorio" });
+    }
+
+    const total = items.reduce((sum, i) => {
+      return sum + (Number(i.price) || 0) * (Number(i.qty) || 1);
     }, 0);
 
     const order = await Order.create({
@@ -146,72 +136,72 @@ router.post(
 );
 
 // ─────────────────────────────────────────────
-// GET ORDER BY ID (PUBLIC TRACKING)
+// GET /api/orders/:id — tracking pubblico
 // ─────────────────────────────────────────────
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: "ID non valido" });
     }
 
-    const order = await Order.findById(id).lean();
+    const order = await Order.findById(req.params.id).lean();
+    if (!order) return res.status(404).json({ error: "Ordine non trovato" });
 
-    if (!order) {
-      return res.status(404).json({ error: "Ordine non trovato" });
-    }
-
-    res.json(order);
+    // Esponiamo solo i campi pubblici
+    const { _id, customer, items, status, total, createdAt } = order;
+    res.json({ _id, customer, items, status, total, createdAt });
   }),
 );
 
 // ─────────────────────────────────────────────
-// UPDATE STATUS (ADMIN)
+// PUT /api/orders/:id — admin: aggiorna stato
 // ─────────────────────────────────────────────
 router.put(
   "/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { status, handledBy } = req.body;
+    const { status, handledBy } = req.body || {};
 
-    const order = await Order.findByIdAndUpdate(
-      id,
-      {
-        status,
-        ...(handledBy ? { handledBy } : {}),
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
-
-    if (!order) {
-      return res.status(404).json({ error: "Ordine non trovato" });
+    if (status && !VALID_STATUSES.includes(status)) {
+      return res
+        .status(400)
+        .json({
+          error: `Stato non valido. Valori: ${VALID_STATUSES.join(", ")}`,
+        });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+
+    const update = {};
+    if (status) update.status = status;
+    if (handledBy) update.handledBy = handledBy;
+
+    const order = await Order.findByIdAndUpdate(req.params.id, update, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!order) return res.status(404).json({ error: "Ordine non trovato" });
     res.json(order);
   }),
 );
 
 // ─────────────────────────────────────────────
-// DELETE ORDER (ADMIN)
+// DELETE /api/orders/:id — admin
 // ─────────────────────────────────────────────
 router.delete(
   "/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    const order = await Order.findByIdAndDelete(id);
-
-    if (!order) {
-      return res.status(404).json({ error: "Ordine non trovato" });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "ID non valido" });
     }
 
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ error: "Ordine non trovato" });
     res.json({ ok: true });
   }),
 );

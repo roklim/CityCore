@@ -1,7 +1,0 @@
-https://dashboard.render.com/web/srv-d7eiuaho3t8c73cvfndg/deploys/dep-d7eiubho3t8c73cvfo4g?r=2026-04-13%4017%3A59%3A14%7E2026-04-13%4018%3A06%3A11
-
-https://vercel.com/roklims-projects/mucho-gusto-p79b
-
-marcorossiuniinf_db_user
-
-HKEc53J2nCw7Sbyg
