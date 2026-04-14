@@ -25,8 +25,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: config.cors.origin || "*",
-    credentials: true,
+    origin: config.cors.origin === "*" ? true : config.cors.origin,
   }),
 );
 
@@ -78,7 +77,9 @@ app.use("/api/menu", menuRouter);
 // 404 HANDLER
 // ─────────────────────────────────────────────
 
-app.use(errorHandler);
+app.use((req, res) => {
+  res.status(404).json({ error: "Endpoint non trovato" });
+});
 
 // ─────────────────────────────────────────────
 // ERROR HANDLER CENTRALIZZATO

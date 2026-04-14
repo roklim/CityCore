@@ -134,5 +134,6 @@ if (require.main === module) {
 
 module.exports = async (req, res) => {
   await connect();
+  await seedMenu();
   return app(req, res);
 };

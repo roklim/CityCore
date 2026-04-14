@@ -1,0 +1,29 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/frontend/customer.html"
+    },
+    {
+      "source": "/customer.html",
+      "destination": "/frontend/customer.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/frontend/admin.html"
+    },
+    {
+      "source": "/admin.html",
+      "destination": "/frontend/admin.html"
+    },
+    {
+      "source": "/css/(.*)",
+      "destination": "/frontend/css/$1"
+    },
+    {
+      "source": "/js/(.*)",
+      "destination": "/frontend/js/$1"
+    }
+  ]
+}
+

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <meta name="api-base-url" content="" />
   </head>
 
   <body>
@@ -66,12 +67,13 @@
     <!-- TOAST -->
     <div id="toast"></div>
 
+    <script src="./js/runtime-config.js"></script>
     <script type="module">
       import {
         loginAdmin,
         getOrders,
         updateOrderStatus,
-      } from "../frontend-js/api.js";
+      } from "./js/api.js";
 
       let token = localStorage.getItem("admin_token") || "";
       let orders = [];

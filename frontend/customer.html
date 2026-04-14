@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/customer.css" />
+    <meta name="api-base-url" content="" />
   </head>
 
   <body>
@@ -78,8 +79,9 @@
       </div>
     </div>
 
+    <script src="./js/runtime-config.js"></script>
     <script type="module">
-      import { getMenu, createOrder } from "../frontend-js/api.js";
+      import { getMenu, createOrder } from "./js/api.js";
 
       let menu = [];
       let cart = [];

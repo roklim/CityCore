@@ -1,4 +1,22 @@
-const API = "https://mucho-gusto-61vk.vercel.app/api";
+const runtimeApi = window.APP_CONFIG?.API_BASE_URL?.trim();
+
+const metaApi = document
+  .querySelector('meta[name="api-base-url"]')
+  ?.content?.trim();
+
+const configuredApi = runtimeApi || metaApi;
+
+const normalizedConfiguredApi = configuredApi
+  ? configuredApi.replace(/\/$/, "")
+  : "";
+
+const defaultApi =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3000/api"
+    : `${window.location.origin}/api`;
+
+const API = normalizedConfiguredApi || defaultApi;
 
 export async function getMenu() {
   const res = await fetch(`${API}/menu`);
