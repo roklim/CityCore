@@ -1,3 +1,5 @@
+"use strict";
+
 const jwt = require("jsonwebtoken");
 const config = require("../config");
 
@@ -9,13 +11,11 @@ function requireAuth(req, res, next) {
   }
 
   try {
-    const token = header.split(" ")[1];
-    const decoded = jwt.verify(token, config.jwt.secret);
-
-    req.user = decoded;
+    const token = header.slice(7);
+    req.user = jwt.verify(token, config.jwt.secret);
     next();
-  } catch (err) {
-    return res.status(401).json({ error: "Token non valido" });
+  } catch {
+    return res.status(401).json({ error: "Token non valido o scaduto" });
   }
 }
 

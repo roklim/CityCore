@@ -1,29 +1,29 @@
+"use strict";
+
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const config = require("../config");
-
 const asyncHandler = require("../middleware/asyncHandler");
 
-// demo user
-const ADMIN = {
-  username: "admin",
-  password: bcrypt.hashSync("admin123", 10),
-};
+// Hash calcolato una volta sola all'avvio (non a ogni richiesta)
+const ADMIN_PASSWORD_HASH = bcrypt.hashSync(config.admin.password, 10);
 
-// LOGIN
+// POST /api/auth/login
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
 
-    if (username !== ADMIN.username) {
-      return res.status(401).json({ error: "Credenziali errate" });
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username e password obbligatori" });
     }
 
-    const ok = await bcrypt.compare(password, ADMIN.password);
+    const usernameMatch = username === config.admin.username;
+    const passwordMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
 
-    if (!ok) {
+    // Stesso messaggio per username e password errati (no user enumeration)
+    if (!usernameMatch || !passwordMatch) {
       return res.status(401).json({ error: "Credenziali errate" });
     }
 
@@ -31,7 +31,7 @@ router.post(
       expiresIn: config.jwt.expiresIn,
     });
 
-    res.json({ token });
+    res.json({ token, expiresIn: config.jwt.expiresIn });
   }),
 );
 
