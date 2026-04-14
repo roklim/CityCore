@@ -1,102 +1,93 @@
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-
+/* ── Card ───────────────────────────── */
+.card {
+  background: var(--surface);
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+}
+
+/* ── Buttons ─────────────────────────── */
+.btn {
+  border: 1px solid var(--border-strong);
   background: var(--surface-2);
-
   color: var(--text);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
   font-weight: 500;
-
-  transition: all 0.15s ease;
+  transition: all 0.18s var(--ease);
 }
 
 .btn:hover {
   transform: translateY(-1px);
   border-color: var(--border-strong);
+  background: var(--surface-3);
 }
 
 .btn-primary {
   background: var(--primary);
-  color: var(--bg);
-  border: none;
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
+  border-color: transparent;
 }
 
-.card {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
-  transition: 0.15s ease;
-}
-
-.card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
-}
-.input {
-  width: 100%;
-  padding: 10px 12px;
-
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-
-  color: var(--text);
-  outline: none;
-
-  transition: 0.15s;
-}
-
-.input:focus {
-  border-color: var(--primary);
-}
+/* ── Badge ───────────────────────────── */
 .badge {
-  display: inline-flex;
-  align-items: center;
-
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: var(--radius-full);
-
-  background: var(--surface-2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
   border: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.badge.success {
-  color: var(--success);
-}
-.badge.warning {
+.badge.preparing {
   color: var(--warning);
 }
-.badge.danger {
-  color: var(--danger);
+.badge.ready {
+  color: var(--success);
 }
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: var(--space-5);
+.badge.done {
+  color: var(--muted);
 }
 
-.grid {
-  display: grid;
-  gap: var(--space-4);
+/* ── Toast ───────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.22s var(--ease);
+  pointer-events: none;
+  z-index: 1000;
 }
 
-.grid-2 {
-  grid-template-columns: 1fr 360px;
-}
-
-.grid-auto {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+#toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }

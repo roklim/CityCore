@@ -3,48 +3,56 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ordina — Pizzeria</title>
-    <!-- STRIPE-STYLE CSS ARCHITECTURE -->
-    <link rel="stylesheet" href="/css/tokens.css" />
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/components.css" />
-    <link rel="stylesheet" href="/css/layout.css" />
-    <link rel="stylesheet" href="/css/customer.css" />
+    <title>Ordina — Mucho Gusto Pizzeria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/customer.css" />
   </head>
 
   <body>
+    <!-- HERO -->
     <header class="hero">
       <div class="hero-eyebrow">Ordina al banco</div>
       <h1>La nostra cucina a tua disposizione</h1>
       <p>Scegli e invia in pochi secondi</p>
+      <a class="hero-admin-link" href="./admin.html">Area Admin →</a>
     </header>
 
+    <!-- LAYOUT -->
     <div class="layout">
       <!-- MENU -->
       <div class="menu-col" id="menu-col">
-        <p>Caricamento...</p>
+        <p>Caricamento menu...</p>
       </div>
 
       <!-- SIDEBAR -->
       <div class="sidebar">
-        <h2>Ordine</h2>
+        <h2>Il tuo ordine</h2>
 
         <div class="field">
-          <label>Nome *</label>
-          <input id="f-name" />
+          <label for="f-name">Nome *</label>
+          <input id="f-name" type="text" placeholder="Il tuo nome" />
         </div>
 
         <div class="field">
-          <label>Telefono</label>
-          <input id="f-phone" />
+          <label for="f-phone">Telefono</label>
+          <input id="f-phone" type="tel" placeholder="Opzionale" />
         </div>
 
         <div class="field">
-          <label>Note</label>
-          <textarea id="f-notes"></textarea>
+          <label for="f-notes">Note</label>
+          <textarea
+            id="f-notes"
+            rows="3"
+            placeholder="Es. senza aglio, extra piccante..."
+          ></textarea>
         </div>
 
-        <div class="cart-list" id="cart-list"></div>
+        <div class="cart-list" id="cart-list">
+          <p class="cart-empty">Nessun prodotto selezionato</p>
+        </div>
 
         <div class="total-row">
           <span>Totale</span>
@@ -55,75 +63,169 @@
       </div>
     </div>
 
+    <!-- TOAST -->
     <div id="toast"></div>
 
-    <!-- overlay -->
+    <!-- OVERLAY conferma -->
     <div id="overlay">
       <div class="confirm-box">
-        <h2>Ordine ricevuto 🍕</h2>
-        <p id="oid-label"></p>
-        <button onclick="resetAll()">Nuovo ordine</button>
+        <div style="font-size: 48px; margin-bottom: 12px">🍕</div>
+        <h2>Ordine ricevuto!</h2>
+        <p id="oid-label">Il tuo ordine è in preparazione.</p>
+        <button class="btn btn-primary" onclick="resetAll()">
+          Nuovo ordine
+        </button>
       </div>
     </div>
 
-    <script>
-      const API = "https://mucho-gusto-mg5y.onrender.com/api";
+    <script type="module">
+      import { getMenu, createOrder } from "../frontend-js/api.js";
 
       let menu = [];
       let cart = [];
 
       const money = (v) => `€ ${v.toFixed(2).replace(".", ",")}`;
 
+      /* ── Toast ── */
       function toast(msg) {
-        const t = document.getElementById("toast");
-        t.innerText = msg;
-        t.classList.add("show");
-        setTimeout(() => t.classList.remove("show"), 2000);
+        const el = document.getElementById("toast");
+        el.innerText = msg;
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), 2500);
       }
 
+      /* ── Boot ── */
       async function boot() {
-        const res = await fetch(`${API}/menu`);
-        menu = await res.json();
-        renderMenu();
+        try {
+          menu = await getMenu();
+          renderMenu();
+        } catch {
+          document.getElementById("menu-col").innerHTML =
+            "<p>Errore nel caricamento del menu. Riprova.</p>";
+        }
       }
 
+      /* ── Render menu ── */
       function renderMenu() {
-        document.getElementById("menu-col").innerHTML = menu
-          .map(
-            (m) => `
-      <div class="card">
-        <div>${m.emoji || "🍕"}</div>
-        <b>${m.name}</b>
-        <p>${money(m.price)}</p>
-        <button onclick="add('${m._id}')">+</button>
-      </div>
-    `,
-          )
-          .join("");
+        document.getElementById("menu-col").innerHTML = `
+          <div class="menu-grid">
+            ${menu
+              .map(
+                (m) => `
+              <div class="menu-card" onclick="add('${m._id}')">
+                <div class="menu-card-emoji">${m.emoji || "🍕"}</div>
+                <div class="menu-card-name">${m.name}</div>
+                <div class="menu-card-price">${money(m.price)}</div>
+                <button class="menu-card-btn">+ Aggiungi</button>
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        `;
       }
 
-      function add(id) {
+      /* ── Add to cart ── */
+      window.add = function (id) {
         const item = menu.find((m) => m._id === id);
+        if (!item) return;
         const ex = cart.find((c) => c.id === id);
-
         if (ex) ex.qty++;
-        else cart.push({ id, name: item.name, price: item.price, qty: 1 });
-
+        else
+          cart.push({
+            id,
+            name: item.name,
+            price: item.price,
+            qty: 1,
+            emoji: item.emoji || "🍕",
+          });
         renderCart();
-      }
+        toast(`${item.emoji || "🍕"} ${item.name} aggiunto`);
+      };
 
+      /* ── Remove from cart ── */
+      window.remove = function (id) {
+        const ex = cart.find((c) => c.id === id);
+        if (!ex) return;
+        if (ex.qty === 1) cart = cart.filter((c) => c.id !== id);
+        else ex.qty--;
+        renderCart();
+      };
+
+      /* ── Render cart ── */
       function renderCart() {
-        let total = 0;
+        const list = document.getElementById("cart-list");
+        const totalEl = document.getElementById("total-val");
 
-        document.getElementById("cart-list").innerHTML = cart
+        if (cart.length === 0) {
+          list.innerHTML = `<p class="cart-empty">Nessun prodotto selezionato</p>`;
+          totalEl.innerText = "€ 0,00";
+          return;
+        }
+
+        let total = 0;
+        list.innerHTML = cart
           .map((c) => {
             total += c.price * c.qty;
-            return `<div>${c.name} x${c.qty}</div>`;
+            return `
+            <div class="cart-item">
+              <span class="cart-item-left">${c.name} ×${c.qty}</span>
+              <div class="cart-item-right">
+                <span class="cart-item-price">${money(c.price * c.qty)}</span>
+                <button class="cart-item-remove" onclick="remove('${c.id}')" title="Rimuovi">−</button>
+              </div>
+            </div>
+          `;
           })
           .join("");
 
-        document.getElementById("total-val").innerText = money(total);
+        totalEl.innerText = money(total);
       }
+
+      /* ── Submit order ── */
+      window.submitOrder = async function () {
+        const name = document.getElementById("f-name").value.trim();
+        if (!name) {
+          toast("Inserisci il tuo nome");
+          return;
+        }
+        if (cart.length === 0) {
+          toast("Aggiungi almeno un prodotto");
+          return;
+        }
+
+        try {
+          const data = await createOrder({
+            customer: name,
+            phone: document.getElementById("f-phone").value.trim(),
+            notes: document.getElementById("f-notes").value.trim(),
+            items: cart.map((c) => ({
+              id: c.id,
+              name: c.name,
+              qty: c.qty,
+              price: c.price,
+            })),
+          });
+
+          const label = data._id
+            ? `ID ordine: ${data._id}`
+            : "Il tuo ordine è in preparazione.";
+          document.getElementById("oid-label").innerText = label;
+          document.getElementById("overlay").classList.add("show");
+        } catch {
+          toast("Errore nell'invio. Riprova.");
+        }
+      };
+
+      /* ── Reset ── */
+      window.resetAll = function () {
+        cart = [];
+        document.getElementById("f-name").value = "";
+        document.getElementById("f-phone").value = "";
+        document.getElementById("f-notes").value = "";
+        renderCart();
+        document.getElementById("overlay").classList.remove("show");
+      };
 
       boot();
     </script>
