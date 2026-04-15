@@ -129,9 +129,54 @@ button {
   gap: 26px;
 }
 
+.menu-category-nav {
+  position: sticky;
+  top: 10px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  background: rgba(247, 239, 227, 0.88);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 32px rgba(64, 42, 27, 0.08);
+}
+
+.menu-category-nav button {
+  display: grid;
+  gap: 3px;
+  padding: 12px 13px;
+  border: 1px solid rgba(47, 103, 70, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 250, 241, 0.88);
+  color: var(--ink);
+  text-align: left;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.menu-category-nav button:hover {
+  background: white;
+  transform: translateY(-2px);
+}
+
+.menu-category-nav span {
+  color: var(--basil);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.menu-category-nav strong {
+  font-size: 14px;
+}
+
 .menu-section {
   display: grid;
   gap: 14px;
+  scroll-margin-top: 98px;
 }
 
 .menu-section-head {
@@ -665,6 +710,11 @@ button {
   .menu-section-head {
     align-items: start;
     flex-direction: column;
+  }
+
+  .menu-category-nav {
+    position: static;
+    grid-template-columns: 1fr;
   }
 
   .date-strip {

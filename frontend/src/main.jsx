@@ -21,19 +21,19 @@ const ADMIN_REFRESH_INTERVAL_MS = 120000;
 const MENU_SECTIONS = [
   {
     id: "pizze-tonde",
-    title: "Pizze tonde",
+    title: "Le Pizze Tonde",
     eyebrow: "Forno classico",
     description: "Impasto fragrante, bordo alto e ingredienti della casa.",
   },
   {
     id: "pizza-teglia",
-    title: "Pizza in teglia",
+    title: "Pizza in Teglia",
     eyebrow: "Al taglio",
     description: "Tranci generosi, perfetti da condividere o portare via.",
   },
   {
     id: "fritti",
-    title: "Fritti",
+    title: "Fritti e Sfizi",
     eyebrow: "Sfizi caldi",
     description: "Croccanti, dorati, da aggiungere all'ordine.",
   },
@@ -100,6 +100,12 @@ function getMenuSectionId(item) {
   }
 
   return "altro";
+}
+
+function scrollToMenuSection(sectionId) {
+  document
+    .getElementById(`menu-${sectionId}`)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function Toast({ message }) {
@@ -321,8 +327,25 @@ function CustomerView() {
             <p className="muted">Caricamento menu...</p>
           ) : (
             <div className="menu-sections">
+              <nav className="menu-category-nav" aria-label="Categorie menu">
+                {menuBySection.map((section) => (
+                  <button
+                    type="button"
+                    key={section.id}
+                    onClick={() => scrollToMenuSection(section.id)}
+                  >
+                    <span>{section.eyebrow}</span>
+                    <strong>{section.title}</strong>
+                  </button>
+                ))}
+              </nav>
+
               {menuBySection.map((section) => (
-                <section className="menu-section" key={section.id}>
+                <section
+                  className="menu-section"
+                  id={`menu-${section.id}`}
+                  key={section.id}
+                >
                   <div className="menu-section-head">
                     <div>
                       <p className="eyebrow">{section.eyebrow}</p>

@@ -10,7 +10,7 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     const items = await MenuItem.find({ available: true })
-      .sort({ category: 1, name: 1 })
+      .sort({ category: 1, sortOrder: 1, name: 1 })
       .lean();
     res.json(items);
   }),
@@ -21,7 +21,9 @@ router.get(
   "/all",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const items = await MenuItem.find().sort({ category: 1, name: 1 }).lean();
+    const items = await MenuItem.find()
+      .sort({ category: 1, sortOrder: 1, name: 1 })
+      .lean();
     res.json(items);
   }),
 );
@@ -31,7 +33,18 @@ router.post(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { name, description, price, category, emoji } = req.body;
+    const {
+      name,
+      description,
+      price,
+      category,
+      emoji,
+      sortOrder,
+      unit,
+      tags,
+      allergens,
+      featured,
+    } = req.body;
 
     if (!name || price == null) {
       return res.status(400).json({ error: "name e price obbligatori" });
@@ -43,6 +56,11 @@ router.post(
       price,
       category,
       emoji,
+      sortOrder,
+      unit,
+      tags,
+      allergens,
+      featured,
     });
     res.status(201).json(item);
   }),
@@ -60,6 +78,11 @@ router.put(
       "category",
       "emoji",
       "available",
+      "sortOrder",
+      "unit",
+      "tags",
+      "allergens",
+      "featured",
     ];
     const update = {};
     for (const key of allowed) {
