@@ -23,6 +23,10 @@ export function getAvailability(date) {
   return request(`/orders/availability?date=${encodeURIComponent(date)}`);
 }
 
+export function lookupCustomer(phone) {
+  return request(`/customers/lookup?phone=${encodeURIComponent(phone)}`);
+}
+
 export function createOrder(order) {
   return request("/orders", {
     method: "POST",

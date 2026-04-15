@@ -12,6 +12,7 @@ const { connect, seedMenu } = require("./db");
 const { errorHandler } = require("./middleware/errorHandler");
 
 const authRouter = require("./routes/auth");
+const customersRouter = require("./routes/customers").router;
 const ordersRouter = require("./routes/orders");
 const menuRouter = require("./routes/menu");
 
@@ -70,6 +71,7 @@ app.get("/health", (req, res) => {
 // ─────────────────────────────────────────────
 
 app.use("/api/auth", authRouter);
+app.use("/api/customers", customersRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/menu", menuRouter);
 

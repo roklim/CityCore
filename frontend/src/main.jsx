@@ -5,6 +5,7 @@ import {
   getAvailability,
   getMenu,
   getOrders,
+  lookupCustomer,
   loginAdmin,
   updateOrderStatus,
 } from "./lib/api";
@@ -65,6 +66,8 @@ function CustomerView() {
   const [notes, setNotes] = useState("");
   const [toast, setToast] = useState("");
   const [confirmation, setConfirmation] = useState(null);
+  const [customerProfile, setCustomerProfile] = useState(null);
+  const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const total = useMemo(
@@ -98,6 +101,40 @@ function CustomerView() {
         notify("Fasce orarie non disponibili.");
       });
   }, [pickupDate]);
+
+  useEffect(() => {
+    const normalizedPhone = phone.replace(/\D/g, "");
+
+    if (normalizedPhone.length < 6) {
+      setCustomerProfile(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCustomerLookupLoading(true);
+
+    const timer = window.setTimeout(() => {
+      lookupCustomer(normalizedPhone)
+        .then((data) => {
+          if (cancelled) return;
+          setCustomerProfile(data.found ? data : null);
+          if (data.found && data.customer?.name && !customer.trim()) {
+            setCustomer(data.customer.name);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setCustomerProfile(null);
+        })
+        .finally(() => {
+          if (!cancelled) setCustomerLookupLoading(false);
+        });
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [phone]);
 
   function notify(message) {
     setToast(message);
@@ -134,6 +171,25 @@ function CustomerView() {
     );
   }
 
+  function reorderLastOrder() {
+    const lastItems = customerProfile?.lastOrder?.items || [];
+
+    if (lastItems.length === 0) {
+      notify("Nessun ordine precedente da riordinare.");
+      return;
+    }
+
+    setCart(
+      lastItems.map((item) => ({
+        id: item.menuItemId || item.name,
+        name: item.name,
+        price: item.price,
+        qty: item.qty,
+      })),
+    );
+    notify("Ultimo ordine aggiunto al carrello.");
+  }
+
   async function submitOrder(event) {
     event.preventDefault();
 
@@ -154,12 +210,19 @@ function CustomerView() {
         pickupDate,
         pickupTime: slot.time,
         pickupSlot: slot.pickupSlot,
-        items: cart.map((item) => ({
-          menuItemId: item.id,
-          name: item.name,
-          price: item.price,
-          qty: item.qty,
-        })),
+        items: cart.map((item) => {
+          const orderItem = {
+            name: item.name,
+            price: item.price,
+            qty: item.qty,
+          };
+
+          if (/^[a-f\d]{24}$/i.test(item.id)) {
+            orderItem.menuItemId = item.id;
+          }
+
+          return orderItem;
+        }),
       });
 
       setConfirmation(order);
@@ -251,6 +314,29 @@ function CustomerView() {
             Telefono
             <input value={phone} onChange={(e) => setPhone(e.target.value)} />
           </label>
+
+          {customerLookupLoading && (
+            <p className="loyalty-card subtle">Controllo tessera fedelta...</p>
+          )}
+
+          {customerProfile && (
+            <div className="loyalty-card">
+              <div>
+                <p className="eyebrow">Bentornato</p>
+                <strong>{customerProfile.customer.name || "Cliente Mucho Gusto"}</strong>
+                <span>
+                  {customerProfile.customer.points} punti fedelta -{" "}
+                  {Math.max(10 - customerProfile.customer.points, 0)} al prossimo bonus
+                </span>
+              </div>
+              {customerProfile.lastOrder && (
+                <button type="button" onClick={reorderLastOrder}>
+                  Riordina ultimo
+                </button>
+              )}
+            </div>
+          )}
+
           <label>
             Note
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />

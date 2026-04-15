@@ -90,18 +90,35 @@ const orderSchema = new mongoose.Schema(
       default: "preparing",
     },
     handledBy: { type: String, default: "" },
+    loyaltyAwarded: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
+const customerSchema = new mongoose.Schema(
+  {
+    name: { type: String, default: "", trim: true, maxlength: 80 },
+    phone: { type: String, required: true, trim: true },
+    points: { type: Number, default: 0, min: 0 },
+    completedOrders: { type: Number, default: 0, min: 0 },
+    totalOrders: { type: Number, default: 0, min: 0 },
+    lastOrder: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+    lastOrderAt: { type: Date },
   },
   { timestamps: true },
 );
 
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ pickupDate: 1, pickupTime: 1 });
+customerSchema.index({ phone: 1 }, { unique: true });
 
 // ── Guard against model overwrite (Vercel hot-reload) ──────
 const MenuItem =
   mongoose.models.MenuItem || mongoose.model("MenuItem", menuItemSchema);
 
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
+const Customer =
+  mongoose.models.Customer || mongoose.model("Customer", customerSchema);
 
 // ─────────────────────────────────────────────
 // SEED
@@ -174,4 +191,4 @@ async function seedMenu() {
 // EXPORT
 // ─────────────────────────────────────────────
 
-module.exports = { connect, seedMenu, MenuItem, Order };
+module.exports = { connect, seedMenu, MenuItem, Order, Customer };

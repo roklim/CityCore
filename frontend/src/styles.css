@@ -254,6 +254,47 @@ button {
   font-size: 18px;
 }
 
+.loyalty-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px;
+  background: rgba(214, 154, 45, 0.13);
+  border: 1px solid rgba(214, 154, 45, 0.28);
+  border-radius: 8px;
+}
+
+.loyalty-card.subtle {
+  display: block;
+  color: var(--muted);
+}
+
+.loyalty-card .eyebrow {
+  margin-bottom: 4px;
+}
+
+.loyalty-card strong,
+.loyalty-card span {
+  display: block;
+}
+
+.loyalty-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.loyalty-card button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--basil);
+  color: white;
+  font-weight: 900;
+  padding: 10px 12px;
+}
+
 .date-strip {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -579,6 +620,10 @@ button {
 
   .slot-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .loyalty-card {
+    grid-template-columns: 1fr;
   }
 
   .submit-button {

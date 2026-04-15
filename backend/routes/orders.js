@@ -2,14 +2,16 @@
 
 const router = require("express").Router();
 const mongoose = require("mongoose");
-const { Order } = require("../db");
+const { Customer, Order } = require("../db");
 const config = require("../config");
 const { requireAuth } = require("../middleware/auth");
 const asyncHandler = require("../middleware/asyncHandler");
+const { normalizePhone } = require("./customers");
 
 const VALID_STATUSES = ["preparing", "ready", "done", "cancelled"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
+const POINTS_PER_COMPLETED_ORDER = 1;
 
 function timeToMinutes(time) {
   const [hours, minutes] = time.split(":").map(Number);
@@ -290,7 +292,7 @@ router.post(
 
     const order = await Order.create({
       customer: customer.trim(),
-      phone: phone.trim(),
+      phone: normalizePhone(phone),
       notes: notes.trim(),
       items,
       total: Math.round(total * 100) / 100,
@@ -298,6 +300,21 @@ router.post(
       pickupTime,
       pickupSlot,
     });
+
+    if (order.phone) {
+      await Customer.findOneAndUpdate(
+        { phone: order.phone },
+        {
+          $set: {
+            name: order.customer,
+            lastOrder: order._id,
+            lastOrderAt: order.createdAt,
+          },
+          $inc: { totalOrders: 1 },
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true },
+      );
+    }
 
     res.status(201).json(order);
   }),
@@ -373,6 +390,28 @@ router.put(
     });
 
     if (!order) return res.status(404).json({ error: "Ordine non trovato" });
+
+    if (status === "done" && order.phone && !order.loyaltyAwarded) {
+      await Customer.findOneAndUpdate(
+        { phone: normalizePhone(order.phone) },
+        {
+          $set: {
+            name: order.customer,
+            lastOrder: order._id,
+            lastOrderAt: order.createdAt,
+          },
+          $inc: {
+            points: POINTS_PER_COMPLETED_ORDER,
+            completedOrders: 1,
+          },
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true },
+      );
+
+      order.loyaltyAwarded = true;
+      await order.save();
+    }
+
     res.json(order);
   }),
 );
