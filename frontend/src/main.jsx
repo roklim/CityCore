@@ -18,6 +18,38 @@ const STATUSES = {
   cancelled: "Annullato",
 };
 const ADMIN_REFRESH_INTERVAL_MS = 120000;
+const MENU_SECTIONS = [
+  {
+    id: "pizze-tonde",
+    title: "Pizze tonde",
+    eyebrow: "Forno classico",
+    description: "Impasto fragrante, bordo alto e ingredienti della casa.",
+  },
+  {
+    id: "pizza-teglia",
+    title: "Pizza in teglia",
+    eyebrow: "Al taglio",
+    description: "Tranci generosi, perfetti da condividere o portare via.",
+  },
+  {
+    id: "fritti",
+    title: "Fritti",
+    eyebrow: "Sfizi caldi",
+    description: "Croccanti, dorati, da aggiungere all'ordine.",
+  },
+  {
+    id: "bevande",
+    title: "Bevande",
+    eyebrow: "Fresco",
+    description: "Bibite e acqua per completare il ritiro.",
+  },
+  {
+    id: "altro",
+    title: "Altre proposte",
+    eyebrow: "Extra",
+    description: "Dolci e specialita disponibili oggi.",
+  },
+];
 
 function todayISO() {
   return toLocalISODate(new Date());
@@ -49,6 +81,25 @@ function money(value) {
     style: "currency",
     currency: "EUR",
   }).format(value || 0);
+}
+
+function getMenuSectionId(item) {
+  const text = `${item.category || ""} ${item.name || ""} ${
+    item.description || ""
+  }`.toLowerCase();
+
+  if (/(drink|bevande|bibite|acqua|coca|cola|fanta|sprite|birra|vino)/.test(text)) {
+    return "bevande";
+  }
+  if (/(teglia|trancio|taglio|pala)/.test(text)) return "pizza-teglia";
+  if (/(fritti|fritto|suppli|supplì|arancino|crocche|patatin|olive ascolane)/.test(text)) {
+    return "fritti";
+  }
+  if (/(pizza|margherita|diavola|formaggi|prosciutto|napoli|capricciosa)/.test(text)) {
+    return "pizze-tonde";
+  }
+
+  return "altro";
 }
 
 function Toast({ message }) {
@@ -84,6 +135,13 @@ function CustomerView() {
     () => (availability?.slots || []).filter((slot) => !slot.full && !slot.past),
     [availability],
   );
+
+  const menuBySection = useMemo(() => {
+    return MENU_SECTIONS.map((section) => ({
+      ...section,
+      items: menu.filter((item) => getMenuSectionId(item) === section.id),
+    })).filter((section) => section.items.length > 0);
+  }, [menu]);
 
   useEffect(() => {
     getMenu()
@@ -262,18 +320,33 @@ function CustomerView() {
           {loading ? (
             <p className="muted">Caricamento menu...</p>
           ) : (
-            <div className="menu-grid">
-              {menu.map((item) => (
-                <button
-                  className="menu-card"
-                  key={item._id}
-                  onClick={() => addToCart(item)}
-                >
-                  <span className="menu-emoji">{item.emoji || "Pizza"}</span>
-                  <span className="menu-name">{item.name}</span>
-                  <span className="menu-desc">{item.description}</span>
-                  <span className="menu-price">{money(item.price)}</span>
-                </button>
+            <div className="menu-sections">
+              {menuBySection.map((section) => (
+                <section className="menu-section" key={section.id}>
+                  <div className="menu-section-head">
+                    <div>
+                      <p className="eyebrow">{section.eyebrow}</p>
+                      <h3>{section.title}</h3>
+                      <span>{section.description}</span>
+                    </div>
+                    <strong>{section.items.length}</strong>
+                  </div>
+
+                  <div className="menu-grid">
+                    {section.items.map((item) => (
+                      <button
+                        className="menu-card"
+                        key={item._id}
+                        onClick={() => addToCart(item)}
+                      >
+                        <span className="menu-emoji">{item.emoji || "Pizza"}</span>
+                        <span className="menu-name">{item.name}</span>
+                        <span className="menu-desc">{item.description}</span>
+                        <span className="menu-price">{money(item.price)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}

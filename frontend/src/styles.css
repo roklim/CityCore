@@ -124,6 +124,49 @@ button {
   font-size: 34px;
 }
 
+.menu-sections {
+  display: grid;
+  gap: 26px;
+}
+
+.menu-section {
+  display: grid;
+  gap: 14px;
+}
+
+.menu-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  padding: 18px 20px;
+  background: rgba(255, 250, 241, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.menu-section-head h3 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-size: 30px;
+}
+
+.menu-section-head span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+}
+
+.menu-section-head strong {
+  min-width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: var(--basil);
+  border-radius: 50%;
+  color: white;
+}
+
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -617,6 +660,11 @@ button {
   .menu-grid,
   .slot-columns {
     grid-template-columns: 1fr;
+  }
+
+  .menu-section-head {
+    align-items: start;
+    flex-direction: column;
   }
 
   .date-strip {

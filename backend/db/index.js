@@ -42,7 +42,16 @@ const menuItemSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     category: {
       type: String,
-      enum: ["pizza", "drink", "dessert", "extra"],
+      enum: [
+        "pizza",
+        "pizze-tonde",
+        "pizza-teglia",
+        "fritti",
+        "drink",
+        "bevande",
+        "dessert",
+        "extra",
+      ],
       default: "pizza",
     },
     available: { type: Boolean, default: true },
