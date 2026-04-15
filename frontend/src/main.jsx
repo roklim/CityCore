@@ -4,6 +4,7 @@ import {
   createOrder,
   getAvailability,
   getMenu,
+  getOrder,
   getOrders,
   lookupCustomer,
   loginAdmin,
@@ -17,7 +18,14 @@ const STATUSES = {
   done: "Completato",
   cancelled: "Annullato",
 };
+const PUBLIC_STATUS_LABELS = {
+  preparing: "In preparazione",
+  ready: "Pronto per il ritiro",
+  done: "Completato",
+  cancelled: "Annullato",
+};
 const ADMIN_REFRESH_INTERVAL_MS = 120000;
+const LOYALTY_GOAL = 10;
 const MENU_SECTIONS = [
   {
     id: "pizze-tonde",
@@ -50,6 +58,14 @@ const MENU_SECTIONS = [
     description: "Dolci e specialita disponibili oggi.",
   },
 ];
+const QUICK_FILTERS = [
+  { id: "vegetariana", label: "Vegetariana" },
+  { id: "piccante", label: "Piccante" },
+  { id: "senza-lattosio", label: "Senza lattosio" },
+  { id: "novita", label: "Novita" },
+  { id: "piu-ordinati", label: "Piu ordinati" },
+];
+const ORDER_STATUS_STEPS = ["preparing", "ready", "done"];
 
 function todayISO() {
   return toLocalISODate(new Date());
@@ -59,6 +75,23 @@ function addDaysISO(days) {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return toLocalISODate(date);
+}
+
+function isClosedDate(date) {
+  return new Date(`${date}T12:00:00`).getDay() === 1;
+}
+
+function nextOpenDates(count) {
+  const dates = [];
+  let offset = 0;
+
+  while (dates.length < count && offset < 21) {
+    const date = addDaysISO(offset);
+    if (!isClosedDate(date)) dates.push(date);
+    offset += 1;
+  }
+
+  return dates;
 }
 
 function toLocalISODate(date) {
@@ -115,6 +148,31 @@ function getMenuSectionId(item) {
   return "altro";
 }
 
+function itemMatchesQuickFilter(item, filterId) {
+  const text = `${item.name || ""} ${item.description || ""} ${(
+    item.tags || []
+  ).join(" ")} ${(item.allergens || []).join(" ")}`.toLowerCase();
+
+  if (filterId === "vegetariana") {
+    return /(vegetariana|vegana|margherita|marinara|ortolana|formaggi|patate)/.test(text);
+  }
+  if (filterId === "piccante") return /(piccante|diavola|nduja|peperoncino)/.test(text);
+  if (filterId === "senza-lattosio") {
+    return !(item.allergens || []).some((allergen) =>
+      /latte|lattosio/.test(String(allergen).toLowerCase()),
+    );
+  }
+  if (filterId === "novita") return Boolean(item.featured);
+  if (filterId === "piu-ordinati") return Boolean(item.featured);
+  return true;
+}
+
+function getSlotHint(slot) {
+  if (slot.almostFull) return "Ultimi orari";
+  if (slot.count === 0) return "Consigliato";
+  return "Buona scelta";
+}
+
 function Toast({ message }) {
   return <div className={`toast ${message ? "show" : ""}`}>{message}</div>;
 }
@@ -134,14 +192,23 @@ function CustomerView() {
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeMenuSection, setActiveMenuSection] = useState(MENU_SECTIONS[0].id);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [addedItemId, setAddedItemId] = useState("");
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
     [cart],
   );
 
+  const cartCount = useMemo(
+    () => cart.reduce((sum, item) => sum + item.qty, 0),
+    [cart],
+  );
+
   const dateOptions = useMemo(
-    () => Array.from({ length: 7 }, (_, index) => addDaysISO(index)),
+    () => nextOpenDates(7),
     [],
   );
 
@@ -150,12 +217,28 @@ function CustomerView() {
     [availability],
   );
 
+  const filteredMenu = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    return menu.filter((item) => {
+      const haystack = `${item.name || ""} ${item.description || ""} ${(
+        item.tags || []
+      ).join(" ")}`.toLowerCase();
+      const matchesSearch = !query || haystack.includes(query);
+      const matchesFilters = activeFilters.every((filterId) =>
+        itemMatchesQuickFilter(item, filterId),
+      );
+
+      return matchesSearch && matchesFilters;
+    });
+  }, [activeFilters, menu, searchTerm]);
+
   const menuBySection = useMemo(() => {
     return MENU_SECTIONS.map((section) => ({
       ...section,
-      items: menu.filter((item) => getMenuSectionId(item) === section.id),
+      items: filteredMenu.filter((item) => getMenuSectionId(item) === section.id),
     })).filter((section) => section.items.length > 0);
-  }, [menu]);
+  }, [filteredMenu]);
 
   const activeMenu = useMemo(() => {
     return (
@@ -163,6 +246,12 @@ function CustomerView() {
       menuBySection[0]
     );
   }, [activeMenuSection, menuBySection]);
+  const loyaltyPoints = customerProfile?.customer?.points || 0;
+  const loyaltyCyclePoints =
+    loyaltyPoints > 0 && loyaltyPoints % LOYALTY_GOAL === 0
+      ? LOYALTY_GOAL
+      : loyaltyPoints % LOYALTY_GOAL;
+  const loyaltyRemaining = Math.max(LOYALTY_GOAL - loyaltyCyclePoints, 0);
 
   useEffect(() => {
     getMenu()
@@ -184,6 +273,12 @@ function CustomerView() {
       setActiveMenuSection(menuBySection[0]?.id || MENU_SECTIONS[0].id);
     }
   }, [activeMenu, activeMenuSection, menuBySection]);
+
+  useEffect(() => {
+    if (!dateOptions.includes(pickupDate)) {
+      setPickupDate(dateOptions[0] || todayISO());
+    }
+  }, [dateOptions, pickupDate]);
 
   useEffect(() => {
     setSelectedSlot("");
@@ -229,6 +324,11 @@ function CustomerView() {
     };
   }, [phone]);
 
+  useEffect(() => {
+    document.body.classList.toggle("drawer-open", mobileCartOpen);
+    return () => document.body.classList.remove("drawer-open");
+  }, [mobileCartOpen]);
+
   function notify(message) {
     setToast(message);
     window.clearTimeout(notify.timer);
@@ -253,6 +353,9 @@ function CustomerView() {
         },
       ];
     });
+    setAddedItemId(item._id);
+    window.clearTimeout(addToCart.timer);
+    addToCart.timer = window.setTimeout(() => setAddedItemId(""), 900);
     notify(`${item.name} aggiunta`);
   }
 
@@ -262,6 +365,24 @@ function CustomerView() {
         .map((item) => (item.id === id ? { ...item, qty: item.qty - 1 } : item))
         .filter((item) => item.qty > 0),
     );
+  }
+
+  function updateCartItemNote(id, itemNotes) {
+    setCart((current) =>
+      current.map((item) => (item.id === id ? { ...item, itemNotes } : item)),
+    );
+  }
+
+  function toggleFilter(filterId) {
+    setActiveFilters((current) =>
+      current.includes(filterId)
+        ? current.filter((item) => item !== filterId)
+        : [...current, filterId],
+    );
+  }
+
+  function getCartItem(itemId) {
+    return cart.find((item) => item.id === itemId);
   }
 
   function reorderLastOrder() {
@@ -278,6 +399,7 @@ function CustomerView() {
         name: item.name,
         price: item.price,
         qty: item.qty,
+        itemNotes: item.notes || item.itemNotes || "",
       })),
     );
     notify("Ultimo ordine aggiunto al carrello.");
@@ -309,6 +431,7 @@ function CustomerView() {
             price: item.price,
             qty: item.qty,
           };
+          if (item.itemNotes?.trim()) orderItem.notes = item.itemNotes.trim();
 
           if (/^[a-f\d]{24}$/i.test(item.id)) {
             orderItem.menuItemId = item.id;
@@ -324,9 +447,14 @@ function CustomerView() {
       setPhone("");
       setNotes("");
       setSelectedSlot("");
+      setMobileCartOpen(false);
       setAvailability(await getAvailability(pickupDate));
     } catch (error) {
-      notify(error.message);
+      notify(
+        error.status === 409
+          ? "Quel forno si e appena riempito: scegliamo un altro orario."
+          : error.message,
+      );
       setAvailability(await getAvailability(pickupDate).catch(() => null));
     }
   }
@@ -356,6 +484,29 @@ function CustomerView() {
             <p className="muted">Caricamento menu...</p>
           ) : (
             <div className="menu-sections">
+              <div className="menu-tools">
+                <label className="menu-search">
+                  Cerca nel menu
+                  <input
+                    placeholder="Cerca pizza, fritto, bevanda..."
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </label>
+                <div className="quick-filters" aria-label="Filtri rapidi">
+                  {QUICK_FILTERS.map((filter) => (
+                    <button
+                      type="button"
+                      className={activeFilters.includes(filter.id) ? "active" : ""}
+                      key={filter.id}
+                      onClick={() => toggleFilter(filter.id)}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <nav className="menu-category-nav" aria-label="Categorie menu">
                 {menuBySection.map((section) => (
                   <button
@@ -370,7 +521,11 @@ function CustomerView() {
                 ))}
               </nav>
 
-              {activeMenu && (
+              {menuBySection.length === 0 ? (
+                <p className="menu-empty">
+                  Nessun prodotto trovato: prova a cambiare ricerca o filtri.
+                </p>
+              ) : activeMenu && (
                 <section
                   className="menu-section"
                   id={`menu-${activeMenu.id}`}
@@ -386,18 +541,49 @@ function CustomerView() {
                   </div>
 
                   <div className="menu-grid">
-                    {activeMenu.items.map((item) => (
-                      <button
-                        className="menu-card"
-                        key={item._id}
-                        onClick={() => addToCart(item)}
-                      >
-                        <span className="menu-emoji">{item.emoji || "Pizza"}</span>
-                        <span className="menu-name">{item.name}</span>
-                        <span className="menu-desc">{item.description}</span>
-                        <span className="menu-price">{money(item.price)}</span>
-                      </button>
-                    ))}
+                    {activeMenu.items.map((item) => {
+                      const cartItem = getCartItem(item._id);
+
+                      return (
+                        <article
+                          className={[
+                            "menu-card",
+                            addedItemId === item._id ? "just-added" : "",
+                          ].join(" ")}
+                          key={item._id}
+                        >
+                          {addedItemId === item._id && (
+                            <span className="added-badge">Aggiunta</span>
+                          )}
+                          <span className="menu-emoji">{item.emoji || "Pizza"}</span>
+                          <span className="menu-name">{item.name}</span>
+                          <span className="menu-desc">{item.description}</span>
+                          <span className="menu-price">{money(item.price)}</span>
+                          {cartItem ? (
+                            <div className="menu-qty-controls">
+                              <button
+                                type="button"
+                                onClick={() => removeFromCart(item._id)}
+                              >
+                                -
+                              </button>
+                              <strong>{cartItem.qty}</strong>
+                              <button type="button" onClick={() => addToCart(item)}>
+                                +
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="menu-add-button"
+                              type="button"
+                              onClick={() => addToCart(item)}
+                            >
+                              Aggiungi
+                            </button>
+                          )}
+                        </article>
+                      );
+                    })}
                   </div>
                 </section>
               )}
@@ -405,7 +591,17 @@ function CustomerView() {
           )}
         </div>
 
-        <form className="checkout-panel" onSubmit={submitOrder}>
+        <form
+          className={`checkout-panel ${mobileCartOpen ? "mobile-open" : ""}`}
+          onSubmit={submitOrder}
+        >
+          <button
+            className="drawer-close"
+            type="button"
+            onClick={() => setMobileCartOpen(false)}
+          >
+            Chiudi
+          </button>
           <div className="section-heading">
             <p className="eyebrow">Ritiro</p>
             <h2>Il tuo ordine</h2>
@@ -417,11 +613,34 @@ function CustomerView() {
             ) : (
               cart.map((item) => (
                 <div className="cart-row" key={item.id}>
-                  <span>{item.name}</span>
+                  <div>
+                    <span>{item.name}</span>
+                    <textarea
+                      placeholder={`Note per ${item.name}`}
+                      value={item.itemNotes || ""}
+                      onChange={(event) =>
+                        updateCartItemNote(item.id, event.target.value)
+                      }
+                    />
+                  </div>
                   <strong>x{item.qty}</strong>
-                  <button type="button" onClick={() => removeFromCart(item.id)}>
-                    -
-                  </button>
+                  <div className="cart-row-actions">
+                    <button type="button" onClick={() => removeFromCart(item.id)}>
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addToCart({
+                          _id: item.id,
+                          name: item.name,
+                          price: item.price,
+                        })
+                      }
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -440,6 +659,10 @@ function CustomerView() {
             Telefono
             <input value={phone} onChange={(e) => setPhone(e.target.value)} />
           </label>
+          <p className="privacy-note">
+            Usiamo il numero solo per riconoscerti, gestire l'ordine e mostrarti
+            i tuoi punti.
+          </p>
 
           {!customerProfile && !customerLookupLoading && (
             <div className="loyalty-card loyalty-empty">
@@ -464,14 +687,28 @@ function CustomerView() {
                 <p className="eyebrow">Bentornato</p>
                 <strong>{customerProfile.customer.name || "Cliente Mucho Gusto"}</strong>
                 <span>
-                  {customerProfile.customer.points} punti fedelta -{" "}
-                  {Math.max(10 - customerProfile.customer.points, 0)} al prossimo bonus
+                  {loyaltyPoints} punti fedelta - {loyaltyRemaining} al prossimo
+                  bonus
                 </span>
+                <strong className="loyalty-progress-label">
+                  {loyaltyCyclePoints}/{LOYALTY_GOAL} verso il bonus
+                </strong>
+                <div className="loyalty-progress">
+                  <span
+                    style={{
+                      width: `${(loyaltyCyclePoints / LOYALTY_GOAL) * 100}%`,
+                    }}
+                  />
+                </div>
+                <small>Ogni 10 ordini completati: 5 euro di sconto.</small>
               </div>
               {customerProfile.lastOrder && (
-                <button type="button" onClick={reorderLastOrder}>
-                  Riordina ultimo
-                </button>
+                <div className="reorder-panel">
+                  <span>Vuoi riordinare come l'altra volta?</span>
+                  <button type="button" onClick={reorderLastOrder}>
+                    Riordina ultimo
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -513,10 +750,15 @@ function CustomerView() {
                   onClick={() => setSelectedSlot(slot.pickupSlot)}
                 >
                   <span>{slot.time}</span>
-                  <small>Disponibile</small>
+                  <small>{getSlotHint(slot)}</small>
                 </button>
               ))
             )}
+          </div>
+
+          <div className="payment-note">
+            <strong>Pagamento al ritiro</strong>
+            <span>Paghi in pizzeria quando ritiri l'ordine.</span>
           </div>
 
           <button className="submit-button" type="submit">
@@ -525,14 +767,54 @@ function CustomerView() {
         </form>
       </section>
 
+      {mobileCartOpen && (
+        <button
+          className="drawer-scrim"
+          type="button"
+          aria-label="Chiudi carrello"
+          onClick={() => setMobileCartOpen(false)}
+        />
+      )}
+
+      {cartCount > 0 && (
+        <div className="mobile-cart-bar">
+          <div>
+            <strong>
+              {cartCount} {cartCount === 1 ? "prodotto" : "prodotti"}
+            </strong>
+            <span>{money(total)}</span>
+          </div>
+          <button type="button" onClick={() => setMobileCartOpen(true)}>
+            Vai al carrello
+          </button>
+        </div>
+      )}
+
       {confirmation && (
         <div className="modal-backdrop">
           <div className="modal">
             <p className="eyebrow">Ordine ricevuto</p>
-            <h2>{confirmation.pickupTime}</h2>
-            <p>
-              ID ordine: <strong>{confirmation._id}</strong>
-            </p>
+            <h2>Ritiro alle {confirmation.pickupTime}</h2>
+            <div className="confirmation-summary">
+              <span>
+                Nome <strong>{confirmation.customer}</strong>
+              </span>
+              <span>
+                Totale <strong>{money(confirmation.total)}</strong>
+              </span>
+              <span>
+                Stato{" "}
+                <strong>
+                  {PUBLIC_STATUS_LABELS[confirmation.status] || confirmation.status}
+                </strong>
+              </span>
+              <span>
+                ID ordine <strong>{confirmation._id}</strong>
+              </span>
+            </div>
+            <a className="tracking-link" href={`/ordine/${confirmation._id}`}>
+              Segui stato ordine
+            </a>
             <button type="button" onClick={() => setConfirmation(null)}>
               Nuovo ordine
             </button>
@@ -540,6 +822,81 @@ function CustomerView() {
         </div>
       )}
 
+      <Toast message={toast} />
+    </main>
+  );
+}
+
+function TrackingView({ orderId }) {
+  const [order, setOrder] = useState(null);
+  const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    refreshOrder();
+  }, [orderId]);
+
+  function notify(message) {
+    setToast(message);
+    window.clearTimeout(notify.timer);
+    notify.timer = window.setTimeout(() => setToast(""), 2400);
+  }
+
+  async function refreshOrder() {
+    setLoading(true);
+    try {
+      setOrder(await getOrder(orderId));
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const activeStep = Math.max(
+    ORDER_STATUS_STEPS.indexOf(order?.status || "preparing"),
+    0,
+  );
+
+  return (
+    <main className="tracking-shell">
+      <section className="tracking-card">
+        <a href="/">Torna al menu</a>
+        <p className="eyebrow">Tracking ordine</p>
+        {loading && !order ? (
+          <h1>Caricamento...</h1>
+        ) : order ? (
+          <>
+            <h1>{PUBLIC_STATUS_LABELS[order.status] || order.status}</h1>
+            <p>
+              Ritiro: <strong>{order.pickupDate} alle {order.pickupTime}</strong>
+            </p>
+            <div className="tracking-steps">
+              {ORDER_STATUS_STEPS.map((status, index) => (
+                <span
+                  className={index <= activeStep ? "active" : ""}
+                  key={status}
+                >
+                  {PUBLIC_STATUS_LABELS[status]}
+                </span>
+              ))}
+            </div>
+            <div className="tracking-items">
+              {order.items.map((item, index) => (
+                <span key={`${item.name}-${index}`}>
+                  {item.qty}x {item.name}
+                </span>
+              ))}
+            </div>
+            <strong className="tracking-total">{money(order.total)}</strong>
+            <button type="button" onClick={refreshOrder}>
+              Aggiorna stato
+            </button>
+          </>
+        ) : (
+          <h1>Ordine non trovato</h1>
+        )}
+      </section>
       <Toast message={toast} />
     </main>
   );
@@ -742,6 +1099,9 @@ function AdminView() {
 
 function App() {
   const path = window.location.pathname;
+  if (path.startsWith("/ordine/")) {
+    return <TrackingView orderId={decodeURIComponent(path.split("/")[2] || "")} />;
+  }
   return path.startsWith("/admin") ? <AdminView /> : <CustomerView />;
 }
 

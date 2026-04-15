@@ -35,3 +35,7 @@ services:
         value: "22:30"
       - key: PICKUP_TIME_ZONE
         value: Europe/Rome
+      - key: PICKUP_MIN_PREPARATION_MINUTES
+        value: 30
+      - key: PICKUP_CLOSED_WEEKDAYS
+        value: "1"

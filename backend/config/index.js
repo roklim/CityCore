@@ -71,6 +71,11 @@ const config = {
     startTime: optional("PICKUP_START_TIME", "18:00"),
     endTime: optional("PICKUP_END_TIME", "22:30"),
     timeZone: optional("PICKUP_TIME_ZONE", "Europe/Rome"),
+    minPreparationMinutes: Number(optional("PICKUP_MIN_PREPARATION_MINUTES", "30")),
+    closedWeekdays: optional("PICKUP_CLOSED_WEEKDAYS", "1")
+      .split(",")
+      .map((day) => Number(day.trim()))
+      .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
   },
 };
 

@@ -76,6 +76,7 @@ const orderItemSchema = new mongoose.Schema(
     name: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
     qty: { type: Number, required: true, min: 1, max: 20 },
+    notes: { type: String, default: "", trim: true, maxlength: 160 },
   },
   { _id: false },
 );

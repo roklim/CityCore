@@ -53,7 +53,15 @@ function isPastSlot(date, time) {
   const now = getPickupNow();
   if (date < now.date) return true;
   if (date > now.date) return false;
-  return timeToMinutes(time) <= now.minutes;
+  return (
+    timeToMinutes(time) <
+    now.minutes + config.pickup.minPreparationMinutes
+  );
+}
+
+function isClosedDate(date) {
+  const weekday = new Date(`${date}T12:00:00`).getDay();
+  return config.pickup.closedWeekdays.includes(weekday);
 }
 
 function generateSlots(date) {
@@ -71,6 +79,18 @@ function generateSlots(date) {
 }
 
 async function buildAvailability(date) {
+  if (isClosedDate(date)) {
+    return {
+      date,
+      closed: true,
+      maxOrdersPerSlot: config.pickup.maxOrdersPerSlot,
+      slotMinutes: config.pickup.slotMinutes,
+      startTime: config.pickup.startTime,
+      endTime: config.pickup.endTime,
+      slots: [],
+    };
+  }
+
   const counts = await Order.aggregate([
     {
       $match: {
@@ -129,6 +149,7 @@ function validatePickup({ pickupDate, pickupTime, pickupSlot }) {
   );
 
   if (!allowedSlots.has(pickupSlot)) return "Fascia oraria non disponibile";
+  if (isClosedDate(pickupDate)) return "Giorno di chiusura";
   if (isPastSlot(pickupDate, pickupTime)) return "Fascia oraria gia passata";
   return "";
 }

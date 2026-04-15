@@ -35,6 +35,10 @@ export function createOrder(order) {
   });
 }
 
+export function getOrder(id) {
+  return request(`/orders/${encodeURIComponent(id)}`);
+}
+
 export function loginAdmin(username, password) {
   return request("/auth/login", {
     method: "POST",
