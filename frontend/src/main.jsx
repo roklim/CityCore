@@ -84,18 +84,31 @@ function money(value) {
 }
 
 function getMenuSectionId(item) {
-  const text = `${item.category || ""} ${item.name || ""} ${
-    item.description || ""
-  }`.toLowerCase();
+  const category = String(item.category || "").trim().toLowerCase();
+  const text = `${item.name || ""} ${item.description || ""}`.toLowerCase();
 
-  if (/(drink|bevande|bibite|acqua|coca|cola|fanta|sprite|birra|vino)/.test(text)) {
-    return "bevande";
-  }
-  if (/(teglia|trancio|taglio|pala)/.test(text)) return "pizza-teglia";
-  if (/(fritti|fritto|suppli|supplì|arancino|crocche|patatin|olive ascolane)/.test(text)) {
+  const categoryMap = {
+    pizza: "pizze-tonde",
+    "pizze-tonde": "pizze-tonde",
+    "pizza-teglia": "pizza-teglia",
+    fritti: "fritti",
+    drink: "bevande",
+    bevande: "bevande",
+    dessert: "altro",
+    dolci: "altro",
+    extra: "altro",
+  };
+
+  if (categoryMap[category]) return categoryMap[category];
+
+  if (/\b(teglia|trancio|taglio|pala)\b/.test(text)) return "pizza-teglia";
+  if (/\b(fritti|fritto|suppli|supplì|arancino|crocche|crocchetta|patatine|patatina|olive ascolane)\b/.test(text)) {
     return "fritti";
   }
-  if (/(pizza|margherita|diavola|formaggi|prosciutto|napoli|capricciosa)/.test(text)) {
+  if (/\b(drink|bevande|bibite|acqua|coca cola|coca|cola|fanta|sprite|birra|vino)\b/.test(text)) {
+    return "bevande";
+  }
+  if (/\b(pizza|margherita|diavola|formaggi|prosciutto|napoli|capricciosa)\b/.test(text)) {
     return "pizze-tonde";
   }
 
