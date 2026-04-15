@@ -4,10 +4,10 @@
 
 .page {
   min-height: 100vh;
-  padding: 22px;
+  padding: 28px; /* più spazio */
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px; /* più distanza tra sezioni */
 }
 
 .page-center {
@@ -24,21 +24,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 20px;
+  padding: 22px 24px; /* più padding */
   border-radius: var(--radius-md);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
+  margin-bottom: 24px; /* più spazio sotto */
 }
 
 .header-title {
   font-weight: 800;
-  font-size: 22px;
+  font-size: 24px; /* leggermente più grande */
 }
 
 .header-back {
   display: inline-flex;
-  margin-top: 6px;
-  font-size: 13px;
+  margin-top: 10px;
+  font-size: 14px;
   color: var(--secondary);
 }
 
@@ -48,66 +49,45 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px; /* più spazio tra box */
 }
 
 .stat {
   background: var(--surface-alt);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 18px 20px;
+  padding: 22px 24px; /* più padding */
   box-shadow: var(--shadow-sm);
 }
 
 .stat-label {
-  font-size: 11px;
-  color: var(--secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-weight: 800;
-  margin-bottom: 6px;
+  font-size: 12px;
+  margin-bottom: 8px;
 }
 
 .stat-value {
-  font-size: 34px;
+  font-size: 38px; /* più grande */
   font-weight: 800;
-}
-
-.stat-value.purple {
-  color: var(--primary);
-}
-.stat-value.orange {
-  color: var(--warning);
-}
-.stat-value.green {
-  color: var(--secondary);
 }
 
 /* ===========================
    BOARD ORDINI
    =========================== */
 
-.board-empty {
-  text-align: center;
-  padding: 70px 24px;
-  color: var(--muted);
-  opacity: 0.8;
-}
-
 .order-board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px; /* più spazio tra card */
 }
 
 .order-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px; /* più spazio interno */
   background: var(--surface-alt);
   border-radius: var(--radius-md);
-  padding: 16px 18px;
+  padding: 20px 22px; /* più padding */
   box-shadow: var(--shadow-sm);
 }
 
@@ -119,24 +99,23 @@
 
 .order-name {
   font-weight: 800;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .order-items {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .order-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .order-actions .btn {
   flex: 1;
-  min-width: 92px;
+  min-width: 100px;
 }
 
 /* ===========================
@@ -144,36 +123,35 @@
    =========================== */
 
 .login-card {
-  width: min(92vw, 360px);
-  padding: 34px 28px;
+  width: min(92vw, 380px);
+  padding: 40px 32px; /* più spazio */
   background: var(--surface-alt);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
 
 .login-card h3 {
-  font-size: 30px;
-  margin-bottom: 22px;
+  font-size: 32px;
+  margin-bottom: 26px;
 }
 
 .login-card input {
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .login-card .btn-primary {
   width: 100%;
-  padding: 14px;
-  font-size: 15px;
-  margin-top: 4px;
+  padding: 16px;
+  font-size: 16px;
+  margin-top: 6px;
   border-radius: 999px;
 }
 
 .login-back {
   display: block;
-  font-size: 13px;
-  color: var(--secondary);
-  margin-bottom: 16px;
+  font-size: 14px;
+  margin-bottom: 20px;
 }
 
 /* ===========================
@@ -182,13 +160,14 @@
 
 @media (max-width: 720px) {
   .page {
-    padding: 16px;
+    padding: 20px;
+    gap: 20px;
   }
 
   .header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 14px;
+    gap: 16px;
   }
 
   .order-board {
