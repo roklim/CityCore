@@ -17,7 +17,7 @@ const defaultApi =
     : `${window.location.origin}/api`;
 
 const API = normalizedConfiguredApi || defaultApi;
-
+console.log("API BASE URL:", normalizedConfiguredApi);
 async function request(path, options = {}) {
   const response = await fetch(`${API}${path}`, options);
   const data = await response.json().catch(() => ({}));
