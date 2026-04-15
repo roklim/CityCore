@@ -1,25 +1,61 @@
+/* ===========================
+   TOKENS: DESIGN SYSTEM
+   - Palette colori
+   - Raggi, ombre, font
+   - Scale tipografiche e spaziature
+   =========================== */
+
 :root {
+  /* --- Colori principali dell'app pizzeria --- */
   --bg: #f6efe2;
   --surface: rgba(255, 249, 240, 0.88);
   --surface-strong: #fffaf2;
   --text: #2c1a12;
   --muted: #6c5447;
+
+  /* --- Linee e bordi --- */
   --line: rgba(66, 34, 18, 0.12);
   --line-strong: rgba(66, 34, 18, 0.22);
-  --primary: #c9532f;
-  --primary-hover: #ad4423;
-  --secondary: #395a41;
-  --secondary-soft: #dce7d8;
-  --warning: #b77716;
-  --danger: #b43a2f;
+
+  /* --- Brand colors --- */
+  --primary: #c9532f; /* Arancio pizza / brand principale */
+  --primary-hover: #ad4423; /* Hover più scuro */
+  --secondary: #395a41; /* Verde ingredienti / natura */
+  --secondary-soft: #dce7d8; /* Verde soft per sfondi */
+  --warning: #b77716; /* Giallo forno / attenzione */
+  --danger: #b43a2f; /* Rosso errore / rimozione */
+
+  /* --- Ombre morbide per look "app" --- */
   --shadow-sm: 0 10px 22px rgba(95, 57, 31, 0.08);
   --shadow-md: 0 22px 45px rgba(95, 57, 31, 0.14);
   --shadow-lg: 0 34px 68px rgba(95, 57, 31, 0.2);
+
+  /* --- Raggi di bordo --- */
   --radius-sm: 12px;
   --radius-md: 20px;
   --radius-lg: 28px;
   --radius-xl: 38px;
-  --font-sans: "Manrope", "Segoe UI", sans-serif;
-  --font-display: "Fraunces", Georgia, serif;
+
+  /* --- Font stack --- */
+  --font-sans: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+
+  /* --- Curva di easing per animazioni fluide --- */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* --- Scala tipografica (per coerenza) --- */
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+  --fs-xxl: clamp(2.5rem, 7vw, 4.75rem);
+
+  /* --- Spaziatura standardizzata --- */
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+  --space-6: 32px;
 }

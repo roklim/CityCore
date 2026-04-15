@@ -1,26 +1,47 @@
-* {
+/* ===========================
+   BASE: RESET LEGGERO E STRUTTURA
+   =========================== */
+
+/* Box model coerente ovunque */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+/* HTML + body: sfondo, font, smoothing */
 html,
 body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+
+  /* Sfondo con gradienti soft "pizzeria premium" */
   background-image:
-    radial-gradient(circle at top left, rgba(201, 83, 47, 0.14), transparent 34%),
-    radial-gradient(circle at right 20%, rgba(57, 90, 65, 0.12), transparent 28%),
+    radial-gradient(
+      circle at top left,
+      rgba(201, 83, 47, 0.14),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at right 20%,
+      rgba(57, 90, 65, 0.12),
+      transparent 28%
+    ),
     linear-gradient(180deg, #fbf5eb 0%, #f6efe2 52%, #f0e2cf 100%);
+
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* Scroll fluido per ancore interne */
 html {
   scroll-behavior: smooth;
 }
 
+/* Titoli: font display e tracking negativo per look moderno */
 h1,
 h2,
 h3 {
@@ -29,12 +50,14 @@ h3 {
   font-family: var(--font-display);
 }
 
+/* Paragrafi: colore attenuato e buona leggibilità */
 p {
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
 }
 
+/* Campi input e textarea: stile uniforme e moderno */
 input,
 textarea {
   width: 100%;
@@ -46,26 +69,30 @@ textarea {
   outline: none;
   transition: all 0.2s var(--ease);
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: var(--fs-md);
 }
 
+/* Stato focus: bordo brand e alone soft per accessibilità */
 input:focus,
 textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(201, 83, 47, 0.14);
 }
 
+/* Bottoni: font coerente e transizioni fluide */
 button {
   font-family: var(--font-sans);
   cursor: pointer;
   transition: all 0.18s var(--ease);
 }
 
+/* Link: ereditano il colore, niente underline di default */
 a {
   color: inherit;
   text-decoration: none;
 }
 
+/* Selezione testo: highlight in tinta brand */
 ::selection {
   background: rgba(201, 83, 47, 0.18);
 }

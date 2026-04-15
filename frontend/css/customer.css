@@ -1,4 +1,8 @@
-/* ===== HERO ===== */
+/* ===========================
+   CUSTOMER: HERO E LAYOUT
+   =========================== */
+
+/* Hero principale: titolo, descrizione, sfondo con gradienti soft */
 .hero {
   text-align: center;
   padding: 88px 20px 44px;
@@ -7,8 +11,9 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent);
 }
 
+/* Eyebrow sopra il titolo (es. "ORDINA ONLINE") */
 .hero-eyebrow {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--secondary);
@@ -16,20 +21,22 @@
   font-weight: 800;
 }
 
+/* Titolo principale: grande, centrato, max 12 caratteri per riga */
 .hero h1 {
-  font-size: clamp(2.5rem, 7vw, 4.75rem);
+  font-size: var(--fs-xxl);
   line-height: 1.1;
   max-width: 12ch;
   margin: 0 auto;
 }
 
+/* Sottotitolo / descrizione hero */
 .hero p {
   margin: 16px auto 0;
   max-width: 620px;
-  font-size: 16px;
+  font-size: var(--fs-md);
 }
 
-/* ===== LAYOUT ===== */
+/* Layout principale: griglia contenuti + sidebar carrello */
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -39,13 +46,18 @@
   padding: 0 20px 80px;
 }
 
+/* Griglia menu: card di pizze / prodotti responsive */
 .menu-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
 }
 
-/* ===== MENU CARD (UPGRADE PREMIUM) ===== */
+/* ===========================
+   CARD MENU (UPGRADE PREMIUM)
+   =========================== */
+
+/* Card di un prodotto / piano: look glass + gradient */
 .menu-card {
   background: linear-gradient(
     180deg,
@@ -57,24 +69,26 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
-
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm);
-
   transition:
-    transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 0.25s;
+    transform 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+  will-change: transform;
 }
 
+/* Hover card: sollevamento e ombra più forte */
 .menu-card:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-md);
 }
 
+/* Click card: leggero scale down per feedback tattile */
 .menu-card:active {
   transform: scale(0.97);
 }
 
+/* Effetto highlight radiale in hover (accento brand) */
 .menu-card::after {
   content: "";
   position: absolute;
@@ -85,31 +99,35 @@
     transparent 60%
   );
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s var(--ease);
 }
 
+/* Mostra highlight al passaggio del mouse */
 .menu-card:hover::after {
   opacity: 1;
 }
 
+/* Emoji / icona del prodotto */
 .menu-card-emoji {
   font-size: 34px;
   margin-bottom: 10px;
 }
 
+/* Nome del prodotto / piano */
 .menu-card-name {
   font-weight: 800;
   margin-bottom: 6px;
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
+/* Descrizione breve del prodotto */
 .menu-card-desc {
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   margin-bottom: 12px;
 }
 
-/* prezzo più forte */
+/* Prezzo evidenziato (più forte) */
 .menu-card-price {
   color: var(--secondary);
   font-size: 18px;
@@ -117,7 +135,7 @@
   margin-bottom: 12px;
 }
 
-/* CTA stile app */
+/* CTA stile app dentro la card (es. "Aggiungi") */
 .menu-card-btn {
   width: 100%;
   padding: 12px 0;
@@ -128,31 +146,39 @@
   font-weight: 800;
   font-size: 15px;
   letter-spacing: 0.03em;
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
 }
 
+/* Hover CTA: leggero sollevamento */
 .menu-card-btn:hover {
   transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
-/* ===== SIDEBAR (GLASS) ===== */
+/* ===========================
+   SIDEBAR / CARRELLO
+   =========================== */
+
+/* Sidebar sticky: riepilogo ordine / carrello */
 .sidebar {
   position: sticky;
   top: 18px;
   padding: 22px;
-
   background: rgba(255, 250, 242, 0.7);
   backdrop-filter: blur(14px);
-
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
 }
 
+/* Titolo sidebar (es. "Il tuo ordine") */
 .sidebar h2 {
   font-size: 28px;
   margin-bottom: 18px;
 }
 
-/* ===== FORM ===== */
+/* Campo form generico (nome, indirizzo, ecc.) */
 .field {
   display: flex;
   flex-direction: column;
@@ -160,6 +186,7 @@
   margin-bottom: 16px;
 }
 
+/* Label dei campi: stile piccolo, uppercase, brand */
 .field label {
   font-size: 11px;
   letter-spacing: 0.18em;
@@ -168,7 +195,7 @@
   font-weight: 800;
 }
 
-/* ===== CART ===== */
+/* Lista articoli nel carrello */
 .cart-list {
   margin-top: 14px;
   display: flex;
@@ -176,21 +203,19 @@
   gap: 10px;
 }
 
-/* animazione */
+/* Singolo item carrello: riga con nome + prezzo + rimozione */
 .cart-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   padding: 12px 14px;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.75);
-
   font-size: 14px;
-
   animation: fadeIn 0.3s ease;
 }
 
+/* Animazione di comparsa per item carrello */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -202,22 +227,25 @@
   }
 }
 
+/* Parte sinistra item: nome pizza / prodotto */
 .cart-item-left {
   font-weight: 700;
 }
 
+/* Parte destra item: prezzo + bottone rimozione */
 .cart-item-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+/* Prezzo item: colore attenuato */
 .cart-item-price {
   color: var(--muted);
   font-size: 13px;
 }
 
-/* remove button moderno */
+/* Bottone rimozione moderno (icona X / cestino) */
 .cart-item-remove {
   width: 28px;
   height: 28px;
@@ -225,14 +253,18 @@
   border: none;
   color: var(--danger);
   border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Hover rimozione: rosso pieno, testo bianco */
 .cart-item-remove:hover {
   background: var(--danger);
   color: #fff;
 }
 
-/* ===== TOTAL ===== */
+/* Riga totale carrello: importo finale */
 .total-row {
   margin-top: 16px;
   display: flex;
@@ -241,30 +273,39 @@
   font-size: 17px;
 }
 
-/* ===== CTA PRINCIPALE ===== */
+/* ===========================
+   CTA PRINCIPALE (ORDINA)
+   =========================== */
+
+/* Pulsante principale di invio ordine */
 .submit {
   width: 100%;
   margin-top: 16px;
   padding: 16px;
-
   background: linear-gradient(135deg, #c9532f, #ff7a3d);
   color: white;
-
   border: none;
   border-radius: 999px;
-
   font-weight: 900;
   font-size: 16px;
-
   box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.2s var(--ease),
+    box-shadow 0.2s var(--ease);
+  will-change: transform;
 }
 
+/* Hover CTA principale: sollevamento e ombra più forte */
 .submit:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
-/* ===== OVERLAY ===== */
+/* ===========================
+   OVERLAY CONFERMA / MODALE
+   =========================== */
+
+/* Overlay scuro a schermo intero per conferme */
 #overlay {
   position: fixed;
   inset: 0;
@@ -272,12 +313,15 @@
   display: none;
   align-items: center;
   justify-content: center;
+  z-index: 900;
 }
 
+/* Classe per mostrare l'overlay */
 #overlay.show {
   display: flex;
 }
 
+/* Box di conferma ordine / messaggi modali */
 .confirm-box {
   background: white;
   padding: 34px 30px;
@@ -287,7 +331,11 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* ===== MOBILE  ===== */
+/* ===========================
+   RESPONSIVE / MOBILE
+   =========================== */
+
+/* Tablet: sidebar sotto, layout a colonna singola */
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
@@ -298,20 +346,23 @@
   }
 }
 
+/* Mobile: griglia menu a 1 colonna, CTA sticky stile app */
 @media (max-width: 720px) {
   .menu-grid {
     grid-template-columns: 1fr;
   }
 
-  /* CTA sticky stile app */
+  /* CTA sticky in basso con rispetto safe-area */
   .submit {
     position: fixed;
     bottom: 12px;
     left: 12px;
     right: 12px;
     z-index: 1000;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
+  /* Extra spazio in fondo per non coprire contenuti */
   .layout {
     padding-bottom: 100px;
   }
