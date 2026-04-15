@@ -1,69 +1,65 @@
 /* ===========================
-   ADMIN: STRUTTURA PAGINA
+   ADMIN LAYOUT
    =========================== */
 
-/* Wrapper pagina admin: padding e altezza minima */
 .page {
   min-height: 100vh;
   padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* Centra contenuti verticalmente/orizzontalmente (es. login) */
 .page-center {
   height: 100vh;
   display: grid;
   place-items: center;
 }
 
-/* Header dashboard: titolo + azioni */
+/* ===========================
+   HEADER
+   =========================== */
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
   padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Titolo header (es. "Ordini in corso") */
 .header-title {
   font-weight: 800;
   font-size: 22px;
 }
 
-/* Link "torna indietro" sotto il titolo */
 .header-back {
   display: inline-flex;
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 13px;
   color: var(--secondary);
 }
 
 /* ===========================
-   STATISTICHE / KPI
+   STATISTICHE
    =========================== */
 
-/* Griglia statistiche: 3 colonne su desktop */
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
-  margin-bottom: 22px;
 }
 
-/* Singolo box statistica (ordini oggi, in preparazione, ecc.) */
 .stat {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 252, 246, 0.86),
-    rgba(246, 236, 221, 0.96)
-  );
+  background: var(--surface-alt);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 18px 20px;
   box-shadow: var(--shadow-sm);
 }
 
-/* Label statistica: piccolo, uppercase, colore secondario */
 .stat-label {
   font-size: 11px;
   color: var(--secondary);
@@ -73,26 +69,25 @@
   margin-bottom: 6px;
 }
 
-/* Valore statistica: grande e bold */
 .stat-value {
   font-size: 34px;
   font-weight: 800;
 }
 
-/* Varianti colore per diversi tipi di KPI */
 .stat-value.purple {
   color: var(--primary);
 }
-
 .stat-value.orange {
   color: var(--warning);
 }
-
 .stat-value.green {
   color: var(--secondary);
 }
 
-/* Stato "nessun ordine" nella board */
+/* ===========================
+   BOARD ORDINI
+   =========================== */
+
 .board-empty {
   text-align: center;
   padding: 70px 24px;
@@ -100,97 +95,72 @@
   opacity: 0.8;
 }
 
-/* ===========================
-   BOARD ORDINI
-   =========================== */
-
-/* Griglia card ordini: auto-fit per adattarsi allo spazio */
 .order-board {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 
-/* Card ordine: usa .card come base (se vuoi) o stile dedicato */
 .order-card {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 252, 246, 0.88),
-    rgba(246, 236, 221, 0.96)
-  );
+  background: var(--surface-alt);
   border-radius: var(--radius-md);
   padding: 16px 18px;
   box-shadow: var(--shadow-sm);
 }
 
-/* Header card ordine: nome cliente + stato */
 .order-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* Nome ordine / cliente */
 .order-name {
   font-weight: 800;
   font-size: 18px;
 }
 
-/* Lista prodotti dell'ordine (testo piccolo, leggibile) */
 .order-items {
   font-size: 14px;
   color: var(--muted);
   line-height: 1.5;
 }
 
-/* Azioni ordine: bottoni (es. "In preparazione", "Pronto", "Consegnato") */
 .order-actions {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
   flex-wrap: wrap;
 }
 
-/* Bottoni azione: si espandono per riempire la riga */
 .order-actions .btn {
   flex: 1;
-  text-align: center;
   min-width: 92px;
 }
 
 /* ===========================
-   LOGIN ADMIN
+   LOGIN
    =========================== */
 
-/* Card login centrata: dimensione massima e padding */
 .login-card {
   width: min(92vw, 360px);
   padding: 34px 28px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 252, 246, 0.9),
-    rgba(246, 236, 221, 0.98)
-  );
+  background: var(--surface-alt);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
 
-/* Titolo login */
 .login-card h3 {
   font-size: 30px;
   margin-bottom: 22px;
 }
 
-/* Input login: full width con margine inferiore */
 .login-card input {
   width: 100%;
   margin-bottom: 12px;
 }
 
-/* Bottone login principale */
 .login-card .btn-primary {
   width: 100%;
   padding: 14px;
@@ -199,7 +169,6 @@
   border-radius: 999px;
 }
 
-/* Link "torna al sito" sopra il form */
 .login-back {
   display: block;
   font-size: 13px;
@@ -207,17 +176,10 @@
   margin-bottom: 16px;
 }
 
-/* Testo attenuato (es. note, disclaimer) */
-.muted {
-  color: var(--muted);
-  font-size: 13px;
-}
-
 /* ===========================
-   RESPONSIVE ADMIN
+   MOBILE
    =========================== */
 
-/* Mobile: padding ridotto, header a colonna, stats e board a 1 colonna */
 @media (max-width: 720px) {
   .page {
     padding: 16px;
@@ -227,10 +189,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 14px;
-  }
-
-  .stats {
-    grid-template-columns: 1fr;
   }
 
   .order-board {
