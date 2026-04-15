@@ -1,28 +1,11 @@
 {
+  "installCommand": "npm --prefix frontend ci",
+  "buildCommand": "npm --prefix frontend run build",
+  "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/frontend/index.html"
-    },
-    {
-      "source": "/customer.html",
-      "destination": "/frontend/customer.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/frontend/admin.html"
-    },
-    {
-      "source": "/admin.html",
-      "destination": "/frontend/admin.html"
-    },
-    {
-      "source": "/css/(.*)",
-      "destination": "/frontend/css/$1"
-    },
-    {
-      "source": "/js/(.*)",
-      "destination": "/frontend/js/$1"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

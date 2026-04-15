@@ -68,6 +68,22 @@ const orderSchema = new mongoose.Schema(
     notes: { type: String, default: "" },
     items: { type: [orderItemSchema], required: true },
     total: { type: Number, required: true, min: 0 },
+    pickupDate: {
+      type: String,
+      required: true,
+      match: /^\d{4}-\d{2}-\d{2}$/,
+    },
+    pickupTime: {
+      type: String,
+      required: true,
+      match: /^\d{2}:\d{2}$/,
+    },
+    pickupSlot: {
+      type: String,
+      required: true,
+      index: true,
+      match: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
+    },
     status: {
       type: String,
       enum: ["preparing", "ready", "done", "cancelled"],
@@ -79,6 +95,7 @@ const orderSchema = new mongoose.Schema(
 );
 
 orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ pickupDate: 1, pickupTime: 1 });
 
 // ── Guard against model overwrite (Vercel hot-reload) ──────
 const MenuItem =

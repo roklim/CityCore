@@ -3,10 +3,103 @@
 const router = require("express").Router();
 const mongoose = require("mongoose");
 const { Order } = require("../db");
+const config = require("../config");
 const { requireAuth } = require("../middleware/auth");
 const asyncHandler = require("../middleware/asyncHandler");
 
 const VALID_STATUSES = ["preparing", "ready", "done", "cancelled"];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^\d{2}:\d{2}$/;
+
+function timeToMinutes(time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(totalMinutes) {
+  const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+  const minutes = String(totalMinutes % 60).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function buildPickupSlot(date, time) {
+  return `${date}T${time}`;
+}
+
+function generateSlots(date) {
+  const start = timeToMinutes(config.pickup.startTime);
+  const end = timeToMinutes(config.pickup.endTime);
+  const step = Math.max(Number(config.pickup.slotMinutes) || 15, 5);
+  const slots = [];
+
+  for (let current = start; current <= end; current += step) {
+    const time = minutesToTime(current);
+    slots.push({ time, pickupSlot: buildPickupSlot(date, time) });
+  }
+
+  return slots;
+}
+
+async function buildAvailability(date) {
+  const counts = await Order.aggregate([
+    {
+      $match: {
+        pickupDate: date,
+        status: { $ne: "cancelled" },
+      },
+    },
+    {
+      $group: {
+        _id: "$pickupSlot",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const countBySlot = new Map(counts.map((slot) => [slot._id, slot.count]));
+  const maxOrdersPerSlot = config.pickup.maxOrdersPerSlot;
+
+  const slots = generateSlots(date).map((slot) => {
+    const count = countBySlot.get(slot.pickupSlot) || 0;
+    const remaining = Math.max(maxOrdersPerSlot - count, 0);
+
+    return {
+      ...slot,
+      count,
+      remaining,
+      full: remaining === 0,
+      almostFull: remaining > 0 && remaining <= 1,
+    };
+  });
+
+  return {
+    date,
+    maxOrdersPerSlot,
+    slotMinutes: config.pickup.slotMinutes,
+    startTime: config.pickup.startTime,
+    endTime: config.pickup.endTime,
+    slots,
+  };
+}
+
+function validatePickup({ pickupDate, pickupTime, pickupSlot }) {
+  if (!DATE_RE.test(pickupDate || "")) {
+    return "pickupDate obbligatoria nel formato YYYY-MM-DD";
+  }
+  if (!TIME_RE.test(pickupTime || "")) {
+    return "pickupTime obbligatoria nel formato HH:mm";
+  }
+  if (pickupSlot !== buildPickupSlot(pickupDate, pickupTime)) {
+    return "pickupSlot non corrisponde a pickupDate e pickupTime";
+  }
+
+  const allowedSlots = new Set(
+    generateSlots(pickupDate).map((slot) => slot.pickupSlot),
+  );
+
+  if (!allowedSlots.has(pickupSlot)) return "Fascia oraria non disponibile";
+  return "";
+}
 
 // ─────────────────────────────────────────────
 // GET /api/orders — admin con filtri e paginazione
@@ -15,11 +108,14 @@ router.get(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { status, limit = 50, page = 1, from, to } = req.query;
+    const { status, limit = 50, page = 1, from, to, pickupDate } = req.query;
 
     const filter = {};
     if (status && status !== "all" && VALID_STATUSES.includes(status)) {
       filter.status = status;
+    }
+    if (pickupDate && DATE_RE.test(pickupDate)) {
+      filter.pickupDate = pickupDate;
     }
     if (from || to) {
       filter.createdAt = {};
@@ -33,7 +129,7 @@ router.get(
 
     const [orders, total] = await Promise.all([
       Order.find(filter)
-        .sort({ createdAt: -1 })
+        .sort({ pickupDate: 1, pickupTime: 1, createdAt: -1 })
         .limit(safeLimit)
         .skip(skip)
         .lean(),
@@ -103,10 +199,33 @@ router.get(
 // ─────────────────────────────────────────────
 // POST /api/orders — pubblico: crea ordine
 // ─────────────────────────────────────────────
+router.get(
+  "/availability",
+  asyncHandler(async (req, res) => {
+    const { date } = req.query;
+
+    if (!DATE_RE.test(date || "")) {
+      return res
+        .status(400)
+        .json({ error: "Parametro date obbligatorio nel formato YYYY-MM-DD" });
+    }
+
+    res.json(await buildAvailability(date));
+  }),
+);
+
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const { customer, phone = "", notes = "", items } = req.body || {};
+    const {
+      customer,
+      phone = "",
+      notes = "",
+      items,
+      pickupDate,
+      pickupTime,
+      pickupSlot,
+    } = req.body || {};
 
     if (!customer?.trim()) {
       return res
@@ -119,6 +238,22 @@ router.post(
         .json({ error: "Almeno un articolo è obbligatorio" });
     }
 
+    const pickupError = validatePickup({ pickupDate, pickupTime, pickupSlot });
+    if (pickupError) {
+      return res.status(400).json({ error: pickupError });
+    }
+
+    const activeOrdersInSlot = await Order.countDocuments({
+      pickupSlot,
+      status: { $ne: "cancelled" },
+    });
+
+    if (activeOrdersInSlot >= config.pickup.maxOrdersPerSlot) {
+      return res.status(409).json({
+        error: "Questa fascia oraria e piena. Scegli un altro orario.",
+      });
+    }
+
     const total = items.reduce((sum, i) => {
       return sum + (Number(i.price) || 0) * (Number(i.qty) || 1);
     }, 0);
@@ -129,6 +264,9 @@ router.post(
       notes: notes.trim(),
       items,
       total: Math.round(total * 100) / 100,
+      pickupDate,
+      pickupTime,
+      pickupSlot,
     });
 
     res.status(201).json(order);
@@ -149,8 +287,28 @@ router.get(
     if (!order) return res.status(404).json({ error: "Ordine non trovato" });
 
     // Esponiamo solo i campi pubblici
-    const { _id, customer, items, status, total, createdAt } = order;
-    res.json({ _id, customer, items, status, total, createdAt });
+    const {
+      _id,
+      customer,
+      items,
+      status,
+      total,
+      pickupDate,
+      pickupTime,
+      pickupSlot,
+      createdAt,
+    } = order;
+    res.json({
+      _id,
+      customer,
+      items,
+      status,
+      total,
+      pickupDate,
+      pickupTime,
+      pickupSlot,
+      createdAt,
+    });
   }),
 );
 
