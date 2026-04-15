@@ -271,6 +271,11 @@ button {
   color: var(--muted);
 }
 
+.loyalty-card.loyalty-empty {
+  background: rgba(47, 103, 70, 0.09);
+  border-color: rgba(47, 103, 70, 0.18);
+}
+
 .loyalty-card .eyebrow {
   margin-bottom: 4px;
 }

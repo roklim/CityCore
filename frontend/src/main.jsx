@@ -315,6 +315,19 @@ function CustomerView() {
             <input value={phone} onChange={(e) => setPhone(e.target.value)} />
           </label>
 
+          {!customerProfile && !customerLookupLoading && (
+            <div className="loyalty-card loyalty-empty">
+              <div>
+                <p className="eyebrow">Fedelta</p>
+                <strong>Ordina con il tuo numero</strong>
+                <span>
+                  Accumuli punti e puoi riordinare le tue pizze preferite piu
+                  velocemente.
+                </span>
+              </div>
+            </div>
+          )}
+
           {customerLookupLoading && (
             <p className="loyalty-card subtle">Controllo tessera fedelta...</p>
           )}
