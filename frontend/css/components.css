@@ -1,82 +1,82 @@
-/* ── Card ───────────────────────────── */
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 18px;
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
   transition:
-    transform 0.2s var(--ease),
-    border-color 0.2s,
-    box-shadow 0.2s;
+    transform 0.24s var(--ease),
+    border-color 0.24s var(--ease),
+    box-shadow 0.24s var(--ease);
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-md);
 }
 
-/* ── Buttons ─────────────────────────── */
 .btn {
-  border: 1px solid var(--border-strong);
-  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--text);
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.18s var(--ease);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .btn:hover {
   transform: translateY(-1px);
-  border-color: var(--border-strong);
-  background: var(--surface-3);
+  background: #fffdf8;
 }
 
 .btn-primary {
   background: var(--primary);
-  border-color: transparent;
+  border-color: var(--primary);
   color: #fff;
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
-  border-color: transparent;
+  border-color: var(--primary-hover);
 }
 
-/* ── Badge ───────────────────────────── */
 .badge {
   font-size: 11px;
-  font-weight: 600;
-  padding: 3px 10px;
+  font-weight: 800;
+  padding: 5px 12px;
   border-radius: 999px;
-  background: var(--surface-3);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 
 .badge.preparing {
   color: var(--warning);
+  background: rgba(183, 119, 22, 0.08);
 }
+
 .badge.ready {
-  color: var(--success);
+  color: var(--secondary);
+  background: rgba(57, 90, 65, 0.1);
 }
+
 .badge.done {
   color: var(--muted);
 }
 
-/* ── Toast ───────────────────────────── */
 #toast {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  padding: 12px 16px;
+  background: rgba(44, 26, 18, 0.92);
+  color: #fff7ef;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 14px 18px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   font-size: 14px;
@@ -90,4 +90,12 @@
 #toast.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+@media (max-width: 720px) {
+  #toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
 }

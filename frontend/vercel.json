@@ -6,9 +6,12 @@
       "destination": "/index.html"
     },
     {
+      "source": "/customer",
+      "destination": "/customer.html"
+    },
+    {
       "source": "/admin",
       "destination": "/admin.html"
     }
   ]
 }
-

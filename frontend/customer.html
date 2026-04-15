@@ -3,8 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ordina — Mucho Gusto Pizzeria</title>
+    <title>Ordina - Mucho Gusto Pizzeria</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
@@ -13,22 +18,18 @@
   </head>
 
   <body>
-    <!-- HERO -->
     <header class="hero">
-      <div class="hero-eyebrow">Ordina al banco</div>
-      <h1>La nostra cucina a tua disposizione</h1>
-      <p>Scegli e invia in pochi secondi</p>
-      <a class="hero-admin-link" href="./admin.html">Area Admin →</a>
+      <div class="hero-eyebrow">Pizzeria artigianale</div>
+      <h1>Ordina in pochi tocchi, ritira con calma.</h1>
+      <p>Pizze, bibite e dolci con un flusso chiaro anche da telefono.</p>
+      <a class="hero-admin-link" href="./admin.html">Area Admin</a>
     </header>
 
-    <!-- LAYOUT -->
     <div class="layout">
-      <!-- MENU -->
       <div class="menu-col" id="menu-col">
         <p>Caricamento menu...</p>
       </div>
 
-      <!-- SIDEBAR -->
       <div class="sidebar">
         <h2>Il tuo ordine</h2>
 
@@ -57,22 +58,20 @@
 
         <div class="total-row">
           <span>Totale</span>
-          <span id="total-val">€ 0,00</span>
+          <span id="total-val">EUR 0,00</span>
         </div>
 
         <button class="submit" onclick="submitOrder()">Invia ordine</button>
       </div>
     </div>
 
-    <!-- TOAST -->
     <div id="toast"></div>
 
-    <!-- OVERLAY conferma -->
     <div id="overlay">
       <div class="confirm-box">
-        <div style="font-size: 48px; margin-bottom: 12px">🍕</div>
+        <div class="confirm-icon">Pizza</div>
         <h2>Ordine ricevuto!</h2>
-        <p id="oid-label">Il tuo ordine è in preparazione.</p>
+        <p id="oid-label">Il tuo ordine e in preparazione.</p>
         <button class="btn btn-primary" onclick="resetAll()">
           Nuovo ordine
         </button>
@@ -86,9 +85,8 @@
       let menu = [];
       let cart = [];
 
-      const money = (v) => `€ ${v.toFixed(2).replace(".", ",")}`;
+      const money = (v) => `EUR ${v.toFixed(2).replace(".", ",")}`;
 
-      /* ── Toast ── */
       function toast(msg) {
         const el = document.getElementById("toast");
         el.innerText = msg;
@@ -96,7 +94,6 @@
         setTimeout(() => el.classList.remove("show"), 2500);
       }
 
-      /* ── Boot ── */
       async function boot() {
         try {
           menu = await getMenu();
@@ -107,7 +104,6 @@
         }
       }
 
-      /* ── Render menu ── */
       function renderMenu() {
         document.getElementById("menu-col").innerHTML = `
           <div class="menu-grid">
@@ -115,8 +111,9 @@
               .map(
                 (m) => `
               <div class="menu-card" onclick="add('${m._id}')">
-                <div class="menu-card-emoji">${m.emoji || "🍕"}</div>
+                <div class="menu-card-emoji">${m.emoji || "Pizza"}</div>
                 <div class="menu-card-name">${m.name}</div>
+                <div class="menu-card-desc">${m.description || ""}</div>
                 <div class="menu-card-price">${money(m.price)}</div>
                 <button class="menu-card-btn">+ Aggiungi</button>
               </div>
@@ -127,41 +124,42 @@
         `;
       }
 
-      /* ── Add to cart ── */
       window.add = function (id) {
         const item = menu.find((m) => m._id === id);
         if (!item) return;
-        const ex = cart.find((c) => c.id === id);
-        if (ex) ex.qty++;
-        else
+        const existing = cart.find((c) => c.id === id);
+
+        if (existing) existing.qty++;
+        else {
           cart.push({
             id,
             name: item.name,
             price: item.price,
             qty: 1,
-            emoji: item.emoji || "🍕",
           });
+        }
+
         renderCart();
-        toast(`${item.emoji || "🍕"} ${item.name} aggiunto`);
+        toast(`${item.name} aggiunto`);
       };
 
-      /* ── Remove from cart ── */
       window.remove = function (id) {
-        const ex = cart.find((c) => c.id === id);
-        if (!ex) return;
-        if (ex.qty === 1) cart = cart.filter((c) => c.id !== id);
-        else ex.qty--;
+        const existing = cart.find((c) => c.id === id);
+        if (!existing) return;
+
+        if (existing.qty === 1) cart = cart.filter((c) => c.id !== id);
+        else existing.qty--;
+
         renderCart();
       };
 
-      /* ── Render cart ── */
       function renderCart() {
         const list = document.getElementById("cart-list");
         const totalEl = document.getElementById("total-val");
 
         if (cart.length === 0) {
           list.innerHTML = `<p class="cart-empty">Nessun prodotto selezionato</p>`;
-          totalEl.innerText = "€ 0,00";
+          totalEl.innerText = "EUR 0,00";
           return;
         }
 
@@ -170,21 +168,20 @@
           .map((c) => {
             total += c.price * c.qty;
             return `
-            <div class="cart-item">
-              <span class="cart-item-left">${c.name} ×${c.qty}</span>
-              <div class="cart-item-right">
-                <span class="cart-item-price">${money(c.price * c.qty)}</span>
-                <button class="cart-item-remove" onclick="remove('${c.id}')" title="Rimuovi">−</button>
+              <div class="cart-item">
+                <span class="cart-item-left">${c.name} x${c.qty}</span>
+                <div class="cart-item-right">
+                  <span class="cart-item-price">${money(c.price * c.qty)}</span>
+                  <button class="cart-item-remove" onclick="remove('${c.id}')" title="Rimuovi">-</button>
+                </div>
               </div>
-            </div>
-          `;
+            `;
           })
           .join("");
 
         totalEl.innerText = money(total);
       }
 
-      /* ── Submit order ── */
       window.submitOrder = async function () {
         const name = document.getElementById("f-name").value.trim();
         if (!name) {
@@ -211,7 +208,7 @@
 
           const label = data._id
             ? `ID ordine: ${data._id}`
-            : "Il tuo ordine è in preparazione.";
+            : "Il tuo ordine e in preparazione.";
           document.getElementById("oid-label").innerText = label;
           document.getElementById("overlay").classList.add("show");
         } catch {
@@ -219,7 +216,6 @@
         }
       };
 
-      /* ── Reset ── */
       window.resetAll = function () {
         cart = [];
         document.getElementById("f-name").value = "";

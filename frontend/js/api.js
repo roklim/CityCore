@@ -18,44 +18,54 @@ const defaultApi =
 
 const API = normalizedConfiguredApi || defaultApi;
 
+async function request(path, options = {}) {
+  const response = await fetch(`${API}${path}`, options);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Richiesta fallita");
+  }
+
+  return data;
+}
+
 export async function getMenu() {
-  const res = await fetch(`${API}/menu`);
-  if (!res.ok) throw new Error("Errore nel caricamento del menu");
-  return res.json();
+  return request("/menu");
 }
 
 export async function createOrder(data) {
-  const res = await fetch(`${API}/orders`, {
+  return request("/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Errore nell'invio dell'ordine");
-  return res.json();
 }
 
 export async function loginAdmin(username, password) {
-  const res = await fetch(`${API}/auth/login`, {
+  return request("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Credenziali non valide");
-  return data;
 }
 
 export async function getOrders(token) {
-  const res = await fetch(`${API}/orders`, {
+  const response = await fetch(`${API}/orders`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (res.status === 401) throw new Error("401");
-  const data = await res.json();
+
+  if (response.status === 401) throw new Error("401");
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Errore nel caricamento ordini");
+  }
+
   return data.orders || [];
 }
 
 export async function updateOrderStatus(id, status, token) {
-  const res = await fetch(`${API}/orders/${id}`, {
+  return request(`/orders/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -63,6 +73,4 @@ export async function updateOrderStatus(id, status, token) {
     },
     body: JSON.stringify({ status }),
   });
-  if (!res.ok) throw new Error("Errore nell'aggiornamento");
-  return res.json();
 }

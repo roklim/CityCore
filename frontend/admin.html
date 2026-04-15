@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin — Mucho Gusto Pizzeria</title>
+    <title>Admin - Mucho Gusto Pizzeria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
@@ -12,10 +18,9 @@
   </head>
 
   <body>
-    <!-- LOGIN -->
     <div id="login" class="page-center">
       <div class="card login-card">
-        <a class="login-back" href="./customer.html">← Torna al menu</a>
+        <a class="login-back" href="./customer.html">Torna al menu</a>
         <h3>Admin Login</h3>
         <input
           id="u"
@@ -33,18 +38,15 @@
       </div>
     </div>
 
-    <!-- APP -->
     <div id="app" class="page" style="display: none">
-      <!-- HEADER -->
       <div class="card header">
         <div>
           <span class="header-title">Pizzeria Admin</span>
-          <a class="header-back" href="./customer.html">← Menu</a>
+          <a class="header-back" href="./customer.html">Menu cliente</a>
         </div>
         <button class="btn" onclick="logout()">Logout</button>
       </div>
 
-      <!-- STATS -->
       <div class="stats">
         <div class="stat">
           <div class="stat-label">Ordini totali</div>
@@ -60,11 +62,9 @@
         </div>
       </div>
 
-      <!-- BOARD -->
       <div id="board" class="order-board"></div>
     </div>
 
-    <!-- TOAST -->
     <div id="toast"></div>
 
     <script src="./js/runtime-config.js"></script>
@@ -82,7 +82,6 @@
       const loginEl = document.getElementById("login");
       const appEl = document.getElementById("app");
 
-      /* ── Toast ── */
       function toast(msg) {
         const el = document.getElementById("toast");
         el.innerText = msg;
@@ -90,7 +89,6 @@
         setTimeout(() => el.classList.remove("show"), 2000);
       }
 
-      /* ── Login ── */
       window.login = async function () {
         try {
           const data = await loginAdmin(
@@ -105,7 +103,6 @@
         }
       };
 
-      /* ── Start app ── */
       function start() {
         loginEl.style.display = "none";
         appEl.style.display = "block";
@@ -113,7 +110,6 @@
         interval = setInterval(load, 4000);
       }
 
-      /* ── Load orders ── */
       async function load() {
         try {
           orders = await getOrders(token);
@@ -124,7 +120,6 @@
         }
       }
 
-      /* ── Stats ── */
       function stats() {
         document.getElementById("tot").innerText = orders.length;
         document.getElementById("prep").innerText = orders.filter(
@@ -135,7 +130,6 @@
         ).length;
       }
 
-      /* ── Render board ── */
       function render() {
         const board = document.getElementById("board");
 
@@ -153,28 +147,27 @@
         board.innerHTML = orders
           .map(
             (o) => `
-          <div class="card order-card">
-            <div class="order-header">
-              <span class="order-name">${o.customer}</span>
-              <span class="badge ${o.status}">${statusLabel[o.status] || o.status}</span>
-            </div>
+              <div class="card order-card">
+                <div class="order-header">
+                  <span class="order-name">${o.customer}</span>
+                  <span class="badge ${o.status}">${statusLabel[o.status] || o.status}</span>
+                </div>
 
-            <div class="order-items">
-              ${o.items.map((i) => `${i.qty}× ${i.name}`).join(" &nbsp;·&nbsp; ")}
-            </div>
+                <div class="order-items">
+                  ${o.items.map((i) => `${i.qty}x ${i.name}`).join(" | ")}
+                </div>
 
-            <div class="order-actions">
-              <button class="btn" onclick="upd('${o._id}','preparing')">Prep</button>
-              <button class="btn btn-primary" onclick="upd('${o._id}','ready')">Pronto</button>
-              <button class="btn" onclick="upd('${o._id}','done')">Done</button>
-            </div>
-          </div>
-        `,
+                <div class="order-actions">
+                  <button class="btn" onclick="upd('${o._id}','preparing')">Prep</button>
+                  <button class="btn btn-primary" onclick="upd('${o._id}','ready')">Pronto</button>
+                  <button class="btn" onclick="upd('${o._id}','done')">Done</button>
+                </div>
+              </div>
+            `,
           )
           .join("");
       }
 
-      /* ── Update status ── */
       window.upd = async function (id, status) {
         try {
           await updateOrderStatus(id, status, token);
@@ -185,7 +178,6 @@
         }
       };
 
-      /* ── Logout ── */
       window.logout = function () {
         if (interval) clearInterval(interval);
         localStorage.removeItem("admin_token");
@@ -195,7 +187,6 @@
         loginEl.style.display = "grid";
       };
 
-      /* ── Auto-start ── */
       if (token) start();
     </script>
   </body>
