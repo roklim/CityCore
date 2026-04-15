@@ -16,6 +16,7 @@ const STATUSES = {
   done: "Completato",
   cancelled: "Annullato",
 };
+const ADMIN_REFRESH_INTERVAL_MS = 120000;
 
 function todayISO() {
   return toLocalISODate(new Date());
@@ -327,11 +328,13 @@ function AdminView() {
   const [orders, setOrders] = useState([]);
   const [availability, setAvailability] = useState(null);
   const [toast, setToast] = useState("");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     refresh();
-    const timer = window.setInterval(refresh, 5000);
+    const timer = window.setInterval(refresh, ADMIN_REFRESH_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [token, pickupDate]);
 
@@ -342,6 +345,9 @@ function AdminView() {
   }
 
   async function refresh() {
+    if (refresh.inFlight) return;
+    refresh.inFlight = true;
+    setRefreshing(true);
     try {
       const [nextOrders, nextAvailability] = await Promise.all([
         getOrders(token, pickupDate),
@@ -349,9 +355,19 @@ function AdminView() {
       ]);
       setOrders(nextOrders);
       setAvailability(nextAvailability);
+      setLastUpdatedAt(
+        new Intl.DateTimeFormat("it-IT", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }).format(new Date()),
+      );
     } catch (error) {
       if (error.status === 401) logout();
       else notify(error.message);
+    } finally {
+      refresh.inFlight = false;
+      setRefreshing(false);
     }
   }
 
@@ -421,6 +437,12 @@ function AdminView() {
           <h1>Ordini per fascia</h1>
         </div>
         <div className="admin-actions">
+          <span className="refresh-note">
+            {lastUpdatedAt ? `Aggiornato ${lastUpdatedAt}` : "Non aggiornato"}
+          </span>
+          <button type="button" onClick={refresh} disabled={refreshing}>
+            {refreshing ? "Aggiorno..." : "Aggiorna"}
+          </button>
           <input
             type="date"
             value={pickupDate}
