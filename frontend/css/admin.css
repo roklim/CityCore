@@ -1,13 +1,13 @@
 /* ===========================
-   ADMIN LAYOUT
+   LAYOUT GENERALE
    =========================== */
 
 .page {
   min-height: 100vh;
-  padding: 28px; /* più spazio */
+  padding: 26px;
   display: flex;
   flex-direction: column;
-  gap: 28px; /* più distanza tra sezioni */
+  gap: 26px;
 }
 
 .page-center {
@@ -24,21 +24,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22px 24px; /* più padding */
+  padding: 22px 24px;
   border-radius: var(--radius-md);
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 24px; /* più spazio sotto */
+  box-shadow: var(--shadow-md);
 }
 
 .header-title {
+  font-size: 24px;
   font-weight: 800;
-  font-size: 24px; /* leggermente più grande */
 }
 
 .header-back {
   display: inline-flex;
-  margin-top: 10px;
+  margin-top: 8px;
   font-size: 14px;
   color: var(--secondary);
 }
@@ -50,24 +49,27 @@
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px; /* più spazio tra box */
+  gap: 22px;
 }
 
 .stat {
   background: var(--surface-alt);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 22px 24px; /* più padding */
+  padding: 22px 24px;
   box-shadow: var(--shadow-sm);
 }
 
 .stat-label {
   font-size: 12px;
   margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--secondary);
 }
 
 .stat-value {
-  font-size: 38px; /* più grande */
+  font-size: 38px;
   font-weight: 800;
 }
 
@@ -78,32 +80,34 @@
 .order-board {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 22px; /* più spazio tra card */
+  gap: 22px;
 }
 
 .order-card {
+  background: var(--surface-alt);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
-  gap: 16px; /* più spazio interno */
-  background: var(--surface-alt);
-  border-radius: var(--radius-md);
-  padding: 20px 22px; /* più padding */
-  box-shadow: var(--shadow-sm);
+  gap: 16px;
 }
 
 .order-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 6px;
 }
 
 .order-name {
-  font-weight: 800;
   font-size: 20px;
+  font-weight: 800;
 }
 
 .order-items {
   font-size: 15px;
+  color: var(--muted);
   line-height: 1.6;
 }
 
@@ -124,7 +128,7 @@
 
 .login-card {
   width: min(92vw, 380px);
-  padding: 40px 32px; /* più spazio */
+  padding: 40px 32px;
   background: var(--surface-alt);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -144,14 +148,7 @@
   width: 100%;
   padding: 16px;
   font-size: 16px;
-  margin-top: 6px;
   border-radius: 999px;
-}
-
-.login-back {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 20px;
 }
 
 /* ===========================
