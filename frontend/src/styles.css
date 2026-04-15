@@ -161,12 +161,22 @@ button {
   transform: translateY(-2px);
 }
 
+.menu-category-nav button.active {
+  background: var(--basil);
+  border-color: var(--basil);
+  color: white;
+}
+
 .menu-category-nav span {
   color: var(--basil);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.menu-category-nav button.active span {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .menu-category-nav strong {

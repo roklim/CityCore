@@ -115,12 +115,6 @@ function getMenuSectionId(item) {
   return "altro";
 }
 
-function scrollToMenuSection(sectionId) {
-  document
-    .getElementById(`menu-${sectionId}`)
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
 function Toast({ message }) {
   return <div className={`toast ${message ? "show" : ""}`}>{message}</div>;
 }
@@ -139,6 +133,7 @@ function CustomerView() {
   const [customerProfile, setCustomerProfile] = useState(null);
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeMenuSection, setActiveMenuSection] = useState(MENU_SECTIONS[0].id);
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -162,12 +157,33 @@ function CustomerView() {
     })).filter((section) => section.items.length > 0);
   }, [menu]);
 
+  const activeMenu = useMemo(() => {
+    return (
+      menuBySection.find((section) => section.id === activeMenuSection) ||
+      menuBySection[0]
+    );
+  }, [activeMenuSection, menuBySection]);
+
   useEffect(() => {
     getMenu()
       .then(setMenu)
       .catch(() => notify("Menu non disponibile. Riprova tra poco."))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!activeMenu && menuBySection[0]) {
+      setActiveMenuSection(menuBySection[0].id);
+      return;
+    }
+
+    if (
+      activeMenu &&
+      !menuBySection.some((section) => section.id === activeMenuSection)
+    ) {
+      setActiveMenuSection(menuBySection[0]?.id || MENU_SECTIONS[0].id);
+    }
+  }, [activeMenu, activeMenuSection, menuBySection]);
 
   useEffect(() => {
     setSelectedSlot("");
@@ -344,8 +360,9 @@ function CustomerView() {
                 {menuBySection.map((section) => (
                   <button
                     type="button"
+                    className={activeMenu?.id === section.id ? "active" : ""}
                     key={section.id}
-                    onClick={() => scrollToMenuSection(section.id)}
+                    onClick={() => setActiveMenuSection(section.id)}
                   >
                     <span>{section.eyebrow}</span>
                     <strong>{section.title}</strong>
@@ -353,23 +370,23 @@ function CustomerView() {
                 ))}
               </nav>
 
-              {menuBySection.map((section) => (
+              {activeMenu && (
                 <section
                   className="menu-section"
-                  id={`menu-${section.id}`}
-                  key={section.id}
+                  id={`menu-${activeMenu.id}`}
+                  key={activeMenu.id}
                 >
                   <div className="menu-section-head">
                     <div>
-                      <p className="eyebrow">{section.eyebrow}</p>
-                      <h3>{section.title}</h3>
-                      <span>{section.description}</span>
+                      <p className="eyebrow">{activeMenu.eyebrow}</p>
+                      <h3>{activeMenu.title}</h3>
+                      <span>{activeMenu.description}</span>
                     </div>
-                    <strong>{section.items.length}</strong>
+                    <strong>{activeMenu.items.length}</strong>
                   </div>
 
                   <div className="menu-grid">
-                    {section.items.map((item) => (
+                    {activeMenu.items.map((item) => (
                       <button
                         className="menu-card"
                         key={item._id}
@@ -383,7 +400,7 @@ function CustomerView() {
                     ))}
                   </div>
                 </section>
-              ))}
+              )}
             </div>
           )}
         </div>
