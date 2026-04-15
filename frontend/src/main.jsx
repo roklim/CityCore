@@ -76,6 +76,11 @@ function CustomerView() {
     [],
   );
 
+  const visibleCustomerSlots = useMemo(
+    () => (availability?.slots || []).filter((slot) => !slot.full && !slot.past),
+    [availability],
+  );
+
   useEffect(() => {
     getMenu()
       .then(setMenu)
@@ -136,7 +141,9 @@ function CustomerView() {
     if (!selectedSlot) return notify("Scegli un orario di ritiro.");
 
     const slot = availability.slots.find((item) => item.pickupSlot === selectedSlot);
-    if (!slot || slot.full) return notify("Questa fascia e piena.");
+    if (!slot || slot.full || slot.past) {
+      return notify("Questa fascia non e disponibile.");
+    }
 
     try {
       const order = await createOrder({
@@ -262,22 +269,28 @@ function CustomerView() {
           </div>
 
           <div className="slot-grid">
-            {(availability?.slots || []).map((slot) => (
-              <button
-                type="button"
-                key={slot.pickupSlot}
-                disabled={slot.full}
-                className={[
-                  selectedSlot === slot.pickupSlot ? "active" : "",
-                  slot.full ? "full" : "",
-                  slot.almostFull ? "almost" : "",
-                ].join(" ")}
-                onClick={() => setSelectedSlot(slot.pickupSlot)}
-              >
-                <span>{slot.time}</span>
-                <small>{slot.full ? "Pieno" : `${slot.remaining} posti`}</small>
-              </button>
-            ))}
+            {!availability ? (
+              <p className="slots-empty">Caricamento orari...</p>
+            ) : visibleCustomerSlots.length === 0 ? (
+              <p className="slots-empty">
+                Nessun orario disponibile per questo giorno.
+              </p>
+            ) : (
+              visibleCustomerSlots.map((slot) => (
+                <button
+                  type="button"
+                  key={slot.pickupSlot}
+                  className={[
+                    selectedSlot === slot.pickupSlot ? "active" : "",
+                    slot.almostFull ? "almost" : "",
+                  ].join(" ")}
+                  onClick={() => setSelectedSlot(slot.pickupSlot)}
+                >
+                  <span>{slot.time}</span>
+                  <small>Disponibile</small>
+                </button>
+              ))
+            )}
           </div>
 
           <button className="submit-button" type="submit">

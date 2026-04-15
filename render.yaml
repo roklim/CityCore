@@ -33,3 +33,5 @@ services:
         value: "18:00"
       - key: PICKUP_END_TIME
         value: "22:30"
+      - key: PICKUP_TIME_ZONE
+        value: Europe/Rome

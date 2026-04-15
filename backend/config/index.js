@@ -70,6 +70,7 @@ const config = {
     maxOrdersPerSlot: Number(optional("PICKUP_MAX_ORDERS_PER_SLOT", "4")),
     startTime: optional("PICKUP_START_TIME", "18:00"),
     endTime: optional("PICKUP_END_TIME", "22:30"),
+    timeZone: optional("PICKUP_TIME_ZONE", "Europe/Rome"),
   },
 };
 

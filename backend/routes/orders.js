@@ -26,6 +26,34 @@ function buildPickupSlot(date, time) {
   return `${date}T${time}`;
 }
 
+function getPickupNow() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: config.pickup.timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const valueByType = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+
+  return {
+    date: `${valueByType.year}-${valueByType.month}-${valueByType.day}`,
+    minutes: timeToMinutes(`${valueByType.hour}:${valueByType.minute}`),
+  };
+}
+
+function isPastSlot(date, time) {
+  const now = getPickupNow();
+  if (date < now.date) return true;
+  if (date > now.date) return false;
+  return timeToMinutes(time) <= now.minutes;
+}
+
 function generateSlots(date) {
   const start = timeToMinutes(config.pickup.startTime);
   const end = timeToMinutes(config.pickup.endTime);
@@ -69,6 +97,7 @@ async function buildAvailability(date) {
       remaining,
       full: remaining === 0,
       almostFull: remaining > 0 && remaining <= 1,
+      past: isPastSlot(date, slot.time),
     };
   });
 
@@ -98,6 +127,7 @@ function validatePickup({ pickupDate, pickupTime, pickupSlot }) {
   );
 
   if (!allowedSlots.has(pickupSlot)) return "Fascia oraria non disponibile";
+  if (isPastSlot(pickupDate, pickupTime)) return "Fascia oraria gia passata";
   return "";
 }
 

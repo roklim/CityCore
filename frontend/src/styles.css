@@ -307,6 +307,16 @@ button {
   opacity: 0.72;
 }
 
+.slots-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 14px;
+  background: rgba(255, 250, 241, 0.76);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}
+
 .slot-grid button.almost {
   border-color: var(--gold);
 }
