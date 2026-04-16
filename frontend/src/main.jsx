@@ -21,7 +21,7 @@ const STATUSES = {
 };
 const PUBLIC_STATUS_LABELS = {
   preparing: "In preparazione",
-  ready: "Pronto per il ritiro",
+  ready: "Pronto al banco",
   done: "Completato",
   cancelled: "Annullato",
 };
@@ -29,34 +29,34 @@ const ADMIN_REFRESH_INTERVAL_MS = 120000;
 const LOYALTY_GOAL = 10;
 const MENU_SECTIONS = [
   {
-    id: "pizze-tonde",
-    title: "Le Pizze Tonde",
-    eyebrow: "Forno classico",
-    description: "Impasto fragrante, bordo alto e ingredienti della casa.",
+    id: "pizza-teglia",
+    title: "Pizza al Taglio",
+    eyebrow: "Banco caldo",
+    description: "Tranci e teglie fragranti, pronti da portare via.",
   },
   {
-    id: "pizza-teglia",
-    title: "Pizza in Teglia",
-    eyebrow: "Al taglio",
-    description: "Tranci generosi, perfetti da condividere o portare via.",
+    id: "pizze-tonde",
+    title: "Pizze Tonde",
+    eyebrow: "Su ordinazione",
+    description: "Tonde cotte al momento, pensate per l'asporto.",
   },
   {
     id: "fritti",
-    title: "Fritti e Sfizi",
-    eyebrow: "Sfizi caldi",
-    description: "Croccanti, dorati, da aggiungere all'ordine.",
+    title: "Fritti Caldi",
+    eyebrow: "Dal banco",
+    description: "Suppli, patatine e sfizi dorati da aggiungere al sacchetto.",
   },
   {
     id: "bevande",
-    title: "Bevande",
-    eyebrow: "Fresco",
-    description: "Bibite e acqua per completare il ritiro.",
+    title: "Bibite Fresche",
+    eyebrow: "Frigo",
+    description: "Acqua, lattine e birre fredde per completare l'asporto.",
   },
   {
     id: "altro",
-    title: "Altre proposte",
-    eyebrow: "Extra",
-    description: "Dolci e specialita disponibili oggi.",
+    title: "Dolci e Extra",
+    eyebrow: "Fine banco",
+    description: "Dolci, salse e piccole aggiunte disponibili oggi.",
   },
 ];
 const QUICK_FILTERS = [
@@ -64,7 +64,7 @@ const QUICK_FILTERS = [
   { id: "piccante", label: "Piccante" },
   { id: "senza-lattosio", label: "Senza lattosio" },
   { id: "novita", label: "Novita" },
-  { id: "piu-ordinati", label: "Piu ordinati" },
+  { id: "piu-ordinati", label: "Piu richiesti" },
 ];
 const ORDER_STATUS_STEPS = ["preparing", "ready", "done"];
 const CUSTOM_PIZZA_BASES = [
@@ -592,19 +592,19 @@ function CustomerView() {
         <a className="admin-link" href="/admin">
           Admin
         </a>
-        <p className="eyebrow">Mucho Gusto Pizzeria</p>
-        <h1>Ordina l'asporto senza code in cucina.</h1>
+        <p className="eyebrow">Mucho Gusto Pizzeria al Taglio</p>
+        <h1>Tranci caldi, teglie fumanti e pizze pronte per l'asporto.</h1>
         <p className="lead">
-          Scegli la pizza, prenota la fascia di ritiro e lasciaci gestire il
-          flusso degli ordini.
+          Scegli dal banco, prenota il ritiro e passa appena il forno ha
+          preparato il tuo ordine.
         </p>
         <div className="customer-orders-panel">
           <div>
             <p className="eyebrow">I miei ordini</p>
-            <h2>Ritrova subito il tuo ritiro</h2>
+            <h2>Recupera il tuo ritiro</h2>
             <p>
-              Inserisci il numero usato nell'ordine: ti mostriamo gli ultimi
-              ritiri e il link per seguirli.
+              Inserisci il numero lasciato in ordine: ritrovi gli ultimi ritiri
+              e li segui senza cercare il link.
             </p>
           </div>
           <label>
@@ -652,9 +652,9 @@ function CustomerView() {
 
       <section className="order-layout">
         <div className="menu-area">
-          <div className="section-heading">
+              <div className="section-heading">
             <p className="eyebrow">Menu</p>
-            <h2>Le proposte di oggi</h2>
+            <h2>Il banco di oggi</h2>
           </div>
 
           {loading ? (
@@ -663,9 +663,9 @@ function CustomerView() {
             <div className="menu-sections">
               <div className="menu-tools">
                 <label className="menu-search">
-                  Cerca nel menu
+                  Cosa ti va dal banco?
                   <input
-                    placeholder="Cerca pizza, fritto, bevanda..."
+                    placeholder="Cerca trancio, teglia, fritto, bibita..."
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
                   />
@@ -687,11 +687,11 @@ function CustomerView() {
               <section className="custom-pizza-builder">
                 <div className="custom-pizza-head">
                   <div>
-                    <p className="eyebrow">Su misura</p>
-                    <h3>Componi la tua pizza</h3>
+                    <p className="eyebrow">Tonda su richiesta</p>
+                    <h3>Componi una pizza su misura</h3>
                     <span>
-                      Scegli una base e fino a {CUSTOM_PIZZA_MAX_TOPPINGS} ingredienti:
-                      la cucina riceve tutto nelle note dell'ordine.
+                      Scegli base e ingredienti: noi la prepariamo al momento e
+                      il forno riceve tutto nelle note.
                     </span>
                   </div>
                   <strong>{money(customPizzaPrice)}</strong>
@@ -752,7 +752,7 @@ function CustomerView() {
                   type="button"
                   onClick={addCustomPizzaToCart}
                 >
-                  Aggiungi pizza su misura - {money(customPizzaPrice)}
+                  Aggiungi tonda su misura - {money(customPizzaPrice)}
                 </button>
               </section>
 
@@ -772,7 +772,8 @@ function CustomerView() {
 
               {menuBySection.length === 0 ? (
                 <p className="menu-empty">
-                  Nessun prodotto trovato: prova a cambiare ricerca o filtri.
+                  Niente al banco con questi filtri: prova a cercare un altro
+                  trancio o sfizio.
                 </p>
               ) : activeMenu && (
                 <section
@@ -852,8 +853,8 @@ function CustomerView() {
             Chiudi
           </button>
           <div className="section-heading">
-            <p className="eyebrow">Ritiro</p>
-            <h2>Il tuo ordine</h2>
+            <p className="eyebrow">Ritiro al banco</p>
+            <h2>Il tuo asporto</h2>
           </div>
 
           <div className="cart-list">
@@ -916,11 +917,11 @@ function CustomerView() {
           {!customerProfile && !customerLookupLoading && (
             <div className="loyalty-card loyalty-empty">
               <div>
-                <p className="eyebrow">Fedelta</p>
+                <p className="eyebrow">Tessera banco</p>
                 <strong>Ordina con il tuo numero</strong>
                 <span>
-                  Accumuli punti e puoi riordinare le tue pizze preferite piu
-                  velocemente.
+                  Accumuli punti e ritrovi piu velocemente i tuoi ordini
+                  preferiti.
                 </span>
               </div>
             </div>
@@ -933,10 +934,10 @@ function CustomerView() {
           {customerProfile && (
             <div className="loyalty-card">
               <div>
-                <p className="eyebrow">Bentornato</p>
+                <p className="eyebrow">Bentornato al banco</p>
                 <strong>{customerProfile.customer.name || "Cliente Mucho Gusto"}</strong>
                 <span>
-                  {loyaltyPoints} punti fedelta - {loyaltyRemaining} al prossimo
+                  {loyaltyPoints} punti banco - {loyaltyRemaining} al prossimo
                   bonus
                 </span>
                 <strong className="loyalty-progress-label">
@@ -953,9 +954,9 @@ function CustomerView() {
               </div>
               {customerProfile.lastOrder && (
                 <div className="reorder-panel">
-                  <span>Vuoi riordinare come l'altra volta?</span>
+                  <span>Riprendiamo lo stesso ordine dell'altra volta?</span>
                   <button type="button" onClick={reorderLastOrder}>
-                    Riordina ultimo
+                    Riordina ora
                   </button>
                 </div>
               )}
@@ -1006,8 +1007,8 @@ function CustomerView() {
           </div>
 
           <div className="payment-note">
-            <strong>Pagamento al ritiro</strong>
-            <span>Paghi in pizzeria quando ritiri l'ordine.</span>
+            <strong>Pagamento al banco</strong>
+            <span>Paghi quando passi a ritirare il sacchetto.</span>
           </div>
 
           <button className="submit-button" type="submit">
@@ -1042,8 +1043,8 @@ function CustomerView() {
       {confirmation && (
         <div className="modal-backdrop">
           <div className="modal">
-            <p className="eyebrow">Ordine ricevuto</p>
-            <h2>Ritiro alle {confirmation.pickupTime}</h2>
+            <p className="eyebrow">Ordine preso al banco</p>
+            <h2>Passa alle {confirmation.pickupTime}</h2>
             <div className="confirmation-summary">
               <span>
                 Nome <strong>{confirmation.customer}</strong>
@@ -1062,10 +1063,10 @@ function CustomerView() {
               </span>
             </div>
             <a className="tracking-link" href={orderTrackingHref(confirmation._id)}>
-              Segui stato ordine
+              Segui il ritiro
             </a>
             <button type="button" onClick={() => setConfirmation(null)}>
-              Nuovo ordine
+              Torna al menu
             </button>
           </div>
         </div>
@@ -1118,7 +1119,8 @@ function TrackingView({ orderId }) {
           <>
             <h1>{PUBLIC_STATUS_LABELS[order.status] || order.status}</h1>
             <p>
-              Ritiro: <strong>{order.pickupDate} alle {order.pickupTime}</strong>
+              Ritiro al banco:{" "}
+              <strong>{order.pickupDate} alle {order.pickupTime}</strong>
             </p>
             <div className="tracking-steps">
               {ORDER_STATUS_STEPS.map((status, index) => (
@@ -1265,8 +1267,8 @@ function AdminView() {
     <main className="admin-shell">
       <header className="admin-header">
         <div>
-          <p className="eyebrow">Mucho Gusto</p>
-          <h1>Ordini per fascia</h1>
+          <p className="eyebrow">Banco Mucho Gusto</p>
+          <h1>Ritiri per fascia</h1>
         </div>
         <div className="admin-actions">
           <span className="refresh-note">
