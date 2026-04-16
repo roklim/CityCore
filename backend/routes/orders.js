@@ -28,6 +28,29 @@ function buildPickupSlot(date, time) {
   return `${date}T${time}`;
 }
 
+function flexiblePhoneRegex(phone) {
+  return new RegExp(phone.split("").join("\\D*"));
+}
+
+function buildPhoneSearchFilter(phone) {
+  const candidates = new Set([phone]);
+
+  if (phone.startsWith("39") && phone.length > 10) {
+    candidates.add(phone.slice(2));
+  } else {
+    candidates.add(`39${phone}`);
+  }
+
+  return {
+    $or: Array.from(candidates)
+      .filter((candidate) => candidate.length >= 6)
+      .flatMap((candidate) => [
+        { phone: candidate },
+        { phone: { $regex: flexiblePhoneRegex(candidate) } },
+      ]),
+  };
+}
+
 function getPickupNow() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: config.pickup.timeZone,
@@ -279,7 +302,7 @@ router.get(
         .json({ error: "Inserisci un numero di telefono valido" });
     }
 
-    const orders = await Order.find({ phone })
+    const orders = await Order.find(buildPhoneSearchFilter(phone))
       .sort({ createdAt: -1 })
       .limit(8)
       .select(
