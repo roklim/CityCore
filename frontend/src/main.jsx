@@ -174,6 +174,10 @@ function getSlotHint(slot) {
   return "Buona scelta";
 }
 
+function orderTrackingHref(orderId) {
+  return `/?ordine=${encodeURIComponent(orderId)}`;
+}
+
 function Toast({ message }) {
   return <div className={`toast ${message ? "show" : ""}`}>{message}</div>;
 }
@@ -525,7 +529,7 @@ function CustomerView() {
           {customerOrders.length > 0 && (
             <div className="customer-orders-list">
               {customerOrders.map((order) => (
-                <a href={`/ordine/${order._id}`} key={order._id}>
+                <a href={orderTrackingHref(order._id)} key={order._id}>
                   <span>
                     <strong>{order.pickupDate} alle {order.pickupTime}</strong>
                     <small>
@@ -880,7 +884,7 @@ function CustomerView() {
                 ID ordine <strong>{confirmation._id}</strong>
               </span>
             </div>
-            <a className="tracking-link" href={`/ordine/${confirmation._id}`}>
+            <a className="tracking-link" href={orderTrackingHref(confirmation._id)}>
               Segui stato ordine
             </a>
             <button type="button" onClick={() => setConfirmation(null)}>
@@ -1167,6 +1171,10 @@ function AdminView() {
 
 function App() {
   const path = window.location.pathname;
+  const orderIdFromQuery = new URLSearchParams(window.location.search).get("ordine");
+  if (orderIdFromQuery) {
+    return <TrackingView orderId={orderIdFromQuery} />;
+  }
   if (path.startsWith("/ordine/")) {
     return <TrackingView orderId={decodeURIComponent(path.split("/")[2] || "")} />;
   }
