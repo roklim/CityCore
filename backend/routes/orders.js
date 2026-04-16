@@ -267,6 +267,30 @@ router.get(
   }),
 );
 
+// GET /api/orders/customer?phone=... - pubblico: ultimi ordini del cliente
+router.get(
+  "/customer",
+  asyncHandler(async (req, res) => {
+    const phone = normalizePhone(req.query.phone || "");
+
+    if (phone.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Inserisci un numero di telefono valido" });
+    }
+
+    const orders = await Order.find({ phone })
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .select(
+        "_id customer items status total pickupDate pickupTime pickupSlot createdAt",
+      )
+      .lean();
+
+    res.json({ orders });
+  }),
+);
+
 router.post(
   "/",
   asyncHandler(async (req, res) => {

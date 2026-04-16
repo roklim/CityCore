@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   createOrder,
   getAvailability,
+  getCustomerOrders,
   getMenu,
   getOrder,
   getOrders,
@@ -189,7 +190,9 @@ function CustomerView() {
   const [toast, setToast] = useState("");
   const [confirmation, setConfirmation] = useState(null);
   const [customerProfile, setCustomerProfile] = useState(null);
+  const [customerOrders, setCustomerOrders] = useState([]);
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
+  const [customerOrdersLoading, setCustomerOrdersLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeMenuSection, setActiveMenuSection] = useState(MENU_SECTIONS[0].id);
   const [searchTerm, setSearchTerm] = useState("");
@@ -206,6 +209,7 @@ function CustomerView() {
     () => cart.reduce((sum, item) => sum + item.qty, 0),
     [cart],
   );
+  const normalizedPhone = useMemo(() => phone.replace(/\D/g, ""), [phone]);
 
   const dateOptions = useMemo(
     () => nextOpenDates(7),
@@ -291,30 +295,44 @@ function CustomerView() {
   }, [pickupDate]);
 
   useEffect(() => {
-    const normalizedPhone = phone.replace(/\D/g, "");
-
     if (normalizedPhone.length < 6) {
       setCustomerProfile(null);
+      setCustomerOrders([]);
+      setCustomerOrdersLoading(false);
       return;
     }
 
     let cancelled = false;
     setCustomerLookupLoading(true);
+    setCustomerOrdersLoading(true);
 
     const timer = window.setTimeout(() => {
-      lookupCustomer(normalizedPhone)
-        .then((data) => {
+      Promise.allSettled([
+        lookupCustomer(normalizedPhone),
+        getCustomerOrders(normalizedPhone),
+      ])
+        .then(([profileResult, ordersResult]) => {
           if (cancelled) return;
-          setCustomerProfile(data.found ? data : null);
-          if (data.found && data.customer?.name && !customer.trim()) {
-            setCustomer(data.customer.name);
+
+          if (profileResult.status === "fulfilled") {
+            const data = profileResult.value;
+            setCustomerProfile(data.found ? data : null);
+            if (data.found && data.customer?.name && !customer.trim()) {
+              setCustomer(data.customer.name);
+            }
+          } else {
+            setCustomerProfile(null);
           }
-        })
-        .catch(() => {
-          if (!cancelled) setCustomerProfile(null);
+
+          setCustomerOrders(
+            ordersResult.status === "fulfilled" ? ordersResult.value : [],
+          );
         })
         .finally(() => {
-          if (!cancelled) setCustomerLookupLoading(false);
+          if (!cancelled) {
+            setCustomerLookupLoading(false);
+            setCustomerOrdersLoading(false);
+          }
         });
     }, 500);
 
@@ -322,7 +340,7 @@ function CustomerView() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [phone]);
+  }, [normalizedPhone]);
 
   useEffect(() => {
     document.body.classList.toggle("drawer-open", mobileCartOpen);
@@ -471,6 +489,56 @@ function CustomerView() {
           Scegli la pizza, prenota la fascia di ritiro e lasciaci gestire il
           flusso degli ordini.
         </p>
+        <div className="customer-orders-panel">
+          <div>
+            <p className="eyebrow">I miei ordini</p>
+            <h2>Ritrova subito il tuo ritiro</h2>
+            <p>
+              Inserisci il numero usato nell'ordine: ti mostriamo gli ultimi
+              ritiri e il link per seguirli.
+            </p>
+          </div>
+          <label>
+            Telefono
+            <input
+              type="tel"
+              placeholder="Es. 333 123 4567"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+            />
+          </label>
+          {normalizedPhone.length > 0 && normalizedPhone.length < 6 && (
+            <p className="orders-helper">
+              Scrivi almeno 6 cifre per cercare i tuoi ordini.
+            </p>
+          )}
+          {customerOrdersLoading && (
+            <p className="orders-helper">Sto cercando i tuoi ordini...</p>
+          )}
+          {!customerOrdersLoading &&
+            normalizedPhone.length >= 6 &&
+            customerOrders.length === 0 && (
+              <p className="orders-helper">
+                Nessun ordine trovato con questo numero.
+              </p>
+            )}
+          {customerOrders.length > 0 && (
+            <div className="customer-orders-list">
+              {customerOrders.map((order) => (
+                <a href={`/ordine/${order._id}`} key={order._id}>
+                  <span>
+                    <strong>{order.pickupDate} alle {order.pickupTime}</strong>
+                    <small>
+                      {PUBLIC_STATUS_LABELS[order.status] || order.status} -
+                      {" "}{order.items.length} prodotti
+                    </small>
+                  </span>
+                  <b>{money(order.total)}</b>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="order-layout">

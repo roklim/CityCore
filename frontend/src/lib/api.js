@@ -39,6 +39,14 @@ export function getOrder(id) {
   return request(`/orders/${encodeURIComponent(id)}`);
 }
 
+export async function getCustomerOrders(phone) {
+  const data = await request(
+    `/orders/customer?phone=${encodeURIComponent(phone)}`,
+  );
+
+  return data.orders || [];
+}
+
 export function loginAdmin(username, password) {
   return request("/auth/login", {
     method: "POST",

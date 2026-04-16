@@ -101,6 +101,98 @@ button {
   font-size: 18px;
 }
 
+.customer-orders-panel {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  display: grid;
+  gap: 14px;
+  margin: 30px auto 0;
+  padding: 18px;
+  background: rgba(255, 250, 241, 0.86);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 16px 38px rgba(64, 42, 27, 0.1);
+  text-align: left;
+}
+
+.customer-orders-panel h2 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-size: 30px;
+}
+
+.customer-orders-panel p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.customer-orders-panel label {
+  display: grid;
+  gap: 8px;
+  color: var(--basil);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.customer-orders-panel input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  padding: 13px 14px;
+  outline: none;
+}
+
+.orders-helper {
+  padding: 12px;
+  background: rgba(47, 103, 70, 0.08);
+  border: 1px dashed rgba(47, 103, 70, 0.22);
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.customer-orders-list {
+  display: grid;
+  gap: 8px;
+}
+
+.customer-orders-list a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.customer-orders-list a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(64, 42, 27, 0.1);
+}
+
+.customer-orders-list span {
+  display: grid;
+  gap: 3px;
+}
+
+.customer-orders-list small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.customer-orders-list b {
+  color: var(--basil);
+}
+
 .admin-link {
   position: absolute;
   top: 28px;
