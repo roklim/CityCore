@@ -342,6 +342,127 @@ button {
   font-weight: 800;
 }
 
+.custom-pizza-builder {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(201, 70, 44, 0.11), transparent 42%),
+    rgba(255, 250, 241, 0.9);
+  border: 1px solid rgba(201, 70, 44, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(64, 42, 27, 0.1);
+}
+
+.custom-pizza-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+}
+
+.custom-pizza-head h3 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-size: 32px;
+}
+
+.custom-pizza-head span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.custom-pizza-head > strong {
+  color: var(--basil);
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.custom-pizza-group {
+  display: grid;
+  gap: 9px;
+}
+
+.custom-pizza-label,
+.custom-pizza-notes {
+  color: var(--basil);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.custom-base-grid,
+.topping-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.custom-base-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.topping-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.custom-base-grid button,
+.topping-grid button {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+}
+
+.custom-base-grid button.active,
+.topping-grid button.active {
+  background: var(--basil);
+  border-color: var(--basil);
+  color: white;
+}
+
+.custom-base-grid small {
+  color: inherit;
+  opacity: 0.72;
+}
+
+.custom-base-grid b,
+.topping-grid b {
+  color: inherit;
+  font-size: 12px;
+}
+
+.custom-pizza-notes {
+  display: grid;
+  gap: 8px;
+}
+
+.custom-pizza-notes input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  padding: 12px;
+  outline: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.custom-pizza-submit {
+  border: 0;
+  border-radius: 999px;
+  background: var(--tomato);
+  color: white;
+  font-weight: 900;
+  padding: 13px 16px;
+}
+
 .menu-section-head {
   display: flex;
   justify-content: space-between;
@@ -860,6 +981,17 @@ button {
   gap: 6px;
 }
 
+.tracking-items span {
+  display: grid;
+  gap: 3px;
+}
+
+.tracking-items small,
+.order-item-notes {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .tracking-total {
   color: var(--basil);
   font-size: 24px;
@@ -994,6 +1126,16 @@ button {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+}
+
+.order-item-notes {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0 12px;
+  padding: 10px;
+  background: rgba(214, 154, 45, 0.1);
+  border: 1px solid rgba(214, 154, 45, 0.22);
+  border-radius: 8px;
 }
 
 .status {
@@ -1171,6 +1313,15 @@ button {
   .menu-section-head {
     align-items: start;
     flex-direction: column;
+  }
+
+  .custom-pizza-head {
+    flex-direction: column;
+  }
+
+  .custom-base-grid,
+  .topping-grid {
+    grid-template-columns: 1fr;
   }
 
   .menu-category-nav {

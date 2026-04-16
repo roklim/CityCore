@@ -67,6 +67,43 @@ const QUICK_FILTERS = [
   { id: "piu-ordinati", label: "Piu ordinati" },
 ];
 const ORDER_STATUS_STEPS = ["preparing", "ready", "done"];
+const CUSTOM_PIZZA_BASES = [
+  {
+    id: "rossa",
+    name: "Base rossa",
+    description: "Pomodoro della casa",
+    price: 6.5,
+  },
+  {
+    id: "bianca",
+    name: "Base bianca",
+    description: "Mozzarella e olio EVO",
+    price: 7,
+  },
+  {
+    id: "margherita",
+    name: "Base Margherita",
+    description: "Pomodoro, mozzarella e basilico",
+    price: 8,
+  },
+];
+const CUSTOM_PIZZA_TOPPINGS = [
+  { id: "mozzarella-extra", name: "Mozzarella extra", price: 1.5 },
+  { id: "bufala", name: "Bufala", price: 2.5 },
+  { id: "prosciutto-cotto", name: "Prosciutto cotto", price: 2 },
+  { id: "salame-piccante", name: "Salame piccante", price: 2 },
+  { id: "salsiccia", name: "Salsiccia", price: 2 },
+  { id: "funghi", name: "Funghi", price: 1.5 },
+  { id: "olive", name: "Olive", price: 1 },
+  { id: "carciofini", name: "Carciofini", price: 1.5 },
+  { id: "cipolla", name: "Cipolla", price: 1 },
+  { id: "rucola", name: "Rucola", price: 1 },
+  { id: "patate", name: "Patate", price: 1.5 },
+  { id: "gorgonzola", name: "Gorgonzola", price: 1.5 },
+  { id: "nduja", name: "Nduja", price: 2 },
+  { id: "basilico", name: "Basilico", price: 0.5 },
+];
+const CUSTOM_PIZZA_MAX_TOPPINGS = 6;
 
 function todayISO() {
   return toLocalISODate(new Date());
@@ -203,6 +240,11 @@ function CustomerView() {
   const [activeFilters, setActiveFilters] = useState([]);
   const [addedItemId, setAddedItemId] = useState("");
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  const [customPizzaBaseId, setCustomPizzaBaseId] = useState(
+    CUSTOM_PIZZA_BASES[2].id,
+  );
+  const [customPizzaToppings, setCustomPizzaToppings] = useState([]);
+  const [customPizzaNotes, setCustomPizzaNotes] = useState("");
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -214,6 +256,28 @@ function CustomerView() {
     [cart],
   );
   const normalizedPhone = useMemo(() => phone.replace(/\D/g, ""), [phone]);
+  const customPizzaBase = useMemo(
+    () =>
+      CUSTOM_PIZZA_BASES.find((base) => base.id === customPizzaBaseId) ||
+      CUSTOM_PIZZA_BASES[0],
+    [customPizzaBaseId],
+  );
+  const customPizzaSelectedToppings = useMemo(
+    () =>
+      CUSTOM_PIZZA_TOPPINGS.filter((topping) =>
+        customPizzaToppings.includes(topping.id),
+      ),
+    [customPizzaToppings],
+  );
+  const customPizzaPrice = useMemo(
+    () =>
+      customPizzaBase.price +
+      customPizzaSelectedToppings.reduce(
+        (sum, topping) => sum + topping.price,
+        0,
+      ),
+    [customPizzaBase, customPizzaSelectedToppings],
+  );
 
   const dateOptions = useMemo(
     () => nextOpenDates(7),
@@ -372,6 +436,7 @@ function CustomerView() {
           name: item.name,
           price: item.price,
           qty: 1,
+          itemNotes: item.itemNotes || "",
         },
       ];
     });
@@ -405,6 +470,46 @@ function CustomerView() {
 
   function getCartItem(itemId) {
     return cart.find((item) => item.id === itemId);
+  }
+
+  function toggleCustomPizzaTopping(toppingId) {
+    setCustomPizzaToppings((current) => {
+      if (current.includes(toppingId)) {
+        return current.filter((id) => id !== toppingId);
+      }
+
+      if (current.length >= CUSTOM_PIZZA_MAX_TOPPINGS) {
+        notify(`Puoi scegliere fino a ${CUSTOM_PIZZA_MAX_TOPPINGS} ingredienti.`);
+        return current;
+      }
+
+      return [...current, toppingId];
+    });
+  }
+
+  function addCustomPizzaToCart() {
+    const ingredientNames = customPizzaSelectedToppings.map(
+      (topping) => topping.name,
+    );
+    const ingredientsText =
+      ingredientNames.length > 0 ? ingredientNames.join(", ") : "nessuna aggiunta";
+    const customNotes = [
+      `Base: ${customPizzaBase.name}`,
+      `Ingredienti: ${ingredientsText}`,
+      customPizzaNotes.trim() ? `Note: ${customPizzaNotes.trim()}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    addToCart({
+      _id: `custom-pizza-${customPizzaBase.id}-${customPizzaToppings
+        .slice()
+        .sort()
+        .join("-")}-${customPizzaNotes.trim().toLowerCase()}`,
+      name: "Pizza su misura",
+      price: Math.round(customPizzaPrice * 100) / 100,
+      itemNotes: customNotes,
+    });
   }
 
   function reorderLastOrder() {
@@ -578,6 +683,78 @@ function CustomerView() {
                   ))}
                 </div>
               </div>
+
+              <section className="custom-pizza-builder">
+                <div className="custom-pizza-head">
+                  <div>
+                    <p className="eyebrow">Su misura</p>
+                    <h3>Componi la tua pizza</h3>
+                    <span>
+                      Scegli una base e fino a {CUSTOM_PIZZA_MAX_TOPPINGS} ingredienti:
+                      la cucina riceve tutto nelle note dell'ordine.
+                    </span>
+                  </div>
+                  <strong>{money(customPizzaPrice)}</strong>
+                </div>
+
+                <div className="custom-pizza-group">
+                  <span className="custom-pizza-label">Base</span>
+                  <div className="custom-base-grid">
+                    {CUSTOM_PIZZA_BASES.map((base) => (
+                      <button
+                        type="button"
+                        className={base.id === customPizzaBase.id ? "active" : ""}
+                        key={base.id}
+                        onClick={() => setCustomPizzaBaseId(base.id)}
+                      >
+                        <strong>{base.name}</strong>
+                        <small>{base.description}</small>
+                        <b>{money(base.price)}</b>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="custom-pizza-group">
+                  <span className="custom-pizza-label">
+                    Ingredienti ({customPizzaToppings.length}/
+                    {CUSTOM_PIZZA_MAX_TOPPINGS})
+                  </span>
+                  <div className="topping-grid">
+                    {CUSTOM_PIZZA_TOPPINGS.map((topping) => (
+                      <button
+                        type="button"
+                        className={
+                          customPizzaToppings.includes(topping.id) ? "active" : ""
+                        }
+                        key={topping.id}
+                        onClick={() => toggleCustomPizzaTopping(topping.id)}
+                      >
+                        <span>{topping.name}</span>
+                        <b>+ {money(topping.price)}</b>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="custom-pizza-notes">
+                  Note per questa pizza
+                  <input
+                    placeholder="Es. ben cotta, poca mozzarella..."
+                    maxLength={120}
+                    value={customPizzaNotes}
+                    onChange={(event) => setCustomPizzaNotes(event.target.value)}
+                  />
+                </label>
+
+                <button
+                  className="custom-pizza-submit"
+                  type="button"
+                  onClick={addCustomPizzaToCart}
+                >
+                  Aggiungi pizza su misura - {money(customPizzaPrice)}
+                </button>
+              </section>
 
               <nav className="menu-category-nav" aria-label="Categorie menu">
                 {menuBySection.map((section) => (
@@ -956,7 +1133,8 @@ function TrackingView({ orderId }) {
             <div className="tracking-items">
               {order.items.map((item, index) => (
                 <span key={`${item.name}-${index}`}>
-                  {item.qty}x {item.name}
+                  <strong>{item.qty}x {item.name}</strong>
+                  {item.notes && <small>{item.notes}</small>}
                 </span>
               ))}
             </div>
@@ -1146,6 +1324,17 @@ function AdminView() {
                       .map((item) => `${item.qty}x ${item.name}`)
                       .join(" | ")}
                   </p>
+                  {order.items.some((item) => item.notes) && (
+                    <div className="order-item-notes">
+                      {order.items
+                        .filter((item) => item.notes)
+                        .map((item, index) => (
+                          <span key={`${order._id}-note-${index}`}>
+                            <strong>{item.name}</strong>: {item.notes}
+                          </span>
+                        ))}
+                    </div>
+                  )}
                   <div className="status-buttons">
                     {Object.keys(STATUSES).map((status) => (
                       <button
