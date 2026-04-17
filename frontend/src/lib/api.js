@@ -1,6 +1,8 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://mucho-gusto-mg5y.onrender.com/api";
+  (import.meta.env.DEV
+    ? "http://localhost:3000/api"
+    : "https://mucho-gusto-mg5y.onrender.com/api");
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
