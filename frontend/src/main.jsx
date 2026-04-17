@@ -586,6 +586,49 @@ function CustomerView() {
     }
   }
 
+  if (confirmation) {
+    return (
+      <main className="customer-shell confirmation-shell">
+        <section className="confirmation-card">
+          <p className="eyebrow">Ordine preso al banco</p>
+          <h1>Passa alle {confirmation.pickupTime}</h1>
+          <p>
+            Il forno ha ricevuto il tuo ordine. Tieni questa schermata o segui il
+            ritiro per controllare quando passa a pronto.
+          </p>
+
+          <div className="confirmation-summary">
+            <span>
+              Nome <strong>{confirmation.customer}</strong>
+            </span>
+            <span>
+              Totale <strong>{money(confirmation.total)}</strong>
+            </span>
+            <span>
+              Stato{" "}
+              <strong>
+                {PUBLIC_STATUS_LABELS[confirmation.status] || confirmation.status}
+              </strong>
+            </span>
+            <span>
+              ID ordine <strong>{confirmation._id}</strong>
+            </span>
+          </div>
+
+          <div className="confirmation-actions">
+            <a className="tracking-link" href={orderTrackingHref(confirmation._id)}>
+              Segui il ritiro
+            </a>
+            <button type="button" onClick={() => setConfirmation(null)}>
+              Torna al menu
+            </button>
+          </div>
+        </section>
+        <Toast message={toast} />
+      </main>
+    );
+  }
+
   return (
     <main className="customer-shell">
       <section className="brand-panel">
@@ -652,7 +695,7 @@ function CustomerView() {
 
       <section className="order-layout">
         <div className="menu-area">
-              <div className="section-heading">
+          <div className="section-heading">
             <p className="eyebrow">Menu</p>
             <h2>Il banco di oggi</h2>
           </div>
@@ -1037,38 +1080,6 @@ function CustomerView() {
           <button type="button" onClick={() => setMobileCartOpen(true)}>
             Vai al carrello
           </button>
-        </div>
-      )}
-
-      {confirmation && (
-        <div className="modal-backdrop">
-          <div className="modal">
-            <p className="eyebrow">Ordine preso al banco</p>
-            <h2>Passa alle {confirmation.pickupTime}</h2>
-            <div className="confirmation-summary">
-              <span>
-                Nome <strong>{confirmation.customer}</strong>
-              </span>
-              <span>
-                Totale <strong>{money(confirmation.total)}</strong>
-              </span>
-              <span>
-                Stato{" "}
-                <strong>
-                  {PUBLIC_STATUS_LABELS[confirmation.status] || confirmation.status}
-                </strong>
-              </span>
-              <span>
-                ID ordine <strong>{confirmation._id}</strong>
-              </span>
-            </div>
-            <a className="tracking-link" href={orderTrackingHref(confirmation._id)}>
-              Segui il ritiro
-            </a>
-            <button type="button" onClick={() => setConfirmation(null)}>
-              Torna al menu
-            </button>
-          </div>
         </div>
       )}
 

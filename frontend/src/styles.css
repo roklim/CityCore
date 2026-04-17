@@ -913,6 +913,68 @@ button {
   border-bottom: 1px solid var(--line);
 }
 
+.confirmation-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(201, 70, 44, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(47, 103, 70, 0.16), transparent 30%),
+    var(--cream);
+}
+
+.confirmation-card {
+  width: min(560px, 100%);
+  padding: 34px;
+  background: rgba(255, 250, 241, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.confirmation-card h1 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-size: clamp(42px, 8vw, 72px);
+  line-height: 0.95;
+}
+
+.confirmation-card p {
+  max-width: 440px;
+  margin: 16px auto 0;
+  color: var(--muted);
+}
+
+.confirmation-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.confirmation-actions .tracking-link,
+.confirmation-actions button {
+  width: 100%;
+  display: block;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 900;
+  padding: 14px 18px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.confirmation-actions .tracking-link {
+  background: var(--basil);
+  color: white;
+}
+
+.confirmation-actions button {
+  background: var(--tomato);
+  color: white;
+}
+
 .tracking-link {
   display: block;
   margin-top: 14px;
