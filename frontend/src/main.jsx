@@ -1,14 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  createMenuItem,
   createOrder,
+  deleteMenuItem,
   getAvailability,
+  getAdminMenu,
   getCustomerOrders,
   getMenu,
   getOrder,
   getOrders,
   lookupCustomer,
   loginAdmin,
+  toggleMenuItem,
+  updateMenuItem,
   updateOrderStatus,
 } from "./lib/api";
 import "./styles.css";
@@ -27,18 +32,53 @@ const PUBLIC_STATUS_LABELS = {
 };
 const ADMIN_REFRESH_INTERVAL_MS = 120000;
 const LOYALTY_GOAL = 10;
+const MENU_CATEGORY_OPTIONS = [
+  { value: "pizze-tonde", label: "Pizze Normali" },
+  { value: "pizza-teglia", label: "Pizza al Trancio" },
+  { value: "pizza-speciali", label: "Pizze Speciali" },
+  { value: "fritti", label: "Fritti" },
+  { value: "bevande", label: "Bevande" },
+  { value: "dolci", label: "Dolci" },
+  { value: "extra", label: "Extra" },
+];
+const MENU_UNIT_OPTIONS = [
+  "pezzo",
+  "porzione",
+  "trancio",
+  "teglia",
+  "lattina",
+  "bottiglia",
+];
+const EMPTY_MENU_FORM = {
+  name: "",
+  description: "",
+  price: "",
+  category: "pizze-tonde",
+  emoji: "🍕",
+  sortOrder: "",
+  unit: "trancio",
+  tags: "",
+  allergens: "",
+  featured: false,
+};
 const MENU_SECTIONS = [
   {
+    id: "pizze-tonde",
+    title: "Pizze Normali",
+    eyebrow: "Classiche",
+    description: "Margherita, Napoli, cotto, crudo e le pizze di tutti i giorni.",
+  },
+  {
     id: "pizza-teglia",
-    title: "Pizza al Taglio",
+    title: "Pizza al Trancio",
     eyebrow: "Banco caldo",
     description: "Tranci e teglie fragranti, pronti da portare via.",
   },
   {
-    id: "pizze-tonde",
-    title: "Pizze Tonde",
-    eyebrow: "Su ordinazione",
-    description: "Tonde cotte al momento, pensate per l'asporto.",
+    id: "pizza-speciali",
+    title: "Pizze Speciali",
+    eyebrow: "Le Mucho pizze",
+    description: "Ricette piu ricche con burrata, mortadella e ingredienti speciali.",
   },
   {
     id: "fritti",
@@ -162,6 +202,7 @@ function getMenuSectionId(item) {
     pizza: "pizze-tonde",
     "pizze-tonde": "pizze-tonde",
     "pizza-teglia": "pizza-teglia",
+    "pizza-speciali": "pizza-speciali",
     fritti: "fritti",
     drink: "bevande",
     bevande: "bevande",
@@ -172,6 +213,9 @@ function getMenuSectionId(item) {
 
   if (categoryMap[category]) return categoryMap[category];
 
+  if (/\b(speciale|speciali|mortazza|burrata|stracciatella|guanciale|crema di zucca|pecorino)\b/.test(text)) {
+    return "pizza-speciali";
+  }
   if (/\b(teglia|trancio|taglio|pala)\b/.test(text)) return "pizza-teglia";
   if (/\b(fritti|fritto|suppli|supplì|arancino|crocche|crocchetta|patatine|patatina|olive ascolane)\b/.test(text)) {
     return "fritti";
@@ -213,6 +257,54 @@ function getSlotHint(slot) {
 
 function orderTrackingHref(orderId) {
   return `/?ordine=${encodeURIComponent(orderId)}`;
+}
+
+function parseCommaList(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function menuItemToForm(item) {
+  return {
+    name: item.name || "",
+    description: item.description || "",
+    price: item.price ?? "",
+    category: getAdminMenuCategory(item),
+    emoji: item.emoji || "🍕",
+    sortOrder: item.sortOrder ?? "",
+    unit: item.unit || "trancio",
+    tags: (item.tags || []).join(", "),
+    allergens: (item.allergens || []).join(", "),
+    featured: Boolean(item.featured),
+  };
+}
+
+function getAdminMenuCategory(item) {
+  const category = String(item.category || "").trim().toLowerCase();
+  if (category === "pizza") return "pizze-tonde";
+  if (category === "drink") return "bevande";
+  if (category === "dessert") return "dolci";
+  if (MENU_CATEGORY_OPTIONS.some((option) => option.value === category)) {
+    return category;
+  }
+  return "extra";
+}
+
+function menuFormToPayload(form) {
+  return {
+    name: form.name.trim(),
+    description: form.description.trim(),
+    price: Number(form.price),
+    category: form.category,
+    emoji: form.emoji.trim() || "🍕",
+    sortOrder: Number(form.sortOrder) || 0,
+    unit: form.unit,
+    tags: parseCommaList(form.tags),
+    allergens: parseCommaList(form.allergens),
+    featured: Boolean(form.featured),
+  };
 }
 
 function Toast({ message }) {
@@ -1172,9 +1264,13 @@ function AdminView() {
   const [pickupDate, setPickupDate] = useState(todayISO());
   const [orders, setOrders] = useState([]);
   const [availability, setAvailability] = useState(null);
+  const [adminMenu, setAdminMenu] = useState([]);
+  const [menuForm, setMenuForm] = useState(EMPTY_MENU_FORM);
+  const [editingMenuId, setEditingMenuId] = useState("");
   const [toast, setToast] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [menuSaving, setMenuSaving] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -1182,6 +1278,11 @@ function AdminView() {
     const timer = window.setInterval(refresh, ADMIN_REFRESH_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [token, pickupDate]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadAdminMenu();
+  }, [token]);
 
   function notify(message) {
     setToast(message);
@@ -1216,6 +1317,15 @@ function AdminView() {
     }
   }
 
+  async function loadAdminMenu() {
+    try {
+      setAdminMenu(await getAdminMenu(token));
+    } catch (error) {
+      if (error.status === 401) logout();
+      else notify(error.message);
+    }
+  }
+
   async function login(event) {
     event.preventDefault();
     try {
@@ -1230,12 +1340,77 @@ function AdminView() {
   function logout() {
     localStorage.removeItem("admin_token");
     setToken("");
+    setAdminMenu([]);
   }
 
   async function changeStatus(id, status) {
     try {
       await updateOrderStatus(id, status, token);
       await refresh();
+    } catch (error) {
+      notify(error.message);
+    }
+  }
+
+  function updateMenuForm(field, value) {
+    setMenuForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function editMenuItem(item) {
+    setEditingMenuId(item._id);
+    setMenuForm(menuItemToForm(item));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetMenuForm() {
+    setEditingMenuId("");
+    setMenuForm(EMPTY_MENU_FORM);
+  }
+
+  async function saveMenuItem(event) {
+    event.preventDefault();
+
+    if (!menuForm.name.trim()) return notify("Inserisci il nome del prodotto.");
+    if (!menuForm.price || Number(menuForm.price) < 0) {
+      return notify("Inserisci un prezzo valido.");
+    }
+
+    setMenuSaving(true);
+    try {
+      const payload = menuFormToPayload(menuForm);
+      if (editingMenuId) {
+        await updateMenuItem(editingMenuId, payload, token);
+        notify("Prodotto aggiornato.");
+      } else {
+        await createMenuItem(payload, token);
+        notify("Prodotto aggiunto al menu.");
+      }
+      resetMenuForm();
+      await loadAdminMenu();
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setMenuSaving(false);
+    }
+  }
+
+  async function changeMenuAvailability(id) {
+    try {
+      await toggleMenuItem(id, token);
+      await loadAdminMenu();
+    } catch (error) {
+      notify(error.message);
+    }
+  }
+
+  async function removeMenuItem(id) {
+    const confirmed = window.confirm("Eliminare questo prodotto dal menu?");
+    if (!confirmed) return;
+
+    try {
+      await deleteMenuItem(id, token);
+      await loadAdminMenu();
+      notify("Prodotto eliminato.");
     } catch (error) {
       notify(error.message);
     }
@@ -1249,6 +1424,15 @@ function AdminView() {
       return groups;
     }, {});
   }, [orders]);
+
+  const groupedMenu = useMemo(() => {
+    return adminMenu.reduce((groups, item) => {
+      const key = getAdminMenuCategory(item);
+      groups[key] = groups[key] || [];
+      groups[key].push(item);
+      return groups;
+    }, {});
+  }, [adminMenu]);
 
   if (!token) {
     return (
@@ -1298,6 +1482,194 @@ function AdminView() {
           </button>
         </div>
       </header>
+
+      <section className="admin-menu-manager">
+        <form className="menu-editor-panel" onSubmit={saveMenuItem}>
+          <div className="section-heading">
+            <p className="eyebrow">Gestione menu</p>
+            <h2>{editingMenuId ? "Modifica prodotto" : "Aggiungi prodotto"}</h2>
+          </div>
+
+          <div className="menu-editor-grid">
+            <label>
+              Nome prodotto
+              <input
+                value={menuForm.name}
+                onChange={(event) => updateMenuForm("name", event.target.value)}
+                placeholder="Es. Margherita"
+              />
+            </label>
+            <label>
+              Prezzo
+              <input
+                min="0"
+                step="0.1"
+                type="number"
+                value={menuForm.price}
+                onChange={(event) => updateMenuForm("price", event.target.value)}
+                placeholder="6.00"
+              />
+            </label>
+            <label>
+              Categoria
+              <select
+                value={menuForm.category}
+                onChange={(event) => updateMenuForm("category", event.target.value)}
+              >
+                {MENU_CATEGORY_OPTIONS.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Unita
+              <select
+                value={menuForm.unit}
+                onChange={(event) => updateMenuForm("unit", event.target.value)}
+              >
+                {MENU_UNIT_OPTIONS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Emoji
+              <input
+                value={menuForm.emoji}
+                onChange={(event) => updateMenuForm("emoji", event.target.value)}
+                placeholder="🍕"
+              />
+            </label>
+            <label>
+              Ordine
+              <input
+                min="0"
+                step="1"
+                type="number"
+                value={menuForm.sortOrder}
+                onChange={(event) => updateMenuForm("sortOrder", event.target.value)}
+                placeholder="10"
+              />
+            </label>
+          </div>
+
+          <label>
+            Descrizione ingredienti
+            <textarea
+              value={menuForm.description}
+              onChange={(event) =>
+                updateMenuForm("description", event.target.value)
+              }
+              placeholder="Pomodoro, mozzarella, basilico"
+            />
+          </label>
+
+          <div className="menu-editor-grid">
+            <label>
+              Tag
+              <input
+                value={menuForm.tags}
+                onChange={(event) => updateMenuForm("tags", event.target.value)}
+                placeholder="vegetariana, classica"
+              />
+            </label>
+            <label>
+              Allergeni
+              <input
+                value={menuForm.allergens}
+                onChange={(event) =>
+                  updateMenuForm("allergens", event.target.value)
+                }
+                placeholder="glutine, latte"
+              />
+            </label>
+          </div>
+
+          <label className="menu-featured-check">
+            <input
+              checked={menuForm.featured}
+              type="checkbox"
+              onChange={(event) =>
+                updateMenuForm("featured", event.target.checked)
+              }
+            />
+            Segna come piu richiesta / novita
+          </label>
+
+          <div className="menu-editor-actions">
+            <button type="submit" disabled={menuSaving}>
+              {menuSaving
+                ? "Salvataggio..."
+                : editingMenuId
+                  ? "Salva modifiche"
+                  : "Aggiungi al menu"}
+            </button>
+            {editingMenuId && (
+              <button type="button" onClick={resetMenuForm}>
+                Annulla modifica
+              </button>
+            )}
+          </div>
+        </form>
+
+        <div className="menu-admin-list">
+          <div className="section-heading">
+            <p className="eyebrow">Prodotti pubblicati</p>
+            <h2>Menu della pizzeria</h2>
+          </div>
+          {MENU_CATEGORY_OPTIONS.map((category) => {
+            const items = groupedMenu[category.value] || [];
+            if (items.length === 0) return null;
+
+            return (
+              <section className="menu-admin-category" key={category.value}>
+                <h3>{category.label}</h3>
+                <div className="menu-admin-items">
+                  {items.map((item) => (
+                    <article
+                      className={`menu-admin-item ${item.available ? "" : "off"}`}
+                      key={item._id}
+                    >
+                      <div>
+                        <strong>
+                          {item.emoji || "🍕"} {item.name}
+                        </strong>
+                        <span>{item.description || "Senza descrizione"}</span>
+                        <small>
+                          {money(item.price)} · {item.unit || "pezzo"} · ordine{" "}
+                          {item.sortOrder || 0}
+                        </small>
+                      </div>
+                      <div className="menu-admin-actions">
+                        <button type="button" onClick={() => editMenuItem(item)}>
+                          Modifica
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => changeMenuAvailability(item._id)}
+                        >
+                          {item.available ? "Nascondi" : "Mostra"}
+                        </button>
+                        <button
+                          className="danger"
+                          type="button"
+                          onClick={() => removeMenuItem(item._id)}
+                        >
+                          Elimina
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="capacity-strip">
         {(availability?.slots || []).map((slot) => (

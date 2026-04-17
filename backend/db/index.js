@@ -46,6 +46,7 @@ const menuItemSchema = new mongoose.Schema(
         "pizza",
         "pizze-tonde",
         "pizza-teglia",
+        "pizza-speciali",
         "fritti",
         "drink",
         "bevande",

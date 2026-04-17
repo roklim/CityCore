@@ -21,6 +21,48 @@ export function getMenu() {
   return request("/menu");
 }
 
+export function getAdminMenu(token) {
+  return request("/menu/all", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function createMenuItem(item, token) {
+  return request("/menu", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(item),
+  });
+}
+
+export function updateMenuItem(id, item, token) {
+  return request(`/menu/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(item),
+  });
+}
+
+export function toggleMenuItem(id, token) {
+  return request(`/menu/${id}/toggle`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function deleteMenuItem(id, token) {
+  return request(`/menu/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export function getAvailability(date) {
   return request(`/orders/availability?date=${encodeURIComponent(date)}`);
 }

@@ -33,6 +33,7 @@ body.drawer-open {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -626,6 +627,9 @@ button {
 .checkout-panel input,
 .checkout-panel textarea,
 .login-panel input,
+.menu-editor-panel input,
+.menu-editor-panel select,
+.menu-editor-panel textarea,
 .admin-actions input {
   width: 100%;
   border: 1px solid var(--line);
@@ -1130,6 +1134,148 @@ button {
   opacity: 0.65;
 }
 
+.admin-menu-manager {
+  display: grid;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.menu-editor-panel,
+.menu-admin-list {
+  background: rgba(255, 250, 241, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(64, 42, 27, 0.08);
+  padding: 18px;
+}
+
+.menu-editor-panel label {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+  color: var(--basil);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.menu-editor-panel textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.menu-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-featured-check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  color: var(--ink) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.menu-featured-check input {
+  width: auto;
+}
+
+.menu-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.menu-editor-actions button,
+.menu-admin-actions button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--basil);
+  color: white;
+  font-weight: 900;
+  padding: 10px 13px;
+}
+
+.menu-editor-actions button:last-child {
+  background: rgba(33, 25, 20, 0.12);
+  color: var(--ink);
+}
+
+.menu-editor-actions button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.menu-admin-list {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.menu-admin-category {
+  display: grid;
+  gap: 10px;
+}
+
+.menu-admin-category h3 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-size: 28px;
+}
+
+.menu-admin-items {
+  display: grid;
+  gap: 8px;
+}
+
+.menu-admin-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.menu-admin-item.off {
+  opacity: 0.58;
+}
+
+.menu-admin-item div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.menu-admin-item span,
+.menu-admin-item small {
+  color: var(--muted);
+}
+
+.menu-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.menu-admin-actions button {
+  background: rgba(47, 103, 70, 0.12);
+  color: var(--basil);
+  font-size: 12px;
+}
+
+.menu-admin-actions button.danger {
+  background: rgba(201, 70, 44, 0.12);
+  color: var(--tomato);
+}
+
 .capacity-strip {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
@@ -1410,8 +1556,19 @@ button {
   }
 
   .admin-header,
-  .admin-actions {
+  .admin-actions,
+  .admin-menu-manager {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-menu-manager,
+  .menu-editor-grid,
+  .menu-admin-item {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-admin-actions {
+    justify-content: flex-start;
   }
 }
