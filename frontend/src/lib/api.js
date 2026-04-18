@@ -4,24 +4,150 @@ const API_BASE_URL =
     ? "http://localhost:3000/api"
     : "https://mucho-gusto-mg5y.onrender.com/api");
 
+const DEFAULT_BUSINESS_SLUG = import.meta.env.VITE_BUSINESS_SLUG || "mucho-gusto";
+
+// Sessione admin salvata dal frontend. La usiamo solo per UX/routing: il vero
+// isolamento tenant resta nel backend tramite JWT con businessId.
+function getStoredAdminSession() {
+  try {
+    return JSON.parse(localStorage.getItem("admin_session") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function getBusinessSlug() {
+  const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+  const search = typeof window === "undefined" ? "" : window.location.search;
+  const params = new URLSearchParams(search);
+  const session = getStoredAdminSession();
+  const adminMatch = pathname.match(/^\/admin\/([^/]+)/);
+  const publicMatch = pathname.match(/^\/p\/([^/]+)/);
+  const match = adminMatch || publicMatch;
+  if (
+    pathname.startsWith("/admin") &&
+    session.role &&
+    session.role !== "global_admin" &&
+    session.business?.slug
+  ) {
+    // Un owner/admin/staff non puo' cambiare tenant navigando manualmente:
+    // anche il frontend continua a inviare lo slug del suo business.
+    return session.business.slug;
+  }
+  if (params.get("business")) return params.get("business");
+  return match?.[1] || DEFAULT_BUSINESS_SLUG;
+}
+
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  // Wrapper unico per fetch: aggiunge sempre lo slug business e normalizza gli
+  // errori backend in Error leggibili dal resto dell'app.
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      "X-Business-Slug": getBusinessSlug(),
+      ...(options.headers || {}),
+    },
+  });
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const error = new Error(data.error || "Richiesta fallita");
+    const isMissingBackendRoute =
+      response.status === 404 && data.error === "Endpoint non trovato";
+    const message = isMissingBackendRoute
+      ? `Endpoint backend non trovato (${path}). Riavvia il backend o verifica che stia girando il codice aggiornato.`
+      : data.error || "Richiesta fallita";
+    const error = new Error(message);
     error.status = response.status;
+    error.path = path;
     throw error;
   }
 
   return data;
 }
 
+export async function getCurrentBusiness() {
+  // Risolve branding/features del business corrente per pagina pubblica/admin.
+  const data = await request("/business/current");
+  return data.business;
+}
+
+export async function getMe(token) {
+  // Reidrata la sessione admin dopo refresh pagina.
+  return request("/auth/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getPlatformBusinesses(token) {
+  // Solo global_admin: elenco e metriche cross-business.
+  const data = await request("/platform/businesses", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return data.businesses || [];
+}
+
+export function createPlatformBusiness(business, token) {
+  // Crea tenant e, se fornito, anche owner Mongo con password temporanea.
+  return request("/platform/businesses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(business),
+  });
+}
+
+export function updatePlatformBusiness(id, business, token) {
+  return request(`/platform/businesses/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(business),
+  });
+}
+
+export async function getBusinessUsers(businessId, token) {
+  // Solo global_admin: utenti owner/admin/staff del business selezionato.
+  const data = await request(`/platform/businesses/${businessId}/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return data.users || [];
+}
+
+export function createBusinessUser(businessId, user, token) {
+  return request(`/platform/businesses/${businessId}/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(user),
+  });
+}
+
+export function updateBusinessUser(userId, user, token) {
+  return request(`/platform/users/${userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(user),
+  });
+}
+
 export function getMenu() {
+  // Menu pubblico: il backend restituisce solo prodotti disponibili.
   return request("/menu");
 }
 
 export function getAdminMenu(token) {
+  // Menu admin: include prodotti nascosti/esauriti del tenant.
   return request("/menu/all", {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -148,6 +274,7 @@ export function updateStoreSettings(settings, token) {
 }
 
 export function createOrder(order) {
+  // Creazione ordine pubblico. Il tenant viene risolto da slug/header.
   return request("/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -168,10 +295,11 @@ export async function getCustomerOrders(phone) {
 }
 
 export function loginAdmin(username, password) {
+  // businessSlug permette login owner/admin/staff sulla propria app dedicata.
   return request("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, email: username, password, businessSlug: getBusinessSlug() }),
   });
 }
 

@@ -3,15 +3,19 @@
 const router = require("express").Router();
 const mongoose = require("mongoose");
 const { Coupon } = require("../db");
-const { requireAuth } = require("../middleware/auth");
+const { requireBusinessRole } = require("../middleware/auth");
+const { businessScope, resolveBusiness } = require("../middleware/business");
 const asyncHandler = require("../middleware/asyncHandler");
 
-router.use(requireAuth);
+// I coupon sono gestiti solo da owner/admin e sempre dentro il tenant corrente.
+router.use(requireBusinessRole(["owner", "admin"]), resolveBusiness);
 
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const coupons = await Coupon.find().sort({ createdAt: -1 }).lean();
+    const coupons = await Coupon.find(businessScope(req))
+      .sort({ createdAt: -1 })
+      .lean();
     res.json({ coupons });
   }),
 );
@@ -19,6 +23,7 @@ router.get(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
+    // Validazione minima lato server per evitare coupon vuoti o sconti negativi.
     const { code, type, value, expiresAt, usageLimit, active } = req.body || {};
 
     if (!code?.trim()) return res.status(400).json({ error: "Codice obbligatorio" });
@@ -30,6 +35,7 @@ router.post(
     }
 
     const coupon = await Coupon.create({
+      businessId: req.businessId,
       code,
       type,
       value: Number(value),
@@ -49,6 +55,7 @@ router.put(
       return res.status(400).json({ error: "ID non valido" });
     }
 
+    // Allowlist: evita che campi non previsti vengano scritti sul documento.
     const allowed = ["code", "type", "value", "expiresAt", "usageLimit", "active"];
     const update = {};
     for (const key of allowed) {
@@ -57,10 +64,14 @@ router.put(
     if (update.value !== undefined) update.value = Number(update.value);
     if (update.usageLimit !== undefined) update.usageLimit = Number(update.usageLimit) || 0;
 
-    const coupon = await Coupon.findByIdAndUpdate(req.params.id, update, {
-      new: true,
-      runValidators: true,
-    });
+    const coupon = await Coupon.findOneAndUpdate(
+      businessScope(req, { _id: req.params.id }),
+      update,
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    );
 
     if (!coupon) return res.status(404).json({ error: "Coupon non trovato" });
     res.json(coupon);
@@ -74,7 +85,9 @@ router.patch(
       return res.status(400).json({ error: "ID non valido" });
     }
 
-    const coupon = await Coupon.findById(req.params.id);
+    const coupon = await Coupon.findOne(
+      businessScope(req, { _id: req.params.id }),
+    );
     if (!coupon) return res.status(404).json({ error: "Coupon non trovato" });
 
     coupon.active = !coupon.active;
@@ -90,7 +103,9 @@ router.delete(
       return res.status(400).json({ error: "ID non valido" });
     }
 
-    const coupon = await Coupon.findByIdAndDelete(req.params.id);
+    const coupon = await Coupon.findOneAndDelete(
+      businessScope(req, { _id: req.params.id }),
+    );
     if (!coupon) return res.status(404).json({ error: "Coupon non trovato" });
     res.json({ ok: true });
   }),

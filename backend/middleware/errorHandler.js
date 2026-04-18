@@ -1,16 +1,20 @@
 "use strict";
 
-// eslint-disable-next-line no-unused-vars
+// Middleware finale Express per errori applicativi e imprevisti.
+// Tiene le risposte client semplici e centralizza i log server.
 function errorHandler(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
 
-  // Log dettagliato solo in sviluppo
+  // In sviluppo vogliamo lo stack completo; in produzione basta una riga
+  // compatta per log provider tipo Render senza esporre dettagli al client.
   if (process.env.NODE_ENV !== "production") {
-    console.error("❌ ERROR:", err);
+    console.error("[error]", err);
   } else {
-    console.error(`❌ [${status}] ${req.method} ${req.url} — ${err.message}`);
+    console.error(`[error] [${status}] ${req.method} ${req.url} - ${err.message}`);
   }
 
+  // Gli errori 5xx rispondono con messaggio generico per non rivelare dettagli
+  // interni del server o del database.
   res.status(status).json({
     error: status < 500 ? err.message : "Errore interno del server",
   });

@@ -3,12 +3,17 @@
 const router = require("express").Router();
 const { Customer, Order } = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { businessScope, resolveBusiness } = require("../middleware/business");
 const asyncHandler = require("../middleware/asyncHandler");
 
+// I telefoni vengono salvati in formato numerico compatto per ricerca semplice
+// e per evitare duplicati dovuti a spazi, +39 o trattini.
 function normalizePhone(phone) {
   return String(phone || "").replace(/\D/g, "");
 }
 
+// Nel lookup pubblico non esponiamo dati admin o note interne: solo riepilogo
+// utile al cliente.
 function publicOrder(order) {
   if (!order) return null;
 
@@ -24,20 +29,26 @@ function publicOrder(order) {
   };
 }
 
+// Tutte le query clienti sono isolate per business.
+router.use(resolveBusiness);
+
 // GET /api/customers/lookup?phone=...
 router.get(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
+    // Ricerca admin per nome o telefono, con metriche aggregate sugli ordini.
     const query = String(req.query.q || "").trim();
-    const filter = {};
+    let filter = businessScope(req);
 
     if (query) {
       const phone = normalizePhone(query);
-      filter.$or = [
-        { name: { $regex: query, $options: "i" } },
-        ...(phone ? [{ phone: { $regex: phone } }] : []),
-      ];
+      filter = businessScope(req, {
+        $or: [
+          { name: { $regex: query, $options: "i" } },
+          ...(phone ? [{ phone: { $regex: phone } }] : []),
+        ],
+      });
     }
 
     const customers = await Customer.find(filter)
@@ -47,7 +58,11 @@ router.get(
 
     const phones = customers.map((customer) => customer.phone).filter(Boolean);
     const orderAgg = await Order.aggregate([
-      { $match: { phone: { $in: phones } } },
+      {
+        $match: businessScope(req, {
+          phone: { $in: phones },
+        }),
+      },
       {
         $group: {
           _id: "$phone",
@@ -70,6 +85,8 @@ router.get(
 router.get(
   "/lookup",
   asyncHandler(async (req, res) => {
+    // Lookup pubblico usato dal checkout: recupera fidelita e ultimo ordine
+    // senza richiedere account cliente.
     const phone = normalizePhone(req.query.phone);
 
     if (phone.length < 6) {
@@ -78,24 +95,31 @@ router.get(
         .json({ error: "Inserisci un numero di telefono valido" });
     }
 
-    let customer = await Customer.findOne({ phone }).lean();
-    const lastOrder = await Order.findOne({
-      phone,
-      status: { $ne: "cancelled" },
-    })
+    let customer = await Customer.findOne(
+      businessScope(req, { phone }),
+    ).lean();
+    const lastOrder = await Order.findOne(
+      businessScope(req, {
+        phone,
+        status: { $ne: "cancelled" },
+      }),
+    )
       .sort({ createdAt: -1 })
       .lean();
 
     if (!customer && lastOrder) {
+      // Backfill pigro: se esistono ordini storici ma manca il Customer,
+      // creiamo il profilo al primo lookup invece di lanciare migrazioni pesanti.
       const [totalOrders, completedOrders] = await Promise.all([
-        Order.countDocuments({ phone }),
-        Order.countDocuments({ phone, status: "done" }),
+        Order.countDocuments(businessScope(req, { phone })),
+        Order.countDocuments(businessScope(req, { phone, status: "done" })),
       ]);
 
       customer = await Customer.findOneAndUpdate(
-        { phone },
+        { businessId: req.businessId, phone },
         {
           $set: {
+            businessId: req.businessId,
             name: lastOrder.customer,
             lastOrder: lastOrder._id,
             lastOrderAt: lastOrder.createdAt,
@@ -104,7 +128,7 @@ router.get(
             points: completedOrders,
           },
         },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
+        { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
       ).lean();
     }
 

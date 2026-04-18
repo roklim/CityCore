@@ -3,25 +3,24 @@
 const mongoose = require("mongoose");
 const config = require("../config");
 
-// ─────────────────────────────────────────────
-// CONNECTION
-// ─────────────────────────────────────────────
-
 let isConnected = false;
+const DEFAULT_BUSINESS_SLUG = config.business.defaultSlug || "mucho-gusto";
 
+// Mantiene una sola connessione Mongoose per processo Node. Su ambienti cloud
+// evita riconnessioni inutili quando il server viene risvegliato o riavviato.
 async function connect() {
   if (isConnected) return;
 
   mongoose.set("strictQuery", true);
 
   mongoose.connection.on("connected", () =>
-    console.log("[db] 🟢 MongoDB connesso"),
+    console.log("[db] MongoDB connesso"),
   );
   mongoose.connection.on("error", (err) =>
-    console.error("[db] 🔴 Errore:", err.message),
+    console.error("[db] Errore:", err.message),
   );
   mongoose.connection.on("disconnected", () =>
-    console.warn("[db] 🟡 Disconnesso"),
+    console.warn("[db] Disconnesso"),
   );
 
   await mongoose.connect(config.mongo.uri, {
@@ -31,43 +30,119 @@ async function connect() {
   isConnected = true;
 }
 
-// ─────────────────────────────────────────────
-// SCHEMAS
-// ─────────────────────────────────────────────
-
-const menuItemSchema = new mongoose.Schema(
+// Business e' il tenant principale della piattaforma: ogni pizzeria/attivita
+// ha il proprio slug, branding, piano, feature abilitate e impostazioni base.
+const businessSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, unique: true, trim: true },
-    description: { type: String, default: "" },
-    price: { type: Number, required: true, min: 0 },
-    category: {
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    },
+    type: {
       type: String,
       enum: [
-        "pizza",
-        "pizze-tonde",
-        "pizza-teglia",
-        "pizza-speciali",
-        "fritti",
-        "drink",
-        "bevande",
-        "dolci",
-        "dessert",
-        "extra",
+        "pizzeria",
+        "sushi",
+        "restaurant",
+        "bar",
+        "bike_rental",
+        "service",
+        "custom",
       ],
-      default: "pizza",
+      default: "pizzeria",
     },
+    ownerUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    plan: { type: String, enum: ["free", "pro", "premium"], default: "free" },
+    subscriptionStatus: {
+      type: String,
+      enum: ["trialing", "active", "past_due", "cancelled"],
+      default: "trialing",
+    },
+    trialEndsAt: { type: Date },
+    branding: {
+      logoUrl: { type: String, default: "" },
+      primaryColor: { type: String, default: "#2C5F2E" },
+      accentColor: { type: String, default: "#C0392B" },
+      publicName: { type: String, default: "" },
+    },
+    deployment: {
+      publicUrl: { type: String, default: "", trim: true },
+      vercelProjectName: { type: String, default: "", trim: true },
+      apiBaseUrl: { type: String, default: "", trim: true },
+      notes: { type: String, default: "", trim: true, maxlength: 500 },
+    },
+    features: {
+      ordering: { type: Boolean, default: true },
+      booking: { type: Boolean, default: false },
+      rental: { type: Boolean, default: false },
+      customPizza: { type: Boolean, default: true },
+      coupons: { type: Boolean, default: true },
+      customerAccounts: { type: Boolean, default: true },
+      analytics: { type: Boolean, default: true },
+    },
+    settings: {
+      timezone: { type: String, default: "Europe/Rome" },
+      currency: { type: String, default: "EUR" },
+      locale: { type: String, default: "it-IT" },
+      publicMessage: { type: String, default: "" },
+      openingHours: { type: String, default: "Mar-Dom 18:00-22:30" },
+    },
+  },
+  { timestamps: true },
+);
+
+// Utenti Mongo reali per Milestone 2. Gli utenti owner/admin/staff sono sempre
+// collegati a un businessId; il global_admin resta un ruolo di piattaforma.
+const userSchema = new mongoose.Schema(
+  {
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
+    name: { type: String, default: "", trim: true, maxlength: 100 },
+    email: { type: String, trim: true, lowercase: true },
+    passwordHash: { type: String, default: "" },
+    role: {
+      type: String,
+      enum: ["global_admin", "owner", "admin", "staff"],
+      default: "owner",
+    },
+    active: { type: Boolean, default: true },
+    lastLoginAt: { type: Date },
+  },
+  { timestamps: true },
+);
+
+// MenuItem nasce come prodotto food, ma contiene gia' module/type/metadata per
+// diventare un item vendibile riusabile anche per rental o booking in futuro.
+const menuItemSchema = new mongoose.Schema(
+  {
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
+    module: {
+      type: String,
+      enum: ["ordering", "rental", "booking"],
+      default: "ordering",
+    },
+    type: {
+      type: String,
+      enum: ["product", "service", "rental_item"],
+      default: "product",
+    },
+    name: { type: String, required: true, trim: true },
+    description: { type: String, default: "" },
+    price: { type: Number, required: true, min: 0 },
+    category: { type: String, default: "pizza", trim: true },
     available: { type: Boolean, default: true },
     emoji: { type: String, default: "🍕" },
     imageUrl: { type: String, default: "", trim: true },
     sortOrder: { type: Number, default: 0 },
-    unit: {
-      type: String,
-      enum: ["pezzo", "porzione", "trancio", "teglia", "lattina", "bottiglia"],
-      default: "pezzo",
-    },
+    unit: { type: String, default: "pezzo", trim: true },
     tags: { type: [String], default: [] },
     allergens: { type: [String], default: [] },
     featured: { type: Boolean, default: false },
+    metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true },
 );
@@ -83,13 +158,21 @@ const orderItemSchema = new mongoose.Schema(
   { _id: false },
 );
 
+// Ordine del modulo ordering: oggi gestisce asporto/ritiro, ma businessId e
+// fulfillmentType lo rendono compatibile con piu' business e varianti future.
 const orderSchema = new mongoose.Schema(
   {
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
     customer: { type: String, required: true, trim: true, maxlength: 80 },
     phone: { type: String, default: "", trim: true },
     notes: { type: String, default: "" },
     items: { type: [orderItemSchema], required: true },
     total: { type: Number, required: true, min: 0 },
+    fulfillmentType: {
+      type: String,
+      enum: ["pickup", "delivery", "dine_in"],
+      default: "pickup",
+    },
     pickupDate: {
       type: String,
       required: true,
@@ -117,8 +200,11 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Cliente locale al business. Lo stesso numero puo' esistere in tenant diversi
+// senza creare collisioni grazie all'indice composto businessId + phone.
 const customerSchema = new mongoose.Schema(
   {
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
     name: { type: String, default: "", trim: true, maxlength: 80 },
     phone: { type: String, required: true, trim: true },
     points: { type: Number, default: 0, min: 0 },
@@ -130,9 +216,12 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Coupon tenant-aware: ogni codice e' unico solo dentro il business, non su
+// tutta la piattaforma.
 const couponSchema = new mongoose.Schema(
   {
-    code: { type: String, required: true, unique: true, trim: true, uppercase: true },
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
+    code: { type: String, required: true, trim: true, uppercase: true },
     type: { type: String, enum: ["percent", "fixed"], default: "percent" },
     value: { type: Number, required: true, min: 0 },
     expiresAt: { type: String, default: "" },
@@ -143,8 +232,11 @@ const couponSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Impostazioni operative del singolo locale. Restano separate da Business per
+// mantenere compatibile il pannello admin gia' esistente.
 const storeSettingsSchema = new mongoose.Schema(
   {
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
     openingHours: { type: String, default: "Mar-Dom 18:00-22:30" },
     deliveryCost: { type: Number, default: 0, min: 0 },
     minimumOrder: { type: Number, default: 0, min: 0 },
@@ -154,16 +246,67 @@ const storeSettingsSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-orderSchema.index({ status: 1, createdAt: -1 });
-orderSchema.index({ pickupDate: 1, pickupTime: 1 });
-menuItemSchema.index({ category: 1, sortOrder: 1, name: 1 });
-customerSchema.index({ phone: 1 }, { unique: true });
-couponSchema.index({ active: 1, expiresAt: 1 });
+// Scaffold del modulo booking: non e' ancora UI completa, ma il modello rende
+// chiara l'estensione verso tavoli, appuntamenti o piccole prenotazioni.
+const bookingSchema = new mongoose.Schema(
+  {
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
+    customer: { type: String, required: true, trim: true, maxlength: 80 },
+    phone: { type: String, default: "", trim: true },
+    resourceId: { type: mongoose.Schema.Types.ObjectId },
+    date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
+    startTime: { type: String, required: true, match: /^\d{2}:\d{2}$/ },
+    endTime: { type: String, default: "", match: /^$|^\d{2}:\d{2}$/ },
+    partySize: { type: Number, default: 1, min: 1 },
+    status: {
+      type: String,
+      enum: ["requested", "confirmed", "completed", "cancelled"],
+      default: "requested",
+    },
+    notes: { type: String, default: "", trim: true, maxlength: 360 },
+  },
+  { timestamps: true },
+);
 
-// ── Guard against model overwrite (Vercel hot-reload) ──────
+// Scaffold del modulo rental: stesso core multi-tenant, pensato per noleggio
+// bici/attrezzatura con durata, deposito e stato.
+const rentalSchema = new mongoose.Schema(
+  {
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
+    customer: { type: String, required: true, trim: true, maxlength: 80 },
+    phone: { type: String, default: "", trim: true },
+    rentalItemId: { type: mongoose.Schema.Types.ObjectId, ref: "MenuItem" },
+    startDateTime: { type: Date, required: true },
+    endDateTime: { type: Date, required: true },
+    duration: { type: Number, default: 0, min: 0 },
+    total: { type: Number, required: true, min: 0 },
+    deposit: { type: Number, default: 0, min: 0 },
+    status: {
+      type: String,
+      enum: ["requested", "active", "returned", "cancelled"],
+      default: "requested",
+    },
+    notes: { type: String, default: "", trim: true, maxlength: 360 },
+  },
+  { timestamps: true },
+);
+
+// Indici multi-tenant: le unicita' importanti sono sempre composte con
+// businessId, cosi' due attivita possono usare stessi nomi/codici/telefoni.
+userSchema.index({ businessId: 1, email: 1 }, { unique: true, sparse: true });
+menuItemSchema.index({ businessId: 1, category: 1, sortOrder: 1, name: 1 });
+menuItemSchema.index({ businessId: 1, name: 1 }, { unique: true, sparse: true });
+orderSchema.index({ businessId: 1, status: 1, createdAt: -1 });
+orderSchema.index({ businessId: 1, pickupDate: 1, pickupTime: 1 });
+customerSchema.index({ businessId: 1, phone: 1 }, { unique: true, sparse: true });
+couponSchema.index({ businessId: 1, active: 1, expiresAt: 1 });
+couponSchema.index({ businessId: 1, code: 1 }, { unique: true, sparse: true });
+
+const Business =
+  mongoose.models.Business || mongoose.model("Business", businessSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 const MenuItem =
   mongoose.models.MenuItem || mongoose.model("MenuItem", menuItemSchema);
-
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 const Customer =
   mongoose.models.Customer || mongoose.model("Customer", customerSchema);
@@ -171,18 +314,86 @@ const Coupon = mongoose.models.Coupon || mongoose.model("Coupon", couponSchema);
 const StoreSettings =
   mongoose.models.StoreSettings ||
   mongoose.model("StoreSettings", storeSettingsSchema);
+const Booking = mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
+const Rental = mongoose.models.Rental || mongoose.model("Rental", rentalSchema);
 
-// ─────────────────────────────────────────────
-// SEED
-// ─────────────────────────────────────────────
+// Crea il tenant Mucho Gusto di fallback. Serve per far continuare a girare la
+// vecchia app single-business mentre il progetto diventa SaaS multi-business.
+async function ensureDefaultBusiness() {
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
+  return Business.findOneAndUpdate(
+    { slug: DEFAULT_BUSINESS_SLUG },
+    {
+      $setOnInsert: {
+        name: "Mucho Gusto",
+        slug: DEFAULT_BUSINESS_SLUG,
+        type: "pizzeria",
+        plan: "free",
+        subscriptionStatus: "trialing",
+        trialEndsAt,
+        branding: {
+          publicName: "Mucho Gusto",
+          primaryColor: "#2C5F2E",
+          accentColor: "#C0392B",
+        },
+        deployment: {
+          publicUrl: "",
+          vercelProjectName: "mucho-gusto",
+          apiBaseUrl: "",
+          notes: "Vercel app dedicata con VITE_BUSINESS_SLUG=mucho-gusto",
+        },
+        features: {
+          ordering: true,
+          booking: false,
+          rental: false,
+          customPizza: true,
+          coupons: true,
+          customerAccounts: true,
+          analytics: true,
+        },
+        settings: {
+          timezone: "Europe/Rome",
+          currency: "EUR",
+          locale: "it-IT",
+          openingHours: "Mar-Dom 18:00-22:30",
+        },
+      },
+    },
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
+  );
+}
+
+// Migrazione morbida: i documenti vecchi senza businessId vengono agganciati al
+// tenant di default invece di richiedere una migrazione manuale immediata.
+async function attachLegacyDataToDefaultBusiness(businessId) {
+  const legacyFilter = {
+    $or: [{ businessId: { $exists: false } }, { businessId: null }],
+  };
+
+  await Promise.all([
+    MenuItem.updateMany(legacyFilter, { $set: { businessId } }),
+    Order.updateMany(legacyFilter, { $set: { businessId } }),
+    Customer.updateMany(legacyFilter, { $set: { businessId } }),
+    Coupon.updateMany(legacyFilter, { $set: { businessId } }),
+    StoreSettings.updateMany(legacyFilter, { $set: { businessId } }),
+  ]);
+}
+
+// Seed idempotente: crea dati demo solo se il business di default non ha menu.
+// In produzione evita duplicati ad ogni riavvio.
 async function seedMenu() {
   try {
-    const count = await MenuItem.countDocuments();
+    const defaultBusiness = await ensureDefaultBusiness();
+    await attachLegacyDataToDefaultBusiness(defaultBusiness._id);
+
+    const count = await MenuItem.countDocuments({ businessId: defaultBusiness._id });
     if (count > 0) return;
 
     await MenuItem.insertMany([
       {
+        businessId: defaultBusiness._id,
         name: "Margherita",
         description: "Pomodoro, fior di latte, basilico",
         price: 8.5,
@@ -191,6 +402,7 @@ async function seedMenu() {
         sortOrder: 10,
       },
       {
+        businessId: defaultBusiness._id,
         name: "Diavola",
         description: "Pomodoro, mozzarella, salame piccante",
         price: 10,
@@ -200,6 +412,7 @@ async function seedMenu() {
         tags: ["piccante"],
       },
       {
+        businessId: defaultBusiness._id,
         name: "Quattro Formaggi",
         description: "Mozzarella, gorgonzola, brie, parmigiano",
         price: 11,
@@ -208,6 +421,7 @@ async function seedMenu() {
         sortOrder: 30,
       },
       {
+        businessId: defaultBusiness._id,
         name: "Prosciutto",
         description: "Pomodoro, mozzarella, prosciutto cotto",
         price: 10,
@@ -216,6 +430,7 @@ async function seedMenu() {
         sortOrder: 40,
       },
       {
+        businessId: defaultBusiness._id,
         name: "Margherita in teglia",
         description: "Trancio alto e soffice con pomodoro e mozzarella",
         price: 4,
@@ -225,6 +440,7 @@ async function seedMenu() {
         unit: "trancio",
       },
       {
+        businessId: defaultBusiness._id,
         name: "Suppli al telefono",
         description: "Riso, pomodoro e cuore filante",
         price: 2.5,
@@ -233,6 +449,7 @@ async function seedMenu() {
         sortOrder: 10,
       },
       {
+        businessId: defaultBusiness._id,
         name: "Patatine fritte",
         description: "Porzione croccante",
         price: 3.5,
@@ -242,6 +459,7 @@ async function seedMenu() {
         unit: "porzione",
       },
       {
+        businessId: defaultBusiness._id,
         name: "Coca Cola",
         description: "33cl",
         price: 2.5,
@@ -251,6 +469,7 @@ async function seedMenu() {
         unit: "lattina",
       },
       {
+        businessId: defaultBusiness._id,
         name: "Acqua",
         description: "50cl naturale o frizzante",
         price: 1.5,
@@ -260,7 +479,8 @@ async function seedMenu() {
         unit: "bottiglia",
       },
       {
-        name: "Tiramisù",
+        businessId: defaultBusiness._id,
+        name: "Tiramisu",
         description: "Fatto in casa",
         price: 4.5,
         category: "dolci",
@@ -269,22 +489,24 @@ async function seedMenu() {
       },
     ]);
 
-    console.log("[db] 🍕 Seed menu completato");
+    console.log("[db] Seed menu completato");
   } catch (err) {
-    console.error("[db] ❌ Seed error:", err.message);
+    console.error("[db] Seed error:", err.message);
   }
 }
-
-// ─────────────────────────────────────────────
-// EXPORT
-// ─────────────────────────────────────────────
 
 module.exports = {
   connect,
   seedMenu,
+  ensureDefaultBusiness,
+  DEFAULT_BUSINESS_SLUG,
+  Business,
+  User,
   MenuItem,
   Order,
   Customer,
   Coupon,
   StoreSettings,
+  Booking,
+  Rental,
 };

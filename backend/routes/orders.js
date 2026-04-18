@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const { Customer, Order } = require("../db");
 const config = require("../config");
 const { requireAuth } = require("../middleware/auth");
+const { businessScope, resolveBusiness } = require("../middleware/business");
 const asyncHandler = require("../middleware/asyncHandler");
 const { normalizePhone } = require("./customers");
 
@@ -13,6 +14,12 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
 const POINTS_PER_COMPLETED_ORDER = 1;
 
+// Ogni route ordini viene risolta su un business prima di leggere/scrivere dati.
+// Per utenti business il resolver usa il businessId del JWT, non quello inviato
+// dal browser.
+router.use(resolveBusiness);
+
+// Utility orarie isolate per tenere leggibile la logica degli slot di ritiro.
 function timeToMinutes(time) {
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
@@ -33,6 +40,8 @@ function flexiblePhoneRegex(phone) {
 }
 
 function buildPhoneSearchFilter(phone) {
+  // Permette di ritrovare ordini anche se il numero e' stato salvato con o
+  // senza prefisso italiano.
   const candidates = new Set([phone]);
 
   if (phone.startsWith("39") && phone.length > 10) {
@@ -52,6 +61,7 @@ function buildPhoneSearchFilter(phone) {
 }
 
 function getPickupNow() {
+  // Usa il timezone configurato invece del timezone della macchina server.
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: config.pickup.timeZone,
     year: "numeric",
@@ -101,7 +111,9 @@ function generateSlots(date) {
   return slots;
 }
 
-async function buildAvailability(date) {
+async function buildAvailability(req, date) {
+  // Calcola disponibilita slot per il tenant corrente contando solo ordini non
+  // annullati dello stesso business.
   if (isClosedDate(date)) {
     return {
       date,
@@ -116,10 +128,10 @@ async function buildAvailability(date) {
 
   const counts = await Order.aggregate([
     {
-      $match: {
+      $match: businessScope(req, {
         pickupDate: date,
         status: { $ne: "cancelled" },
-      },
+      }),
     },
     {
       $group: {
@@ -157,6 +169,8 @@ async function buildAvailability(date) {
 }
 
 function validatePickup({ pickupDate, pickupTime, pickupSlot }) {
+  // La validazione e' server-side: il client puo' suggerire gli slot, ma non e'
+  // fonte affidabile per orari passati, giorni chiusi o slot non generati.
   if (!DATE_RE.test(pickupDate || "")) {
     return "pickupDate obbligatoria nel formato YYYY-MM-DD";
   }
@@ -184,9 +198,10 @@ router.get(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
+    // Vista admin: filtri e paginazione restano sempre dentro businessScope.
     const { status, limit = 50, page = 1, from, to, pickupDate } = req.query;
 
-    const filter = {};
+    const filter = businessScope(req);
     if (status && status !== "all" && VALID_STATUSES.includes(status)) {
       filter.status = status;
     }
@@ -228,25 +243,26 @@ router.get(
   "/stats",
   requireAuth,
   asyncHandler(async (req, res) => {
+    // Metriche operative del giorno per la dashboard "Oggi".
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
     const [statusAgg, revenueAgg, topProducts, recentOrders] = await Promise.all([
       Order.aggregate([
         {
-          $match: {
+          $match: businessScope(req, {
             createdAt: { $gte: todayStart },
             status: { $ne: "cancelled" },
-          },
+          }),
         },
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ]),
       Order.aggregate([
         {
-          $match: {
+          $match: businessScope(req, {
             createdAt: { $gte: todayStart },
             status: { $ne: "cancelled" },
-          },
+          }),
         },
         {
           $group: {
@@ -258,10 +274,10 @@ router.get(
       ]),
       Order.aggregate([
         {
-          $match: {
+          $match: businessScope(req, {
             createdAt: { $gte: todayStart },
             status: { $ne: "cancelled" },
-          },
+          }),
         },
         { $unwind: "$items" },
         {
@@ -276,7 +292,7 @@ router.get(
         { $sort: { qty: -1, revenue: -1 } },
         { $limit: 5 },
       ]),
-      Order.find({ createdAt: { $gte: todayStart } })
+      Order.find(businessScope(req, { createdAt: { $gte: todayStart } }))
         .sort({ createdAt: -1 })
         .limit(8)
         .lean(),
@@ -308,6 +324,7 @@ router.get(
 router.get(
   "/availability",
   asyncHandler(async (req, res) => {
+    // Endpoint pubblico usato dal checkout per mostrare slot disponibili.
     const { date } = req.query;
 
     if (!DATE_RE.test(date || "")) {
@@ -316,7 +333,7 @@ router.get(
         .json({ error: "Parametro date obbligatorio nel formato YYYY-MM-DD" });
     }
 
-    res.json(await buildAvailability(date));
+    res.json(await buildAvailability(req, date));
   }),
 );
 
@@ -324,6 +341,7 @@ router.get(
 router.get(
   "/customer",
   asyncHandler(async (req, res) => {
+    // Tracking leggero per cliente: mostra solo gli ultimi ordini del tenant.
     const phone = normalizePhone(req.query.phone || "");
 
     if (phone.length < 6) {
@@ -332,7 +350,9 @@ router.get(
         .json({ error: "Inserisci un numero di telefono valido" });
     }
 
-    const orders = await Order.find(buildPhoneSearchFilter(phone))
+    const orders = await Order.find(
+      businessScope(req, buildPhoneSearchFilter(phone)),
+    )
       .sort({ createdAt: -1 })
       .limit(8)
       .select(
@@ -347,6 +367,8 @@ router.get(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
+    // Creazione ordine pubblico. Prezzi e totale sono ancora derivati dal client
+    // per compatibilita col flusso esistente; hardening futuro: ricalcolare da DB.
     const {
       customer,
       phone = "",
@@ -373,10 +395,12 @@ router.post(
       return res.status(400).json({ error: pickupError });
     }
 
-    const activeOrdersInSlot = await Order.countDocuments({
-      pickupSlot,
-      status: { $ne: "cancelled" },
-    });
+    const activeOrdersInSlot = await Order.countDocuments(
+      businessScope(req, {
+        pickupSlot,
+        status: { $ne: "cancelled" },
+      }),
+    );
 
     if (activeOrdersInSlot >= config.pickup.maxOrdersPerSlot) {
       return res.status(409).json({
@@ -389,6 +413,7 @@ router.post(
     }, 0);
 
     const order = await Order.create({
+      businessId: req.businessId,
       customer: customer.trim(),
       phone: normalizePhone(phone),
       notes: notes.trim(),
@@ -400,17 +425,20 @@ router.post(
     });
 
     if (order.phone) {
+      // Aggiorna o crea il profilo cliente nel business corrente per fidelita e
+      // storico admin.
       await Customer.findOneAndUpdate(
-        { phone: order.phone },
+        { businessId: req.businessId, phone: order.phone },
         {
           $set: {
+            businessId: req.businessId,
             name: order.customer,
             lastOrder: order._id,
             lastOrderAt: order.createdAt,
           },
           $inc: { totalOrders: 1 },
         },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
+        { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
       );
     }
 
@@ -428,7 +456,9 @@ router.get(
       return res.status(400).json({ error: "ID non valido" });
     }
 
-    const order = await Order.findById(req.params.id).lean();
+    const order = await Order.findOne(
+      businessScope(req, { _id: req.params.id }),
+    ).lean();
     if (!order) return res.status(404).json({ error: "Ordine non trovato" });
 
     // Esponiamo solo i campi pubblici
@@ -464,6 +494,8 @@ router.put(
   "/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
+    // Cambio stato da admin/staff: quando l'ordine diventa done assegna punti
+    // una sola volta grazie al flag loyaltyAwarded.
     const { status, handledBy } = req.body || {};
 
     if (status && !VALID_STATUSES.includes(status)) {
@@ -482,18 +514,23 @@ router.put(
     if (status) update.status = status;
     if (handledBy) update.handledBy = handledBy;
 
-    const order = await Order.findByIdAndUpdate(req.params.id, update, {
-      new: true,
-      runValidators: true,
-    });
+    const order = await Order.findOneAndUpdate(
+      businessScope(req, { _id: req.params.id }),
+      update,
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    );
 
     if (!order) return res.status(404).json({ error: "Ordine non trovato" });
 
     if (status === "done" && order.phone && !order.loyaltyAwarded) {
       await Customer.findOneAndUpdate(
-        { phone: normalizePhone(order.phone) },
+        { businessId: req.businessId, phone: normalizePhone(order.phone) },
         {
           $set: {
+            businessId: req.businessId,
             name: order.customer,
             lastOrder: order._id,
             lastOrderAt: order.createdAt,
@@ -503,7 +540,7 @@ router.put(
             completedOrders: 1,
           },
         },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
+        { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
       );
 
       order.loyaltyAwarded = true;
@@ -525,7 +562,9 @@ router.delete(
       return res.status(400).json({ error: "ID non valido" });
     }
 
-    const order = await Order.findByIdAndDelete(req.params.id);
+    const order = await Order.findOneAndDelete(
+      businessScope(req, { _id: req.params.id }),
+    );
     if (!order) return res.status(404).json({ error: "Ordine non trovato" });
     res.json({ ok: true });
   }),

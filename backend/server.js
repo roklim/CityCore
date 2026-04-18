@@ -1,5 +1,7 @@
-// server.js
-// Entry point — avvio backend Pizzeria (Render-ready)
+"use strict";
+
+// Entry point HTTP del backend. Qui vengono montati sicurezza, middleware,
+// route API e bootstrap Mongo/seed.
 
 const express = require("express");
 const cors = require("cors");
@@ -17,13 +19,13 @@ const ordersRouter = require("./routes/orders");
 const menuRouter = require("./routes/menu");
 const couponsRouter = require("./routes/coupons");
 const settingsRouter = require("./routes/settings");
+const businessesRouter = require("./routes/businesses");
+const platformRouter = require("./routes/platform");
 
 const app = express();
 
-// ─────────────────────────────────────────────
-// SECURITY
-// ─────────────────────────────────────────────
-
+// Sicurezza HTTP di base. Helmet imposta header difensivi, CORS viene letto da
+// config per supportare sia sviluppo locale sia deploy su Vercel/Render.
 app.use(helmet());
 
 app.use(
@@ -32,21 +34,20 @@ app.use(
   }),
 );
 
-// Rate limit (anti spam / brute force)
+// Rate limit globale: protegge login e API pubbliche da spam/brute force senza
+// aggiungere un sistema anti-abuso piu' complesso.
 app.use(
   rateLimit({
     windowMs: config.rateLimit.windowMs || 15 * 60 * 1000,
     max: config.rateLimit.max || 200,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: "Troppe richieste, riprova più tardi." },
+    message: { error: "Troppe richieste, riprova piu tardi." },
   }),
 );
 
-// ─────────────────────────────────────────────
-// MIDDLEWARE BASE
-// ─────────────────────────────────────────────
-
+// Payload piccoli: l'app non carica immagini binarie dal backend, quindi 100kb
+// sono sufficienti e riducono il rischio di richieste pesanti.
 app.use(express.json({ limit: "100kb" }));
 
 app.use(
@@ -55,10 +56,7 @@ app.use(
   }),
 );
 
-// ─────────────────────────────────────────────
-// HEALTH CHECK (Render friendly)
-// ─────────────────────────────────────────────
-
+// Health check semplice per Render/Vercel monitoring e smoke test locali.
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -68,34 +66,24 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ─────────────────────────────────────────────
-// ROUTES
-// ─────────────────────────────────────────────
-
+// Route order matters: auth/business/platform sono montate prima dei moduli
+// operativi. Ogni router applica poi auth e tenant scope dove necessario.
 app.use("/api/auth", authRouter);
+app.use("/api/business", businessesRouter);
+app.use("/api/platform", platformRouter);
 app.use("/api/customers", customersRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/menu", menuRouter);
 app.use("/api/coupons", couponsRouter);
 app.use("/api/settings", settingsRouter);
 
-// ─────────────────────────────────────────────
-// 404 HANDLER
-// ─────────────────────────────────────────────
-
+// Risposta JSON uniforme per endpoint inesistenti.
 app.use((req, res) => {
   res.status(404).json({ error: "Endpoint non trovato" });
 });
 
-// ─────────────────────────────────────────────
-// ERROR HANDLER CENTRALIZZATO
-// ─────────────────────────────────────────────
-
+// Deve rimanere dopo tutte le route.
 app.use(errorHandler);
-
-// ─────────────────────────────────────────────
-// START SERVER
-// ─────────────────────────────────────────────
 
 async function start() {
   try {
@@ -108,15 +96,10 @@ async function start() {
     console.log("[db] Seed menu verificato");
 
     const server = app.listen(config.port, () => {
-      console.log(
-        `[server] 🚀 Online su porta ${config.port} (${config.nodeEnv})`,
-      );
+      console.log(`[server] Online su porta ${config.port} (${config.nodeEnv})`);
     });
 
-    // ─────────────────────────────────────────────
-    // Graceful shutdown (IMPORTANTISSIMO su Render)
-    // ─────────────────────────────────────────────
-
+    // Chiusura pulita richiesta da ambienti managed come Render.
     process.on("SIGTERM", () => {
       console.log("[server] SIGTERM ricevuto, chiusura server...");
       server.close(() => {
@@ -125,6 +108,7 @@ async function start() {
       });
     });
 
+    // Logghiamo errori inattesi senza duplicare la logica di risposta HTTP.
     process.on("uncaughtException", (err) => {
       console.error("[server] Uncaught Exception:", err);
     });
@@ -133,7 +117,7 @@ async function start() {
       console.error("[server] Unhandled Rejection:", err);
     });
   } catch (err) {
-    console.error("[server] ❌ Avvio fallito:", err.message);
+    console.error("[server] Avvio fallito:", err.message);
     process.exit(1);
   }
 }

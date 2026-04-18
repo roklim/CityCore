@@ -1,3 +1,5 @@
+/* Design tokens condivisi: i colori --mg-* sono il design system Mucho Gusto,
+   mentre alias come --cream/--paper mantengono compatibile il CSS esistente. */
 :root {
   --mg-crust: #FAF3E0;
   --mg-dough: #F0E6CC;
@@ -24,6 +26,7 @@
   background: var(--cream);
 }
 
+/* Reset minimo e accessibilita di base. */
 * {
   box-sizing: border-box;
 }
@@ -81,11 +84,13 @@ a:focus-visible {
   color: var(--muted);
 }
 
+/* Layout pubblici e shell principali. */
 .customer-shell,
 .admin-shell {
   min-height: 100vh;
 }
 
+/* Hero cliente: comunica subito asporto, banco e menu. */
 .brand-panel {
   position: relative;
   padding: 72px 24px 38px;
@@ -117,6 +122,7 @@ a:focus-visible {
   letter-spacing: 0;
 }
 
+/* Animazione di ingresso leggera usata su hero e CTA. */
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -227,6 +233,7 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
+/* Recupero ordine cliente tramite telefono. */
 .customer-orders-panel {
   position: relative;
   z-index: 1;
@@ -343,6 +350,7 @@ a:focus-visible {
   text-decoration: none;
 }
 
+/* Layout desktop a due colonne: menu a sinistra, checkout sticky a destra. */
 .order-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
@@ -366,6 +374,8 @@ a:focus-visible {
   gap: 26px;
 }
 
+/* Barra strumenti menu: ricerca e filtri rapidi rimangono visibili mentre si
+   scorre la lista prodotti. */
 .menu-tools {
   position: sticky;
   top: 0;
@@ -493,6 +503,7 @@ a:focus-visible {
   font-weight: 800;
 }
 
+/* Configuratore pizza su misura integrato nel menu pubblico. */
 .custom-pizza-builder {
   display: grid;
   gap: 16px;
@@ -700,6 +711,7 @@ a:focus-visible {
   gap: 16px;
 }
 
+/* Card prodotto compatta e mobile-first. */
 .menu-card {
   position: relative;
   min-height: 210px;
@@ -860,6 +872,7 @@ a:focus-visible {
   margin-top: 16px;
 }
 
+/* Card speciale accordion: sembra un prodotto, ma apre il configuratore. */
 .custom-pizza-card {
   grid-column: 1 / -1;
   border: 1.5px dashed var(--mg-basil);
@@ -941,6 +954,7 @@ a:focus-visible {
   font-size: 18px;
 }
 
+/* Carrello e form checkout desktop. */
 .checkout-panel,
 .login-panel {
   background: rgba(255, 250, 241, 0.94);
@@ -995,6 +1009,7 @@ a:focus-visible {
   margin-bottom: 12px;
 }
 
+/* Riga carrello, inclusa sintesi per pizza su misura. */
 .cart-row {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -1168,6 +1183,7 @@ a:focus-visible {
   font-size: 13px;
 }
 
+/* Picker giorno/slot ritiro: scrollabile su mobile e leggibile al banco. */
 .date-strip {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1265,6 +1281,7 @@ a:focus-visible {
   opacity: 0.45;
 }
 
+/* Modali leggere per conferme senza usare window.confirm dove c'e' UI custom. */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1298,6 +1315,7 @@ a:focus-visible {
   border-bottom: 1px solid var(--line);
 }
 
+/* Conferma ordine e tracking pubblico. */
 .confirmation-shell {
   min-height: 100vh;
   display: grid;
@@ -1367,6 +1385,7 @@ a:focus-visible {
   font-weight: 900;
 }
 
+/* Bottom cart mobile: sheet dal basso e barra fissa. */
 .drawer-close,
 .drawer-scrim,
 .mobile-cart-bar {
@@ -1453,6 +1472,7 @@ a:focus-visible {
   padding: 13px 16px;
 }
 
+/* Login admin: usato sia da global_admin sia da owner/admin/staff business. */
 .admin-login {
   min-height: 100vh;
   display: grid;
@@ -1476,6 +1496,7 @@ a:focus-visible {
   font-size: 42px;
 }
 
+/* Layout admin desktop con sidebar; su mobile diventa nav orizzontale. */
 .admin-shell {
   width: min(1480px, 100%);
   margin: 0 auto;
@@ -1574,6 +1595,7 @@ a:focus-visible {
   padding: 12px 16px;
 }
 
+/* Metriche operative "Oggi" e card dashboard. */
 .admin-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1721,6 +1743,7 @@ a:focus-visible {
   opacity: 0.65;
 }
 
+/* Gestione Banco/Menu: form prodotto + lista prodotti tenant-aware. */
 .admin-menu-manager {
   display: grid;
   grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
@@ -1783,13 +1806,15 @@ a:focus-visible {
 }
 
 .menu-editor-actions button,
-.menu-admin-actions button {
+.menu-admin-actions button,
+.admin-action-link {
   border: 0;
   border-radius: 999px;
   background: var(--basil);
   color: white;
   font-weight: 900;
   padding: 10px 13px;
+  text-decoration: none;
 }
 
 .menu-editor-actions button:last-child {
@@ -1864,10 +1889,23 @@ a:focus-visible {
   gap: 6px;
 }
 
-.menu-admin-actions button {
+.menu-admin-actions button,
+.admin-action-link {
   background: rgba(47, 103, 70, 0.12);
   color: var(--basil);
   font-size: 12px;
+}
+
+.admin-business-slug {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 7px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(47, 103, 70, 0.12);
+  color: var(--basil);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .menu-admin-actions button.danger {
@@ -1875,6 +1913,113 @@ a:focus-visible {
   color: var(--tomato);
 }
 
+/* Sezione Business globale: branding, feature flag e configurazione Vercel. */
+.business-color-row,
+.business-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.business-color-row input[type="color"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 4px;
+}
+
+.business-env-preview,
+.business-deploy-box {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: rgba(47, 103, 70, 0.06);
+}
+
+.business-env-preview span,
+.business-deploy-box span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.business-env-preview code,
+.business-deploy-box code {
+  overflow-wrap: anywhere;
+  color: var(--basil);
+  font-weight: 900;
+}
+
+/* Card tenant del global admin, con metriche e accesso gestione utenti. */
+.business-admin-list {
+  display: grid;
+  gap: 12px;
+}
+
+.business-admin-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+}
+
+.business-admin-card > div:first-child {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: center;
+}
+
+.business-admin-card > div:first-child small {
+  grid-column: 2;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.business-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.business-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.business-card-metrics span {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(33, 25, 20, 0.04);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.business-card-metrics b {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.business-deploy-box {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.business-deploy-box a {
+  color: var(--basil);
+  font-weight: 900;
+}
+
+/* Disponibilita per fasce orarie: utile a colpo d'occhio durante il servizio. */
 .capacity-strip {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
@@ -1921,6 +2066,7 @@ a:focus-visible {
   font-size: 34px;
 }
 
+/* Scheda ordine admin: priorita a cliente, orario, totale e cambio stato. */
 .order-card {
   padding: 16px;
   background: rgba(255, 250, 241, 0.94);
@@ -2009,6 +2155,7 @@ a:focus-visible {
   color: white;
 }
 
+/* Disponibilita prodotti da banco: pulsanti grandi per uso su tablet/telefono. */
 .availability-list article {
   grid-template-columns: minmax(0, 1fr) auto;
 }
@@ -2046,6 +2193,7 @@ a:focus-visible {
   color: var(--ink);
 }
 
+/* Impostazioni essenziali del locale. */
 .settings-panel {
   max-width: 920px;
 }
@@ -2076,6 +2224,7 @@ a:focus-visible {
   grid-column: 1 / -1;
 }
 
+/* Feedback globale non bloccante per salvataggi, errori e azioni rapide. */
 .toast {
   position: fixed;
   right: 18px;
@@ -2096,6 +2245,7 @@ a:focus-visible {
   transform: translateY(0);
 }
 
+/* Breakpoint tablet: admin e checkout diventano piu compatti. */
 @media (max-width: 920px) {
   .brand-panel h1 {
     font-size: 48px;
@@ -2144,6 +2294,7 @@ a:focus-visible {
   }
 }
 
+/* Breakpoint telefono: bottom cart, card compatte e nav admin scrollabile. */
 @media (max-width: 680px) {
   .brand-panel {
     padding: 48px 14px 22px;
@@ -2374,7 +2525,11 @@ a:focus-visible {
 
   .admin-menu-manager,
   .menu-editor-grid,
-  .menu-admin-item {
+  .menu-admin-item,
+  .business-color-row,
+  .business-feature-grid,
+  .business-card-metrics,
+  .business-deploy-box {
     grid-template-columns: 1fr;
   }
 
