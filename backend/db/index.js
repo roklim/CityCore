@@ -58,6 +58,7 @@ const menuItemSchema = new mongoose.Schema(
     },
     available: { type: Boolean, default: true },
     emoji: { type: String, default: "🍕" },
+    imageUrl: { type: String, default: "", trim: true },
     sortOrder: { type: Number, default: 0 },
     unit: {
       type: String,
@@ -129,10 +130,35 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+const couponSchema = new mongoose.Schema(
+  {
+    code: { type: String, required: true, unique: true, trim: true, uppercase: true },
+    type: { type: String, enum: ["percent", "fixed"], default: "percent" },
+    value: { type: Number, required: true, min: 0 },
+    expiresAt: { type: String, default: "" },
+    usageLimit: { type: Number, default: 0, min: 0 },
+    usedCount: { type: Number, default: 0, min: 0 },
+    active: { type: Boolean, default: true },
+  },
+  { timestamps: true },
+);
+
+const storeSettingsSchema = new mongoose.Schema(
+  {
+    openingHours: { type: String, default: "Mar-Dom 18:00-22:30" },
+    deliveryCost: { type: Number, default: 0, min: 0 },
+    minimumOrder: { type: Number, default: 0, min: 0 },
+    serviceZones: { type: [String], default: [] },
+    customerMessage: { type: String, default: "" },
+  },
+  { timestamps: true },
+);
+
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ pickupDate: 1, pickupTime: 1 });
 menuItemSchema.index({ category: 1, sortOrder: 1, name: 1 });
 customerSchema.index({ phone: 1 }, { unique: true });
+couponSchema.index({ active: 1, expiresAt: 1 });
 
 // ── Guard against model overwrite (Vercel hot-reload) ──────
 const MenuItem =
@@ -141,6 +167,10 @@ const MenuItem =
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 const Customer =
   mongoose.models.Customer || mongoose.model("Customer", customerSchema);
+const Coupon = mongoose.models.Coupon || mongoose.model("Coupon", couponSchema);
+const StoreSettings =
+  mongoose.models.StoreSettings ||
+  mongoose.model("StoreSettings", storeSettingsSchema);
 
 // ─────────────────────────────────────────────
 // SEED
@@ -249,4 +279,12 @@ async function seedMenu() {
 // EXPORT
 // ─────────────────────────────────────────────
 
-module.exports = { connect, seedMenu, MenuItem, Order, Customer };
+module.exports = {
+  connect,
+  seedMenu,
+  MenuItem,
+  Order,
+  Customer,
+  Coupon,
+  StoreSettings,
+};

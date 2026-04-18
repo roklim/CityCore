@@ -15,6 +15,8 @@ const authRouter = require("./routes/auth");
 const customersRouter = require("./routes/customers").router;
 const ordersRouter = require("./routes/orders");
 const menuRouter = require("./routes/menu");
+const couponsRouter = require("./routes/coupons");
+const settingsRouter = require("./routes/settings");
 
 const app = express();
 
@@ -74,6 +76,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/customers", customersRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/menu", menuRouter);
+app.use("/api/coupons", couponsRouter);
+app.use("/api/settings", settingsRouter);
 
 // ─────────────────────────────────────────────
 // 404 HANDLER

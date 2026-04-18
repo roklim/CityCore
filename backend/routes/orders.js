@@ -231,7 +231,7 @@ router.get(
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [statusAgg, revenueAgg] = await Promise.all([
+    const [statusAgg, revenueAgg, topProducts, recentOrders] = await Promise.all([
       Order.aggregate([
         {
           $match: {
@@ -256,9 +256,33 @@ router.get(
           },
         },
       ]),
+      Order.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: todayStart },
+            status: { $ne: "cancelled" },
+          },
+        },
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: "$items.name",
+            qty: { $sum: "$items.qty" },
+            revenue: {
+              $sum: { $multiply: ["$items.price", "$items.qty"] },
+            },
+          },
+        },
+        { $sort: { qty: -1, revenue: -1 } },
+        { $limit: 5 },
+      ]),
+      Order.find({ createdAt: { $gte: todayStart } })
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
     ]);
 
-    const counts = { preparing: 0, ready: 0, done: 0 };
+    const counts = { preparing: 0, ready: 0, done: 0, cancelled: 0 };
     for (const s of statusAgg)
       if (counts[s._id] !== undefined) counts[s._id] = s.count;
 
@@ -268,6 +292,12 @@ router.get(
         revenue: Number((revenueAgg[0]?.revenue || 0).toFixed(2)),
         ...counts,
       },
+      topProducts: topProducts.map((item) => ({
+        name: item._id,
+        qty: item.qty,
+        revenue: Number((item.revenue || 0).toFixed(2)),
+      })),
+      recentOrders,
     });
   }),
 );

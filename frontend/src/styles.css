@@ -102,6 +102,35 @@ button {
   font-size: 18px;
 }
 
+.service-strip {
+  position: relative;
+  z-index: 1;
+  width: min(760px, calc(100% - 28px));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 22px auto 0;
+}
+
+.service-strip span {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  background: rgba(255, 250, 241, 0.88);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.service-strip strong {
+  color: var(--basil);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .customer-orders-panel {
   position: relative;
   z-index: 1;
@@ -348,16 +377,17 @@ button {
   gap: 16px;
   padding: 18px;
   background:
-    linear-gradient(135deg, rgba(201, 70, 44, 0.11), transparent 42%),
-    rgba(255, 250, 241, 0.9);
-  border: 1px solid rgba(201, 70, 44, 0.18);
-  border-radius: 16px;
-  box-shadow: 0 14px 34px rgba(64, 42, 27, 0.1);
+    linear-gradient(135deg, rgba(201, 70, 44, 0.13), transparent 46%),
+    linear-gradient(225deg, rgba(47, 103, 70, 0.1), transparent 42%),
+    rgba(255, 250, 241, 0.96);
+  border: 1px solid rgba(201, 70, 44, 0.22);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(64, 42, 27, 0.12);
 }
 
 .custom-pizza-head {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 16px;
 }
@@ -365,7 +395,8 @@ button {
 .custom-pizza-head h3 {
   margin: 0;
   font-family: "Fraunces", serif;
-  font-size: 32px;
+  font-size: 34px;
+  line-height: 1;
 }
 
 .custom-pizza-head span {
@@ -374,7 +405,27 @@ button {
   color: var(--muted);
 }
 
-.custom-pizza-head > strong {
+.custom-pizza-total {
+  min-width: 118px;
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  background: white;
+  border: 1px solid rgba(47, 103, 70, 0.18);
+  border-radius: 10px;
+  color: var(--basil);
+  text-align: right;
+}
+
+.custom-pizza-total small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.custom-pizza-total strong {
   color: var(--basil);
   font-size: 24px;
   white-space: nowrap;
@@ -412,12 +463,20 @@ button {
 .topping-grid button {
   display: grid;
   gap: 4px;
+  min-height: 58px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: white;
   color: var(--ink);
   text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.custom-base-grid button:hover,
+.topping-grid button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(47, 103, 70, 0.28);
 }
 
 .custom-base-grid button.active,
@@ -446,7 +505,8 @@ button {
 .custom-pizza-notes input {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  min-height: 46px;
+  border-radius: 8px;
   background: white;
   color: var(--ink);
   padding: 12px;
@@ -457,7 +517,8 @@ button {
 
 .custom-pizza-submit {
   border: 0;
-  border-radius: 999px;
+  min-height: 50px;
+  border-radius: 8px;
   background: var(--tomato);
   color: white;
   font-weight: 900;
@@ -505,7 +566,7 @@ button {
 
 .menu-card {
   position: relative;
-  min-height: 230px;
+  min-height: 210px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -516,6 +577,14 @@ button {
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(64, 42, 27, 0.08);
   transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.menu-card-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
 }
 
 .menu-card.just-added {
@@ -529,13 +598,31 @@ button {
 }
 
 .menu-emoji {
-  min-height: 38px;
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  background: rgba(201, 70, 44, 0.09);
+  border: 1px solid rgba(201, 70, 44, 0.16);
+  border-radius: 8px;
   font-size: 30px;
 }
 
 .menu-name {
-  margin-top: 10px;
+  display: block;
   font-size: 19px;
+  font-weight: 900;
+}
+
+.menu-unit {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 5px 8px;
+  background: rgba(47, 103, 70, 0.1);
+  border-radius: 999px;
+  color: var(--basil);
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -544,6 +631,17 @@ button {
   margin-top: 8px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.menu-featured {
+  margin-top: 10px;
+  padding: 5px 8px;
+  background: rgba(214, 154, 45, 0.14);
+  border: 1px solid rgba(214, 154, 45, 0.24);
+  border-radius: 999px;
+  color: #8a5c11;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .menu-price {
@@ -576,6 +674,7 @@ button {
 .menu-add-button {
   width: 100%;
   margin-top: 16px;
+  min-height: 46px;
   padding: 11px 14px;
 }
 
@@ -589,7 +688,7 @@ button {
 }
 
 .menu-qty-controls button {
-  height: 42px;
+  height: 46px;
 }
 
 .menu-qty-controls strong {
@@ -1096,9 +1195,63 @@ button {
 }
 
 .admin-shell {
-  max-width: 1360px;
+  width: min(1480px, 100%);
   margin: 0 auto;
   padding: 28px 22px 58px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 22px;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 22px;
+  align-self: start;
+  display: grid;
+  gap: 20px;
+  padding: 14px;
+  background: rgba(255, 250, 241, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(64, 42, 27, 0.08);
+}
+
+.admin-sidebar strong {
+  display: block;
+  font-family: "Fraunces", serif;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.admin-sidebar nav {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-sidebar button,
+.admin-sidebar a {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 900;
+  min-height: 46px;
+  padding: 11px 12px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.admin-sidebar button.active,
+.admin-sidebar button:hover,
+.admin-sidebar a:hover {
+  background: rgba(47, 103, 70, 0.1);
+  border-color: rgba(47, 103, 70, 0.16);
+  color: var(--basil);
+}
+
+.admin-main {
+  min-width: 0;
 }
 
 .admin-header {
@@ -1129,6 +1282,131 @@ button {
   padding: 12px 16px;
 }
 
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.admin-stats-grid article,
+.admin-panel {
+  background: rgba(255, 250, 241, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(64, 42, 27, 0.08);
+}
+
+.admin-stats-grid article {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.admin-stats-grid span,
+.compact-order span,
+.order-meta,
+.availability-list span,
+.customer-admin-list span,
+.customer-admin-list small {
+  color: var(--muted);
+}
+
+.admin-stats-grid strong {
+  color: var(--ink);
+  font-family: "Fraunces", serif;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 18px;
+}
+
+.admin-panel {
+  padding: 18px;
+}
+
+.admin-panel.wide {
+  grid-column: span 1;
+}
+
+.admin-table,
+.top-products,
+.availability-list,
+.customer-admin-list {
+  display: grid;
+  gap: 8px;
+}
+
+.compact-order,
+.availability-list article,
+.customer-admin-list article {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.compact-order {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.compact-order > div {
+  display: grid;
+  gap: 4px;
+}
+
+.compact-order.urgent,
+.order-card.urgent {
+  border-color: rgba(201, 70, 44, 0.42);
+  box-shadow: 0 12px 30px rgba(201, 70, 44, 0.12);
+}
+
+.top-products span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.top-products b {
+  color: var(--basil);
+}
+
+.capacity-strip.compact {
+  margin-bottom: 0;
+}
+
+.admin-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.admin-toolbar input,
+.admin-search,
+.settings-form input,
+.settings-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 12px 13px;
+  outline: none;
+}
+
 .admin-actions button:disabled {
   cursor: wait;
   opacity: 0.65;
@@ -1148,6 +1426,10 @@ button {
   border-radius: 12px;
   box-shadow: 0 12px 34px rgba(64, 42, 27, 0.08);
   padding: 18px;
+}
+
+.menu-editor-panel select {
+  width: 100%;
 }
 
 .menu-editor-panel label {
@@ -1258,6 +1540,14 @@ button {
   color: var(--muted);
 }
 
+.menu-admin-thumb {
+  width: 86px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
 .menu-admin-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1330,6 +1620,28 @@ button {
   box-shadow: 0 10px 28px rgba(64, 42, 27, 0.08);
 }
 
+.order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 9px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.order-meta strong {
+  color: var(--basil);
+}
+
+.order-note {
+  padding: 10px;
+  background: rgba(49, 93, 128, 0.08);
+  border: 1px solid rgba(49, 93, 128, 0.16);
+  border-radius: 8px;
+  color: var(--blue);
+  font-weight: 800;
+}
+
 .order-card-head {
   display: flex;
   justify-content: space-between;
@@ -1372,13 +1684,87 @@ button {
 
 .status-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
 .status-buttons button {
+  min-height: 44px;
   padding: 9px;
   font-size: 12px;
+}
+
+.status-buttons button.active {
+  background: var(--basil);
+  border-color: var(--basil);
+  color: white;
+}
+
+.availability-list article {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.availability-list article.off {
+  background: rgba(201, 70, 44, 0.07);
+  border-color: rgba(201, 70, 44, 0.22);
+}
+
+.availability-list button,
+.settings-form button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--basil);
+  color: white;
+  font-weight: 900;
+  min-height: 48px;
+  padding: 10px 13px;
+}
+
+.customer-admin-list {
+  margin-top: 14px;
+}
+
+.customer-admin-list article {
+  grid-template-columns: minmax(160px, 1.2fr) repeat(4, auto);
+}
+
+.customer-admin-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.customer-admin-list strong {
+  color: var(--ink);
+}
+
+.settings-panel {
+  max-width: 920px;
+}
+
+.settings-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--basil);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.settings-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.settings-full,
+.settings-form button {
+  grid-column: 1 / -1;
 }
 
 .toast {
@@ -1413,11 +1799,45 @@ button {
   .checkout-panel {
     position: static;
   }
+
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+  }
+
+  .admin-sidebar nav {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .admin-sidebar button,
+  .admin-sidebar a {
+    min-width: max-content;
+    text-align: center;
+  }
+
+  .admin-dashboard-grid,
+  .admin-toolbar,
+  .admin-menu-manager {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .customer-admin-list article {
+    grid-template-columns: minmax(0, 1fr) repeat(2, auto);
+  }
 }
 
 @media (max-width: 680px) {
   .brand-panel {
-    padding: 58px 18px 28px;
+    padding: 48px 14px 22px;
   }
 
   .brand-panel::before {
@@ -1426,7 +1846,24 @@ button {
 
   .brand-panel h1,
   .admin-header h1 {
-    font-size: 38px;
+    font-size: 36px;
+  }
+
+  .lead {
+    margin-top: 14px;
+    font-size: 16px;
+  }
+
+  .service-strip {
+    grid-template-columns: 1fr;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .service-strip span {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    text-align: left;
   }
 
   .order-layout,
@@ -1518,13 +1955,40 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .menu-card {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .menu-card-head {
+    gap: 10px;
+  }
+
+  .menu-name {
+    font-size: 17px;
+  }
+
+  .menu-desc {
+    flex: initial;
+  }
+
+  .menu-add-button,
+  .menu-qty-controls button {
+    min-height: 50px;
+  }
+
   .menu-section-head {
     align-items: start;
     flex-direction: column;
   }
 
   .custom-pizza-head {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  .custom-pizza-total {
+    width: 100%;
+    text-align: left;
   }
 
   .custom-base-grid,
@@ -1560,6 +2024,34 @@ button {
   .admin-menu-manager {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-sidebar nav,
+  .admin-stats-grid,
+  .settings-form,
+  .customer-admin-list article,
+  .availability-list article {
+    grid-template-columns: 1fr;
+  }
+
+  .status-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-sidebar {
+    margin: 0 -2px;
+  }
+
+  .admin-sidebar nav {
+    display: flex;
+  }
+
+  .admin-actions {
+    gap: 8px;
+  }
+
+  .admin-toolbar {
+    align-items: stretch;
   }
 
   .admin-menu-manager,

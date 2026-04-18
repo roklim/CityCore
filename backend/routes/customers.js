@@ -2,6 +2,7 @@
 
 const router = require("express").Router();
 const { Customer, Order } = require("../db");
+const { requireAuth } = require("../middleware/auth");
 const asyncHandler = require("../middleware/asyncHandler");
 
 function normalizePhone(phone) {
@@ -24,6 +25,48 @@ function publicOrder(order) {
 }
 
 // GET /api/customers/lookup?phone=...
+router.get(
+  "/",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const query = String(req.query.q || "").trim();
+    const filter = {};
+
+    if (query) {
+      const phone = normalizePhone(query);
+      filter.$or = [
+        { name: { $regex: query, $options: "i" } },
+        ...(phone ? [{ phone: { $regex: phone } }] : []),
+      ];
+    }
+
+    const customers = await Customer.find(filter)
+      .sort({ lastOrderAt: -1, updatedAt: -1 })
+      .limit(80)
+      .lean();
+
+    const phones = customers.map((customer) => customer.phone).filter(Boolean);
+    const orderAgg = await Order.aggregate([
+      { $match: { phone: { $in: phones } } },
+      {
+        $group: {
+          _id: "$phone",
+          totalSpent: { $sum: "$total" },
+          lastOrderTotal: { $last: "$total" },
+        },
+      },
+    ]);
+    const orderStats = new Map(orderAgg.map((item) => [item._id, item]));
+
+    res.json({
+      customers: customers.map((customer) => ({
+        ...customer,
+        totalSpent: Number((orderStats.get(customer.phone)?.totalSpent || 0).toFixed(2)),
+      })),
+    });
+  }),
+);
+
 router.get(
   "/lookup",
   asyncHandler(async (req, res) => {

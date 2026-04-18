@@ -3,27 +3,52 @@ import { createRoot } from "react-dom/client";
 import {
   createMenuItem,
   createOrder,
+  createCoupon,
+  deleteCoupon,
   deleteMenuItem,
+  getAdminCustomers,
   getAvailability,
   getAdminMenu,
   getCustomerOrders,
+  getCoupons,
   getMenu,
   getOrder,
+  getOrderStats,
   getOrders,
+  getStoreSettings,
   lookupCustomer,
   loginAdmin,
+  toggleCoupon,
   toggleMenuItem,
+  updateCoupon,
   updateMenuItem,
   updateOrderStatus,
+  updateStoreSettings,
 } from "./lib/api";
 import "./styles.css";
 
 const STATUSES = {
   preparing: "Preparazione",
   ready: "Pronto",
-  done: "Completato",
+  done: "Ritirato",
   cancelled: "Annullato",
 };
+const ADMIN_NAV = [
+  { id: "dashboard", label: "Oggi" },
+  { id: "orders", label: "Ordini" },
+  { id: "menu", label: "Banco/Menu" },
+  { id: "availability", label: "Disponibilita" },
+  { id: "customers", label: "Clienti" },
+  { id: "settings", label: "Impostazioni" },
+];
+const ORDER_FILTERS = [
+  { id: "all", label: "Tutti" },
+  { id: "new", label: "Nuovi" },
+  { id: "preparing", label: "Preparazione" },
+  { id: "ready", label: "Pronti" },
+  { id: "done", label: "Ritirati" },
+  { id: "cancelled", label: "Annullati" },
+];
 const PUBLIC_STATUS_LABELS = {
   preparing: "In preparazione",
   ready: "Pronto al banco",
@@ -33,13 +58,13 @@ const PUBLIC_STATUS_LABELS = {
 const ADMIN_REFRESH_INTERVAL_MS = 120000;
 const LOYALTY_GOAL = 10;
 const MENU_CATEGORY_OPTIONS = [
-  { value: "pizze-tonde", label: "Pizze Normali" },
-  { value: "pizza-teglia", label: "Pizza al Trancio" },
-  { value: "pizza-speciali", label: "Pizze Speciali" },
+  { value: "pizza-teglia", label: "Tranci e Teglie" },
+  { value: "pizze-tonde", label: "Pizze Tonde" },
+  { value: "pizza-speciali", label: "Tonde Speciali" },
   { value: "fritti", label: "Fritti" },
   { value: "bevande", label: "Bevande" },
   { value: "dolci", label: "Dolci" },
-  { value: "extra", label: "Extra" },
+  { value: "extra", label: "Extra Banco" },
 ];
 const MENU_UNIT_OPTIONS = [
   "pezzo",
@@ -55,6 +80,7 @@ const EMPTY_MENU_FORM = {
   price: "",
   category: "pizze-tonde",
   emoji: "🍕",
+  imageUrl: "",
   sortOrder: "",
   unit: "trancio",
   tags: "",
@@ -63,22 +89,22 @@ const EMPTY_MENU_FORM = {
 };
 const MENU_SECTIONS = [
   {
-    id: "pizze-tonde",
-    title: "Pizze Normali",
-    eyebrow: "Classiche",
-    description: "Margherita, Napoli, cotto, crudo e le pizze di tutti i giorni.",
+    id: "pizza-teglia",
+    title: "Tranci e Teglie",
+    eyebrow: "Banco caldo",
+    description: "Pizza al taglio, pezzi pronti e teglie da ordinare per l'asporto.",
   },
   {
-    id: "pizza-teglia",
-    title: "Pizza al Trancio",
-    eyebrow: "Banco caldo",
-    description: "Tranci e teglie fragranti, pronti da portare via.",
+    id: "pizze-tonde",
+    title: "Pizze Tonde",
+    eyebrow: "Su richiesta",
+    description: "Le tonde classiche quando disponibili in menu.",
   },
   {
     id: "pizza-speciali",
-    title: "Pizze Speciali",
-    eyebrow: "Le Mucho pizze",
-    description: "Ricette piu ricche con burrata, mortadella e ingredienti speciali.",
+    title: "Tonde Speciali",
+    eyebrow: "Dal forno",
+    description: "Ricette piu ricche, comode da ordinare in anticipo.",
   },
   {
     id: "fritti",
@@ -194,6 +220,38 @@ function money(value) {
   }).format(value || 0);
 }
 
+function formatDateTime(value) {
+  if (!value) return "N/D";
+  return new Intl.DateTimeFormat("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function minutesUntilPickup(order) {
+  if (!order?.pickupDate || !order?.pickupTime) return Number.POSITIVE_INFINITY;
+  return Math.round(
+    (new Date(`${order.pickupDate}T${order.pickupTime}:00`) - new Date()) / 60000,
+  );
+}
+
+function isFreshOrder(order) {
+  if (order.status !== "preparing" || !order.createdAt) return false;
+  return Date.now() - new Date(order.createdAt).getTime() < 10 * 60 * 1000;
+}
+
+function isUrgentOrder(order) {
+  const minutes = minutesUntilPickup(order);
+  return (
+    order.status !== "done" &&
+    order.status !== "cancelled" &&
+    Number.isFinite(minutes) &&
+    minutes <= 15
+  );
+}
+
 function getMenuSectionId(item) {
   const category = String(item.category || "").trim().toLowerCase();
   const text = `${item.name || ""} ${item.description || ""}`.toLowerCase();
@@ -273,6 +331,7 @@ function menuItemToForm(item) {
     price: item.price ?? "",
     category: getAdminMenuCategory(item),
     emoji: item.emoji || "🍕",
+    imageUrl: item.imageUrl || "",
     sortOrder: item.sortOrder ?? "",
     unit: item.unit || "trancio",
     tags: (item.tags || []).join(", "),
@@ -299,6 +358,7 @@ function menuFormToPayload(form) {
     price: Number(form.price),
     category: form.category,
     emoji: form.emoji.trim() || "🍕",
+    imageUrl: form.imageUrl.trim(),
     sortOrder: Number(form.sortOrder) || 0,
     unit: form.unit,
     tags: parseCommaList(form.tags),
@@ -598,7 +658,7 @@ function CustomerView() {
         .slice()
         .sort()
         .join("-")}-${customPizzaNotes.trim().toLowerCase()}`,
-      name: "Pizza su misura",
+      name: "Tonda su ordinazione",
       price: Math.round(customPizzaPrice * 100) / 100,
       itemNotes: customNotes,
     });
@@ -728,11 +788,16 @@ function CustomerView() {
           Admin
         </a>
         <p className="eyebrow">Mucho Gusto Pizzeria al Taglio</p>
-        <h1>Tranci caldi, teglie fumanti e pizze pronte per l'asporto.</h1>
+        <h1>Pizza al taglio pronta da portare via.</h1>
         <p className="lead">
-          Scegli dal banco, prenota il ritiro e passa appena il forno ha
-          preparato il tuo ordine.
+          Scegli tranci, teglie, fritti e bibite. Prenoti l'orario, passi al
+          banco e paghi al ritiro.
         </p>
+        <div className="service-strip" aria-label="Servizio pizzeria">
+          <span><strong>Asporto</strong> ritiro al banco</span>
+          <span><strong>Pizza</strong> trancio o teglia</span>
+          <span><strong>Pagamento</strong> in pizzeria</span>
+        </div>
         <div className="customer-orders-panel">
           <div>
             <p className="eyebrow">I miei ordini</p>
@@ -822,18 +887,21 @@ function CustomerView() {
               <section className="custom-pizza-builder">
                 <div className="custom-pizza-head">
                   <div>
-                    <p className="eyebrow">Tonda su richiesta</p>
-                    <h3>Componi una pizza su misura</h3>
+                    <p className="eyebrow">Fuori banco</p>
+                    <h3>Tonda su ordinazione</h3>
                     <span>
-                      Scegli base e ingredienti: noi la prepariamo al momento e
-                      il forno riceve tutto nelle note.
+                      Scegli base e ingredienti, noi la prepariamo al momento
+                      per il tuo orario di ritiro.
                     </span>
                   </div>
-                  <strong>{money(customPizzaPrice)}</strong>
+                  <div className="custom-pizza-total">
+                    <small>Totale</small>
+                    <strong>{money(customPizzaPrice)}</strong>
+                  </div>
                 </div>
 
                 <div className="custom-pizza-group">
-                  <span className="custom-pizza-label">Base</span>
+                  <span className="custom-pizza-label">Scegli la base</span>
                   <div className="custom-base-grid">
                     {CUSTOM_PIZZA_BASES.map((base) => (
                       <button
@@ -852,7 +920,7 @@ function CustomerView() {
 
                 <div className="custom-pizza-group">
                   <span className="custom-pizza-label">
-                    Ingredienti ({customPizzaToppings.length}/
+                    Aggiunte ({customPizzaToppings.length}/
                     {CUSTOM_PIZZA_MAX_TOPPINGS})
                   </span>
                   <div className="topping-grid">
@@ -875,7 +943,7 @@ function CustomerView() {
                 <label className="custom-pizza-notes">
                   Note per questa pizza
                   <input
-                    placeholder="Es. ben cotta, poca mozzarella..."
+                    placeholder="Es. ben cotta, poca mozzarella, tagliata..."
                     maxLength={120}
                     value={customPizzaNotes}
                     onChange={(event) => setCustomPizzaNotes(event.target.value)}
@@ -887,7 +955,7 @@ function CustomerView() {
                   type="button"
                   onClick={addCustomPizzaToCart}
                 >
-                  Aggiungi tonda su misura - {money(customPizzaPrice)}
+                  Aggiungi tonda - {money(customPizzaPrice)}
                 </button>
               </section>
 
@@ -940,10 +1008,19 @@ function CustomerView() {
                           {addedItemId === item._id && (
                             <span className="added-badge">Aggiunta</span>
                           )}
-                          <span className="menu-emoji">{item.emoji || "Pizza"}</span>
-                          <span className="menu-name">{item.name}</span>
+                          <div className="menu-card-head">
+                            <span className="menu-emoji">{item.emoji || "Pizza"}</span>
+                            <div>
+                              <span className="menu-name">{item.name}</span>
+                              <span className="menu-unit">
+                                {money(item.price)} / {item.unit || "pezzo"}
+                              </span>
+                            </div>
+                          </div>
                           <span className="menu-desc">{item.description}</span>
-                          <span className="menu-price">{money(item.price)}</span>
+                          {item.featured && (
+                            <span className="menu-featured">Piu richiesto</span>
+                          )}
                           {cartItem ? (
                             <div className="menu-qty-controls">
                               <button
@@ -1261,16 +1338,41 @@ function AdminView() {
   const [token, setToken] = useState(localStorage.getItem("admin_token") || "");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [activeAdminSection, setActiveAdminSection] = useState("dashboard");
   const [pickupDate, setPickupDate] = useState(todayISO());
+  const [orderFilter, setOrderFilter] = useState("all");
+  const [orderSearch, setOrderSearch] = useState("");
   const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState(null);
   const [availability, setAvailability] = useState(null);
   const [adminMenu, setAdminMenu] = useState([]);
   const [menuForm, setMenuForm] = useState(EMPTY_MENU_FORM);
   const [editingMenuId, setEditingMenuId] = useState("");
+  const [customers, setCustomers] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [coupons, setCoupons] = useState([]);
+  const [couponForm, setCouponForm] = useState({
+    code: "",
+    type: "percent",
+    value: "",
+    expiresAt: "",
+    usageLimit: "",
+    active: true,
+  });
+  const [editingCouponId, setEditingCouponId] = useState("");
+  const [settingsForm, setSettingsForm] = useState({
+    openingHours: "",
+    deliveryCost: "",
+    minimumOrder: "",
+    serviceZones: "",
+    customerMessage: "",
+  });
   const [toast, setToast] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [menuSaving, setMenuSaving] = useState(false);
+  const [couponSaving, setCouponSaving] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -1281,8 +1383,14 @@ function AdminView() {
 
   useEffect(() => {
     if (!token) return;
-    loadAdminMenu();
+    loadAdminResources();
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    const timer = window.setTimeout(() => loadCustomers(customerSearch), 350);
+    return () => window.clearTimeout(timer);
+  }, [customerSearch, token]);
 
   function notify(message) {
     setToast(message);
@@ -1295,12 +1403,14 @@ function AdminView() {
     refresh.inFlight = true;
     setRefreshing(true);
     try {
-      const [nextOrders, nextAvailability] = await Promise.all([
+      const [nextOrders, nextAvailability, nextStats] = await Promise.all([
         getOrders(token, pickupDate),
         getAvailability(pickupDate),
+        getOrderStats(token),
       ]);
       setOrders(nextOrders);
       setAvailability(nextAvailability);
+      setStats(nextStats);
       setLastUpdatedAt(
         new Intl.DateTimeFormat("it-IT", {
           hour: "2-digit",
@@ -1317,9 +1427,47 @@ function AdminView() {
     }
   }
 
+  async function loadAdminResources() {
+    await Promise.all([loadAdminMenu(), loadCustomers(customerSearch), loadSettings()]);
+  }
+
   async function loadAdminMenu() {
     try {
       setAdminMenu(await getAdminMenu(token));
+    } catch (error) {
+      if (error.status === 401) logout();
+      else notify(error.message);
+    }
+  }
+
+  async function loadCustomers(query = "") {
+    try {
+      setCustomers(await getAdminCustomers(token, query));
+    } catch (error) {
+      if (error.status === 401) logout();
+      else notify(error.message);
+    }
+  }
+
+  async function loadCoupons() {
+    try {
+      setCoupons(await getCoupons(token));
+    } catch (error) {
+      if (error.status === 401) logout();
+      else notify(error.message);
+    }
+  }
+
+  async function loadSettings() {
+    try {
+      const settings = await getStoreSettings(token);
+      setSettingsForm({
+        openingHours: settings.openingHours || "",
+        deliveryCost: settings.deliveryCost ?? "",
+        minimumOrder: settings.minimumOrder ?? "",
+        serviceZones: (settings.serviceZones || []).join(", "),
+        customerMessage: settings.customerMessage || "",
+      });
     } catch (error) {
       if (error.status === 401) logout();
       else notify(error.message);
@@ -1341,6 +1489,8 @@ function AdminView() {
     localStorage.removeItem("admin_token");
     setToken("");
     setAdminMenu([]);
+    setCustomers([]);
+    setCoupons([]);
   }
 
   async function changeStatus(id, status) {
@@ -1394,6 +1544,111 @@ function AdminView() {
     }
   }
 
+  function updateCouponForm(field, value) {
+    setCouponForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function editCoupon(coupon) {
+    setEditingCouponId(coupon._id);
+    setCouponForm({
+      code: coupon.code || "",
+      type: coupon.type || "percent",
+      value: coupon.value ?? "",
+      expiresAt: coupon.expiresAt || "",
+      usageLimit: coupon.usageLimit ?? "",
+      active: coupon.active !== false,
+    });
+    setActiveAdminSection("coupons");
+  }
+
+  function resetCouponForm() {
+    setEditingCouponId("");
+    setCouponForm({
+      code: "",
+      type: "percent",
+      value: "",
+      expiresAt: "",
+      usageLimit: "",
+      active: true,
+    });
+  }
+
+  async function saveCoupon(event) {
+    event.preventDefault();
+    if (!couponForm.code.trim()) return notify("Inserisci un codice coupon.");
+    if (!couponForm.value || Number(couponForm.value) <= 0) {
+      return notify("Inserisci un valore coupon valido.");
+    }
+
+    setCouponSaving(true);
+    try {
+      const payload = {
+        ...couponForm,
+        code: couponForm.code.trim().toUpperCase(),
+        value: Number(couponForm.value),
+        usageLimit: Number(couponForm.usageLimit) || 0,
+      };
+      if (editingCouponId) {
+        await updateCoupon(editingCouponId, payload, token);
+        notify("Coupon aggiornato.");
+      } else {
+        await createCoupon(payload, token);
+        notify("Coupon creato.");
+      }
+      resetCouponForm();
+      await loadCoupons();
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setCouponSaving(false);
+    }
+  }
+
+  async function changeCouponStatus(id) {
+    try {
+      await toggleCoupon(id, token);
+      await loadCoupons();
+    } catch (error) {
+      notify(error.message);
+    }
+  }
+
+  async function removeCoupon(id) {
+    const confirmed = window.confirm("Eliminare questo coupon?");
+    if (!confirmed) return;
+
+    try {
+      await deleteCoupon(id, token);
+      await loadCoupons();
+      notify("Coupon eliminato.");
+    } catch (error) {
+      notify(error.message);
+    }
+  }
+
+  async function saveSettings(event) {
+    event.preventDefault();
+    setSettingsSaving(true);
+    try {
+      await updateStoreSettings(
+        {
+          openingHours: settingsForm.openingHours,
+          deliveryCost: Number(settingsForm.deliveryCost) || 0,
+          minimumOrder: Number(settingsForm.minimumOrder) || 0,
+          serviceZones: parseCommaList(settingsForm.serviceZones),
+          customerMessage: settingsForm.customerMessage,
+        },
+        token,
+      );
+      notify("Impostazioni aggiornate.");
+      await loadSettings();
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
+
   async function changeMenuAvailability(id) {
     try {
       await toggleMenuItem(id, token);
@@ -1417,13 +1672,29 @@ function AdminView() {
   }
 
   const groupedOrders = useMemo(() => {
-    return orders.reduce((groups, order) => {
+    return orders
+      .filter((order) => {
+        const query = orderSearch.trim().toLowerCase();
+        const matchesFilter =
+          orderFilter === "all" ||
+          (orderFilter === "new" ? isFreshOrder(order) : order.status === orderFilter);
+        const haystack = `${order.customer || ""} ${order.phone || ""} ${
+          order.notes || ""
+        } ${(order.items || []).map((item) => item.name).join(" ")}`.toLowerCase();
+        return matchesFilter && (!query || haystack.includes(query));
+      })
+      .reduce((groups, order) => {
       const key = order.pickupSlot || "Senza fascia";
       groups[key] = groups[key] || [];
       groups[key].push(order);
       return groups;
     }, {});
-  }, [orders]);
+  }, [orderFilter, orderSearch, orders]);
+
+  const visibleOrders = useMemo(
+    () => Object.values(groupedOrders).flat(),
+    [groupedOrders],
+  );
 
   const groupedMenu = useMemo(() => {
     return adminMenu.reduce((groups, item) => {
@@ -1433,6 +1704,42 @@ function AdminView() {
       return groups;
     }, {});
   }, [adminMenu]);
+
+  const dashboardStats = useMemo(() => {
+    const today = stats?.today || {};
+    const fallbackRevenue = orders
+      .filter((order) => order.status !== "cancelled")
+      .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+
+    return {
+      total: today.total ?? orders.filter((order) => order.status !== "cancelled").length,
+      revenue: today.revenue ?? fallbackRevenue,
+      pending:
+        (today.preparing ?? orders.filter((order) => order.status === "preparing").length) +
+        (today.ready ?? orders.filter((order) => order.status === "ready").length),
+      done: today.done ?? orders.filter((order) => order.status === "done").length,
+      cancelled:
+        today.cancelled ?? orders.filter((order) => order.status === "cancelled").length,
+    };
+  }, [orders, stats]);
+
+  const topProducts = useMemo(() => {
+    if (stats?.topProducts?.length) return stats.topProducts;
+    const productMap = new Map();
+    for (const order of orders) {
+      if (order.status === "cancelled") continue;
+      for (const item of order.items || []) {
+        const current = productMap.get(item.name) || { name: item.name, qty: 0, revenue: 0 };
+        current.qty += item.qty || 0;
+        current.revenue += (item.price || 0) * (item.qty || 0);
+        productMap.set(item.name, current);
+      }
+    }
+    return Array.from(productMap.values()).sort((a, b) => b.qty - a.qty).slice(0, 5);
+  }, [orders, stats]);
+
+  const recentOrders = stats?.recentOrders?.length ? stats.recentOrders : orders.slice(0, 8);
+  const unavailableItems = adminMenu.filter((item) => !item.available);
 
   if (!token) {
     return (
@@ -1460,35 +1767,233 @@ function AdminView() {
 
   return (
     <main className="admin-shell">
-      <header className="admin-header">
+      <aside className="admin-sidebar">
         <div>
-          <p className="eyebrow">Banco Mucho Gusto</p>
-          <h1>Ritiri per fascia</h1>
+          <p className="eyebrow">Mucho Gusto</p>
+          <strong>Banco admin</strong>
         </div>
-        <div className="admin-actions">
-          <span className="refresh-note">
-            {lastUpdatedAt ? `Aggiornato ${lastUpdatedAt}` : "Non aggiornato"}
-          </span>
-          <button type="button" onClick={refresh} disabled={refreshing}>
-            {refreshing ? "Aggiorno..." : "Aggiorna"}
-          </button>
-          <input
-            type="date"
-            value={pickupDate}
-            onChange={(e) => setPickupDate(e.target.value)}
-          />
-          <button type="button" onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </header>
+        <nav>
+          {ADMIN_NAV.map((item) => (
+            <button
+              className={activeAdminSection === item.id ? "active" : ""}
+              key={item.id}
+              type="button"
+              onClick={() => setActiveAdminSection(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <a href="/">Menu cliente</a>
+      </aside>
 
-      <section className="admin-menu-manager">
-        <form className="menu-editor-panel" onSubmit={saveMenuItem}>
-          <div className="section-heading">
-            <p className="eyebrow">Gestione menu</p>
-            <h2>{editingMenuId ? "Modifica prodotto" : "Aggiungi prodotto"}</h2>
+      <section className="admin-main">
+        <header className="admin-header">
+          <div>
+            <p className="eyebrow">Operativita giornaliera</p>
+            <h1>{ADMIN_NAV.find((item) => item.id === activeAdminSection)?.label}</h1>
           </div>
+          <div className="admin-actions">
+            <span className="refresh-note">
+              {lastUpdatedAt ? `Aggiornato ${lastUpdatedAt}` : "Non aggiornato"}
+            </span>
+            <button type="button" onClick={refresh} disabled={refreshing}>
+              {refreshing ? "Aggiorno..." : "Aggiorna"}
+            </button>
+            <input
+              type="date"
+              value={pickupDate}
+              onChange={(e) => setPickupDate(e.target.value)}
+            />
+            <button type="button" onClick={logout}>
+              Logout
+            </button>
+          </div>
+        </header>
+
+        {(activeAdminSection === "dashboard" || activeAdminSection === "orders") && (
+          <section className="admin-stats-grid">
+            <article>
+              <span>Ordini oggi</span>
+              <strong>{dashboardStats.total}</strong>
+            </article>
+            <article>
+              <span>Incasso</span>
+              <strong>{money(dashboardStats.revenue)}</strong>
+            </article>
+            <article>
+              <span>In attesa</span>
+              <strong>{dashboardStats.pending}</strong>
+            </article>
+            <article>
+              <span>Ritirati</span>
+              <strong>{dashboardStats.done}</strong>
+            </article>
+          </section>
+        )}
+
+        {activeAdminSection === "dashboard" && (
+          <section className="admin-dashboard-grid">
+            <div className="admin-panel">
+              <div className="section-heading">
+                <p className="eyebrow">Oggi al banco</p>
+                <h2>Ordini in arrivo</h2>
+              </div>
+              <div className="admin-table">
+                {recentOrders.length === 0 ? (
+                  <p className="muted">Nessun ordine registrato oggi.</p>
+                ) : (
+                  recentOrders.map((order) => (
+                    <article
+                      className={`compact-order ${isUrgentOrder(order) ? "urgent" : ""}`}
+                      key={order._id}
+                    >
+                      <div>
+                        <strong>{order.customer}</strong>
+                        <span>{order.pickupTime} · {money(order.total)}</span>
+                      </div>
+                      <span className={`status ${order.status}`}>
+                        {isFreshOrder(order) ? "Nuovo" : STATUSES[order.status]}
+                      </span>
+                    </article>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="admin-panel">
+              <div className="section-heading">
+                <p className="eyebrow">Vendite</p>
+                <h2>Piu ordinati</h2>
+              </div>
+              <div className="top-products">
+                {topProducts.length === 0 ? (
+                  <p className="muted">Ancora nessun prodotto venduto oggi.</p>
+                ) : (
+                  topProducts.map((item) => (
+                    <span key={item.name}>
+                      <strong>{item.name}</strong>
+                      <b>{item.qty} pz · {money(item.revenue)}</b>
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="admin-panel">
+              <div className="section-heading">
+                <p className="eyebrow">Capienza</p>
+                <h2>Fasce orarie</h2>
+              </div>
+              <div className="capacity-strip compact">
+                {(availability?.slots || []).map((slot) => (
+                  <div
+                    className={[
+                      "capacity-pill",
+                      slot.full ? "full" : "",
+                      slot.almostFull ? "almost" : "",
+                    ].join(" ")}
+                    key={slot.pickupSlot}
+                  >
+                    <strong>{slot.time}</strong>
+                    <span>{slot.count}/{availability.maxOrdersPerSlot}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeAdminSection === "orders" && (
+          <>
+            <section className="admin-toolbar">
+              <div className="quick-filters">
+                {ORDER_FILTERS.map((filter) => (
+                  <button
+                    className={orderFilter === filter.id ? "active" : ""}
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setOrderFilter(filter.id)}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                placeholder="Cerca cliente, telefono, prodotto o nota"
+                value={orderSearch}
+                onChange={(event) => setOrderSearch(event.target.value)}
+              />
+            </section>
+
+            <section className="slot-columns">
+              {visibleOrders.length === 0 ? (
+                <p className="muted">Nessun ordine con questi filtri.</p>
+              ) : (
+                Object.entries(groupedOrders).map(([slot, slotOrders]) => (
+                  <div className="slot-column" key={slot}>
+                    <h2>{slotOrders[0]?.pickupTime || slot}</h2>
+                    {slotOrders.map((order) => (
+                      <article
+                        className={`order-card ${isUrgentOrder(order) ? "urgent" : ""}`}
+                        key={order._id}
+                      >
+                        <div className="order-card-head">
+                          <strong>{order.customer}</strong>
+                          <span className={`status ${order.status}`}>
+                            {isFreshOrder(order) ? "Nuovo" : STATUSES[order.status]}
+                          </span>
+                        </div>
+                        <div className="order-meta">
+                          <span>{order.phone || "Telefono non inserito"}</span>
+                          <span>{order.pickupDate} · {order.pickupTime}</span>
+                          <strong>{money(order.total)}</strong>
+                        </div>
+                        <p>
+                          {(order.items || [])
+                            .map((item) => `${item.qty}x ${item.name}`)
+                            .join(" | ")}
+                        </p>
+                        {order.notes && <p className="order-note">{order.notes}</p>}
+                        {order.items?.some((item) => item.notes) && (
+                          <div className="order-item-notes">
+                            {order.items
+                              .filter((item) => item.notes)
+                              .map((item, index) => (
+                                <span key={`${order._id}-note-${index}`}>
+                                  <strong>{item.name}</strong>: {item.notes}
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                        <div className="status-buttons">
+                          {Object.keys(STATUSES).map((status) => (
+                            <button
+                              className={order.status === status ? "active" : ""}
+                              type="button"
+                              key={status}
+                              onClick={() => changeStatus(order._id, status)}
+                            >
+                              {STATUSES[status]}
+                            </button>
+                          ))}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ))
+              )}
+            </section>
+          </>
+        )}
+
+        {activeAdminSection === "menu" && (
+          <section className="admin-menu-manager">
+            <form className="menu-editor-panel" onSubmit={saveMenuItem}>
+              <div className="section-heading">
+                <p className="eyebrow">Gestione menu</p>
+                <h2>{editingMenuId ? "Modifica prodotto" : "Aggiungi prodotto"}</h2>
+              </div>
 
           <div className="menu-editor-grid">
             <label>
@@ -1556,6 +2061,15 @@ function AdminView() {
               />
             </label>
           </div>
+
+          <label>
+            Immagine prodotto
+            <input
+              value={menuForm.imageUrl}
+              onChange={(event) => updateMenuForm("imageUrl", event.target.value)}
+              placeholder="https://..."
+            />
+          </label>
 
           <label>
             Descrizione ingredienti
@@ -1638,6 +2152,9 @@ function AdminView() {
                         <strong>
                           {item.emoji || "🍕"} {item.name}
                         </strong>
+                        {item.imageUrl && (
+                          <img className="menu-admin-thumb" src={item.imageUrl} alt="" />
+                        )}
                         <span>{item.description || "Senza descrizione"}</span>
                         <small>
                           {money(item.price)} · {item.unit || "pezzo"} · ordine{" "}
@@ -1670,71 +2187,257 @@ function AdminView() {
           })}
         </div>
       </section>
+        )}
 
-      <section className="capacity-strip">
-        {(availability?.slots || []).map((slot) => (
-          <div
-            className={[
-              "capacity-pill",
-              slot.full ? "full" : "",
-              slot.almostFull ? "almost" : "",
-            ].join(" ")}
-            key={slot.pickupSlot}
-          >
-            <strong>{slot.time}</strong>
-            <span>
-              {slot.count}/{availability.maxOrdersPerSlot}
-            </span>
-          </div>
-        ))}
-      </section>
-
-      <section className="slot-columns">
-        {Object.entries(groupedOrders).length === 0 ? (
-          <p className="muted">Nessun ordine per questa giornata.</p>
-        ) : (
-          Object.entries(groupedOrders).map(([slot, slotOrders]) => (
-            <div className="slot-column" key={slot}>
-              <h2>{slotOrders[0]?.pickupTime || slot}</h2>
-              {slotOrders.map((order) => (
-                <article className="order-card" key={order._id}>
-                  <div className="order-card-head">
-                    <strong>{order.customer}</strong>
-                    <span className={`status ${order.status}`}>
-                      {STATUSES[order.status] || order.status}
-                    </span>
-                  </div>
-                  <p>
-                    {order.items
-                      .map((item) => `${item.qty}x ${item.name}`)
-                      .join(" | ")}
-                  </p>
-                  {order.items.some((item) => item.notes) && (
-                    <div className="order-item-notes">
-                      {order.items
-                        .filter((item) => item.notes)
-                        .map((item, index) => (
-                          <span key={`${order._id}-note-${index}`}>
-                            <strong>{item.name}</strong>: {item.notes}
-                          </span>
-                        ))}
-                    </div>
-                  )}
-                  <div className="status-buttons">
-                    {Object.keys(STATUSES).map((status) => (
-                      <button
-                        type="button"
-                        key={status}
-                        onClick={() => changeStatus(order._id, status)}
-                      >
-                        {STATUSES[status]}
+        {activeAdminSection === "availability" && (
+          <section className="admin-dashboard-grid">
+            <div className="admin-panel wide">
+              <div className="section-heading">
+                <p className="eyebrow">Disponibilita prodotti</p>
+                <h2>Esauriti o nascosti</h2>
+              </div>
+              <div className="availability-list">
+                {adminMenu.length === 0 ? (
+                  <p className="muted">Menu non ancora caricato.</p>
+                ) : (
+                  adminMenu.map((item) => (
+                    <article className={item.available ? "" : "off"} key={item._id}>
+                      <div>
+                        <strong>{item.emoji || "🍕"} {item.name}</strong>
+                        <span>{item.available ? "Visibile ai clienti" : "Nascosto / esaurito"}</span>
+                      </div>
+                      <button type="button" onClick={() => changeMenuAvailability(item._id)}>
+                        {item.available ? "Segna esaurito" : "Rendi ordinabile"}
                       </button>
-                    ))}
-                  </div>
-                </article>
-              ))}
+                    </article>
+                  ))
+                )}
+              </div>
             </div>
-          ))
+            <div className="admin-panel">
+              <div className="section-heading">
+                <p className="eyebrow">Riepilogo</p>
+                <h2>Stato menu</h2>
+              </div>
+              <div className="top-products">
+                <span><strong>Prodotti attivi</strong><b>{adminMenu.length - unavailableItems.length}</b></span>
+                <span><strong>Non ordinabili</strong><b>{unavailableItems.length}</b></span>
+                <span><strong>Categorie</strong><b>{MENU_CATEGORY_OPTIONS.length}</b></span>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeAdminSection === "customers" && (
+          <section className="admin-panel">
+            <div className="section-heading">
+              <p className="eyebrow">Clienti</p>
+              <h2>Rubrica ordini</h2>
+            </div>
+            <input
+              className="admin-search"
+              placeholder="Cerca nome o telefono"
+              value={customerSearch}
+              onChange={(event) => setCustomerSearch(event.target.value)}
+            />
+            <div className="customer-admin-list">
+              {customers.length === 0 ? (
+                <p className="muted">Nessun cliente trovato.</p>
+              ) : (
+                customers.map((customer) => (
+                  <article key={customer._id}>
+                    <div>
+                      <strong>{customer.name || "Cliente senza nome"}</strong>
+                      <span>{customer.phone}</span>
+                    </div>
+                    <span>{customer.totalOrders || 0} ordini</span>
+                    <span>{customer.completedOrders || 0} ritirati</span>
+                    <strong>{money(customer.totalSpent)}</strong>
+                    <small>{customer.lastOrderAt ? formatDateTime(customer.lastOrderAt) : "Nessun ordine"}</small>
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
+        )}
+
+        {activeAdminSection === "coupons" && (
+          <section className="admin-menu-manager">
+            <form className="menu-editor-panel" onSubmit={saveCoupon}>
+              <div className="section-heading">
+                <p className="eyebrow">Coupon e offerte</p>
+                <h2>{editingCouponId ? "Modifica coupon" : "Nuovo coupon"}</h2>
+              </div>
+              <div className="menu-editor-grid">
+                <label>
+                  Codice
+                  <input
+                    value={couponForm.code}
+                    onChange={(event) => updateCouponForm("code", event.target.value)}
+                    placeholder="PIZZA10"
+                  />
+                </label>
+                <label>
+                  Tipo
+                  <select
+                    value={couponForm.type}
+                    onChange={(event) => updateCouponForm("type", event.target.value)}
+                  >
+                    <option value="percent">Percentuale</option>
+                    <option value="fixed">Importo fisso</option>
+                  </select>
+                </label>
+                <label>
+                  Valore
+                  <input
+                    min="0"
+                    step="0.1"
+                    type="number"
+                    value={couponForm.value}
+                    onChange={(event) => updateCouponForm("value", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Scadenza
+                  <input
+                    type="date"
+                    value={couponForm.expiresAt}
+                    onChange={(event) => updateCouponForm("expiresAt", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Limite utilizzi
+                  <input
+                    min="0"
+                    step="1"
+                    type="number"
+                    value={couponForm.usageLimit}
+                    onChange={(event) => updateCouponForm("usageLimit", event.target.value)}
+                    placeholder="0 = illimitato"
+                  />
+                </label>
+              </div>
+              <label className="menu-featured-check">
+                <input
+                  checked={couponForm.active}
+                  type="checkbox"
+                  onChange={(event) => updateCouponForm("active", event.target.checked)}
+                />
+                Coupon attivo
+              </label>
+              <div className="menu-editor-actions">
+                <button type="submit" disabled={couponSaving}>
+                  {couponSaving ? "Salvataggio..." : editingCouponId ? "Salva coupon" : "Crea coupon"}
+                </button>
+                {editingCouponId && (
+                  <button type="button" onClick={resetCouponForm}>
+                    Annulla
+                  </button>
+                )}
+              </div>
+            </form>
+
+            <div className="menu-admin-list">
+              <div className="section-heading">
+                <p className="eyebrow">Offerte attive</p>
+                <h2>Codici sconto</h2>
+              </div>
+              {coupons.length === 0 ? (
+                <p className="muted">Nessun coupon creato.</p>
+              ) : (
+                <div className="menu-admin-items">
+                  {coupons.map((coupon) => (
+                    <article className={`menu-admin-item ${coupon.active ? "" : "off"}`} key={coupon._id}>
+                      <div>
+                        <strong>{coupon.code}</strong>
+                        <span>
+                          {coupon.type === "percent" ? `${coupon.value}%` : money(coupon.value)}
+                          {coupon.expiresAt ? ` · fino al ${coupon.expiresAt}` : " · senza scadenza"}
+                        </span>
+                        <small>{coupon.usedCount || 0}/{coupon.usageLimit || "∞"} utilizzi</small>
+                      </div>
+                      <div className="menu-admin-actions">
+                        <button type="button" onClick={() => editCoupon(coupon)}>Modifica</button>
+                        <button type="button" onClick={() => changeCouponStatus(coupon._id)}>
+                          {coupon.active ? "Disattiva" : "Attiva"}
+                        </button>
+                        <button className="danger" type="button" onClick={() => removeCoupon(coupon._id)}>
+                          Elimina
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {activeAdminSection === "settings" && (
+          <section className="admin-panel settings-panel">
+            <div className="section-heading">
+              <p className="eyebrow">Locale</p>
+              <h2>Impostazioni operative</h2>
+            </div>
+            <form className="settings-form" onSubmit={saveSettings}>
+              <label>
+                Orari apertura
+                <input
+                  value={settingsForm.openingHours}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({ ...current, openingHours: event.target.value }))
+                  }
+                />
+              </label>
+              <label>
+                Costo consegna
+                <input
+                  min="0"
+                  step="0.1"
+                  type="number"
+                  value={settingsForm.deliveryCost}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({ ...current, deliveryCost: event.target.value }))
+                  }
+                />
+              </label>
+              <label>
+                Ordine minimo
+                <input
+                  min="0"
+                  step="0.1"
+                  type="number"
+                  value={settingsForm.minimumOrder}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({ ...current, minimumOrder: event.target.value }))
+                  }
+                />
+              </label>
+              <label>
+                Zone servite
+                <input
+                  value={settingsForm.serviceZones}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({ ...current, serviceZones: event.target.value }))
+                  }
+                  placeholder="Centro, San Paolo, Eur"
+                />
+              </label>
+              <label className="settings-full">
+                Messaggio temporaneo
+                <textarea
+                  value={settingsForm.customerMessage}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({ ...current, customerMessage: event.target.value }))
+                  }
+                  placeholder="Siamo chiusi per ferie"
+                />
+              </label>
+              <button type="submit" disabled={settingsSaving}>
+                {settingsSaving ? "Salvataggio..." : "Salva impostazioni"}
+              </button>
+            </form>
+          </section>
         )}
       </section>
 
