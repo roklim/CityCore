@@ -10,6 +10,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 
 const config = require("./config");
+const { createCorsOptions } = require("./config/cors");
 const { connect, seedMenu } = require("./db");
 const { errorHandler } = require("./middleware/errorHandler");
 
@@ -28,11 +29,7 @@ const app = express();
 // config per supportare sia sviluppo locale sia deploy su Vercel/Render.
 app.use(helmet());
 
-app.use(
-  cors({
-    origin: config.cors.origin === "*" ? true : config.cors.origin,
-  }),
-);
+app.use(cors(createCorsOptions()));
 
 // Rate limit globale: protegge login e API pubbliche da spam/brute force senza
 // aggiungere un sistema anti-abuso piu' complesso.

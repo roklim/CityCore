@@ -10,6 +10,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 
 const config = require("./config");
+const { createCorsOptions } = require("./config/cors");
 const { connect, seedMenu } = require("./db");
 const { errorHandler } = require("./middleware/errorHandler");
 
@@ -26,11 +27,7 @@ const app = express();
 
 // Stessa pipeline di server.js, mantenuta qui per compatibilita serverless.
 app.use(helmet());
-app.use(
-  cors({
-    origin: config.cors.origin === "*" ? true : config.cors.origin,
-  }),
-);
+app.use(cors(createCorsOptions()));
 app.use(
   rateLimit({
     windowMs: config.rateLimit.windowMs,

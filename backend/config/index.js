@@ -35,6 +35,11 @@ const required = (key) => {
 };
 
 const optional = (key, fallback) => process.env[key] || fallback;
+const list = (key, fallback = "") =>
+  optional(key, fallback)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 const nodeEnv = optional("NODE_ENV", "development");
 const normalizedNodeEnv = nodeEnv === "prod" ? "production" : nodeEnv;
@@ -68,6 +73,7 @@ const config = {
 
   cors: {
     origin: optional("CORS_ORIGIN", "*"),
+    origins: list("CORS_ORIGINS"),
   },
 
   rateLimit: {
