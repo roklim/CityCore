@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   createMenuItem,
@@ -313,6 +313,12 @@ function getSlotHint(slot) {
   return "Buona scelta";
 }
 
+function isCounterOpenNow() {
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  return minutes >= 17 * 60 + 30 && minutes <= 22 * 60 + 30;
+}
+
 function orderTrackingHref(orderId) {
   return `/?ordine=${encodeURIComponent(orderId)}`;
 }
@@ -392,11 +398,11 @@ function CustomerView() {
   const [activeFilters, setActiveFilters] = useState([]);
   const [addedItemId, setAddedItemId] = useState("");
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
-  const [customPizzaBaseId, setCustomPizzaBaseId] = useState(
-    CUSTOM_PIZZA_BASES[2].id,
-  );
+  const [customPizzaOpen, setCustomPizzaOpen] = useState(false);
+  const [customPizzaBaseId, setCustomPizzaBaseId] = useState("");
   const [customPizzaToppings, setCustomPizzaToppings] = useState([]);
   const [customPizzaNotes, setCustomPizzaNotes] = useState("");
+  const customPizzaRef = useRef(null);
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -410,8 +416,7 @@ function CustomerView() {
   const normalizedPhone = useMemo(() => phone.replace(/\D/g, ""), [phone]);
   const customPizzaBase = useMemo(
     () =>
-      CUSTOM_PIZZA_BASES.find((base) => base.id === customPizzaBaseId) ||
-      CUSTOM_PIZZA_BASES[0],
+      CUSTOM_PIZZA_BASES.find((base) => base.id === customPizzaBaseId) || null,
     [customPizzaBaseId],
   );
   const customPizzaSelectedToppings = useMemo(
@@ -423,7 +428,7 @@ function CustomerView() {
   );
   const customPizzaPrice = useMemo(
     () =>
-      customPizzaBase.price +
+      (customPizzaBase?.price || 0) +
       customPizzaSelectedToppings.reduce(
         (sum, topping) => sum + topping.price,
         0,
@@ -461,7 +466,7 @@ function CustomerView() {
     return MENU_SECTIONS.map((section) => ({
       ...section,
       items: filteredMenu.filter((item) => getMenuSectionId(item) === section.id),
-    })).filter((section) => section.items.length > 0);
+    })).filter((section) => section.items.length > 0 || section.id === "pizze-tonde");
   }, [filteredMenu]);
 
   const activeMenu = useMemo(() => {
@@ -589,6 +594,8 @@ function CustomerView() {
           price: item.price,
           qty: 1,
           itemNotes: item.itemNotes || "",
+          customSummary: item.customSummary || "",
+          emoji: item.emoji || "",
         },
       ];
     });
@@ -618,6 +625,9 @@ function CustomerView() {
         ? current.filter((item) => item !== filterId)
         : [...current, filterId],
     );
+    window.setTimeout(() => {
+      document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
   }
 
   function getCartItem(itemId) {
@@ -639,7 +649,27 @@ function CustomerView() {
     });
   }
 
+  function toggleCustomPizzaBuilder() {
+    setCustomPizzaOpen((current) => {
+      const next = !current;
+      if (!current) {
+        window.setTimeout(() => {
+          customPizzaRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 80);
+      }
+      return next;
+    });
+  }
+
   function addCustomPizzaToCart() {
+    if (!customPizzaBase) {
+      notify("Scegli prima la base della pizza.");
+      return;
+    }
+
     const ingredientNames = customPizzaSelectedToppings.map(
       (topping) => topping.name,
     );
@@ -659,9 +689,18 @@ function CustomerView() {
         .sort()
         .join("-")}-${customPizzaNotes.trim().toLowerCase()}`,
       name: "Tonda su ordinazione",
+      emoji: "🍕",
       price: Math.round(customPizzaPrice * 100) / 100,
       itemNotes: customNotes,
+      customSummary: [
+        customPizzaBase.name,
+        ...ingredientNames,
+        customPizzaNotes.trim() ? customPizzaNotes.trim() : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
     });
+    setCustomPizzaOpen(false);
   }
 
   function reorderLastOrder() {
@@ -787,18 +826,43 @@ function CustomerView() {
         <a className="admin-link" href="/admin">
           Admin
         </a>
+        <span className={`counter-badge ${isCounterOpenNow() ? "open" : "closed"}`}>
+          {isCounterOpenNow()
+            ? "Banco aperto · ordina ora"
+            : "Banco chiuso · riapre stasera alle 18:00"}
+        </span>
         <p className="eyebrow">Mucho Gusto Pizzeria al Taglio</p>
-        <h1>Pizza al taglio pronta da portare via.</h1>
+        <h1>Tranci caldi, teglie fumanti e pizze pronte per l'asporto.</h1>
         <p className="lead">
           Scegli tranci, teglie, fritti e bibite. Prenoti l'orario, passi al
           banco e paghi al ritiro.
         </p>
+        <div className="hero-actions">
+          <button
+            type="button"
+            onClick={() =>
+              document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })
+            }
+          >
+            Ordina ora →
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .getElementById("recover-order")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+          >
+            Recupera il tuo ordine ↓
+          </button>
+        </div>
         <div className="service-strip" aria-label="Servizio pizzeria">
           <span><strong>Asporto</strong> ritiro al banco</span>
           <span><strong>Pizza</strong> trancio o teglia</span>
           <span><strong>Pagamento</strong> in pizzeria</span>
         </div>
-        <div className="customer-orders-panel">
+        <div className="customer-orders-panel" id="recover-order">
           <div>
             <p className="eyebrow">I miei ordini</p>
             <h2>Recupera il tuo ritiro</h2>
@@ -850,7 +914,7 @@ function CustomerView() {
         </div>
       </section>
 
-      <section className="order-layout">
+      <section className="order-layout" id="menu">
         <div className="menu-area">
           <div className="section-heading">
             <p className="eyebrow">Menu</p>
@@ -871,6 +935,18 @@ function CustomerView() {
                   />
                 </label>
                 <div className="quick-filters" aria-label="Filtri rapidi">
+                  <button
+                    type="button"
+                    className={activeFilters.length === 0 ? "active" : ""}
+                    onClick={() => {
+                      setActiveFilters([]);
+                      document
+                        .getElementById("menu")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  >
+                    Tutti
+                  </button>
                   {QUICK_FILTERS.map((filter) => (
                     <button
                       type="button"
@@ -883,81 +959,6 @@ function CustomerView() {
                   ))}
                 </div>
               </div>
-
-              <section className="custom-pizza-builder">
-                <div className="custom-pizza-head">
-                  <div>
-                    <p className="eyebrow">Fuori banco</p>
-                    <h3>Tonda su ordinazione</h3>
-                    <span>
-                      Scegli base e ingredienti, noi la prepariamo al momento
-                      per il tuo orario di ritiro.
-                    </span>
-                  </div>
-                  <div className="custom-pizza-total">
-                    <small>Totale</small>
-                    <strong>{money(customPizzaPrice)}</strong>
-                  </div>
-                </div>
-
-                <div className="custom-pizza-group">
-                  <span className="custom-pizza-label">Scegli la base</span>
-                  <div className="custom-base-grid">
-                    {CUSTOM_PIZZA_BASES.map((base) => (
-                      <button
-                        type="button"
-                        className={base.id === customPizzaBase.id ? "active" : ""}
-                        key={base.id}
-                        onClick={() => setCustomPizzaBaseId(base.id)}
-                      >
-                        <strong>{base.name}</strong>
-                        <small>{base.description}</small>
-                        <b>{money(base.price)}</b>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="custom-pizza-group">
-                  <span className="custom-pizza-label">
-                    Aggiunte ({customPizzaToppings.length}/
-                    {CUSTOM_PIZZA_MAX_TOPPINGS})
-                  </span>
-                  <div className="topping-grid">
-                    {CUSTOM_PIZZA_TOPPINGS.map((topping) => (
-                      <button
-                        type="button"
-                        className={
-                          customPizzaToppings.includes(topping.id) ? "active" : ""
-                        }
-                        key={topping.id}
-                        onClick={() => toggleCustomPizzaTopping(topping.id)}
-                      >
-                        <span>{topping.name}</span>
-                        <b>+ {money(topping.price)}</b>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <label className="custom-pizza-notes">
-                  Note per questa pizza
-                  <input
-                    placeholder="Es. ben cotta, poca mozzarella, tagliata..."
-                    maxLength={120}
-                    value={customPizzaNotes}
-                    onChange={(event) => setCustomPizzaNotes(event.target.value)}
-                  />
-                </label>
-
-                <button
-                  className="custom-pizza-submit"
-                  type="button"
-                  onClick={addCustomPizzaToCart}
-                >
-                  Aggiungi tonda - {money(customPizzaPrice)}
-                </button>
-              </section>
 
               <nav className="menu-category-nav" aria-label="Categorie menu">
                 {menuBySection.map((section) => (
@@ -990,10 +991,145 @@ function CustomerView() {
                       <h3>{activeMenu.title}</h3>
                       <span>{activeMenu.description}</span>
                     </div>
-                    <strong>{activeMenu.items.length}</strong>
+                    <strong>
+                      {activeMenu.items.length + (activeMenu.id === "pizze-tonde" ? 1 : 0)} prodotti
+                    </strong>
                   </div>
 
                   <div className="menu-grid">
+                    {activeMenu.id === "pizze-tonde" && (
+                      <article
+                        className={[
+                          "menu-card",
+                          "custom-pizza-card",
+                          customPizzaOpen ? "expanded" : "",
+                          addedItemId.startsWith("custom-pizza") ? "just-added" : "",
+                        ].join(" ")}
+                        ref={customPizzaRef}
+                      >
+                        <div className="menu-card-head">
+                          <span className="menu-emoji">🍕</span>
+                          <div>
+                            <span className="menu-featured custom">Personalizzabile</span>
+                            <span className="menu-name">Pizza su misura</span>
+                            <span className="menu-desc">
+                              Scegli base e ingredienti, la prepariamo noi al momento.
+                            </span>
+                            <span className="menu-unit">da {money(CUSTOM_PIZZA_BASES[0].price)}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          className="menu-add-button custom-toggle"
+                          type="button"
+                          onClick={toggleCustomPizzaBuilder}
+                          aria-expanded={customPizzaOpen}
+                        >
+                          {customPizzaOpen ? "▲ Chiudi" : "Configura"}
+                        </button>
+
+                        <div
+                          className={`custom-pizza-accordion ${
+                            customPizzaOpen ? "open" : ""
+                          }`}
+                        >
+                          <hr />
+                          <p className="custom-pizza-inner-title">
+                            Componi la tua pizza
+                          </p>
+
+                          <div className="custom-pizza-group">
+                            <span className="custom-pizza-label">Scegli la base</span>
+                            <div className="custom-base-grid">
+                              {CUSTOM_PIZZA_BASES.map((base) => (
+                                <button
+                                  type="button"
+                                  className={base.id === customPizzaBaseId ? "active" : ""}
+                                  key={base.id}
+                                  onClick={() => setCustomPizzaBaseId(base.id)}
+                                >
+                                  <strong>
+                                    {base.id === customPizzaBaseId ? "✓ " : ""}
+                                    {base.name}
+                                  </strong>
+                                  <small>{base.description}</small>
+                                  <b>{money(base.price)}</b>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {customPizzaBase && (
+                            <>
+                              <div className="custom-pizza-group">
+                                <span className="custom-pizza-label">
+                                  Aggiungi ingredienti ({customPizzaToppings.length}/
+                                  {CUSTOM_PIZZA_MAX_TOPPINGS})
+                                </span>
+                                <div className="topping-grid">
+                                  {CUSTOM_PIZZA_TOPPINGS.map((topping) => (
+                                    <button
+                                      type="button"
+                                      className={
+                                        customPizzaToppings.includes(topping.id)
+                                          ? "active"
+                                          : ""
+                                      }
+                                      key={topping.id}
+                                      onClick={() => toggleCustomPizzaTopping(topping.id)}
+                                    >
+                                      <span>{topping.name}</span>
+                                      <b>+ {money(topping.price)}</b>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <label className="custom-pizza-notes">
+                                Note pizza
+                                <textarea
+                                  placeholder="Es. ben cotta, poca mozzarella..."
+                                  maxLength={160}
+                                  rows="2"
+                                  value={customPizzaNotes}
+                                  onChange={(event) =>
+                                    setCustomPizzaNotes(event.target.value)
+                                  }
+                                />
+                              </label>
+
+                              <div className="custom-pizza-summary">
+                                <span>
+                                  <small>Base {customPizzaBase.name}</small>
+                                  <strong>{money(customPizzaBase.price)}</strong>
+                                </span>
+                                {customPizzaSelectedToppings.map((topping) => (
+                                  <span key={topping.id}>
+                                    <small>+ {topping.name}</small>
+                                    <strong>{money(topping.price)}</strong>
+                                  </span>
+                                ))}
+                                <b>
+                                  <span>Totale pizza</span>
+                                  <strong>{money(customPizzaPrice)}</strong>
+                                </b>
+                              </div>
+                            </>
+                          )}
+
+                          <button
+                            className="custom-pizza-submit"
+                            type="button"
+                            onClick={addCustomPizzaToCart}
+                            disabled={!customPizzaBase}
+                            aria-disabled={!customPizzaBase}
+                          >
+                            Aggiungi al carrello · {money(customPizzaPrice)}
+                          </button>
+                        </div>
+                      </article>
+                    )}
+
                     {activeMenu.items.map((item) => {
                       const cartItem = getCartItem(item._id);
 
@@ -1076,16 +1212,28 @@ function CustomerView() {
               cart.map((item) => (
                 <div className="cart-row" key={item.id}>
                   <div>
-                    <span>{item.name}</span>
-                    <textarea
-                      placeholder={`Note per ${item.name}`}
-                      value={item.itemNotes || ""}
-                      onChange={(event) =>
-                        updateCartItemNote(item.id, event.target.value)
-                      }
-                    />
+                    <span>
+                      {item.emoji && <b className="cart-row-emoji">{item.emoji}</b>}
+                      {item.name}
+                    </span>
+                    {item.customSummary ? (
+                      <small className="cart-custom-summary">
+                        {item.customSummary}
+                      </small>
+                    ) : (
+                      <textarea
+                        placeholder={`Note per ${item.name}`}
+                        value={item.itemNotes || ""}
+                        onChange={(event) =>
+                          updateCartItemNote(item.id, event.target.value)
+                        }
+                      />
+                    )}
                   </div>
-                  <strong>x{item.qty}</strong>
+                  <strong>
+                    {money(item.price * item.qty)}
+                    <small>x{item.qty}</small>
+                  </strong>
                   <div className="cart-row-actions">
                     <button type="button" onClick={() => removeFromCart(item.id)}>
                       -
@@ -1223,8 +1371,12 @@ function CustomerView() {
             <span>Paghi quando passi a ritirare il sacchetto.</span>
           </div>
 
-          <button className="submit-button" type="submit">
-            Conferma ordine
+          <button
+            className="submit-button"
+            type="submit"
+            disabled={!customer.trim() || !phone.trim() || cart.length === 0 || !selectedSlot}
+          >
+            Conferma ordine · {money(total)}
           </button>
         </form>
       </section>
@@ -1242,12 +1394,12 @@ function CustomerView() {
         <div className="mobile-cart-bar">
           <div>
             <strong>
-              {cartCount} {cartCount === 1 ? "prodotto" : "prodotti"}
+              {cartCount} {cartCount === 1 ? "prodotto" : "prodotti"} · {money(total)}
             </strong>
-            <span>{money(total)}</span>
+            <span>Ritiro al banco</span>
           </div>
           <button type="button" onClick={() => setMobileCartOpen(true)}>
-            Vai al carrello
+            Vedi ordine
           </button>
         </div>
       )}
@@ -1740,6 +1892,7 @@ function AdminView() {
 
   const recentOrders = stats?.recentOrders?.length ? stats.recentOrders : orders.slice(0, 8);
   const unavailableItems = adminMenu.filter((item) => !item.available);
+  const topProductMax = Math.max(...topProducts.map((item) => item.qty || 0), 1);
 
   if (!token) {
     return (
@@ -1871,9 +2024,12 @@ function AdminView() {
                   <p className="muted">Ancora nessun prodotto venduto oggi.</p>
                 ) : (
                   topProducts.map((item) => (
-                    <span key={item.name}>
-                      <strong>{item.name}</strong>
-                      <b>{item.qty} pz · {money(item.revenue)}</b>
+                    <span className="top-product-row" key={item.name}>
+                      <span>
+                        <strong>{item.name}</strong>
+                        <b>{item.qty} pz · {money(item.revenue)}</b>
+                      </span>
+                      <i style={{ width: `${((item.qty || 0) / topProductMax) * 100}%` }} />
                     </span>
                   ))
                 )}
