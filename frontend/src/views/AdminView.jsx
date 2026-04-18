@@ -359,7 +359,7 @@ export default function AdminView() {
                       onChange={(event) =>
                         updateBusinessForm("apiBaseUrl", event.target.value)
                       }
-                      placeholder="https://api.tuodominio.com/api"
+                      placeholder="https://mucho-gusto-mg5y.onrender.com/api"
                     />
                   </label>
                   <label>
