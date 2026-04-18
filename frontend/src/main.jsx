@@ -92,7 +92,8 @@ const MENU_SECTIONS = [
     id: "pizza-teglia",
     title: "Tranci e Teglie",
     eyebrow: "Banco caldo",
-    description: "Pizza al taglio, pezzi pronti e teglie da ordinare per l'asporto.",
+    description:
+      "Pizza al taglio, pezzi pronti e teglie da ordinare per l'asporto.",
   },
   {
     id: "pizze-tonde",
@@ -233,7 +234,8 @@ function formatDateTime(value) {
 function minutesUntilPickup(order) {
   if (!order?.pickupDate || !order?.pickupTime) return Number.POSITIVE_INFINITY;
   return Math.round(
-    (new Date(`${order.pickupDate}T${order.pickupTime}:00`) - new Date()) / 60000,
+    (new Date(`${order.pickupDate}T${order.pickupTime}:00`) - new Date()) /
+      60000,
   );
 }
 
@@ -253,7 +255,9 @@ function isUrgentOrder(order) {
 }
 
 function getMenuSectionId(item) {
-  const category = String(item.category || "").trim().toLowerCase();
+  const category = String(item.category || "")
+    .trim()
+    .toLowerCase();
   const text = `${item.name || ""} ${item.description || ""}`.toLowerCase();
 
   const categoryMap = {
@@ -271,17 +275,33 @@ function getMenuSectionId(item) {
 
   if (categoryMap[category]) return categoryMap[category];
 
-  if (/\b(speciale|speciali|mortazza|burrata|stracciatella|guanciale|crema di zucca|pecorino)\b/.test(text)) {
+  if (
+    /\b(speciale|speciali|mortazza|burrata|stracciatella|guanciale|crema di zucca|pecorino)\b/.test(
+      text,
+    )
+  ) {
     return "pizza-speciali";
   }
   if (/\b(teglia|trancio|taglio|pala)\b/.test(text)) return "pizza-teglia";
-  if (/\b(fritti|fritto|suppli|supplì|arancino|crocche|crocchetta|patatine|patatina|olive ascolane)\b/.test(text)) {
+  if (
+    /\b(fritti|fritto|suppli|supplì|arancino|crocche|crocchetta|patatine|patatina|olive ascolane)\b/.test(
+      text,
+    )
+  ) {
     return "fritti";
   }
-  if (/\b(drink|bevande|bibite|acqua|coca cola|coca|cola|fanta|sprite|birra|vino)\b/.test(text)) {
+  if (
+    /\b(drink|bevande|bibite|acqua|coca cola|coca|cola|fanta|sprite|birra|vino)\b/.test(
+      text,
+    )
+  ) {
     return "bevande";
   }
-  if (/\b(pizza|margherita|diavola|formaggi|prosciutto|napoli|capricciosa)\b/.test(text)) {
+  if (
+    /\b(pizza|margherita|diavola|formaggi|prosciutto|napoli|capricciosa)\b/.test(
+      text,
+    )
+  ) {
     return "pizze-tonde";
   }
 
@@ -294,9 +314,12 @@ function itemMatchesQuickFilter(item, filterId) {
   ).join(" ")} ${(item.allergens || []).join(" ")}`.toLowerCase();
 
   if (filterId === "vegetariana") {
-    return /(vegetariana|vegana|margherita|marinara|ortolana|formaggi|patate)/.test(text);
+    return /(vegetariana|vegana|margherita|marinara|ortolana|formaggi|patate)/.test(
+      text,
+    );
   }
-  if (filterId === "piccante") return /(piccante|diavola|nduja|peperoncino)/.test(text);
+  if (filterId === "piccante")
+    return /(piccante|diavola|nduja|peperoncino)/.test(text);
   if (filterId === "senza-lattosio") {
     return !(item.allergens || []).some((allergen) =>
       /latte|lattosio/.test(String(allergen).toLowerCase()),
@@ -347,7 +370,9 @@ function menuItemToForm(item) {
 }
 
 function getAdminMenuCategory(item) {
-  const category = String(item.category || "").trim().toLowerCase();
+  const category = String(item.category || "")
+    .trim()
+    .toLowerCase();
   if (category === "pizza") return "pizze-tonde";
   if (category === "drink") return "bevande";
   if (category === "dessert") return "dolci";
@@ -393,7 +418,9 @@ function CustomerView() {
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const [customerOrdersLoading, setCustomerOrdersLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeMenuSection, setActiveMenuSection] = useState(MENU_SECTIONS[0].id);
+  const [activeMenuSection, setActiveMenuSection] = useState(
+    MENU_SECTIONS[0].id,
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilters, setActiveFilters] = useState([]);
   const [addedItemId, setAddedItemId] = useState("");
@@ -436,13 +463,11 @@ function CustomerView() {
     [customPizzaBase, customPizzaSelectedToppings],
   );
 
-  const dateOptions = useMemo(
-    () => nextOpenDates(7),
-    [],
-  );
+  const dateOptions = useMemo(() => nextOpenDates(7), []);
 
   const visibleCustomerSlots = useMemo(
-    () => (availability?.slots || []).filter((slot) => !slot.full && !slot.past),
+    () =>
+      (availability?.slots || []).filter((slot) => !slot.full && !slot.past),
     [availability],
   );
 
@@ -465,8 +490,12 @@ function CustomerView() {
   const menuBySection = useMemo(() => {
     return MENU_SECTIONS.map((section) => ({
       ...section,
-      items: filteredMenu.filter((item) => getMenuSectionId(item) === section.id),
-    })).filter((section) => section.items.length > 0 || section.id === "pizze-tonde");
+      items: filteredMenu.filter(
+        (item) => getMenuSectionId(item) === section.id,
+      ),
+    })).filter(
+      (section) => section.items.length > 0 || section.id === "pizze-tonde",
+    );
   }, [filteredMenu]);
 
   const activeMenu = useMemo(() => {
@@ -641,7 +670,9 @@ function CustomerView() {
       }
 
       if (current.length >= CUSTOM_PIZZA_MAX_TOPPINGS) {
-        notify(`Puoi scegliere fino a ${CUSTOM_PIZZA_MAX_TOPPINGS} ingredienti.`);
+        notify(
+          `Puoi scegliere fino a ${CUSTOM_PIZZA_MAX_TOPPINGS} ingredienti.`,
+        );
         return current;
       }
 
@@ -674,7 +705,9 @@ function CustomerView() {
       (topping) => topping.name,
     );
     const ingredientsText =
-      ingredientNames.length > 0 ? ingredientNames.join(", ") : "nessuna aggiunta";
+      ingredientNames.length > 0
+        ? ingredientNames.join(", ")
+        : "nessuna aggiunta";
     const customNotes = [
       `Base: ${customPizzaBase.name}`,
       `Ingredienti: ${ingredientsText}`,
@@ -730,7 +763,9 @@ function CustomerView() {
     if (cart.length === 0) return notify("Aggiungi almeno un prodotto.");
     if (!selectedSlot) return notify("Scegli un orario di ritiro.");
 
-    const slot = availability.slots.find((item) => item.pickupSlot === selectedSlot);
+    const slot = availability.slots.find(
+      (item) => item.pickupSlot === selectedSlot,
+    );
     if (!slot || slot.full || slot.past) {
       return notify("Questa fascia non e disponibile.");
     }
@@ -784,8 +819,8 @@ function CustomerView() {
           <p className="eyebrow">Ordine preso al banco</p>
           <h1>Passa alle {confirmation.pickupTime}</h1>
           <p>
-            Il forno ha ricevuto il tuo ordine. Tieni questa schermata o segui il
-            ritiro per controllare quando passa a pronto.
+            Il forno ha ricevuto il tuo ordine. Tieni questa schermata o segui
+            il ritiro per controllare quando passa a pronto.
           </p>
 
           <div className="confirmation-summary">
@@ -798,7 +833,8 @@ function CustomerView() {
             <span>
               Stato{" "}
               <strong>
-                {PUBLIC_STATUS_LABELS[confirmation.status] || confirmation.status}
+                {PUBLIC_STATUS_LABELS[confirmation.status] ||
+                  confirmation.status}
               </strong>
             </span>
             <span>
@@ -807,7 +843,10 @@ function CustomerView() {
           </div>
 
           <div className="confirmation-actions">
-            <a className="tracking-link" href={orderTrackingHref(confirmation._id)}>
+            <a
+              className="tracking-link"
+              href={orderTrackingHref(confirmation._id)}
+            >
               Segui il ritiro
             </a>
             <button type="button" onClick={() => setConfirmation(null)}>
@@ -826,12 +865,14 @@ function CustomerView() {
         <a className="admin-link" href="/admin">
           Admin
         </a>
-        <span className={`counter-badge ${isCounterOpenNow() ? "open" : "closed"}`}>
+        <span
+          className={`counter-badge ${isCounterOpenNow() ? "open" : "closed"}`}
+        >
           {isCounterOpenNow()
             ? "Banco aperto · ordina ora"
-            : "Banco chiuso · riapre stasera alle 18:00"}
+            : "chiuso · riapre stasera alle 18:00"}
         </span>
-        <p className="eyebrow">Mucho Gusto Pizzeria al Taglio</p>
+        <p className="eyebrow">Mucho Gusto Pizzeria</p>
         <h1>Tranci caldi, teglie fumanti e pizze pronte per l'asporto.</h1>
         <p className="lead">
           Scegli tranci, teglie, fritti e bibite. Prenoti l'orario, passi al
@@ -841,7 +882,9 @@ function CustomerView() {
           <button
             type="button"
             onClick={() =>
-              document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })
+              document
+                .getElementById("menu")
+                ?.scrollIntoView({ behavior: "smooth" })
             }
           >
             Ordina ora →
@@ -858,9 +901,15 @@ function CustomerView() {
           </button>
         </div>
         <div className="service-strip" aria-label="Servizio pizzeria">
-          <span><strong>Asporto</strong> ritiro al banco</span>
-          <span><strong>Pizza</strong> trancio o teglia</span>
-          <span><strong>Pagamento</strong> in pizzeria</span>
+          <span>
+            <strong>Asporto</strong> ritiro al banco
+          </span>
+          <span>
+            <strong>Pizza</strong> trancio o teglia
+          </span>
+          <span>
+            <strong>Pagamento</strong> in pizzeria
+          </span>
         </div>
         <div className="customer-orders-panel" id="recover-order">
           <div>
@@ -900,10 +949,12 @@ function CustomerView() {
               {customerOrders.map((order) => (
                 <a href={orderTrackingHref(order._id)} key={order._id}>
                   <span>
-                    <strong>{order.pickupDate} alle {order.pickupTime}</strong>
+                    <strong>
+                      {order.pickupDate} alle {order.pickupTime}
+                    </strong>
                     <small>
-                      {PUBLIC_STATUS_LABELS[order.status] || order.status} -
-                      {" "}{order.items.length} prodotti
+                      {PUBLIC_STATUS_LABELS[order.status] || order.status} -{" "}
+                      {order.items.length} prodotti
                     </small>
                   </span>
                   <b>{money(order.total)}</b>
@@ -950,7 +1001,9 @@ function CustomerView() {
                   {QUICK_FILTERS.map((filter) => (
                     <button
                       type="button"
-                      className={activeFilters.includes(filter.id) ? "active" : ""}
+                      className={
+                        activeFilters.includes(filter.id) ? "active" : ""
+                      }
                       key={filter.id}
                       onClick={() => toggleFilter(filter.id)}
                     >
@@ -979,211 +1032,250 @@ function CustomerView() {
                   Niente al banco con questi filtri: prova a cercare un altro
                   trancio o sfizio.
                 </p>
-              ) : activeMenu && (
-                <section
-                  className="menu-section"
-                  id={`menu-${activeMenu.id}`}
-                  key={activeMenu.id}
-                >
-                  <div className="menu-section-head">
-                    <div>
-                      <p className="eyebrow">{activeMenu.eyebrow}</p>
-                      <h3>{activeMenu.title}</h3>
-                      <span>{activeMenu.description}</span>
+              ) : (
+                activeMenu && (
+                  <section
+                    className="menu-section"
+                    id={`menu-${activeMenu.id}`}
+                    key={activeMenu.id}
+                  >
+                    <div className="menu-section-head">
+                      <div>
+                        <p className="eyebrow">{activeMenu.eyebrow}</p>
+                        <h3>{activeMenu.title}</h3>
+                        <span>{activeMenu.description}</span>
+                      </div>
+                      <strong>
+                        {activeMenu.items.length +
+                          (activeMenu.id === "pizze-tonde" ? 1 : 0)}{" "}
+                        prodotti
+                      </strong>
                     </div>
-                    <strong>
-                      {activeMenu.items.length + (activeMenu.id === "pizze-tonde" ? 1 : 0)} prodotti
-                    </strong>
-                  </div>
 
-                  <div className="menu-grid">
-                    {activeMenu.id === "pizze-tonde" && (
-                      <article
-                        className={[
-                          "menu-card",
-                          "custom-pizza-card",
-                          customPizzaOpen ? "expanded" : "",
-                          addedItemId.startsWith("custom-pizza") ? "just-added" : "",
-                        ].join(" ")}
-                        ref={customPizzaRef}
-                      >
-                        <div className="menu-card-head">
-                          <span className="menu-emoji">🍕</span>
-                          <div>
-                            <span className="menu-featured custom">Personalizzabile</span>
-                            <span className="menu-name">Pizza su misura</span>
-                            <span className="menu-desc">
-                              Scegli base e ingredienti, la prepariamo noi al momento.
-                            </span>
-                            <span className="menu-unit">da {money(CUSTOM_PIZZA_BASES[0].price)}</span>
-                          </div>
-                        </div>
-
-                        <button
-                          className="menu-add-button custom-toggle"
-                          type="button"
-                          onClick={toggleCustomPizzaBuilder}
-                          aria-expanded={customPizzaOpen}
-                        >
-                          {customPizzaOpen ? "▲ Chiudi" : "Configura"}
-                        </button>
-
-                        <div
-                          className={`custom-pizza-accordion ${
-                            customPizzaOpen ? "open" : ""
-                          }`}
-                        >
-                          <hr />
-                          <p className="custom-pizza-inner-title">
-                            Componi la tua pizza
-                          </p>
-
-                          <div className="custom-pizza-group">
-                            <span className="custom-pizza-label">Scegli la base</span>
-                            <div className="custom-base-grid">
-                              {CUSTOM_PIZZA_BASES.map((base) => (
-                                <button
-                                  type="button"
-                                  className={base.id === customPizzaBaseId ? "active" : ""}
-                                  key={base.id}
-                                  onClick={() => setCustomPizzaBaseId(base.id)}
-                                >
-                                  <strong>
-                                    {base.id === customPizzaBaseId ? "✓ " : ""}
-                                    {base.name}
-                                  </strong>
-                                  <small>{base.description}</small>
-                                  <b>{money(base.price)}</b>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {customPizzaBase && (
-                            <>
-                              <div className="custom-pizza-group">
-                                <span className="custom-pizza-label">
-                                  Aggiungi ingredienti ({customPizzaToppings.length}/
-                                  {CUSTOM_PIZZA_MAX_TOPPINGS})
-                                </span>
-                                <div className="topping-grid">
-                                  {CUSTOM_PIZZA_TOPPINGS.map((topping) => (
-                                    <button
-                                      type="button"
-                                      className={
-                                        customPizzaToppings.includes(topping.id)
-                                          ? "active"
-                                          : ""
-                                      }
-                                      key={topping.id}
-                                      onClick={() => toggleCustomPizzaTopping(topping.id)}
-                                    >
-                                      <span>{topping.name}</span>
-                                      <b>+ {money(topping.price)}</b>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <label className="custom-pizza-notes">
-                                Note pizza
-                                <textarea
-                                  placeholder="Es. ben cotta, poca mozzarella..."
-                                  maxLength={160}
-                                  rows="2"
-                                  value={customPizzaNotes}
-                                  onChange={(event) =>
-                                    setCustomPizzaNotes(event.target.value)
-                                  }
-                                />
-                              </label>
-
-                              <div className="custom-pizza-summary">
-                                <span>
-                                  <small>Base {customPizzaBase.name}</small>
-                                  <strong>{money(customPizzaBase.price)}</strong>
-                                </span>
-                                {customPizzaSelectedToppings.map((topping) => (
-                                  <span key={topping.id}>
-                                    <small>+ {topping.name}</small>
-                                    <strong>{money(topping.price)}</strong>
-                                  </span>
-                                ))}
-                                <b>
-                                  <span>Totale pizza</span>
-                                  <strong>{money(customPizzaPrice)}</strong>
-                                </b>
-                              </div>
-                            </>
-                          )}
-
-                          <button
-                            className="custom-pizza-submit"
-                            type="button"
-                            onClick={addCustomPizzaToCart}
-                            disabled={!customPizzaBase}
-                            aria-disabled={!customPizzaBase}
-                          >
-                            Aggiungi al carrello · {money(customPizzaPrice)}
-                          </button>
-                        </div>
-                      </article>
-                    )}
-
-                    {activeMenu.items.map((item) => {
-                      const cartItem = getCartItem(item._id);
-
-                      return (
+                    <div className="menu-grid">
+                      {activeMenu.id === "pizze-tonde" && (
                         <article
                           className={[
                             "menu-card",
-                            addedItemId === item._id ? "just-added" : "",
+                            "custom-pizza-card",
+                            customPizzaOpen ? "expanded" : "",
+                            addedItemId.startsWith("custom-pizza")
+                              ? "just-added"
+                              : "",
                           ].join(" ")}
-                          key={item._id}
+                          ref={customPizzaRef}
                         >
-                          {addedItemId === item._id && (
-                            <span className="added-badge">Aggiunta</span>
-                          )}
                           <div className="menu-card-head">
-                            <span className="menu-emoji">{item.emoji || "Pizza"}</span>
+                            <span className="menu-emoji">🍕</span>
                             <div>
-                              <span className="menu-name">{item.name}</span>
+                              <span className="menu-featured custom">
+                                Personalizzabile
+                              </span>
+                              <span className="menu-name">Pizza su misura</span>
+                              <span className="menu-desc">
+                                Scegli base e ingredienti, la prepariamo noi al
+                                momento.
+                              </span>
                               <span className="menu-unit">
-                                {money(item.price)} / {item.unit || "pezzo"}
+                                da {money(CUSTOM_PIZZA_BASES[0].price)}
                               </span>
                             </div>
                           </div>
-                          <span className="menu-desc">{item.description}</span>
-                          {item.featured && (
-                            <span className="menu-featured">Piu richiesto</span>
-                          )}
-                          {cartItem ? (
-                            <div className="menu-qty-controls">
-                              <button
-                                type="button"
-                                onClick={() => removeFromCart(item._id)}
-                              >
-                                -
-                              </button>
-                              <strong>{cartItem.qty}</strong>
-                              <button type="button" onClick={() => addToCart(item)}>
-                                +
-                              </button>
+
+                          <button
+                            className="menu-add-button custom-toggle"
+                            type="button"
+                            onClick={toggleCustomPizzaBuilder}
+                            aria-expanded={customPizzaOpen}
+                          >
+                            {customPizzaOpen ? "▲ Chiudi" : "Configura"}
+                          </button>
+
+                          <div
+                            className={`custom-pizza-accordion ${
+                              customPizzaOpen ? "open" : ""
+                            }`}
+                          >
+                            <hr />
+                            <p className="custom-pizza-inner-title">
+                              Componi la tua pizza
+                            </p>
+
+                            <div className="custom-pizza-group">
+                              <span className="custom-pizza-label">
+                                Scegli la base
+                              </span>
+                              <div className="custom-base-grid">
+                                {CUSTOM_PIZZA_BASES.map((base) => (
+                                  <button
+                                    type="button"
+                                    className={
+                                      base.id === customPizzaBaseId
+                                        ? "active"
+                                        : ""
+                                    }
+                                    key={base.id}
+                                    onClick={() =>
+                                      setCustomPizzaBaseId(base.id)
+                                    }
+                                  >
+                                    <strong>
+                                      {base.id === customPizzaBaseId
+                                        ? "✓ "
+                                        : ""}
+                                      {base.name}
+                                    </strong>
+                                    <small>{base.description}</small>
+                                    <b>{money(base.price)}</b>
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                          ) : (
+
+                            {customPizzaBase && (
+                              <>
+                                <div className="custom-pizza-group">
+                                  <span className="custom-pizza-label">
+                                    Aggiungi ingredienti (
+                                    {customPizzaToppings.length}/
+                                    {CUSTOM_PIZZA_MAX_TOPPINGS})
+                                  </span>
+                                  <div className="topping-grid">
+                                    {CUSTOM_PIZZA_TOPPINGS.map((topping) => (
+                                      <button
+                                        type="button"
+                                        className={
+                                          customPizzaToppings.includes(
+                                            topping.id,
+                                          )
+                                            ? "active"
+                                            : ""
+                                        }
+                                        key={topping.id}
+                                        onClick={() =>
+                                          toggleCustomPizzaTopping(topping.id)
+                                        }
+                                      >
+                                        <span>{topping.name}</span>
+                                        <b>+ {money(topping.price)}</b>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <label className="custom-pizza-notes">
+                                  Note pizza
+                                  <textarea
+                                    placeholder="Es. ben cotta, poca mozzarella..."
+                                    maxLength={160}
+                                    rows="2"
+                                    value={customPizzaNotes}
+                                    onChange={(event) =>
+                                      setCustomPizzaNotes(event.target.value)
+                                    }
+                                  />
+                                </label>
+
+                                <div className="custom-pizza-summary">
+                                  <span>
+                                    <small>Base {customPizzaBase.name}</small>
+                                    <strong>
+                                      {money(customPizzaBase.price)}
+                                    </strong>
+                                  </span>
+                                  {customPizzaSelectedToppings.map(
+                                    (topping) => (
+                                      <span key={topping.id}>
+                                        <small>+ {topping.name}</small>
+                                        <strong>{money(topping.price)}</strong>
+                                      </span>
+                                    ),
+                                  )}
+                                  <b>
+                                    <span>Totale pizza</span>
+                                    <strong>{money(customPizzaPrice)}</strong>
+                                  </b>
+                                </div>
+                              </>
+                            )}
+
                             <button
-                              className="menu-add-button"
+                              className="custom-pizza-submit"
                               type="button"
-                              onClick={() => addToCart(item)}
+                              onClick={addCustomPizzaToCart}
+                              disabled={!customPizzaBase}
+                              aria-disabled={!customPizzaBase}
                             >
-                              Aggiungi
+                              Aggiungi al carrello · {money(customPizzaPrice)}
                             </button>
-                          )}
+                          </div>
                         </article>
-                      );
-                    })}
-                  </div>
-                </section>
+                      )}
+
+                      {activeMenu.items.map((item) => {
+                        const cartItem = getCartItem(item._id);
+
+                        return (
+                          <article
+                            className={[
+                              "menu-card",
+                              addedItemId === item._id ? "just-added" : "",
+                            ].join(" ")}
+                            key={item._id}
+                          >
+                            {addedItemId === item._id && (
+                              <span className="added-badge">Aggiunta</span>
+                            )}
+                            <div className="menu-card-head">
+                              <span className="menu-emoji">
+                                {item.emoji || "Pizza"}
+                              </span>
+                              <div>
+                                <span className="menu-name">{item.name}</span>
+                                <span className="menu-unit">
+                                  {money(item.price)} / {item.unit || "pezzo"}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="menu-desc">
+                              {item.description}
+                            </span>
+                            {item.featured && (
+                              <span className="menu-featured">
+                                Piu richiesto
+                              </span>
+                            )}
+                            {cartItem ? (
+                              <div className="menu-qty-controls">
+                                <button
+                                  type="button"
+                                  onClick={() => removeFromCart(item._id)}
+                                >
+                                  -
+                                </button>
+                                <strong>{cartItem.qty}</strong>
+                                <button
+                                  type="button"
+                                  onClick={() => addToCart(item)}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                className="menu-add-button"
+                                type="button"
+                                onClick={() => addToCart(item)}
+                              >
+                                Aggiungi
+                              </button>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )
               )}
             </div>
           )}
@@ -1213,7 +1305,9 @@ function CustomerView() {
                 <div className="cart-row" key={item.id}>
                   <div>
                     <span>
-                      {item.emoji && <b className="cart-row-emoji">{item.emoji}</b>}
+                      {item.emoji && (
+                        <b className="cart-row-emoji">{item.emoji}</b>
+                      )}
                       {item.name}
                     </span>
                     {item.customSummary ? (
@@ -1235,7 +1329,10 @@ function CustomerView() {
                     <small>x{item.qty}</small>
                   </strong>
                   <div className="cart-row-actions">
-                    <button type="button" onClick={() => removeFromCart(item.id)}>
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(item.id)}
+                    >
                       -
                     </button>
                     <button
@@ -1263,7 +1360,10 @@ function CustomerView() {
 
           <label>
             Nome
-            <input value={customer} onChange={(e) => setCustomer(e.target.value)} />
+            <input
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+            />
           </label>
           <label>
             Telefono
@@ -1295,7 +1395,9 @@ function CustomerView() {
             <div className="loyalty-card">
               <div>
                 <p className="eyebrow">Bentornato al banco</p>
-                <strong>{customerProfile.customer.name || "Cliente Mucho Gusto"}</strong>
+                <strong>
+                  {customerProfile.customer.name || "Cliente Mucho Gusto"}
+                </strong>
                 <span>
                   {loyaltyPoints} punti banco - {loyaltyRemaining} al prossimo
                   bonus
@@ -1325,7 +1427,10 @@ function CustomerView() {
 
           <label>
             Note
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </label>
 
           <div className="date-strip">
@@ -1374,7 +1479,12 @@ function CustomerView() {
           <button
             className="submit-button"
             type="submit"
-            disabled={!customer.trim() || !phone.trim() || cart.length === 0 || !selectedSlot}
+            disabled={
+              !customer.trim() ||
+              !phone.trim() ||
+              cart.length === 0 ||
+              !selectedSlot
+            }
           >
             Conferma ordine · {money(total)}
           </button>
@@ -1394,7 +1504,8 @@ function CustomerView() {
         <div className="mobile-cart-bar">
           <div>
             <strong>
-              {cartCount} {cartCount === 1 ? "prodotto" : "prodotti"} · {money(total)}
+              {cartCount} {cartCount === 1 ? "prodotto" : "prodotti"} ·{" "}
+              {money(total)}
             </strong>
             <span>Ritiro al banco</span>
           </div>
@@ -1452,7 +1563,9 @@ function TrackingView({ orderId }) {
             <h1>{PUBLIC_STATUS_LABELS[order.status] || order.status}</h1>
             <p>
               Ritiro al banco:{" "}
-              <strong>{order.pickupDate} alle {order.pickupTime}</strong>
+              <strong>
+                {order.pickupDate} alle {order.pickupTime}
+              </strong>
             </p>
             <div className="tracking-steps">
               {ORDER_STATUS_STEPS.map((status, index) => (
@@ -1467,7 +1580,9 @@ function TrackingView({ orderId }) {
             <div className="tracking-items">
               {order.items.map((item, index) => (
                 <span key={`${item.name}-${index}`}>
-                  <strong>{item.qty}x {item.name}</strong>
+                  <strong>
+                    {item.qty}x {item.name}
+                  </strong>
                   {item.notes && <small>{item.notes}</small>}
                 </span>
               ))}
@@ -1580,7 +1695,11 @@ function AdminView() {
   }
 
   async function loadAdminResources() {
-    await Promise.all([loadAdminMenu(), loadCustomers(customerSearch), loadSettings()]);
+    await Promise.all([
+      loadAdminMenu(),
+      loadCustomers(customerSearch),
+      loadSettings(),
+    ]);
   }
 
   async function loadAdminMenu() {
@@ -1829,18 +1948,20 @@ function AdminView() {
         const query = orderSearch.trim().toLowerCase();
         const matchesFilter =
           orderFilter === "all" ||
-          (orderFilter === "new" ? isFreshOrder(order) : order.status === orderFilter);
+          (orderFilter === "new"
+            ? isFreshOrder(order)
+            : order.status === orderFilter);
         const haystack = `${order.customer || ""} ${order.phone || ""} ${
           order.notes || ""
         } ${(order.items || []).map((item) => item.name).join(" ")}`.toLowerCase();
         return matchesFilter && (!query || haystack.includes(query));
       })
       .reduce((groups, order) => {
-      const key = order.pickupSlot || "Senza fascia";
-      groups[key] = groups[key] || [];
-      groups[key].push(order);
-      return groups;
-    }, {});
+        const key = order.pickupSlot || "Senza fascia";
+        groups[key] = groups[key] || [];
+        groups[key].push(order);
+        return groups;
+      }, {});
   }, [orderFilter, orderSearch, orders]);
 
   const visibleOrders = useMemo(
@@ -1864,14 +1985,20 @@ function AdminView() {
       .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
 
     return {
-      total: today.total ?? orders.filter((order) => order.status !== "cancelled").length,
+      total:
+        today.total ??
+        orders.filter((order) => order.status !== "cancelled").length,
       revenue: today.revenue ?? fallbackRevenue,
       pending:
-        (today.preparing ?? orders.filter((order) => order.status === "preparing").length) +
-        (today.ready ?? orders.filter((order) => order.status === "ready").length),
-      done: today.done ?? orders.filter((order) => order.status === "done").length,
+        (today.preparing ??
+          orders.filter((order) => order.status === "preparing").length) +
+        (today.ready ??
+          orders.filter((order) => order.status === "ready").length),
+      done:
+        today.done ?? orders.filter((order) => order.status === "done").length,
       cancelled:
-        today.cancelled ?? orders.filter((order) => order.status === "cancelled").length,
+        today.cancelled ??
+        orders.filter((order) => order.status === "cancelled").length,
     };
   }, [orders, stats]);
 
@@ -1881,18 +2008,29 @@ function AdminView() {
     for (const order of orders) {
       if (order.status === "cancelled") continue;
       for (const item of order.items || []) {
-        const current = productMap.get(item.name) || { name: item.name, qty: 0, revenue: 0 };
+        const current = productMap.get(item.name) || {
+          name: item.name,
+          qty: 0,
+          revenue: 0,
+        };
         current.qty += item.qty || 0;
         current.revenue += (item.price || 0) * (item.qty || 0);
         productMap.set(item.name, current);
       }
     }
-    return Array.from(productMap.values()).sort((a, b) => b.qty - a.qty).slice(0, 5);
+    return Array.from(productMap.values())
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
   }, [orders, stats]);
 
-  const recentOrders = stats?.recentOrders?.length ? stats.recentOrders : orders.slice(0, 8);
+  const recentOrders = stats?.recentOrders?.length
+    ? stats.recentOrders
+    : orders.slice(0, 8);
   const unavailableItems = adminMenu.filter((item) => !item.available);
-  const topProductMax = Math.max(...topProducts.map((item) => item.qty || 0), 1);
+  const topProductMax = Math.max(
+    ...topProducts.map((item) => item.qty || 0),
+    1,
+  );
 
   if (!token) {
     return (
@@ -1944,7 +2082,9 @@ function AdminView() {
         <header className="admin-header">
           <div>
             <p className="eyebrow">Operativita giornaliera</p>
-            <h1>{ADMIN_NAV.find((item) => item.id === activeAdminSection)?.label}</h1>
+            <h1>
+              {ADMIN_NAV.find((item) => item.id === activeAdminSection)?.label}
+            </h1>
           </div>
           <div className="admin-actions">
             <span className="refresh-note">
@@ -1964,7 +2104,8 @@ function AdminView() {
           </div>
         </header>
 
-        {(activeAdminSection === "dashboard" || activeAdminSection === "orders") && (
+        {(activeAdminSection === "dashboard" ||
+          activeAdminSection === "orders") && (
           <section className="admin-stats-grid">
             <article>
               <span>Ordini oggi</span>
@@ -2003,7 +2144,9 @@ function AdminView() {
                     >
                       <div>
                         <strong>{order.customer}</strong>
-                        <span>{order.pickupTime} · {money(order.total)}</span>
+                        <span>
+                          {order.pickupTime} · {money(order.total)}
+                        </span>
                       </div>
                       <span className={`status ${order.status}`}>
                         {isFreshOrder(order) ? "Nuovo" : STATUSES[order.status]}
@@ -2027,9 +2170,15 @@ function AdminView() {
                     <span className="top-product-row" key={item.name}>
                       <span>
                         <strong>{item.name}</strong>
-                        <b>{item.qty} pz · {money(item.revenue)}</b>
+                        <b>
+                          {item.qty} pz · {money(item.revenue)}
+                        </b>
                       </span>
-                      <i style={{ width: `${((item.qty || 0) / topProductMax) * 100}%` }} />
+                      <i
+                        style={{
+                          width: `${((item.qty || 0) / topProductMax) * 100}%`,
+                        }}
+                      />
                     </span>
                   ))
                 )}
@@ -2052,7 +2201,9 @@ function AdminView() {
                     key={slot.pickupSlot}
                   >
                     <strong>{slot.time}</strong>
-                    <span>{slot.count}/{availability.maxOrdersPerSlot}</span>
+                    <span>
+                      {slot.count}/{availability.maxOrdersPerSlot}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -2097,12 +2248,16 @@ function AdminView() {
                         <div className="order-card-head">
                           <strong>{order.customer}</strong>
                           <span className={`status ${order.status}`}>
-                            {isFreshOrder(order) ? "Nuovo" : STATUSES[order.status]}
+                            {isFreshOrder(order)
+                              ? "Nuovo"
+                              : STATUSES[order.status]}
                           </span>
                         </div>
                         <div className="order-meta">
                           <span>{order.phone || "Telefono non inserito"}</span>
-                          <span>{order.pickupDate} · {order.pickupTime}</span>
+                          <span>
+                            {order.pickupDate} · {order.pickupTime}
+                          </span>
                           <strong>{money(order.total)}</strong>
                         </div>
                         <p>
@@ -2110,7 +2265,9 @@ function AdminView() {
                             .map((item) => `${item.qty}x ${item.name}`)
                             .join(" | ")}
                         </p>
-                        {order.notes && <p className="order-note">{order.notes}</p>}
+                        {order.notes && (
+                          <p className="order-note">{order.notes}</p>
+                        )}
                         {order.items?.some((item) => item.notes) && (
                           <div className="order-item-notes">
                             {order.items
@@ -2125,7 +2282,9 @@ function AdminView() {
                         <div className="status-buttons">
                           {Object.keys(STATUSES).map((status) => (
                             <button
-                              className={order.status === status ? "active" : ""}
+                              className={
+                                order.status === status ? "active" : ""
+                              }
                               type="button"
                               key={status}
                               onClick={() => changeStatus(order._id, status)}
@@ -2148,201 +2307,228 @@ function AdminView() {
             <form className="menu-editor-panel" onSubmit={saveMenuItem}>
               <div className="section-heading">
                 <p className="eyebrow">Gestione menu</p>
-                <h2>{editingMenuId ? "Modifica prodotto" : "Aggiungi prodotto"}</h2>
+                <h2>
+                  {editingMenuId ? "Modifica prodotto" : "Aggiungi prodotto"}
+                </h2>
               </div>
 
-          <div className="menu-editor-grid">
-            <label>
-              Nome prodotto
-              <input
-                value={menuForm.name}
-                onChange={(event) => updateMenuForm("name", event.target.value)}
-                placeholder="Es. Margherita"
-              />
-            </label>
-            <label>
-              Prezzo
-              <input
-                min="0"
-                step="0.1"
-                type="number"
-                value={menuForm.price}
-                onChange={(event) => updateMenuForm("price", event.target.value)}
-                placeholder="6.00"
-              />
-            </label>
-            <label>
-              Categoria
-              <select
-                value={menuForm.category}
-                onChange={(event) => updateMenuForm("category", event.target.value)}
-              >
-                {MENU_CATEGORY_OPTIONS.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Unita
-              <select
-                value={menuForm.unit}
-                onChange={(event) => updateMenuForm("unit", event.target.value)}
-              >
-                {MENU_UNIT_OPTIONS.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {unit}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Emoji
-              <input
-                value={menuForm.emoji}
-                onChange={(event) => updateMenuForm("emoji", event.target.value)}
-                placeholder="🍕"
-              />
-            </label>
-            <label>
-              Ordine
-              <input
-                min="0"
-                step="1"
-                type="number"
-                value={menuForm.sortOrder}
-                onChange={(event) => updateMenuForm("sortOrder", event.target.value)}
-                placeholder="10"
-              />
-            </label>
-          </div>
+              <div className="menu-editor-grid">
+                <label>
+                  Nome prodotto
+                  <input
+                    value={menuForm.name}
+                    onChange={(event) =>
+                      updateMenuForm("name", event.target.value)
+                    }
+                    placeholder="Es. Margherita"
+                  />
+                </label>
+                <label>
+                  Prezzo
+                  <input
+                    min="0"
+                    step="0.1"
+                    type="number"
+                    value={menuForm.price}
+                    onChange={(event) =>
+                      updateMenuForm("price", event.target.value)
+                    }
+                    placeholder="6.00"
+                  />
+                </label>
+                <label>
+                  Categoria
+                  <select
+                    value={menuForm.category}
+                    onChange={(event) =>
+                      updateMenuForm("category", event.target.value)
+                    }
+                  >
+                    {MENU_CATEGORY_OPTIONS.map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Unita
+                  <select
+                    value={menuForm.unit}
+                    onChange={(event) =>
+                      updateMenuForm("unit", event.target.value)
+                    }
+                  >
+                    {MENU_UNIT_OPTIONS.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {unit}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Emoji
+                  <input
+                    value={menuForm.emoji}
+                    onChange={(event) =>
+                      updateMenuForm("emoji", event.target.value)
+                    }
+                    placeholder="🍕"
+                  />
+                </label>
+                <label>
+                  Ordine
+                  <input
+                    min="0"
+                    step="1"
+                    type="number"
+                    value={menuForm.sortOrder}
+                    onChange={(event) =>
+                      updateMenuForm("sortOrder", event.target.value)
+                    }
+                    placeholder="10"
+                  />
+                </label>
+              </div>
 
-          <label>
-            Immagine prodotto
-            <input
-              value={menuForm.imageUrl}
-              onChange={(event) => updateMenuForm("imageUrl", event.target.value)}
-              placeholder="https://..."
-            />
-          </label>
+              <label>
+                Immagine prodotto
+                <input
+                  value={menuForm.imageUrl}
+                  onChange={(event) =>
+                    updateMenuForm("imageUrl", event.target.value)
+                  }
+                  placeholder="https://..."
+                />
+              </label>
 
-          <label>
-            Descrizione ingredienti
-            <textarea
-              value={menuForm.description}
-              onChange={(event) =>
-                updateMenuForm("description", event.target.value)
-              }
-              placeholder="Pomodoro, mozzarella, basilico"
-            />
-          </label>
+              <label>
+                Descrizione ingredienti
+                <textarea
+                  value={menuForm.description}
+                  onChange={(event) =>
+                    updateMenuForm("description", event.target.value)
+                  }
+                  placeholder="Pomodoro, mozzarella, basilico"
+                />
+              </label>
 
-          <div className="menu-editor-grid">
-            <label>
-              Tag
-              <input
-                value={menuForm.tags}
-                onChange={(event) => updateMenuForm("tags", event.target.value)}
-                placeholder="vegetariana, classica"
-              />
-            </label>
-            <label>
-              Allergeni
-              <input
-                value={menuForm.allergens}
-                onChange={(event) =>
-                  updateMenuForm("allergens", event.target.value)
-                }
-                placeholder="glutine, latte"
-              />
-            </label>
-          </div>
+              <div className="menu-editor-grid">
+                <label>
+                  Tag
+                  <input
+                    value={menuForm.tags}
+                    onChange={(event) =>
+                      updateMenuForm("tags", event.target.value)
+                    }
+                    placeholder="vegetariana, classica"
+                  />
+                </label>
+                <label>
+                  Allergeni
+                  <input
+                    value={menuForm.allergens}
+                    onChange={(event) =>
+                      updateMenuForm("allergens", event.target.value)
+                    }
+                    placeholder="glutine, latte"
+                  />
+                </label>
+              </div>
 
-          <label className="menu-featured-check">
-            <input
-              checked={menuForm.featured}
-              type="checkbox"
-              onChange={(event) =>
-                updateMenuForm("featured", event.target.checked)
-              }
-            />
-            Segna come piu richiesta / novita
-          </label>
+              <label className="menu-featured-check">
+                <input
+                  checked={menuForm.featured}
+                  type="checkbox"
+                  onChange={(event) =>
+                    updateMenuForm("featured", event.target.checked)
+                  }
+                />
+                Segna come piu richiesta / novita
+              </label>
 
-          <div className="menu-editor-actions">
-            <button type="submit" disabled={menuSaving}>
-              {menuSaving
-                ? "Salvataggio..."
-                : editingMenuId
-                  ? "Salva modifiche"
-                  : "Aggiungi al menu"}
-            </button>
-            {editingMenuId && (
-              <button type="button" onClick={resetMenuForm}>
-                Annulla modifica
-              </button>
-            )}
-          </div>
-        </form>
+              <div className="menu-editor-actions">
+                <button type="submit" disabled={menuSaving}>
+                  {menuSaving
+                    ? "Salvataggio..."
+                    : editingMenuId
+                      ? "Salva modifiche"
+                      : "Aggiungi al menu"}
+                </button>
+                {editingMenuId && (
+                  <button type="button" onClick={resetMenuForm}>
+                    Annulla modifica
+                  </button>
+                )}
+              </div>
+            </form>
 
-        <div className="menu-admin-list">
-          <div className="section-heading">
-            <p className="eyebrow">Prodotti pubblicati</p>
-            <h2>Menu della pizzeria</h2>
-          </div>
-          {MENU_CATEGORY_OPTIONS.map((category) => {
-            const items = groupedMenu[category.value] || [];
-            if (items.length === 0) return null;
+            <div className="menu-admin-list">
+              <div className="section-heading">
+                <p className="eyebrow">Prodotti pubblicati</p>
+                <h2>Menu della pizzeria</h2>
+              </div>
+              {MENU_CATEGORY_OPTIONS.map((category) => {
+                const items = groupedMenu[category.value] || [];
+                if (items.length === 0) return null;
 
-            return (
-              <section className="menu-admin-category" key={category.value}>
-                <h3>{category.label}</h3>
-                <div className="menu-admin-items">
-                  {items.map((item) => (
-                    <article
-                      className={`menu-admin-item ${item.available ? "" : "off"}`}
-                      key={item._id}
-                    >
-                      <div>
-                        <strong>
-                          {item.emoji || "🍕"} {item.name}
-                        </strong>
-                        {item.imageUrl && (
-                          <img className="menu-admin-thumb" src={item.imageUrl} alt="" />
-                        )}
-                        <span>{item.description || "Senza descrizione"}</span>
-                        <small>
-                          {money(item.price)} · {item.unit || "pezzo"} · ordine{" "}
-                          {item.sortOrder || 0}
-                        </small>
-                      </div>
-                      <div className="menu-admin-actions">
-                        <button type="button" onClick={() => editMenuItem(item)}>
-                          Modifica
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => changeMenuAvailability(item._id)}
+                return (
+                  <section className="menu-admin-category" key={category.value}>
+                    <h3>{category.label}</h3>
+                    <div className="menu-admin-items">
+                      {items.map((item) => (
+                        <article
+                          className={`menu-admin-item ${item.available ? "" : "off"}`}
+                          key={item._id}
                         >
-                          {item.available ? "Nascondi" : "Mostra"}
-                        </button>
-                        <button
-                          className="danger"
-                          type="button"
-                          onClick={() => removeMenuItem(item._id)}
-                        >
-                          Elimina
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      </section>
+                          <div>
+                            <strong>
+                              {item.emoji || "🍕"} {item.name}
+                            </strong>
+                            {item.imageUrl && (
+                              <img
+                                className="menu-admin-thumb"
+                                src={item.imageUrl}
+                                alt=""
+                              />
+                            )}
+                            <span>
+                              {item.description || "Senza descrizione"}
+                            </span>
+                            <small>
+                              {money(item.price)} · {item.unit || "pezzo"} ·
+                              ordine {item.sortOrder || 0}
+                            </small>
+                          </div>
+                          <div className="menu-admin-actions">
+                            <button
+                              type="button"
+                              onClick={() => editMenuItem(item)}
+                            >
+                              Modifica
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => changeMenuAvailability(item._id)}
+                            >
+                              {item.available ? "Nascondi" : "Mostra"}
+                            </button>
+                            <button
+                              className="danger"
+                              type="button"
+                              onClick={() => removeMenuItem(item._id)}
+                            >
+                              Elimina
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {activeAdminSection === "availability" && (
@@ -2357,12 +2543,24 @@ function AdminView() {
                   <p className="muted">Menu non ancora caricato.</p>
                 ) : (
                   adminMenu.map((item) => (
-                    <article className={item.available ? "" : "off"} key={item._id}>
+                    <article
+                      className={item.available ? "" : "off"}
+                      key={item._id}
+                    >
                       <div>
-                        <strong>{item.emoji || "🍕"} {item.name}</strong>
-                        <span>{item.available ? "Visibile ai clienti" : "Nascosto / esaurito"}</span>
+                        <strong>
+                          {item.emoji || "🍕"} {item.name}
+                        </strong>
+                        <span>
+                          {item.available
+                            ? "Visibile ai clienti"
+                            : "Nascosto / esaurito"}
+                        </span>
                       </div>
-                      <button type="button" onClick={() => changeMenuAvailability(item._id)}>
+                      <button
+                        type="button"
+                        onClick={() => changeMenuAvailability(item._id)}
+                      >
                         {item.available ? "Segna esaurito" : "Rendi ordinabile"}
                       </button>
                     </article>
@@ -2376,9 +2574,18 @@ function AdminView() {
                 <h2>Stato menu</h2>
               </div>
               <div className="top-products">
-                <span><strong>Prodotti attivi</strong><b>{adminMenu.length - unavailableItems.length}</b></span>
-                <span><strong>Non ordinabili</strong><b>{unavailableItems.length}</b></span>
-                <span><strong>Categorie</strong><b>{MENU_CATEGORY_OPTIONS.length}</b></span>
+                <span>
+                  <strong>Prodotti attivi</strong>
+                  <b>{adminMenu.length - unavailableItems.length}</b>
+                </span>
+                <span>
+                  <strong>Non ordinabili</strong>
+                  <b>{unavailableItems.length}</b>
+                </span>
+                <span>
+                  <strong>Categorie</strong>
+                  <b>{MENU_CATEGORY_OPTIONS.length}</b>
+                </span>
               </div>
             </div>
           </section>
@@ -2409,7 +2616,11 @@ function AdminView() {
                     <span>{customer.totalOrders || 0} ordini</span>
                     <span>{customer.completedOrders || 0} ritirati</span>
                     <strong>{money(customer.totalSpent)}</strong>
-                    <small>{customer.lastOrderAt ? formatDateTime(customer.lastOrderAt) : "Nessun ordine"}</small>
+                    <small>
+                      {customer.lastOrderAt
+                        ? formatDateTime(customer.lastOrderAt)
+                        : "Nessun ordine"}
+                    </small>
                   </article>
                 ))
               )}
@@ -2429,7 +2640,9 @@ function AdminView() {
                   Codice
                   <input
                     value={couponForm.code}
-                    onChange={(event) => updateCouponForm("code", event.target.value)}
+                    onChange={(event) =>
+                      updateCouponForm("code", event.target.value)
+                    }
                     placeholder="PIZZA10"
                   />
                 </label>
@@ -2437,7 +2650,9 @@ function AdminView() {
                   Tipo
                   <select
                     value={couponForm.type}
-                    onChange={(event) => updateCouponForm("type", event.target.value)}
+                    onChange={(event) =>
+                      updateCouponForm("type", event.target.value)
+                    }
                   >
                     <option value="percent">Percentuale</option>
                     <option value="fixed">Importo fisso</option>
@@ -2450,7 +2665,9 @@ function AdminView() {
                     step="0.1"
                     type="number"
                     value={couponForm.value}
-                    onChange={(event) => updateCouponForm("value", event.target.value)}
+                    onChange={(event) =>
+                      updateCouponForm("value", event.target.value)
+                    }
                   />
                 </label>
                 <label>
@@ -2458,7 +2675,9 @@ function AdminView() {
                   <input
                     type="date"
                     value={couponForm.expiresAt}
-                    onChange={(event) => updateCouponForm("expiresAt", event.target.value)}
+                    onChange={(event) =>
+                      updateCouponForm("expiresAt", event.target.value)
+                    }
                   />
                 </label>
                 <label>
@@ -2468,7 +2687,9 @@ function AdminView() {
                     step="1"
                     type="number"
                     value={couponForm.usageLimit}
-                    onChange={(event) => updateCouponForm("usageLimit", event.target.value)}
+                    onChange={(event) =>
+                      updateCouponForm("usageLimit", event.target.value)
+                    }
                     placeholder="0 = illimitato"
                   />
                 </label>
@@ -2477,13 +2698,19 @@ function AdminView() {
                 <input
                   checked={couponForm.active}
                   type="checkbox"
-                  onChange={(event) => updateCouponForm("active", event.target.checked)}
+                  onChange={(event) =>
+                    updateCouponForm("active", event.target.checked)
+                  }
                 />
                 Coupon attivo
               </label>
               <div className="menu-editor-actions">
                 <button type="submit" disabled={couponSaving}>
-                  {couponSaving ? "Salvataggio..." : editingCouponId ? "Salva coupon" : "Crea coupon"}
+                  {couponSaving
+                    ? "Salvataggio..."
+                    : editingCouponId
+                      ? "Salva coupon"
+                      : "Crea coupon"}
                 </button>
                 {editingCouponId && (
                   <button type="button" onClick={resetCouponForm}>
@@ -2503,21 +2730,43 @@ function AdminView() {
               ) : (
                 <div className="menu-admin-items">
                   {coupons.map((coupon) => (
-                    <article className={`menu-admin-item ${coupon.active ? "" : "off"}`} key={coupon._id}>
+                    <article
+                      className={`menu-admin-item ${coupon.active ? "" : "off"}`}
+                      key={coupon._id}
+                    >
                       <div>
                         <strong>{coupon.code}</strong>
                         <span>
-                          {coupon.type === "percent" ? `${coupon.value}%` : money(coupon.value)}
-                          {coupon.expiresAt ? ` · fino al ${coupon.expiresAt}` : " · senza scadenza"}
+                          {coupon.type === "percent"
+                            ? `${coupon.value}%`
+                            : money(coupon.value)}
+                          {coupon.expiresAt
+                            ? ` · fino al ${coupon.expiresAt}`
+                            : " · senza scadenza"}
                         </span>
-                        <small>{coupon.usedCount || 0}/{coupon.usageLimit || "∞"} utilizzi</small>
+                        <small>
+                          {coupon.usedCount || 0}/{coupon.usageLimit || "∞"}{" "}
+                          utilizzi
+                        </small>
                       </div>
                       <div className="menu-admin-actions">
-                        <button type="button" onClick={() => editCoupon(coupon)}>Modifica</button>
-                        <button type="button" onClick={() => changeCouponStatus(coupon._id)}>
+                        <button
+                          type="button"
+                          onClick={() => editCoupon(coupon)}
+                        >
+                          Modifica
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => changeCouponStatus(coupon._id)}
+                        >
                           {coupon.active ? "Disattiva" : "Attiva"}
                         </button>
-                        <button className="danger" type="button" onClick={() => removeCoupon(coupon._id)}>
+                        <button
+                          className="danger"
+                          type="button"
+                          onClick={() => removeCoupon(coupon._id)}
+                        >
                           Elimina
                         </button>
                       </div>
@@ -2541,7 +2790,10 @@ function AdminView() {
                 <input
                   value={settingsForm.openingHours}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({ ...current, openingHours: event.target.value }))
+                    setSettingsForm((current) => ({
+                      ...current,
+                      openingHours: event.target.value,
+                    }))
                   }
                 />
               </label>
@@ -2553,7 +2805,10 @@ function AdminView() {
                   type="number"
                   value={settingsForm.deliveryCost}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({ ...current, deliveryCost: event.target.value }))
+                    setSettingsForm((current) => ({
+                      ...current,
+                      deliveryCost: event.target.value,
+                    }))
                   }
                 />
               </label>
@@ -2565,7 +2820,10 @@ function AdminView() {
                   type="number"
                   value={settingsForm.minimumOrder}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({ ...current, minimumOrder: event.target.value }))
+                    setSettingsForm((current) => ({
+                      ...current,
+                      minimumOrder: event.target.value,
+                    }))
                   }
                 />
               </label>
@@ -2574,7 +2832,10 @@ function AdminView() {
                 <input
                   value={settingsForm.serviceZones}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({ ...current, serviceZones: event.target.value }))
+                    setSettingsForm((current) => ({
+                      ...current,
+                      serviceZones: event.target.value,
+                    }))
                   }
                   placeholder="Centro, San Paolo, Eur"
                 />
@@ -2584,7 +2845,10 @@ function AdminView() {
                 <textarea
                   value={settingsForm.customerMessage}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({ ...current, customerMessage: event.target.value }))
+                    setSettingsForm((current) => ({
+                      ...current,
+                      customerMessage: event.target.value,
+                    }))
                   }
                   placeholder="Siamo chiusi per ferie"
                 />
@@ -2604,12 +2868,16 @@ function AdminView() {
 
 function App() {
   const path = window.location.pathname;
-  const orderIdFromQuery = new URLSearchParams(window.location.search).get("ordine");
+  const orderIdFromQuery = new URLSearchParams(window.location.search).get(
+    "ordine",
+  );
   if (orderIdFromQuery) {
     return <TrackingView orderId={orderIdFromQuery} />;
   }
   if (path.startsWith("/ordine/")) {
-    return <TrackingView orderId={decodeURIComponent(path.split("/")[2] || "")} />;
+    return (
+      <TrackingView orderId={decodeURIComponent(path.split("/")[2] || "")} />
+    );
   }
   return path.startsWith("/admin") ? <AdminView /> : <CustomerView />;
 }
