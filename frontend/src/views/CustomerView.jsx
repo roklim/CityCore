@@ -68,6 +68,36 @@ function getBusinessHeroCopy(business) {
   };
 }
 
+function timeToMinutes(time) {
+  const [hours, minutes] = String(time || "")
+    .split(":")
+    .map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+}
+
+function isBusinessOpenNow(business) {
+  const settings = business?.settings;
+  if (!settings) return isCounterOpenNow();
+
+  const dayCodes = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+  const now = new Date();
+  const openingDays = Array.isArray(settings.openingDays)
+    ? settings.openingDays
+    : null;
+
+  if (openingDays && !openingDays.includes(dayCodes[now.getDay()])) {
+    return false;
+  }
+
+  const start = timeToMinutes(settings.openingTimeStart || "17:30");
+  const end = timeToMinutes(settings.openingTimeEnd || "22:30");
+  const current = now.getHours() * 60 + now.getMinutes();
+
+  if (start === null || end === null) return isCounterOpenNow();
+  return current >= start && current <= end;
+}
+
 function MenuSkeleton() {
   return (
     <div className="menu-skeleton" aria-label="Caricamento menu">
@@ -166,7 +196,7 @@ export default function CustomerView() {
   const openingHours =
     currentBusiness?.settings?.openingHours || "Orari in aggiornamento";
   const publicMessage = currentBusiness?.settings?.publicMessage || "";
-  const counterOpen = isCounterOpenNow();
+  const counterOpen = isBusinessOpenNow(currentBusiness);
   const customPizzaEnabled =
     currentBusiness?.features?.customPizza !== false &&
     ["pizzeria", "restaurant"].includes(currentBusiness?.type || "pizzeria");
@@ -262,7 +292,7 @@ export default function CustomerView() {
         >
           {counterOpen
             ? "Banco aperto - ordina ora"
-            : "Chiuso - riapre stasera alle 18:00"}
+            : "Chiuso - controlla gli orari"}
         </span>
         <p className="eyebrow">{heroCopy.eyebrow}</p>
         <h1>{heroCopy.title}</h1>
