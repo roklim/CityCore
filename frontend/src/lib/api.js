@@ -34,11 +34,18 @@ export function getBusinessSlug() {
   const adminMatch = pathname.match(/^\/admin\/([^/]+)/);
   const publicMatch = pathname.match(/^\/p\/([^/]+)/);
   const businessBaseMatch = pathname.match(/^\/([^/]+)(?:\/admin|\/ordine\/|\/?$)/);
-  const reservedSlugs = new Set(["admin", "ordine", "p"]);
+  const reservedSlugs = new Set(["admin", "ordine", "p", "businesses"]);
+  const adminSlug = reservedSlugs.has(adminMatch?.[1]) ? "" : adminMatch?.[1];
   const baseSlug = reservedSlugs.has(businessBaseMatch?.[1])
     ? ""
     : businessBaseMatch?.[1];
-  const match = adminMatch || publicMatch;
+  const match = (adminSlug && { 1: adminSlug }) || publicMatch;
+  if (
+    session.role === "global_admin" &&
+    (pathname === "/" || pathname === "/admin" || pathname.startsWith("/admin/businesses"))
+  ) {
+    return "";
+  }
   if (
     (pathname.startsWith("/admin") || /\/admin(?:\/|$)/.test(pathname)) &&
     session.role &&
@@ -56,10 +63,11 @@ export function getBusinessSlug() {
 async function request(path, options = {}) {
   // Wrapper unico per fetch: aggiunge sempre lo slug business e normalizza gli
   // errori backend in Error leggibili dal resto dell'app.
+  const businessSlug = getBusinessSlug();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
-      "X-Business-Slug": getBusinessSlug(),
+      ...(businessSlug ? { "X-Business-Slug": businessSlug } : {}),
       ...(options.headers || {}),
     },
   });
@@ -84,6 +92,11 @@ export async function getCurrentBusiness() {
   // Risolve branding/features del business corrente per pagina pubblica/admin.
   const data = await request("/business/current");
   return data.business;
+}
+
+export async function getPublicBusinesses() {
+  const data = await request("/business/public");
+  return data.businesses || [];
 }
 
 export async function getMe(token) {

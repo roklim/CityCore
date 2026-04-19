@@ -2298,14 +2298,14 @@ a:focus-visible {
 
 .platform-primary,
 .platform-actions button,
-.platform-card-actions a:last-child {
+.platform-card-actions a:nth-child(2) {
   background: var(--tomato);
   color: #fff;
 }
 
 .platform-primary:hover,
 .platform-actions button:hover,
-.platform-card-actions a:last-child:hover {
+.platform-card-actions a:nth-child(2):hover {
   background: var(--mg-tomato-dark);
 }
 
@@ -2332,6 +2332,88 @@ a:focus-visible {
   font-size: 18px;
 }
 
+.platform-login-panel {
+  max-width: 440px;
+  margin: 0 0 28px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 0 12px 34px rgba(28, 28, 26, 0.08);
+}
+
+.platform-login-panel form,
+.platform-directory-head {
+  display: grid;
+  gap: 12px;
+}
+
+.platform-login-panel h2,
+.platform-directory-head h2 {
+  margin: 0;
+  font-family: "Playfair Display", serif;
+  font-size: 28px;
+}
+
+.platform-login-panel input,
+.platform-filters input,
+.platform-filters select {
+  width: 100%;
+  min-height: 46px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #fff;
+}
+
+.platform-login-panel button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--tomato);
+  color: #fff;
+  font-weight: 900;
+}
+
+.platform-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 24px;
+}
+
+.platform-stats-grid article {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--mg-dough);
+}
+
+.platform-stats-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.platform-stats-grid strong {
+  font-family: "Playfair Display", serif;
+  font-size: 28px;
+}
+
+.platform-directory-head {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+  align-items: end;
+  margin: 0 0 16px;
+}
+
+.platform-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 10px;
+}
+
 .platform-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -2347,6 +2429,18 @@ a:focus-visible {
   border-radius: 14px;
   background: var(--paper);
   box-shadow: 0 12px 34px rgba(28, 28, 26, 0.08);
+}
+
+.platform-app-card.own {
+  border-color: var(--basil);
+  box-shadow: 0 12px 34px rgba(44, 95, 46, 0.16);
+}
+
+.platform-app-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .platform-app-icon {
@@ -2365,9 +2459,18 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.platform-own-badge {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #EAF3DE;
+  color: var(--basil);
+  font-size: 12px;
+}
+
 .platform-app-body span,
 .platform-app-body p,
-.platform-app-metrics span {
+.platform-app-metrics span,
+.platform-app-meta span {
   color: var(--muted);
   font-size: 13px;
 }
@@ -2382,6 +2485,19 @@ a:focus-visible {
   margin: 0;
 }
 
+.platform-app-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.platform-app-meta span {
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(250, 243, 224, 0.72);
+}
+
 .platform-app-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2393,6 +2509,11 @@ a:focus-visible {
   border-radius: 8px;
   background: var(--mg-crust);
   font-weight: 700;
+}
+
+.platform-card-actions a:nth-child(n + 3) {
+  border-color: var(--line);
+  color: var(--ink);
 }
 
 /* Breakpoint tablet: admin e checkout diventano piu compatti. */
@@ -2416,6 +2537,11 @@ a:focus-visible {
   .platform-hero {
     grid-template-columns: 1fr;
     align-items: start;
+  }
+
+  .platform-directory-head,
+  .platform-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-sidebar {
@@ -2696,6 +2822,12 @@ a:focus-visible {
 
   .platform-hero h1 {
     font-size: 34px;
+  }
+
+  .platform-directory-head,
+  .platform-filters,
+  .platform-stats-grid {
+    grid-template-columns: 1fr;
   }
 
   .platform-actions,

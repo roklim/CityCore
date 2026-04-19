@@ -81,21 +81,43 @@ coupons.code_1
 
 These should eventually be replaced by tenant-scoped indexes.
 
-## Vercel Business App Shows Wrong Menu
+## Cagli Shows Wrong Business Or Admin
 
-Check the Vercel project env:
+Current routing model:
 
-```env
-VITE_API_BASE_URL=https://your-backend.example.com/api
-VITE_BUSINESS_SLUG=<correct-business-slug>
+```txt
+/                  platform directory
+/admin             global login/platform console
+/<slug>            public menu
+/<slug>/admin      business admin
 ```
 
-Then redeploy the Vercel project.
+If `/admin` shows "Operativita Mucho Gusto", the frontend deployment is old.
+Redeploy Vercel after pushing the route refactor.
+
+## Vercel Business App Shows Wrong Menu
+
+Check the central Vercel project env:
+
+```env
+VITE_API_BASE_URL=https://mucho-gusto-mg5y.onrender.com/api
+VITE_BUSINESS_SLUG=mucho-gusto
+```
+
+`VITE_BUSINESS_SLUG` is only a fallback. The normal business is read from the
+path, for example `/sushi` or `/mucho-gusto/admin`.
 
 For local testing, use:
 
 ```txt
+/<slug>
+/<slug>/admin
+?business=<slug>
+```
+
+Legacy URLs still work:
+
+```txt
 /p/<slug>
 /admin/<slug>
-?business=<slug>
 ```

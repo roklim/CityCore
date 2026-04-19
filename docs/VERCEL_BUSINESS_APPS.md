@@ -31,7 +31,8 @@ https://cagli.vercel.app/sushi/admin
 /:businessSlug            Menu/app cliente del business
 /:businessSlug/admin      Banco admin del business
 /:businessSlug?ordine=id  Tracking ordine del business
-/admin                    Login/admin legacy
+/admin                    Login/console globale
+/admin/businesses         Gestione business globale
 /admin/:businessSlug      Compatibilita legacy
 /p/:businessSlug          Compatibilita legacy
 ```
@@ -47,6 +48,14 @@ VITE_BUSINESS_SLUG=mucho-gusto
 
 `VITE_BUSINESS_SLUG` resta il fallback per vecchi link senza slug. Le route
 nuove prendono lo slug direttamente dal path.
+
+## Permessi
+
+- `global_admin`: vede tutte le attivita, puo aprire ogni `/:slug/admin` e puo
+  gestire business/utenti dalla console.
+- `owner`, `admin`, `staff`: possono vedere la directory pubblica, ma il banco
+  admin e' disponibile solo per il proprio business.
+- pubblico: puo aprire `/` e tutti i menu `/:slug`, senza funzioni admin.
 
 ## Render CORS
 
@@ -66,7 +75,7 @@ CORS_ALLOW_VERCEL_APP=true
 
 1. Apri `https://cagli.vercel.app/admin`.
 2. Accedi come `global_admin`.
-3. Apri la sezione `Business`.
+3. Dalla console usa `Gestione business` oppure una card business.
 4. Crea il business con slug stabile, per esempio `sushi`.
 5. Crea o assegna l'owner con email e password temporanea.
 6. Apri `https://cagli.vercel.app/sushi` per il menu cliente.

@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { getOrder } from "../lib/api";
+import { getBusinessSlug, getOrder } from "../lib/api";
 import { ORDER_STATUS_STEPS, PUBLIC_STATUS_LABELS } from "../constants";
 import { money } from "../utils/format";
 import Toast from "../components/Toast";
@@ -38,7 +38,7 @@ export default function TrackingView({ orderId }) {
   return (
     <main className="tracking-shell">
       <section className="tracking-card">
-        <a href="/">Torna al menu</a>
+        <a href={`/${getBusinessSlug()}`}>Torna al menu</a>
         <p className="eyebrow">Tracking ordine</p>
         {loading && !order ? (
           <h1>Caricamento...</h1>

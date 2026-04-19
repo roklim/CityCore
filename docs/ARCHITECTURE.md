@@ -22,7 +22,9 @@ Important fields:
 - `settings`
 - `deployment`
 
-`deployment` stores Vercel/app metadata for the separate frontend project of each business:
+`deployment` stores optional metadata for a separate/customer-specific frontend
+project. The default production model uses one central Vercel app and routes by
+business slug.
 
 - `publicUrl`
 - `vercelProjectName`
@@ -49,9 +51,12 @@ Requests are resolved in this order:
 
 1. `X-Business-Slug` header
 2. `?business=` query parameter
-3. `/admin/<slug>` frontend route
-4. `/p/<slug>` frontend route
-5. `DEFAULT_BUSINESS_SLUG`
+3. `/<slug>` frontend route
+4. `/<slug>/admin` frontend route
+5. `/<slug>/ordine/<id>` frontend route
+6. `/admin/<slug>` legacy frontend route
+7. `/p/<slug>` legacy frontend route
+8. `DEFAULT_BUSINESS_SLUG`
 
 The default fallback keeps the current pizza app working during the transition.
 
@@ -63,26 +68,41 @@ The recommended production model is:
 - one MongoDB database
 - many `Business` documents
 - one frontend codebase
-- one Vercel project per business
+- one central Vercel project, currently `https://cagli.vercel.app`
 
-Each Vercel project uses:
+The central Vercel project uses:
 
 ```env
-VITE_API_BASE_URL=https://your-api.example.com/api
-VITE_BUSINESS_SLUG=<business-slug>
+VITE_API_BASE_URL=https://mucho-gusto-mg5y.onrender.com/api
+VITE_BUSINESS_SLUG=mucho-gusto
 ```
 
-This gives every activity its own app/domain while keeping code, database, and operations centralized.
+`VITE_BUSINESS_SLUG` is only the legacy fallback. Normal customer/admin traffic
+uses path-based routing:
+
+```txt
+/                         platform directory
+/admin                    global login/platform console
+/admin/businesses         global business/user management
+/:businessSlug            public menu/app
+/:businessSlug/admin      business admin
+/:businessSlug/ordine/:id order tracking
+```
 
 ## Platform Admin
 
-The platform owner can use `/admin` and the `Business` section to:
+The platform owner can use `/` or `/admin` to see the Cagli platform console.
+`/admin` no longer opens the default Mucho Gusto operational dashboard.
+
+From the platform console the global admin can:
 
 - list all businesses
 - create a new business
 - edit plan/status/type/branding/deployment metadata
 - see total orders, estimated GMV, products and customers
 - copy the Vercel slug variable
+- open any business menu with `/:slug`
+- open any operational admin with `/:slug/admin`
 
 The current global admin can still use env credentials. Per-business users are Mongo-backed and receive JWTs containing `businessId` and `businessSlug`.
 

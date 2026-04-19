@@ -33,7 +33,7 @@ function compileOriginPatterns(origins) {
   const wildcardRegexes = [];
 
   for (const origin of origins) {
-    const value = String(origin).trim();
+    const value = String(origin).trim().replace(/\/+$/, "");
     if (!value) continue;
 
     if (value.includes("*")) {

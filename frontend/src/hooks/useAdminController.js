@@ -55,7 +55,12 @@ export default function useAdminController() {
   const [token, setToken] = useState(localStorage.getItem("admin_token") || "");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [activeAdminSection, setActiveAdminSection] = useState("dashboard");
+  const [activeAdminSection, setActiveAdminSection] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get("section");
+    return ADMIN_NAV.some((item) => item.id === requested)
+      ? requested
+      : "dashboard";
+  });
   const [pickupDate, setPickupDate] = useState(todayISO());
   const [orderFilter, setOrderFilter] = useState("all");
   const [orderSearch, setOrderSearch] = useState("");
