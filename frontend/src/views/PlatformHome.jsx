@@ -360,34 +360,64 @@ function PublicHero({
   typeFilter,
   setTypeFilter,
 }) {
+  const visibleCount = businesses.length;
+
   return (
     <>
       <section className="cagli-public-hero">
-        <h1>Le attivita di Cagli, tutte in un posto</h1>
-        <p>
-          Sfoglia menu, scopri novita e ordina direttamente dai locali del
-          centro.
-        </p>
-        <label className="cagli-search">
-          <span aria-hidden="true">Cerca</span>
-          <input
-            placeholder="Cerca pizzeria, sushi, bar..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
-        <div className="cagli-filter-pills">
-          {PUBLIC_TYPE_FILTERS.map((filter) => (
-            <button
-              className={typeFilter === filter.id ? "active" : ""}
-              key={filter.id}
-              type="button"
-              onClick={() => setTypeFilter(filter.id)}
-            >
-              {filter.label}
-            </button>
-          ))}
+        <div className="cagli-hero-copy">
+          <span className="cagli-hero-kicker">Cagli Local</span>
+          <h1>Menu e ordini dei locali di Cagli, in un unico posto.</h1>
+          <p>
+            Scopri pizzerie, sushi bar e attivita del quartiere. Apri il menu,
+            scegli cosa vuoi e ordina direttamente dal locale.
+          </p>
+          <div className="cagli-hero-stats" aria-label="Riepilogo attivita">
+            <span>
+              <strong>{visibleCount}</strong>
+              locali visibili
+            </span>
+            <span>
+              <strong>24/7</strong>
+              menu consultabili
+            </span>
+            <span>
+              <strong>0</strong>
+              app da installare
+            </span>
+          </div>
         </div>
+
+        <div className="cagli-hero-search-card">
+          <label className="cagli-search">
+            <span aria-hidden="true">Cerca</span>
+            <input
+              placeholder="Cerca pizzeria, sushi, bar..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          <div className="cagli-filter-pills">
+            {PUBLIC_TYPE_FILTERS.map((filter) => (
+              <button
+                className={typeFilter === filter.id ? "active" : ""}
+                key={filter.id}
+                type="button"
+                onClick={() => setTypeFilter(filter.id)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="cagli-directory-title">
+        <div>
+          <p>Directory</p>
+          <h2>Attivita disponibili</h2>
+        </div>
+        <span>{loading ? "Caricamento..." : `${visibleCount} risultati`}</span>
       </section>
 
       <section className="cagli-public-grid">
@@ -540,10 +570,12 @@ function PublicBusinessCard({ business, index, search }) {
   const slug = business.slug || "";
   const name = businessName(business);
   const active = isBusinessActive(business);
+  const typeLabel = businessTypeLabel(business.type);
   const description =
     business.settings?.publicMessage ||
     business.settings?.openingHours ||
     "Scopri il menu e ordina dal locale.";
+  const openingHours = business.settings?.openingHours || "Orari da verificare";
 
   return (
     <a
@@ -552,13 +584,16 @@ function PublicBusinessCard({ business, index, search }) {
       style={{ animationDelay: `${250 + index * 60}ms` }}
       aria-disabled={!active}
     >
-      <BusinessLogo business={business} />
-      <div>
+      <header>
+        <BusinessLogo business={business} />
         <span className="cagli-type-badge">
-          {active ? businessTypeLabel(business.type) : "Temporaneamente chiuso"}
+          {active ? typeLabel : "Temporaneamente chiuso"}
         </span>
+      </header>
+      <div>
         <h2><Highlight text={name} search={search} /></h2>
         <p>{description}</p>
+        <small>{openingHours}</small>
       </div>
       <strong>{active ? "Apri menu ->" : "Non disponibile"}</strong>
     </a>
