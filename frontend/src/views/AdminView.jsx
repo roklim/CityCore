@@ -475,7 +475,7 @@ export default function AdminView() {
                           />
                           <strong>{business.name}</strong>
                           <small>
-                            {business.slug} Â· {business.type} Â· {business.plan}
+                            {business.slug} - {business.type} - {business.plan}
                           </small>
                           <small>
                             Owner: {business.owner?.email || "non impostato"}
@@ -719,7 +719,7 @@ export default function AdminView() {
                       <div>
                         <strong>{order.customer}</strong>
                         <span>
-                          {order.pickupTime} Â· {money(order.total)}
+                          {order.pickupTime} - {money(order.total)}
                         </span>
                       </div>
                       <span className={`status ${order.status}`}>
@@ -745,7 +745,7 @@ export default function AdminView() {
                       <span>
                         <strong>{item.name}</strong>
                         <b>
-                          {item.qty} pz Â· {money(item.revenue)}
+                          {item.qty} pz - {money(item.revenue)}
                         </b>
                       </span>
                       <i
@@ -830,7 +830,7 @@ export default function AdminView() {
                         <div className="order-meta">
                           <span>{order.phone || "Telefono non inserito"}</span>
                           <span>
-                            {order.pickupDate} Â· {order.pickupTime}
+                            {order.pickupDate} - {order.pickupTime}
                           </span>
                           <strong>{money(order.total)}</strong>
                         </div>
@@ -878,12 +878,47 @@ export default function AdminView() {
 
         {activeAdminSection === "menu" && (
           <section className="admin-menu-manager">
+            <div className="admin-menu-overview">
+              <article>
+                <span>Prodotti totali</span>
+                <strong>{adminMenu.length}</strong>
+              </article>
+              <article>
+                <span>Visibili</span>
+                <strong>{adminMenu.length - unavailableItems.length}</strong>
+              </article>
+              <article>
+                <span>Nascosti</span>
+                <strong>{unavailableItems.length}</strong>
+              </article>
+              <article>
+                <span>Categorie</span>
+                <strong>{Object.keys(groupedMenu).length}</strong>
+              </article>
+            </div>
             <form className="menu-editor-panel" onSubmit={saveMenuItem}>
               <div className="section-heading">
                 <p className="eyebrow">Gestione menu</p>
                 <h2>
                   {editingMenuId ? "Modifica prodotto" : "Aggiungi prodotto"}
                 </h2>
+              </div>
+              <div className="menu-live-preview">
+                <span>Anteprima cliente</span>
+                <article>
+                  <b>{menuForm.emoji || "•"}</b>
+                  <div>
+                    <strong>{menuForm.name || "Nome prodotto"}</strong>
+                    <p>
+                      {menuForm.description ||
+                        "Descrizione breve visibile nel menu pubblico."}
+                    </p>
+                  </div>
+                  <em>
+                    {money(Number(menuForm.price) || 0)} /{" "}
+                    {menuForm.unit || "pezzo"}
+                  </em>
+                </article>
               </div>
 
               <div className="menu-editor-grid">
@@ -947,7 +982,7 @@ export default function AdminView() {
                     onChange={(event) =>
                       updateMenuForm("emoji", event.target.value)
                     }
-                    placeholder="ðŸ•"
+                    placeholder={"\u{1F355}"}
                   />
                 </label>
                 <label>
@@ -1057,7 +1092,7 @@ export default function AdminView() {
                         >
                           <div>
                             <strong>
-                              {item.emoji || "ðŸ•"} {item.name}
+                              {item.emoji || "\u{1F355}"} {item.name}
                             </strong>
                             {item.imageUrl && (
                               <img
@@ -1070,7 +1105,7 @@ export default function AdminView() {
                               {item.description || "Senza descrizione"}
                             </span>
                             <small>
-                              {money(item.price)} Â· {item.unit || "pezzo"} Â·
+                              {money(item.price)} - {item.unit || "pezzo"} -
                               ordine {item.sortOrder || 0}
                             </small>
                           </div>
@@ -1123,7 +1158,7 @@ export default function AdminView() {
                     >
                       <div>
                         <strong>
-                          {item.emoji || "ðŸ•"} {item.name}
+                          {item.emoji || "\u{1F355}"} {item.name}
                         </strong>
                         <span>
                           {item.available
@@ -1315,11 +1350,11 @@ export default function AdminView() {
                             ? `${coupon.value}%`
                             : money(coupon.value)}
                           {coupon.expiresAt
-                            ? ` Â· fino al ${coupon.expiresAt}`
-                            : " Â· senza scadenza"}
+                            ? ` - fino al ${coupon.expiresAt}`
+                            : " - senza scadenza"}
                         </span>
                         <small>
-                          {coupon.usedCount || 0}/{coupon.usageLimit || "âˆž"}{" "}
+                          {coupon.usedCount || 0}/{coupon.usageLimit || "illimitato"}{" "}
                           utilizzi
                         </small>
                       </div>
@@ -1359,6 +1394,37 @@ export default function AdminView() {
               <h2>Impostazioni operative</h2>
             </div>
             <form className="settings-form" onSubmit={saveSettings}>
+              <div className="settings-hours-card">
+                <div>
+                  <p className="eyebrow">Visibile sul menu cliente</p>
+                  <h3>Orari di apertura</h3>
+                  <span>
+                    Questo testo compare nella prima schermata del menu pubblico.
+                  </span>
+                </div>
+                <strong>{settingsForm.openingHours || "Non impostati"}</strong>
+                <div className="settings-hour-presets">
+                  {[
+                    "Tutti i giorni 18:00-22:30",
+                    "Mar-Dom 18:00-22:30",
+                    "Lun-Sab 12:00-15:00 / 18:00-22:30",
+                    "Chiuso per ferie",
+                  ].map((preset) => (
+                    <button
+                      type="button"
+                      key={preset}
+                      onClick={() =>
+                        setSettingsForm((current) => ({
+                          ...current,
+                          openingHours: preset,
+                        }))
+                      }
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <label>
                 Orari apertura
                 <input
@@ -1369,6 +1435,7 @@ export default function AdminView() {
                       openingHours: event.target.value,
                     }))
                   }
+                  placeholder="Es. Mar-Dom 18:00-22:30"
                 />
               </label>
               <label>

@@ -1,7 +1,7 @@
 "use strict";
 
 const router = require("express").Router();
-const { StoreSettings } = require("../db");
+const { Business, StoreSettings } = require("../db");
 const { requireBusinessRole } = require("../middleware/auth");
 const { businessScope, resolveBusiness } = require("../middleware/business");
 const asyncHandler = require("../middleware/asyncHandler");
@@ -15,7 +15,11 @@ async function getSettingsDocument(req) {
   // primo accesso mantenendo il pannello admin sempre funzionante.
   let settings = await StoreSettings.findOne(businessScope(req));
   if (!settings) {
-    settings = await StoreSettings.create({ businessId: req.businessId });
+    settings = await StoreSettings.create({
+      businessId: req.businessId,
+      openingHours: req.business?.settings?.openingHours || undefined,
+      customerMessage: req.business?.settings?.publicMessage || undefined,
+    });
   }
   return settings;
 }
@@ -49,6 +53,12 @@ router.put(
     if (!Array.isArray(settings.serviceZones)) settings.serviceZones = [];
 
     await settings.save();
+    await Business.findByIdAndUpdate(req.businessId, {
+      $set: {
+        "settings.openingHours": settings.openingHours,
+        "settings.publicMessage": settings.customerMessage,
+      },
+    });
     res.json(settings);
   }),
 );

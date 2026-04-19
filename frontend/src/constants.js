@@ -55,7 +55,7 @@ export const EMPTY_MENU_FORM = {
   description: "",
   price: "",
   category: "pizze-tonde",
-  emoji: "ðŸ•",
+  emoji: "\u{1F355}",
   imageUrl: "",
   sortOrder: "",
   unit: "trancio",

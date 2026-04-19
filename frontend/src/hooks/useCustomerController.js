@@ -2,6 +2,7 @@
 import {
   createOrder,
   getAvailability,
+  getCurrentBusiness,
   getCustomerOrders,
   getMenu,
   lookupCustomer,
@@ -24,6 +25,7 @@ export default function useCustomerController() {
   // Esperienza pubblica cliente: menu, configuratore pizza, carrello, checkout e
   // recupero ordine convivono qui finche' il frontend non verra' diviso.
   const [menu, setMenu] = useState([]);
+  const [currentBusiness, setCurrentBusiness] = useState(null);
   const [cart, setCart] = useState([]);
   const [pickupDate, setPickupDate] = useState(todayISO());
   const [availability, setAvailability] = useState(null);
@@ -132,9 +134,18 @@ export default function useCustomerController() {
   const loyaltyRemaining = Math.max(LOYALTY_GOAL - loyaltyCyclePoints, 0);
 
   useEffect(() => {
-    getMenu()
-      .then(setMenu)
-      .catch(() => notify("Menu non disponibile. Riprova tra poco."))
+    Promise.allSettled([getMenu(), getCurrentBusiness()])
+      .then(([menuResult, businessResult]) => {
+        if (menuResult.status === "fulfilled") {
+          setMenu(menuResult.value);
+        } else {
+          notify("Menu non disponibile. Riprova tra poco.");
+        }
+
+        if (businessResult.status === "fulfilled") {
+          setCurrentBusiness(businessResult.value);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -342,7 +353,7 @@ export default function useCustomerController() {
         .sort()
         .join("-")}-${customPizzaNotes.trim().toLowerCase()}`,
       name: "Tonda su ordinazione",
-      emoji: "ðŸ•",
+      emoji: "\u{1F355}",
       price: Math.round(customPizzaPrice * 100) / 100,
       itemNotes: customNotes,
       customSummary: [
@@ -351,7 +362,7 @@ export default function useCustomerController() {
         customPizzaNotes.trim() ? customPizzaNotes.trim() : "",
       ]
         .filter(Boolean)
-        .join(" Â· "),
+        .join(" - "),
     });
     setCustomPizzaOpen(false);
   }
@@ -444,6 +455,7 @@ export default function useCustomerController() {
     cart,
     cartCount,
     confirmation,
+    currentBusiness,
     customPizzaBase,
     customPizzaBaseId,
     customPizzaNotes,

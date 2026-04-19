@@ -29,6 +29,7 @@ export default function CustomerView() {
     cart,
     cartCount,
     confirmation,
+    currentBusiness,
     customPizzaBase,
     customPizzaBaseId,
     customPizzaNotes,
@@ -79,6 +80,15 @@ export default function CustomerView() {
     updateCartItemNote,
     visibleCustomerSlots,
   } = useCustomerController();
+
+  const businessName =
+    currentBusiness?.branding?.publicName ||
+    currentBusiness?.name ||
+    "Mucho Gusto";
+  const openingHours =
+    currentBusiness?.settings?.openingHours || "Orari in aggiornamento";
+  const publicMessage = currentBusiness?.settings?.publicMessage || "";
+
   if (confirmation) {
     return (
       <main className="customer-shell confirmation-shell">
@@ -136,15 +146,20 @@ export default function CustomerView() {
           className={`counter-badge ${isCounterOpenNow() ? "open" : "closed"}`}
         >
           {isCounterOpenNow()
-            ? "Banco aperto Â· ordina ora"
-            : "chiuso Â· riapre stasera alle 18:00"}
+            ? "Banco aperto - ordina ora"
+            : "Chiuso - riapre stasera alle 18:00"}
         </span>
-        <p className="eyebrow">Mucho Gusto Pizzeria</p>
+        <p className="eyebrow">{businessName}</p>
         <h1>Tranci caldi, teglie fumanti e pizze pronte per l'asporto.</h1>
         <p className="lead">
           Scegli tranci, teglie, fritti e bibite. Prenoti l'orario, passi al
           banco e paghi al ritiro.
         </p>
+        <div className="opening-hours-card">
+          <span>Orari di apertura</span>
+          <strong>{openingHours}</strong>
+          {publicMessage && <p>{publicMessage}</p>}
+        </div>
         <div className="hero-actions">
           <button
             type="button"
@@ -154,7 +169,7 @@ export default function CustomerView() {
                 ?.scrollIntoView({ behavior: "smooth" })
             }
           >
-            Ordina ora â†’
+            Ordina ora -&gt;
           </button>
           <button
             type="button"
@@ -164,7 +179,7 @@ export default function CustomerView() {
                 ?.scrollIntoView({ behavior: "smooth" })
             }
           >
-            Recupera il tuo ordine â†“
+            Recupera il tuo ordine
           </button>
         </div>
         <div className="service-strip" aria-label="Servizio pizzeria">
@@ -333,7 +348,7 @@ export default function CustomerView() {
                           ref={customPizzaRef}
                         >
                           <div className="menu-card-head">
-                            <span className="menu-emoji">ðŸ•</span>
+                            <span className="menu-emoji">{"\u{1F355}"}</span>
                             <div>
                               <span className="menu-featured custom">
                                 Personalizzabile
@@ -355,7 +370,7 @@ export default function CustomerView() {
                             onClick={toggleCustomPizzaBuilder}
                             aria-expanded={customPizzaOpen}
                           >
-                            {customPizzaOpen ? "â–² Chiudi" : "Configura"}
+                            {customPizzaOpen ? "Chiudi" : "Configura"}
                           </button>
 
                           <div
@@ -388,7 +403,7 @@ export default function CustomerView() {
                                   >
                                     <strong>
                                       {base.id === customPizzaBaseId
-                                        ? "âœ“ "
+                                        ? "Scelta - "
                                         : ""}
                                       {base.name}
                                     </strong>
@@ -473,7 +488,7 @@ export default function CustomerView() {
                               disabled={!customPizzaBase}
                               aria-disabled={!customPizzaBase}
                             >
-                              Aggiungi al carrello Â· {money(customPizzaPrice)}
+                              Aggiungi al carrello - {money(customPizzaPrice)}
                             </button>
                           </div>
                         </article>
@@ -753,7 +768,7 @@ export default function CustomerView() {
               !selectedSlot
             }
           >
-            Conferma ordine Â· {money(total)}
+            Conferma ordine - {money(total)}
           </button>
         </form>
       </section>
@@ -771,7 +786,7 @@ export default function CustomerView() {
         <div className="mobile-cart-bar">
           <div>
             <strong>
-              {cartCount} {cartCount === 1 ? "prodotto" : "prodotti"} Â·{" "}
+              {cartCount} {cartCount === 1 ? "prodotto" : "prodotti"} -{" "}
               {money(total)}
             </strong>
             <span>Ritiro al banco</span>
