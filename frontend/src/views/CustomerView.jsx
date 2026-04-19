@@ -1,13 +1,15 @@
 ﻿import {
+  BUSINESS_TYPE_OPTIONS,
   CUSTOM_PIZZA_BASES,
   CUSTOM_PIZZA_MAX_TOPPINGS,
   CUSTOM_PIZZA_TOPPINGS,
   LOYALTY_GOAL,
-  MENU_SECTIONS,
   PUBLIC_STATUS_LABELS,
   QUICK_FILTERS,
 } from "../constants";
 import {
+  businessAdminHref,
+  businessHref,
   formatDate,
   getSlotHint,
   isCounterOpenNow,
@@ -17,6 +19,71 @@ import {
 import { getBusinessSlug } from "../lib/api";
 import Toast from "../components/Toast";
 import useCustomerController from "../hooks/useCustomerController";
+
+function getBusinessTypeLabel(type) {
+  return (
+    BUSINESS_TYPE_OPTIONS.find((option) => option.value === type)?.label ||
+    "Attivita locale"
+  );
+}
+
+function getBusinessInitials(name) {
+  return String(name || "C")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function getBusinessHeroCopy(business) {
+  const type = business?.type || "pizzeria";
+  const name = business?.branding?.publicName || business?.name || "Mucho Gusto";
+  const typeLabel = getBusinessTypeLabel(type);
+
+  if (type === "sushi") {
+    return {
+      eyebrow: `${name} - ${typeLabel}`,
+      title: "Ordina i tuoi piatti preferiti, scegli l'orario e ritira al banco.",
+      subtitle:
+        "Sfoglia il menu, aggiungi cio che vuoi e passa a ritirare quando e pronto.",
+    };
+  }
+
+  if (["pizzeria", "restaurant"].includes(type)) {
+    return {
+      eyebrow: `${name} - ${typeLabel}`,
+      title: "Tranci caldi, teglie fumanti e pizze pronte per l'asporto.",
+      subtitle:
+        "Scegli dal menu, prenota l'orario, passa al banco e paga al ritiro.",
+    };
+  }
+
+  return {
+    eyebrow: `${name} - ${typeLabel}`,
+    title: "Scopri prodotti e servizi, scegli l'orario e completa la richiesta.",
+    subtitle:
+      "Consulta la disponibilita, prepara la richiesta e segui tutto da questa pagina.",
+  };
+}
+
+function MenuSkeleton() {
+  return (
+    <div className="menu-skeleton" aria-label="Caricamento menu">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <article className="menu-skeleton-card" key={index}>
+          <i />
+          <span />
+          <strong />
+          <p />
+          <b />
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export default function CustomerView() {
   const {
     activeFilters,
@@ -26,6 +93,7 @@ export default function CustomerView() {
     addToCart,
     addedItemId,
     availability,
+    availabilityLoading,
     cart,
     cartCount,
     confirmation,
@@ -45,11 +113,13 @@ export default function CustomerView() {
     customerProfile,
     dateOptions,
     getCartItem,
+    loadPublicData,
     loading,
     loyaltyCyclePoints,
     loyaltyPoints,
     loyaltyRemaining,
     menuBySection,
+    menuError,
     mobileCartOpen,
     normalizedPhone,
     notes,
@@ -85,9 +155,23 @@ export default function CustomerView() {
     currentBusiness?.branding?.publicName ||
     currentBusiness?.name ||
     "Mucho Gusto";
+  const businessSlug = currentBusiness?.slug || getBusinessSlug();
+  const businessTypeLabel = getBusinessTypeLabel(currentBusiness?.type);
+  const heroCopy = getBusinessHeroCopy(currentBusiness);
+  const businessPrimary =
+    currentBusiness?.branding?.primaryColor || "var(--mg-basil)";
+  const businessAccent =
+    currentBusiness?.branding?.accentColor || "var(--mg-tomato)";
+  const businessLogoUrl = currentBusiness?.branding?.logoUrl || "";
   const openingHours =
     currentBusiness?.settings?.openingHours || "Orari in aggiornamento";
   const publicMessage = currentBusiness?.settings?.publicMessage || "";
+  const counterOpen = isCounterOpenNow();
+  const customPizzaEnabled =
+    currentBusiness?.features?.customPizza !== false &&
+    ["pizzeria", "restaurant"].includes(currentBusiness?.type || "pizzeria");
+  const checkoutDisabled =
+    !customer.trim() || !phone.trim() || cart.length === 0 || !selectedSlot;
 
   if (confirmation) {
     return (
@@ -126,6 +210,7 @@ export default function CustomerView() {
             >
               Segui il ritiro
             </a>
+            <a href="/">Tutte le attivita</a>
             <button type="button" onClick={() => setConfirmation(null)}>
               Torna al menu
             </button>
@@ -137,28 +222,56 @@ export default function CustomerView() {
   }
 
   return (
-    <main className="customer-shell">
-      <section className="brand-panel">
-        <a className="admin-link" href={`/${getBusinessSlug()}/admin`}>
-          Admin
-        </a>
-        <span
-          className={`counter-badge ${isCounterOpenNow() ? "open" : "closed"}`}
+    <main
+      className="customer-shell"
+      style={{
+        "--business-primary": businessPrimary,
+        "--business-accent": businessAccent,
+      }}
+    >
+      <header className="business-public-header">
+        <a
+          className="business-home-link"
+          href="/"
+          aria-label="Torna a tutte le attivita Cagli"
         >
-          {isCounterOpenNow()
+          <span aria-hidden="true">&lt;</span>
+          Tutte le attivita
+        </a>
+        <a className="business-header-brand" href={businessHref(businessSlug)}>
+          {businessLogoUrl ? (
+            <img src={businessLogoUrl} alt="" loading="lazy" />
+          ) : (
+            <span>{getBusinessInitials(businessName)}</span>
+          )}
+          <div>
+            <strong>{businessName}</strong>
+            <small>{businessTypeLabel}</small>
+          </div>
+        </a>
+        <div className="business-header-actions">
+          <span className={`business-status-pill ${counterOpen ? "open" : "closed"}`}>
+            {counterOpen ? "Aperto" : "Chiuso"}
+          </span>
+          <a href={businessAdminHref(businessSlug)}>Admin</a>
+        </div>
+      </header>
+      <section className="brand-panel">
+        <span
+          className={`counter-badge ${counterOpen ? "open" : "closed"}`}
+        >
+          {counterOpen
             ? "Banco aperto - ordina ora"
             : "Chiuso - riapre stasera alle 18:00"}
         </span>
-        <p className="eyebrow">{businessName}</p>
-        <h1>Tranci caldi, teglie fumanti e pizze pronte per l'asporto.</h1>
-        <p className="lead">
-          Scegli tranci, teglie, fritti e bibite. Prenoti l'orario, passi al
-          banco e paghi al ritiro.
-        </p>
+        <p className="eyebrow">{heroCopy.eyebrow}</p>
+        <h1>{heroCopy.title}</h1>
+        <p className="lead">{heroCopy.subtitle}</p>
         <div className="opening-hours-card">
           <span>Orari di apertura</span>
           <strong>{openingHours}</strong>
           {publicMessage && <p>{publicMessage}</p>}
+          <a href="/">Torna a tutte le attivita</a>
         </div>
         <div className="hero-actions">
           <button
@@ -255,7 +368,29 @@ export default function CustomerView() {
           </div>
 
           {loading ? (
-            <p className="muted">Caricamento menu...</p>
+            <MenuSkeleton />
+          ) : menuError ? (
+            <div className="menu-state-card error">
+              <p className="eyebrow">Menu non disponibile</p>
+              <h3>Non riusciamo a caricare il menu</h3>
+              <p>{menuError}</p>
+              <div>
+                <button type="button" onClick={loadPublicData}>
+                  Riprova
+                </button>
+                <a href="/">Torna alla home</a>
+              </div>
+            </div>
+          ) : menu.length === 0 ? (
+            <div className="menu-state-card">
+              <p className="eyebrow">Menu in aggiornamento</p>
+              <h3>Menu non ancora disponibile</h3>
+              <p>
+                Il locale sta aggiornando i prodotti. Riprova piu tardi o torna
+                alle attivita di Cagli.
+              </p>
+              <a href="/">Torna alle attivita</a>
+            </div>
           ) : (
             <div className="menu-sections">
               <div className="menu-tools">
@@ -329,13 +464,15 @@ export default function CustomerView() {
                       </div>
                       <strong>
                         {activeMenu.items.length +
-                          (activeMenu.id === "pizze-tonde" ? 1 : 0)}{" "}
+                          (activeMenu.id === "pizze-tonde" && customPizzaEnabled
+                            ? 1
+                            : 0)}{" "}
                         prodotti
                       </strong>
                     </div>
 
                     <div className="menu-grid">
-                      {activeMenu.id === "pizze-tonde" && (
+                      {activeMenu.id === "pizze-tonde" && customPizzaEnabled && (
                         <article
                           className={[
                             "menu-card",
@@ -576,12 +713,16 @@ export default function CustomerView() {
           </button>
           <div className="section-heading">
             <p className="eyebrow">Ritiro al banco</p>
-            <h2>Il tuo asporto</h2>
+            <h2>Il tuo ordine</h2>
+            <span className="checkout-subtitle">Ritiro presso {businessName}</span>
           </div>
 
           <div className="cart-list">
             {cart.length === 0 ? (
-              <p className="empty-cart">Nessun prodotto selezionato</p>
+              <div className="empty-cart">
+                <strong>Ancora nessun prodotto</strong>
+                <span>Scegli dal menu per preparare il tuo ritiro.</span>
+              </div>
             ) : (
               cart.map((item) => (
                 <div className="cart-row" key={item.id}>
@@ -729,11 +870,26 @@ export default function CustomerView() {
           </div>
 
           <div className="slot-grid">
-            {!availability ? (
-              <p className="slots-empty">Caricamento orari...</p>
+            {availabilityLoading ? (
+              <div className="slot-skeleton" aria-label="Caricamento orari">
+                <span />
+                <span />
+                <span />
+              </div>
+            ) : availability?.closed ? (
+              <p className="slots-empty">
+                <strong>Locale chiuso in questo giorno</strong>
+                <span>Scegli un altro giorno di ritiro.</span>
+              </p>
+            ) : !availability ? (
+              <p className="slots-empty">
+                <strong>Orari non disponibili</strong>
+                <span>Riprova tra poco o contatta il locale.</span>
+              </p>
             ) : visibleCustomerSlots.length === 0 ? (
               <p className="slots-empty">
-                Nessun orario disponibile per questo giorno.
+                <strong>Nessuna fascia disponibile</strong>
+                <span>Prova un altro giorno o contatta il locale.</span>
               </p>
             ) : (
               visibleCustomerSlots.map((slot) => (
@@ -761,12 +917,8 @@ export default function CustomerView() {
           <button
             className="submit-button"
             type="submit"
-            disabled={
-              !customer.trim() ||
-              !phone.trim() ||
-              cart.length === 0 ||
-              !selectedSlot
-            }
+            disabled={checkoutDisabled}
+            aria-disabled={checkoutDisabled}
           >
             Conferma ordine - {money(total)}
           </button>

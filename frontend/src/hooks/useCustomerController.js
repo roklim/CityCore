@@ -40,6 +40,8 @@ export default function useCustomerController() {
   const [customerLookupLoading, setCustomerLookupLoading] = useState(false);
   const [customerOrdersLoading, setCustomerOrdersLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [menuError, setMenuError] = useState("");
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [activeMenuSection, setActiveMenuSection] = useState(
     MENU_SECTIONS[0].id,
   );
@@ -109,6 +111,10 @@ export default function useCustomerController() {
     });
   }, [activeFilters, menu, searchTerm]);
 
+  const customPizzaVisible =
+    currentBusiness?.features?.customPizza !== false &&
+    ["pizzeria", "restaurant", undefined].includes(currentBusiness?.type);
+
   const menuBySection = useMemo(() => {
     return MENU_SECTIONS.map((section) => ({
       ...section,
@@ -116,9 +122,11 @@ export default function useCustomerController() {
         (item) => getMenuSectionId(item) === section.id,
       ),
     })).filter(
-      (section) => section.items.length > 0 || section.id === "pizze-tonde",
+      (section) =>
+        section.items.length > 0 ||
+        (section.id === "pizze-tonde" && customPizzaVisible),
     );
-  }, [filteredMenu]);
+  }, [customPizzaVisible, filteredMenu]);
 
   const activeMenu = useMemo(() => {
     return (
@@ -133,12 +141,15 @@ export default function useCustomerController() {
       : loyaltyPoints % LOYALTY_GOAL;
   const loyaltyRemaining = Math.max(LOYALTY_GOAL - loyaltyCyclePoints, 0);
 
-  useEffect(() => {
+  function loadPublicData() {
+    setLoading(true);
+    setMenuError("");
     Promise.allSettled([getMenu(), getCurrentBusiness()])
       .then(([menuResult, businessResult]) => {
         if (menuResult.status === "fulfilled") {
           setMenu(menuResult.value);
         } else {
+          setMenuError("Non riusciamo a caricare il menu in questo momento.");
           notify("Menu non disponibile. Riprova tra poco.");
         }
 
@@ -147,6 +158,10 @@ export default function useCustomerController() {
         }
       })
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    loadPublicData();
   }, []);
 
   useEffect(() => {
@@ -171,12 +186,14 @@ export default function useCustomerController() {
 
   useEffect(() => {
     setSelectedSlot("");
+    setAvailabilityLoading(true);
     getAvailability(pickupDate)
       .then(setAvailability)
       .catch(() => {
         setAvailability(null);
         notify("Fasce orarie non disponibili.");
-      });
+      })
+      .finally(() => setAvailabilityLoading(false));
   }, [pickupDate]);
 
   useEffect(() => {
@@ -452,6 +469,7 @@ export default function useCustomerController() {
     addToCart,
     addedItemId,
     availability,
+    availabilityLoading,
     cart,
     cartCount,
     confirmation,
@@ -471,11 +489,13 @@ export default function useCustomerController() {
     customerProfile,
     dateOptions,
     getCartItem,
+    loadPublicData,
     loading,
     loyaltyCyclePoints,
     loyaltyPoints,
     loyaltyRemaining,
     menuBySection,
+    menuError,
     mobileCartOpen,
     normalizedPhone,
     notes,

@@ -101,6 +101,121 @@ a:focus-visible {
   min-height: 100vh;
 }
 
+.customer-shell {
+  --business-primary: var(--mg-basil);
+  --business-accent: var(--mg-tomato);
+}
+
+/* Header pubblico del singolo business: resta dentro la piattaforma Cagli e
+   rende sempre chiaro come tornare alla directory. */
+.business-public-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(240, 230, 204, 0.92);
+  background: rgba(255, 250, 241, 0.88);
+  backdrop-filter: blur(16px);
+}
+
+.business-home-link,
+.business-header-brand,
+.business-header-actions a {
+  color: var(--mg-char);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.business-home-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--mg-dough);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.business-home-link span {
+  color: var(--business-primary);
+  font-size: 18px;
+}
+
+.business-header-brand {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-self: center;
+  gap: 10px;
+}
+
+.business-header-brand img,
+.business-header-brand > span {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--business-primary);
+  color: white;
+  font-family: "Playfair Display", serif;
+  font-size: 18px;
+  object-fit: cover;
+}
+
+.business-header-brand div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.business-header-brand strong,
+.business-header-brand small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.business-header-brand small {
+  color: var(--mg-ash);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.business-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.business-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--mg-tomato-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.business-status-pill.open {
+  background: rgba(44, 95, 46, 0.12);
+  color: var(--business-primary);
+}
+
+.business-header-actions a {
+  color: var(--mg-ash);
+  font-size: 13px;
+}
+
 /* Hero cliente: comunica subito asporto, banco e menu. */
 .brand-panel {
   position: relative;
@@ -168,7 +283,7 @@ a:focus-visible {
   display: inline-flex;
   margin-bottom: 18px;
   padding: 8px 13px;
-  background: var(--mg-basil);
+  background: var(--business-primary);
   border-radius: 999px;
   color: white;
   font-size: 13px;
@@ -196,7 +311,7 @@ a:focus-visible {
   min-height: 52px;
   border: 0;
   border-radius: 8px;
-  background: var(--mg-tomato);
+  background: var(--business-accent);
   color: white;
   font-weight: 900;
   padding: 0 22px;
@@ -210,7 +325,7 @@ a:focus-visible {
   min-height: 44px;
   border: 0;
   background: transparent;
-  color: var(--mg-basil);
+  color: var(--business-primary);
   font-weight: 900;
   padding: 0 6px;
 }
@@ -238,7 +353,7 @@ a:focus-visible {
 }
 
 .service-strip strong {
-  color: var(--basil);
+  color: var(--business-primary);
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -252,7 +367,7 @@ a:focus-visible {
   gap: 4px;
   margin: 20px auto 0;
   padding: 14px 16px;
-  border: 1px solid rgba(44, 95, 46, 0.22);
+  border: 1px solid color-mix(in srgb, var(--business-primary) 24%, transparent);
   border-radius: 12px;
   background: rgba(234, 243, 222, 0.78);
   color: var(--mg-char);
@@ -260,7 +375,7 @@ a:focus-visible {
 }
 
 .opening-hours-card span {
-  color: var(--mg-basil);
+  color: var(--business-primary);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -276,6 +391,15 @@ a:focus-visible {
   margin: 2px 0 0;
   color: var(--muted);
   font-size: 14px;
+}
+
+.opening-hours-card a {
+  width: fit-content;
+  margin-top: 4px;
+  color: var(--business-primary);
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 /* Recupero ordine cliente tramite telefono. */
@@ -423,7 +547,7 @@ a:focus-visible {
    scorre la lista prodotti. */
 .menu-tools {
   position: sticky;
-  top: 0;
+  top: 66px;
   z-index: 10;
   display: grid;
   gap: 12px;
@@ -511,8 +635,8 @@ a:focus-visible {
 }
 
 .menu-category-nav button.active {
-  background: var(--basil);
-  border-color: var(--basil);
+  background: var(--business-primary);
+  border-color: var(--business-primary);
   color: white;
 }
 
@@ -546,6 +670,134 @@ a:focus-visible {
   border-radius: 12px;
   color: var(--muted);
   font-weight: 800;
+}
+
+.menu-skeleton {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.menu-skeleton-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px 12px;
+  padding: 16px;
+  border: 1px solid var(--mg-dough);
+  border-radius: 12px;
+  background: rgba(255, 250, 241, 0.92);
+}
+
+.menu-skeleton-card i,
+.menu-skeleton-card span,
+.menu-skeleton-card strong,
+.menu-skeleton-card p,
+.menu-skeleton-card b,
+.slot-skeleton span {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(240, 230, 204, 0.8),
+    rgba(255, 255, 255, 0.9),
+    rgba(240, 230, 204, 0.8)
+  );
+  background-size: 220% 100%;
+  animation: skeletonPulse 1.15s ease-in-out infinite;
+}
+
+.menu-skeleton-card i {
+  grid-row: span 3;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.menu-skeleton-card span {
+  width: 42%;
+  height: 12px;
+}
+
+.menu-skeleton-card strong {
+  width: 76%;
+  height: 18px;
+}
+
+.menu-skeleton-card p {
+  width: 92%;
+  height: 12px;
+}
+
+.menu-skeleton-card b {
+  grid-column: 1 / -1;
+  width: 120px;
+  height: 42px;
+  border-radius: 8px;
+}
+
+.menu-state-card {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+  padding: 22px;
+  border: 1px dashed var(--mg-dough);
+  border-radius: 14px;
+  background: rgba(255, 250, 241, 0.92);
+  box-shadow: 0 12px 32px rgba(64, 42, 27, 0.08);
+}
+
+.menu-state-card.error {
+  border-color: rgba(192, 57, 43, 0.3);
+}
+
+.menu-state-card h3 {
+  margin: 0;
+  font-family: "Playfair Display", serif;
+  font-size: 30px;
+}
+
+.menu-state-card p:not(.eyebrow) {
+  margin: 0;
+  color: var(--mg-ash);
+}
+
+.menu-state-card div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.menu-state-card button,
+.menu-state-card a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.menu-state-card button {
+  border: 0;
+  background: var(--business-primary);
+  color: white;
+}
+
+.menu-state-card a {
+  border: 1px solid var(--mg-dough);
+  color: var(--mg-char);
+}
+
+@keyframes skeletonPulse {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
 }
 
 /* Configuratore pizza su misura integrato nel menu pubblico. */
@@ -1015,6 +1267,14 @@ a:focus-visible {
   padding: 22px;
 }
 
+.checkout-subtitle {
+  display: block;
+  margin-top: 6px;
+  color: var(--mg-ash);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .checkout-panel label,
 .login-panel label {
   display: grid;
@@ -1052,6 +1312,25 @@ a:focus-visible {
   display: grid;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.empty-cart {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px dashed var(--mg-dough);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.empty-cart strong {
+  color: var(--mg-char);
+}
+
+.empty-cart span {
+  color: var(--mg-ash);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* Riga carrello, inclusa sintesi per pizza su misura. */
@@ -1258,8 +1537,8 @@ a:focus-visible {
 
 .date-strip button.active,
 .slot-grid button.active {
-  background: var(--basil);
-  border-color: var(--basil);
+  background: var(--business-primary);
+  border-color: var(--business-primary);
   color: white;
 }
 
@@ -1284,12 +1563,34 @@ a:focus-visible {
 
 .slots-empty {
   grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
   margin: 0;
   padding: 14px;
   background: rgba(255, 250, 241, 0.76);
   border: 1px dashed var(--line);
   border-radius: 8px;
   color: var(--muted);
+}
+
+.slots-empty strong {
+  color: var(--mg-char);
+}
+
+.slots-empty span {
+  font-size: 13px;
+}
+
+.slot-skeleton {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.slot-skeleton span {
+  height: 58px;
+  border-radius: 8px;
 }
 
 .slot-grid button.almost {
@@ -1309,8 +1610,8 @@ a:focus-visible {
   width: 100%;
   margin-top: 18px;
   padding: 15px 18px;
-  background: var(--tomato);
-  border-color: var(--tomato);
+  background: var(--business-accent);
+  border-color: var(--business-accent);
   color: white;
 }
 
@@ -3629,6 +3930,24 @@ a:focus-visible {
 
 /* Breakpoint tablet: admin e checkout diventano piu compatti. */
 @media (max-width: 920px) {
+  .business-public-header {
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+
+  .business-header-brand {
+    justify-self: start;
+    order: -1;
+  }
+
+  .business-home-link {
+    justify-self: start;
+  }
+
+  .business-header-actions {
+    justify-self: end;
+  }
+
   .brand-panel h1 {
     font-size: 48px;
   }
@@ -3716,8 +4035,46 @@ a:focus-visible {
 
 /* Breakpoint telefono: bottom cart, card compatte e nav admin scrollabile. */
 @media (max-width: 680px) {
+  .business-public-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 9px 12px;
+  }
+
+  .business-home-link {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .business-header-brand {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .business-header-brand img,
+  .business-header-brand > span {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .business-header-actions {
+    position: absolute;
+    top: 9px;
+    right: 12px;
+  }
+
+  .business-header-actions a {
+    font-size: 12px;
+  }
+
+  .business-status-pill {
+    min-height: 30px;
+  }
+
   .brand-panel {
-    padding: 48px 14px 22px;
+    padding: 34px 14px 22px;
   }
 
   .brand-panel::before {
@@ -3833,6 +4190,7 @@ a:focus-visible {
   }
 
   .menu-grid,
+  .menu-skeleton,
   .slot-columns {
     grid-template-columns: 1fr;
   }
@@ -3890,12 +4248,20 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .menu-tools {
+    position: static;
+  }
+
   .date-strip {
     grid-template-columns: repeat(2, 1fr);
   }
 
   .slot-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .slot-skeleton {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .loyalty-card {

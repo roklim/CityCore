@@ -175,11 +175,29 @@ export function isCounterOpenNow() {
 }
 
 export function orderTrackingHref(orderId) {
+  return businessOrderHref(getCurrentBusinessSlugFromPath(), orderId);
+}
+
+export function getCurrentBusinessSlugFromPath() {
   const pathname = typeof window === "undefined" ? "" : window.location.pathname;
   const firstSegment = pathname.split("/").filter(Boolean)[0];
   const reserved = new Set(["admin", "ordine", "p"]);
-  const base = firstSegment && !reserved.has(firstSegment) ? `/${firstSegment}` : "";
-  return `${base || ""}?ordine=${encodeURIComponent(orderId)}`;
+  return firstSegment && !reserved.has(firstSegment) ? firstSegment : "";
+}
+
+export function businessHref(slug) {
+  return slug ? `/${encodeURIComponent(slug)}` : "/";
+}
+
+export function businessAdminHref(slug) {
+  return slug ? `/${encodeURIComponent(slug)}/admin` : "/admin";
+}
+
+export function businessOrderHref(slug, orderId) {
+  const encodedId = encodeURIComponent(orderId);
+  return slug
+    ? `/${encodeURIComponent(slug)}/ordine/${encodedId}`
+    : `/ordine/${encodedId}`;
 }
 
 export function parseCommaList(value) {
