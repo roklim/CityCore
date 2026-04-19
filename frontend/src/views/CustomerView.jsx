@@ -287,21 +287,16 @@ export default function CustomerView() {
         </div>
       </header>
       <section className="brand-panel">
-        <span
-          className={`counter-badge ${counterOpen ? "open" : "closed"}`}
-        >
-          {counterOpen
-            ? "Banco aperto - ordina ora"
-            : "Chiuso - controlla gli orari"}
-        </span>
         <p className="eyebrow">{heroCopy.eyebrow}</p>
         <h1>{heroCopy.title}</h1>
         <p className="lead">{heroCopy.subtitle}</p>
-        <div className="opening-hours-card">
-          <span>Orari di apertura</span>
+        <div className={`opening-hours-card ${counterOpen ? "open" : "closed"}`}>
+          <span className="opening-status-pill">
+            {counterOpen ? "Aperto ora" : "Chiuso ora"}
+          </span>
+          <span className="opening-label">Orari di apertura</span>
           <strong>{openingHours}</strong>
           {publicMessage && <p>{publicMessage}</p>}
-          <a href="/">Torna a tutte le attivita</a>
         </div>
         <div className="hero-actions">
           <button

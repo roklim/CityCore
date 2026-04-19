@@ -364,18 +364,46 @@ a:focus-visible {
   z-index: 1;
   width: min(520px, calc(100% - 28px));
   display: grid;
-  gap: 4px;
+  justify-items: center;
+  gap: 6px;
   margin: 20px auto 0;
-  padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--business-primary) 24%, transparent);
-  border-radius: 12px;
-  background: rgba(234, 243, 222, 0.78);
+  padding: 16px;
+  border-radius: 14px;
   color: var(--mg-char);
+  text-align: center;
   animation: slideUp 0.4s ease 0.25s both;
 }
 
-.opening-hours-card span {
-  color: var(--business-primary);
+.opening-hours-card.open {
+  border: 1px solid var(--business-primary, var(--mg-basil));
+  background: rgba(234, 243, 222, 0.9);
+}
+
+.opening-hours-card.closed {
+  border: 1px solid rgba(192, 57, 43, 0.42);
+  background: #FCEBEB;
+}
+
+.opening-status-pill {
+  width: fit-content;
+  justify-self: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.opening-hours-card.open .opening-status-pill {
+  background: var(--business-primary, var(--mg-basil));
+}
+
+.opening-hours-card.closed .opening-status-pill {
+  background: var(--mg-tomato-dark);
+}
+
+.opening-label {
+  color: var(--mg-ash);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -391,15 +419,6 @@ a:focus-visible {
   margin: 2px 0 0;
   color: var(--muted);
   font-size: 14px;
-}
-
-.opening-hours-card a {
-  width: fit-content;
-  margin-top: 4px;
-  color: var(--business-primary);
-  font-size: 13px;
-  font-weight: 900;
-  text-decoration: none;
 }
 
 /* Recupero ordine cliente tramite telefono. */
