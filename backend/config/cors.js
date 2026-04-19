@@ -13,6 +13,17 @@ function getAllowedOrigins() {
   );
 }
 
+function isVercelAppOrigin(origin) {
+  // Preview + production domains su Vercel terminano in .vercel.app
+  // (es. https://my-app.vercel.app oppure https://my-app-<hash>.vercel.app).
+  try {
+    const url = new URL(origin);
+    return url.protocol === "https:" && url.hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
+}
+
 function escapeRegex(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -46,6 +57,9 @@ function createCorsOptions() {
   }
 
   const { exact, wildcardRegexes } = compileOriginPatterns(allowedOrigins);
+  const allowVercelWildcard = String(process.env.CORS_ALLOW_VERCEL_APP || "")
+    .trim()
+    .toLowerCase() === "true";
 
   return {
     origin(origin, callback) {
@@ -61,7 +75,14 @@ function createCorsOptions() {
         return callback(null, true);
       }
 
-      return callback(new Error(`CORS origin non autorizzato: ${origin}`));
+      if (allowVercelWildcard && isVercelAppOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      // Non lanciamo un errore (evita 500 sul preflight). Senza header ACAO,
+      // il browser blocca comunque la richiesta e noi vediamo un log chiaro.
+      console.warn("[cors] Origin non autorizzato:", origin);
+      return callback(null, false);
     },
   };
 }
