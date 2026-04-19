@@ -2,26 +2,20 @@
 import {
   BUSINESS_TYPE_OPTIONS,
   BUSINESS_USER_ROLES,
-  MENU_CATEGORY_OPTIONS,
-  MENU_UNIT_OPTIONS,
-  OPENING_DAY_OPTIONS,
-  ORDER_FILTERS,
   PLAN_OPTIONS,
-  STATUSES,
   SUBSCRIPTION_STATUS_OPTIONS,
 } from "../constants";
-import {
-  formatDate,
-  formatDateTime,
-  isFreshOrder,
-  isUrgentOrder,
-  minutesUntilPickup,
-  money,
-  slugify,
-} from "../utils/format";
+import { money, slugify } from "../utils/format";
 import Toast from "../components/Toast";
 import useAdminController from "../hooks/useAdminController";
+import AdminAvailabilitySection from "../components/admin/AdminAvailabilitySection";
+import AdminCouponsSection from "../components/admin/AdminCouponsSection";
+import AdminCustomersSection from "../components/admin/AdminCustomersSection";
+import AdminDashboardSection from "../components/admin/AdminDashboardSection";
 import AdminHeader from "../components/admin/AdminHeader";
+import AdminMenuSection from "../components/admin/AdminMenuSection";
+import AdminOrdersSection from "../components/admin/AdminOrdersSection";
+import AdminSettingsSection from "../components/admin/AdminSettingsSection";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminStatsGrid from "../components/admin/AdminStatsGrid";
 import InlineNotice from "../components/ui/InlineNotice";
@@ -666,840 +660,79 @@ export default function AdminView() {
         )}
 
         {activeAdminSection === "dashboard" && (
-          <section className="admin-dashboard-grid">
-            <div className="admin-panel">
-              <div className="section-heading">
-                <p className="eyebrow">Oggi al banco</p>
-                <h2>Ordini in arrivo</h2>
-              </div>
-              <div className="admin-table">
-                {recentOrders.length === 0 ? (
-                  <InlineNotice
-                    title="Nessun ordine registrato oggi"
-                    description="Gli ordini in arrivo appariranno qui in tempo reale."
-                  />
-                ) : (
-                  recentOrders.map((order) => (
-                    <article
-                      className={`compact-order ${isUrgentOrder(order) ? "urgent" : ""}`}
-                      key={order._id}
-                    >
-                      <div>
-                        <strong>{order.customer}</strong>
-                        <span>
-                          {order.pickupTime} - {money(order.total)}
-                        </span>
-                      </div>
-                      <span className={`status ${order.status}`}>
-                        {isFreshOrder(order) ? "Nuovo" : STATUSES[order.status]}
-                      </span>
-                    </article>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="admin-panel">
-              <div className="section-heading">
-                <p className="eyebrow">Vendite</p>
-                <h2>Piu ordinati</h2>
-              </div>
-              <div className="top-products">
-                {topProducts.length === 0 ? (
-                  <InlineNotice
-                    title="Ancora nessun prodotto venduto"
-                    description="La classifica si aggiorna appena arrivano ordini."
-                  />
-                ) : (
-                  topProducts.map((item) => (
-                    <span className="top-product-row" key={item.name}>
-                      <span>
-                        <strong>{item.name}</strong>
-                        <b>
-                          {item.qty} pz - {money(item.revenue)}
-                        </b>
-                      </span>
-                      <i
-                        style={{
-                          width: `${((item.qty || 0) / topProductMax) * 100}%`,
-                        }}
-                      />
-                    </span>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="admin-panel">
-              <div className="section-heading">
-                <p className="eyebrow">Capienza</p>
-                <h2>Fasce orarie</h2>
-              </div>
-              <div className="capacity-strip compact">
-                {(availability?.slots || []).map((slot) => (
-                  <div
-                    className={[
-                      "capacity-pill",
-                      slot.full ? "full" : "",
-                      slot.almostFull ? "almost" : "",
-                    ].join(" ")}
-                    key={slot.pickupSlot}
-                  >
-                    <strong>{slot.time}</strong>
-                    <span>
-                      {slot.count}/{availability.maxOrdersPerSlot}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+          <AdminDashboardSection
+            availability={availability}
+            recentOrders={recentOrders}
+            topProductMax={topProductMax}
+            topProducts={topProducts}
+          />
         )}
 
         {activeAdminSection === "orders" && (
-          <>
-            <section className="admin-toolbar">
-              <div className="quick-filters">
-                {ORDER_FILTERS.map((filter) => (
-                  <button
-                    className={orderFilter === filter.id ? "active" : ""}
-                    key={filter.id}
-                    type="button"
-                    onClick={() => setOrderFilter(filter.id)}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-              <input
-                placeholder="Cerca cliente, telefono, prodotto o nota"
-                value={orderSearch}
-                onChange={(event) => setOrderSearch(event.target.value)}
-              />
-            </section>
-
-            <section className="slot-columns">
-              {visibleOrders.length === 0 ? (
-                <InlineNotice
-                  title="Nessun ordine con questi filtri"
-                  description="Cambia stato, ricerca o data per vedere altri ordini."
-                />
-              ) : (
-                Object.entries(groupedOrders).map(([slot, slotOrders]) => (
-                  <div className="slot-column" key={slot}>
-                    <h2>{slotOrders[0]?.pickupTime || slot}</h2>
-                    {slotOrders.map((order) => (
-                      <article
-                        className={`order-card ${isUrgentOrder(order) ? "urgent" : ""}`}
-                        key={order._id}
-                      >
-                        <div className="order-card-head">
-                          <strong>{order.customer}</strong>
-                          <span className={`status ${order.status}`}>
-                            {isFreshOrder(order)
-                              ? "Nuovo"
-                              : STATUSES[order.status]}
-                          </span>
-                        </div>
-                        <div className="order-meta">
-                          <span>{order.phone || "Telefono non inserito"}</span>
-                          <span>
-                            {order.pickupDate} - {order.pickupTime}
-                          </span>
-                          <strong>{money(order.total)}</strong>
-                        </div>
-                        <p>
-                          {(order.items || [])
-                            .map((item) => `${item.qty}x ${item.name}`)
-                            .join(" | ")}
-                        </p>
-                        {order.notes && (
-                          <p className="order-note">{order.notes}</p>
-                        )}
-                        {order.items?.some((item) => item.notes) && (
-                          <div className="order-item-notes">
-                            {order.items
-                              .filter((item) => item.notes)
-                              .map((item, index) => (
-                                <span key={`${order._id}-note-${index}`}>
-                                  <strong>{item.name}</strong>: {item.notes}
-                                </span>
-                              ))}
-                          </div>
-                        )}
-                        <div className="status-buttons">
-                          {Object.keys(STATUSES).map((status) => (
-                            <button
-                              className={
-                                order.status === status ? "active" : ""
-                              }
-                              type="button"
-                              key={status}
-                              onClick={() => changeStatus(order._id, status)}
-                            >
-                              {STATUSES[status]}
-                            </button>
-                          ))}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                ))
-              )}
-            </section>
-          </>
+          <AdminOrdersSection
+            changeStatus={changeStatus}
+            groupedOrders={groupedOrders}
+            orderFilter={orderFilter}
+            orderSearch={orderSearch}
+            setOrderFilter={setOrderFilter}
+            setOrderSearch={setOrderSearch}
+            visibleOrders={visibleOrders}
+          />
         )}
 
         {activeAdminSection === "menu" && (
-          <section className="admin-menu-manager">
-            <div className="admin-menu-overview">
-              <article>
-                <span>Prodotti totali</span>
-                <strong>{adminMenu.length}</strong>
-              </article>
-              <article>
-                <span>Visibili</span>
-                <strong>{adminMenu.length - unavailableItems.length}</strong>
-              </article>
-              <article>
-                <span>Nascosti</span>
-                <strong>{unavailableItems.length}</strong>
-              </article>
-              <article>
-                <span>Categorie</span>
-                <strong>{Object.keys(groupedMenu).length}</strong>
-              </article>
-            </div>
-            <form className="menu-editor-panel" onSubmit={saveMenuItem}>
-              <div className="section-heading">
-                <p className="eyebrow">Gestione menu</p>
-                <h2>
-                  {editingMenuId ? "Modifica prodotto" : "Aggiungi prodotto"}
-                </h2>
-              </div>
-              <div className="menu-live-preview">
-                <span>Anteprima cliente</span>
-                <article>
-                  <b>{menuForm.emoji || "•"}</b>
-                  <div>
-                    <strong>{menuForm.name || "Nome prodotto"}</strong>
-                    <p>
-                      {menuForm.description ||
-                        "Descrizione breve visibile nel menu pubblico."}
-                    </p>
-                  </div>
-                  <em>
-                    {money(Number(menuForm.price) || 0)} /{" "}
-                    {menuForm.unit || "pezzo"}
-                  </em>
-                </article>
-              </div>
-
-              <div className="menu-editor-grid">
-                <label>
-                  Nome prodotto
-                  <input
-                    value={menuForm.name}
-                    onChange={(event) =>
-                      updateMenuForm("name", event.target.value)
-                    }
-                    placeholder="Es. Margherita"
-                  />
-                </label>
-                <label>
-                  Prezzo
-                  <input
-                    min="0"
-                    step="0.1"
-                    type="number"
-                    value={menuForm.price}
-                    onChange={(event) =>
-                      updateMenuForm("price", event.target.value)
-                    }
-                    placeholder="6.00"
-                  />
-                </label>
-                <label>
-                  Categoria
-                  <select
-                    value={menuForm.category}
-                    onChange={(event) =>
-                      updateMenuForm("category", event.target.value)
-                    }
-                  >
-                    {MENU_CATEGORY_OPTIONS.map((category) => (
-                      <option key={category.value} value={category.value}>
-                        {category.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Unita
-                  <select
-                    value={menuForm.unit}
-                    onChange={(event) =>
-                      updateMenuForm("unit", event.target.value)
-                    }
-                  >
-                    {MENU_UNIT_OPTIONS.map((unit) => (
-                      <option key={unit} value={unit}>
-                        {unit}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Emoji
-                  <input
-                    value={menuForm.emoji}
-                    onChange={(event) =>
-                      updateMenuForm("emoji", event.target.value)
-                    }
-                    placeholder={"\u{1F355}"}
-                  />
-                </label>
-                <label>
-                  Ordine
-                  <input
-                    min="0"
-                    step="1"
-                    type="number"
-                    value={menuForm.sortOrder}
-                    onChange={(event) =>
-                      updateMenuForm("sortOrder", event.target.value)
-                    }
-                    placeholder="10"
-                  />
-                </label>
-              </div>
-
-              <label>
-                Immagine prodotto
-                <input
-                  value={menuForm.imageUrl}
-                  onChange={(event) =>
-                    updateMenuForm("imageUrl", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </label>
-
-              <label>
-                Descrizione ingredienti
-                <textarea
-                  value={menuForm.description}
-                  onChange={(event) =>
-                    updateMenuForm("description", event.target.value)
-                  }
-                  placeholder="Pomodoro, mozzarella, basilico"
-                />
-              </label>
-
-              <div className="menu-editor-grid">
-                <label>
-                  Tag
-                  <input
-                    value={menuForm.tags}
-                    onChange={(event) =>
-                      updateMenuForm("tags", event.target.value)
-                    }
-                    placeholder="vegetariana, classica"
-                  />
-                </label>
-                <label>
-                  Allergeni
-                  <input
-                    value={menuForm.allergens}
-                    onChange={(event) =>
-                      updateMenuForm("allergens", event.target.value)
-                    }
-                    placeholder="glutine, latte"
-                  />
-                </label>
-              </div>
-
-              <label className="menu-featured-check">
-                <input
-                  checked={menuForm.featured}
-                  type="checkbox"
-                  onChange={(event) =>
-                    updateMenuForm("featured", event.target.checked)
-                  }
-                />
-                Segna come piu richiesta / novita
-              </label>
-
-              <div className="menu-editor-actions">
-                <button type="submit" disabled={menuSaving}>
-                  {menuSaving
-                    ? "Salvataggio..."
-                    : editingMenuId
-                      ? "Salva modifiche"
-                      : "Aggiungi al menu"}
-                </button>
-                {editingMenuId && (
-                  <button type="button" onClick={resetMenuForm}>
-                    Annulla modifica
-                  </button>
-                )}
-              </div>
-            </form>
-
-            <div className="menu-admin-list">
-              <div className="section-heading">
-                <p className="eyebrow">Prodotti pubblicati</p>
-                <h2>Menu della pizzeria</h2>
-              </div>
-              {MENU_CATEGORY_OPTIONS.map((category) => {
-                const items = groupedMenu[category.value] || [];
-                if (items.length === 0) return null;
-
-                return (
-                  <section className="menu-admin-category" key={category.value}>
-                    <h3>{category.label}</h3>
-                    <div className="menu-admin-items">
-                      {items.map((item) => (
-                        <article
-                          className={`menu-admin-item ${item.available ? "" : "off"}`}
-                          key={item._id}
-                        >
-                          <div>
-                            <strong>
-                              {item.emoji || "\u{1F355}"} {item.name}
-                            </strong>
-                            {item.imageUrl && (
-                              <img
-                                className="menu-admin-thumb"
-                                src={item.imageUrl}
-                                alt=""
-                              />
-                            )}
-                            <span>
-                              {item.description || "Senza descrizione"}
-                            </span>
-                            <small>
-                              {money(item.price)} - {item.unit || "pezzo"} -
-                              ordine {item.sortOrder || 0}
-                            </small>
-                          </div>
-                          <div className="menu-admin-actions">
-                            <button
-                              type="button"
-                              onClick={() => editMenuItem(item)}
-                            >
-                              Modifica
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => changeMenuAvailability(item._id)}
-                            >
-                              {item.available ? "Nascondi" : "Mostra"}
-                            </button>
-                            <button
-                              className="danger"
-                              type="button"
-                              onClick={() => removeMenuItem(item._id)}
-                            >
-                              Elimina
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          </section>
+          <AdminMenuSection
+            adminMenu={adminMenu}
+            changeMenuAvailability={changeMenuAvailability}
+            editMenuItem={editMenuItem}
+            editingMenuId={editingMenuId}
+            groupedMenu={groupedMenu}
+            menuForm={menuForm}
+            menuSaving={menuSaving}
+            removeMenuItem={removeMenuItem}
+            resetMenuForm={resetMenuForm}
+            saveMenuItem={saveMenuItem}
+            unavailableItems={unavailableItems}
+            updateMenuForm={updateMenuForm}
+          />
         )}
-
         {activeAdminSection === "availability" && (
-          <section className="admin-dashboard-grid">
-            <div className="admin-panel wide">
-              <div className="section-heading">
-                <p className="eyebrow">Disponibilita prodotti</p>
-                <h2>Esauriti o nascosti</h2>
-              </div>
-              <div className="availability-list">
-                {adminMenu.length === 0 ? (
-                  <p className="muted">Menu non ancora caricato.</p>
-                ) : (
-                  adminMenu.map((item) => (
-                    <article
-                      className={item.available ? "" : "off"}
-                      key={item._id}
-                    >
-                      <div>
-                        <strong>
-                          {item.emoji || "\u{1F355}"} {item.name}
-                        </strong>
-                        <span>
-                          {item.available
-                            ? "Visibile ai clienti"
-                            : "Nascosto / esaurito"}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => changeMenuAvailability(item._id)}
-                      >
-                        {item.available ? "Segna esaurito" : "Rendi ordinabile"}
-                      </button>
-                    </article>
-                  ))
-                )}
-              </div>
-            </div>
-            <div className="admin-panel">
-              <div className="section-heading">
-                <p className="eyebrow">Riepilogo</p>
-                <h2>Stato menu</h2>
-              </div>
-              <div className="top-products">
-                <span>
-                  <strong>Prodotti attivi</strong>
-                  <b>{adminMenu.length - unavailableItems.length}</b>
-                </span>
-                <span>
-                  <strong>Non ordinabili</strong>
-                  <b>{unavailableItems.length}</b>
-                </span>
-                <span>
-                  <strong>Categorie</strong>
-                  <b>{MENU_CATEGORY_OPTIONS.length}</b>
-                </span>
-              </div>
-            </div>
-          </section>
+          <AdminAvailabilitySection
+            adminMenu={adminMenu}
+            changeMenuAvailability={changeMenuAvailability}
+            unavailableItems={unavailableItems}
+          />
         )}
-
         {activeAdminSection === "customers" && (
-          <section className="admin-panel">
-            <div className="section-heading">
-              <p className="eyebrow">Clienti</p>
-              <h2>Rubrica ordini</h2>
-            </div>
-            <input
-              className="admin-search"
-              placeholder="Cerca nome o telefono"
-              value={customerSearch}
-              onChange={(event) => setCustomerSearch(event.target.value)}
-            />
-            <div className="customer-admin-list">
-              {customers.length === 0 ? (
-                <InlineNotice
-                  title="Nessun cliente trovato"
-                  description="Prova con un altro nome o numero di telefono."
-                />
-              ) : (
-                customers.map((customer) => (
-                  <article key={customer._id}>
-                    <div>
-                      <strong>{customer.name || "Cliente senza nome"}</strong>
-                      <span>{customer.phone}</span>
-                    </div>
-                    <span>{customer.totalOrders || 0} ordini</span>
-                    <span>{customer.completedOrders || 0} ritirati</span>
-                    <strong>{money(customer.totalSpent)}</strong>
-                    <small>
-                      {customer.lastOrderAt
-                        ? formatDateTime(customer.lastOrderAt)
-                        : "Nessun ordine"}
-                    </small>
-                  </article>
-                ))
-              )}
-            </div>
-          </section>
+          <AdminCustomersSection
+            customerSearch={customerSearch}
+            customers={customers}
+            setCustomerSearch={setCustomerSearch}
+          />
         )}
-
         {activeAdminSection === "coupons" && (
-          <section className="admin-menu-manager">
-            <form className="menu-editor-panel" onSubmit={saveCoupon}>
-              <div className="section-heading">
-                <p className="eyebrow">Coupon e offerte</p>
-                <h2>{editingCouponId ? "Modifica coupon" : "Nuovo coupon"}</h2>
-              </div>
-              <div className="menu-editor-grid">
-                <label>
-                  Codice
-                  <input
-                    value={couponForm.code}
-                    onChange={(event) =>
-                      updateCouponForm("code", event.target.value)
-                    }
-                    placeholder="PIZZA10"
-                  />
-                </label>
-                <label>
-                  Tipo
-                  <select
-                    value={couponForm.type}
-                    onChange={(event) =>
-                      updateCouponForm("type", event.target.value)
-                    }
-                  >
-                    <option value="percent">Percentuale</option>
-                    <option value="fixed">Importo fisso</option>
-                  </select>
-                </label>
-                <label>
-                  Valore
-                  <input
-                    min="0"
-                    step="0.1"
-                    type="number"
-                    value={couponForm.value}
-                    onChange={(event) =>
-                      updateCouponForm("value", event.target.value)
-                    }
-                  />
-                </label>
-                <label>
-                  Scadenza
-                  <input
-                    type="date"
-                    value={couponForm.expiresAt}
-                    onChange={(event) =>
-                      updateCouponForm("expiresAt", event.target.value)
-                    }
-                  />
-                </label>
-                <label>
-                  Limite utilizzi
-                  <input
-                    min="0"
-                    step="1"
-                    type="number"
-                    value={couponForm.usageLimit}
-                    onChange={(event) =>
-                      updateCouponForm("usageLimit", event.target.value)
-                    }
-                    placeholder="0 = illimitato"
-                  />
-                </label>
-              </div>
-              <label className="menu-featured-check">
-                <input
-                  checked={couponForm.active}
-                  type="checkbox"
-                  onChange={(event) =>
-                    updateCouponForm("active", event.target.checked)
-                  }
-                />
-                Coupon attivo
-              </label>
-              <div className="menu-editor-actions">
-                <button type="submit" disabled={couponSaving}>
-                  {couponSaving
-                    ? "Salvataggio..."
-                    : editingCouponId
-                      ? "Salva coupon"
-                      : "Crea coupon"}
-                </button>
-                {editingCouponId && (
-                  <button type="button" onClick={resetCouponForm}>
-                    Annulla
-                  </button>
-                )}
-              </div>
-            </form>
-
-            <div className="menu-admin-list">
-              <div className="section-heading">
-                <p className="eyebrow">Offerte attive</p>
-                <h2>Codici sconto</h2>
-              </div>
-              {coupons.length === 0 ? (
-                <InlineNotice
-                  title="Nessun coupon creato"
-                  description="Crea un codice sconto quando vuoi attivare una promozione."
-                />
-              ) : (
-                <div className="menu-admin-items">
-                  {coupons.map((coupon) => (
-                    <article
-                      className={`menu-admin-item ${coupon.active ? "" : "off"}`}
-                      key={coupon._id}
-                    >
-                      <div>
-                        <strong>{coupon.code}</strong>
-                        <span>
-                          {coupon.type === "percent"
-                            ? `${coupon.value}%`
-                            : money(coupon.value)}
-                          {coupon.expiresAt
-                            ? ` - fino al ${coupon.expiresAt}`
-                            : " - senza scadenza"}
-                        </span>
-                        <small>
-                          {coupon.usedCount || 0}/{coupon.usageLimit || "illimitato"}{" "}
-                          utilizzi
-                        </small>
-                      </div>
-                      <div className="menu-admin-actions">
-                        <button
-                          type="button"
-                          onClick={() => editCoupon(coupon)}
-                        >
-                          Modifica
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => changeCouponStatus(coupon._id)}
-                        >
-                          {coupon.active ? "Disattiva" : "Attiva"}
-                        </button>
-                        <button
-                          className="danger"
-                          type="button"
-                          onClick={() => removeCoupon(coupon._id)}
-                        >
-                          Elimina
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
+          <AdminCouponsSection
+            changeCouponStatus={changeCouponStatus}
+            couponForm={couponForm}
+            couponSaving={couponSaving}
+            coupons={coupons}
+            editCoupon={editCoupon}
+            editingCouponId={editingCouponId}
+            removeCoupon={removeCoupon}
+            resetCouponForm={resetCouponForm}
+            saveCoupon={saveCoupon}
+            updateCouponForm={updateCouponForm}
+          />
         )}
-
         {activeAdminSection === "settings" && (
-          <section className="admin-panel settings-panel">
-            <div className="section-heading">
-              <p className="eyebrow">Locale</p>
-              <h2>Impostazioni operative</h2>
-            </div>
-            <form className="settings-form" onSubmit={saveSettings}>
-              <div className="settings-hours-card">
-                <div>
-                  <p className="eyebrow">Visibile sul menu cliente</p>
-                  <h3>Orari di apertura</h3>
-                  <span>
-                    Questo testo compare nella prima schermata del menu pubblico.
-                  </span>
-                </div>
-                <strong>{settingsForm.openingHours || "Non impostati"}</strong>
-                <div className="settings-hour-presets">
-                  {[
-                    ["daily", "Tutti i giorni"],
-                    ["takeaway", "Mar-Dom sera"],
-                    ["weekend", "Weekend"],
-                    ["weekly", "Pranzo Lun-Sab"],
-                    ["closed", "Chiuso"],
-                  ].map(([preset, label]) => (
-                    <button
-                      type="button"
-                      key={preset}
-                      onClick={() => applyOpeningPreset(preset)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="settings-full settings-days-editor">
-                <span className="settings-field-title">Giorni di apertura</span>
-                <div className="settings-day-grid">
-                  {OPENING_DAY_OPTIONS.map((day) => {
-                    const active = settingsForm.openingDays.includes(day.id);
-                    return (
-                      <button
-                        type="button"
-                        key={day.id}
-                        className={active ? "active" : ""}
-                        aria-pressed={active}
-                        onClick={() => toggleOpeningDay(day.id)}
-                      >
-                        <strong>{day.label}</strong>
-                        <span>{day.fullLabel}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <label>
-                Ora apertura
-                <input
-                  type="time"
-                  value={settingsForm.openingTimeStart}
-                  onChange={(event) =>
-                    updateSettingsForm({ openingTimeStart: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Ora chiusura
-                <input
-                  type="time"
-                  value={settingsForm.openingTimeEnd}
-                  onChange={(event) =>
-                    updateSettingsForm({ openingTimeEnd: event.target.value })
-                  }
-                />
-              </label>
-              <label className="settings-full">
-                Testo mostrato sul menu
-                <input
-                  value={settingsForm.openingHours}
-                  onChange={(event) =>
-                    updateSettingsForm({ openingHours: event.target.value })
-                  }
-                  placeholder="Es. Mar-Dom 18:00-22:30"
-                />
-              </label>
-              <label>
-                Costo consegna
-                <input
-                  min="0"
-                  step="0.1"
-                  type="number"
-                  value={settingsForm.deliveryCost}
-                  onChange={(event) =>
-                    updateSettingsForm({ deliveryCost: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Ordine minimo
-                <input
-                  min="0"
-                  step="0.1"
-                  type="number"
-                  value={settingsForm.minimumOrder}
-                  onChange={(event) =>
-                    updateSettingsForm({ minimumOrder: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Zone servite
-                <input
-                  value={settingsForm.serviceZones}
-                  onChange={(event) =>
-                    updateSettingsForm({ serviceZones: event.target.value })
-                  }
-                  placeholder="Centro, San Paolo, Eur"
-                />
-              </label>
-              <label className="settings-full">
-                Messaggio temporaneo
-                <textarea
-                  value={settingsForm.customerMessage}
-                  onChange={(event) =>
-                    updateSettingsForm({ customerMessage: event.target.value })
-                  }
-                  placeholder="Siamo chiusi per ferie"
-                />
-              </label>
-              <button type="submit" disabled={settingsSaving}>
-                {settingsSaving ? "Salvataggio..." : "Salva impostazioni"}
-              </button>
-            </form>
-          </section>
+          <AdminSettingsSection
+            applyOpeningPreset={applyOpeningPreset}
+            saveSettings={saveSettings}
+            settingsForm={settingsForm}
+            settingsSaving={settingsSaving}
+            toggleOpeningDay={toggleOpeningDay}
+            updateSettingsForm={updateSettingsForm}
+          />
         )}
       </section>
 
