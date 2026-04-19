@@ -106,7 +106,7 @@ export default function AdminView() {
     return (
       <main className="admin-login">
         <form className="login-panel" onSubmit={login}>
-          <a href="/">Menu cliente</a>
+          <a href={`/${getBusinessSlug()}`}>Menu cliente</a>
           <h1>Banco admin</h1>
           <input
             placeholder="Email o username"
@@ -150,7 +150,7 @@ export default function AdminView() {
             </button>
           ))}
         </nav>
-        <a href={`/p/${getBusinessSlug()}`}>Menu cliente</a>
+        <a href={`/${getBusinessSlug()}`}>Menu cliente</a>
       </aside>
 
       <section className="admin-main">
@@ -501,31 +501,24 @@ export default function AdminView() {
                         </div>
                         <div className="business-deploy-box">
                           <code>VITE_BUSINESS_SLUG={business.slug}</code>
-                          {business.deployment?.publicUrl ? (
-                            <a
-                              href={`${business.deployment.publicUrl.replace(
-                                /\/$/,
-                                "",
-                              )}/admin`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Apri admin app
-                            </a>
-                          ) : (
-                            <span>URL Vercel non inserito</span>
-                          )}
+                          <a
+                            href={`/${business.slug}/admin`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Apri admin app
+                          </a>
                         </div>
                         <div className="menu-admin-actions">
                           <a
                             className="admin-action-link"
-                            href={`/admin/${business.slug}`}
+                            href={`/${business.slug}/admin`}
                           >
                             Gestisci
                           </a>
                           <a
                             className="admin-action-link"
-                            href={`/p/${business.slug}`}
+                            href={`/${business.slug}`}
                           >
                             Anteprima
                           </a>

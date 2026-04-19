@@ -14,6 +14,7 @@ import {
   money,
   orderTrackingHref,
 } from "../utils/format";
+import { getBusinessSlug } from "../lib/api";
 import Toast from "../components/Toast";
 import useCustomerController from "../hooks/useCustomerController";
 export default function CustomerView() {
@@ -128,7 +129,7 @@ export default function CustomerView() {
   return (
     <main className="customer-shell">
       <section className="brand-panel">
-        <a className="admin-link" href="/admin">
+        <a className="admin-link" href={`/${getBusinessSlug()}/admin`}>
           Admin
         </a>
         <span

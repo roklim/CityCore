@@ -33,9 +33,14 @@ export function getBusinessSlug() {
   const session = getStoredAdminSession();
   const adminMatch = pathname.match(/^\/admin\/([^/]+)/);
   const publicMatch = pathname.match(/^\/p\/([^/]+)/);
+  const businessBaseMatch = pathname.match(/^\/([^/]+)(?:\/admin|\/ordine\/|\/?$)/);
+  const reservedSlugs = new Set(["admin", "ordine", "p"]);
+  const baseSlug = reservedSlugs.has(businessBaseMatch?.[1])
+    ? ""
+    : businessBaseMatch?.[1];
   const match = adminMatch || publicMatch;
   if (
-    pathname.startsWith("/admin") &&
+    (pathname.startsWith("/admin") || /\/admin(?:\/|$)/.test(pathname)) &&
     session.role &&
     session.role !== "global_admin" &&
     session.business?.slug
@@ -45,7 +50,7 @@ export function getBusinessSlug() {
     return session.business.slug;
   }
   if (params.get("business")) return params.get("business");
-  return match?.[1] || DEFAULT_BUSINESS_SLUG;
+  return match?.[1] || baseSlug || DEFAULT_BUSINESS_SLUG;
 }
 
 async function request(path, options = {}) {

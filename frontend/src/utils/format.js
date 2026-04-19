@@ -175,7 +175,11 @@ export function isCounterOpenNow() {
 }
 
 export function orderTrackingHref(orderId) {
-  return `/?ordine=${encodeURIComponent(orderId)}`;
+  const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+  const firstSegment = pathname.split("/").filter(Boolean)[0];
+  const reserved = new Set(["admin", "ordine", "p"]);
+  const base = firstSegment && !reserved.has(firstSegment) ? `/${firstSegment}` : "";
+  return `${base || ""}?ordine=${encodeURIComponent(orderId)}`;
 }
 
 export function parseCommaList(value) {

@@ -1,109 +1,85 @@
-# Vercel Apps Per Business
+# Vercel Business Apps
 
-Use one frontend codebase and create one Vercel project for each business.
-
-## Recommended Model
-
-- Backend: one shared API
-- Database: one shared MongoDB database
-- Frontend code: one repository
-- Vercel: one project per business
-- Tenant selection: `VITE_BUSINESS_SLUG`
-
-## Create A Business
-
-1. Open `/admin`.
-2. Login as global admin.
-3. Open `Business`.
-4. Create the activity.
-5. Keep `Menu demo automatico` enabled if you want starter products.
-6. Copy the generated env variable.
-
-Example:
-
-```env
-VITE_BUSINESS_SLUG=sushi-centro
-```
-
-## Local Admin Without Env Changes
-
-You can manage a tenant directly by URL:
+Il modello consigliato ora e' una sola app Vercel centrale:
 
 ```txt
-/admin/mucho-gusto
-/admin/sushi-centro
-/admin/burger-lab
+https://cagli.vercel.app/
 ```
 
-The customer preview is:
+La root e' la console piattaforma per il global admin. Ogni business vive sotto
+il proprio slug:
 
 ```txt
-/p/mucho-gusto
-/p/sushi-centro
-/p/burger-lab
+https://cagli.vercel.app/mucho-gusto
+https://cagli.vercel.app/mucho-gusto/admin
+https://cagli.vercel.app/sushi
+https://cagli.vercel.app/sushi/admin
 ```
 
-The frontend reads the slug from:
+## Perche' Questo Modello
 
-1. `?business=<slug>`
-2. `/admin/<slug>`
-3. `/p/<slug>`
-4. `VITE_BUSINESS_SLUG`
+- Un solo deploy frontend.
+- Una sola configurazione CORS stabile.
+- Nessun URL preview Vercel diverso per ogni locale.
+- Il backend continua a isolare i dati tramite `businessId` e JWT.
+- Il global admin vede tutte le app dalla home piattaforma.
 
-For logged-in `owner`, `admin`, and `staff` users, the backend still enforces the tenant from the JWT. The slug is only a UX hint; it is not trusted for authorization.
-
-## Giving Access To A Business Owner
-
-1. Open `/admin` as `global_admin`.
-2. Open `Business`.
-3. Create or edit a business.
-4. Fill owner name, owner email, and temporary password.
-5. Send the owner their app URL and credentials.
-
-Example:
+## Route Principali
 
 ```txt
-Business: Mucho Gusto
-Owner: mario@muchogusto.it
-App: https://mucho-gusto.vercel.app/admin
+/                         Console piattaforma
+/:businessSlug            Menu/app cliente del business
+/:businessSlug/admin      Banco admin del business
+/:businessSlug?ordine=id  Tracking ordine del business
+/admin                    Login/admin legacy
+/admin/:businessSlug      Compatibilita legacy
+/p/:businessSlug          Compatibilita legacy
 ```
-
-When Mario logs in, his JWT contains Mucho Gusto's `businessId`; he cannot see other businesses.
 
 ## Vercel Environment Variables
 
-For every Vercel project set:
+Nel progetto Vercel centrale `cagli` imposta:
 
 ```env
-VITE_API_BASE_URL=https://your-backend.example.com/api
-VITE_BUSINESS_SLUG=<business-slug>
-```
-
-Examples:
-
-```env
-VITE_API_BASE_URL=https://api.localbusiness.app/api
+VITE_API_BASE_URL=https://mucho-gusto-mg5y.onrender.com/api
 VITE_BUSINESS_SLUG=mucho-gusto
 ```
 
+`VITE_BUSINESS_SLUG` resta il fallback per vecchi link senza slug. Le route
+nuove prendono lo slug direttamente dal path.
+
+## Render CORS
+
+Sul backend Render usa solo domini stabili:
+
 ```env
-VITE_API_BASE_URL=https://api.localbusiness.app/api
-VITE_BUSINESS_SLUG=sushi-centro
+CORS_ORIGINS=https://cagli.vercel.app
 ```
 
-## Custom Domains
+Se usi anche preview deployment Vercel:
 
-After the Vercel project is deployed, attach the customer's custom domain in Vercel and save the final URL in the `Business` section.
+```env
+CORS_ALLOW_VERCEL_APP=true
+```
 
-## Operational Checklist
+## Creare Un Nuovo Business
 
-For each new business:
+1. Apri `https://cagli.vercel.app/admin`.
+2. Accedi come `global_admin`.
+3. Apri la sezione `Business`.
+4. Crea il business con slug stabile, per esempio `sushi`.
+5. Crea o assegna l'owner con email e password temporanea.
+6. Apri `https://cagli.vercel.app/sushi` per il menu cliente.
+7. Apri `https://cagli.vercel.app/sushi/admin` per il banco admin.
 
-1. Create business from global admin.
-2. Verify starter menu.
-3. Create Vercel project from the same repo.
-4. Set `VITE_API_BASE_URL`.
-5. Set `VITE_BUSINESS_SLUG`.
-6. Deploy.
-7. Save public URL in the Business form.
-8. Open `/admin/<slug>` and customize menu/settings.
+## Accesso Owner/Admin/Staff
+
+Quando un owner entra da `/:businessSlug/admin`, il frontend invia lo slug al
+backend. Dopo il login, il JWT contiene il `businessId`; quindi l'utente vede
+solo il proprio business anche se prova a cambiare URL manualmente.
+
+## Quando Usare Un Progetto Vercel Separato
+
+Usalo solo se un cliente richiede dominio, branding o deploy completamente
+separati. Per la gestione quotidiana e per ridurre problemi CORS, il modello
+centrale `cagli.vercel.app/:slug` e' preferibile.
