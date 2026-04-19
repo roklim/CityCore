@@ -1,13 +1,26 @@
 ﻿import { useEffect, useState } from "react";
 import { getBusinessSlug, getOrder } from "../lib/api";
 import { ORDER_STATUS_STEPS, PUBLIC_STATUS_LABELS } from "../constants";
-import { money } from "../utils/format";
+import { businessHref, money } from "../utils/format";
 import Toast from "../components/Toast";
+import EmptyState from "../components/ui/EmptyState";
+import LoadingSkeleton from "../components/ui/LoadingSkeleton";
+import StatusPill from "../components/ui/StatusPill";
+
+function statusTone(status) {
+  if (status === "ready" || status === "done") return "success";
+  if (status === "cancelled") return "danger";
+  return "warning";
+}
+
 export default function TrackingView({ orderId }) {
   // Vista pubblica minimale per controllare stato e dettagli essenziali ordine.
   const [order, setOrder] = useState(null);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const businessSlug = getBusinessSlug();
+  const menuHref = businessHref(businessSlug);
 
   useEffect(() => {
     refreshOrder();
@@ -21,9 +34,11 @@ export default function TrackingView({ orderId }) {
 
   async function refreshOrder() {
     setLoading(true);
+    setError("");
     try {
       setOrder(await getOrder(orderId));
     } catch (error) {
+      setError(error.message || "Errore durante il caricamento dell'ordine");
       notify(error.message);
     } finally {
       setLoading(false);
@@ -38,13 +53,24 @@ export default function TrackingView({ orderId }) {
   return (
     <main className="tracking-shell">
       <section className="tracking-card">
-        <a href={`/${getBusinessSlug()}`}>Torna al menu</a>
+        <div className="tracking-links">
+          <a href={menuHref}>Torna al menu</a>
+          <a href="/">Tutte le attivita</a>
+        </div>
         <p className="eyebrow">Tracking ordine</p>
         {loading && !order ? (
-          <h1>Caricamento...</h1>
+          <>
+            <h1>Caricamento ordine</h1>
+            <LoadingSkeleton variant="list" count={3} />
+          </>
         ) : order ? (
           <>
-            <h1>{PUBLIC_STATUS_LABELS[order.status] || order.status}</h1>
+            <div className="tracking-status-row">
+              <h1>{PUBLIC_STATUS_LABELS[order.status] || order.status}</h1>
+              <StatusPill tone={statusTone(order.status)}>
+                {PUBLIC_STATUS_LABELS[order.status] || order.status}
+              </StatusPill>
+            </div>
             <p>
               Ritiro al banco:{" "}
               <strong>
@@ -77,7 +103,17 @@ export default function TrackingView({ orderId }) {
             </button>
           </>
         ) : (
-          <h1>Ordine non trovato</h1>
+          <EmptyState
+            title={error ? "Non riusciamo a caricare l'ordine" : "Ordine non trovato"}
+            description={
+              error ||
+              "Controlla il link ricevuto oppure torna al menu del locale."
+            }
+            actionLabel="Riprova"
+            onAction={refreshOrder}
+            secondaryLabel="Torna al menu"
+            secondaryHref={menuHref}
+          />
         )}
       </section>
       <Toast message={toast} />

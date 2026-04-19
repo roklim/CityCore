@@ -8,8 +8,6 @@
   QUICK_FILTERS,
 } from "../constants";
 import {
-  businessAdminHref,
-  businessHref,
   formatDate,
   getSlotHint,
   isCounterOpenNow,
@@ -19,6 +17,9 @@ import {
 import { getBusinessSlug } from "../lib/api";
 import Toast from "../components/Toast";
 import useCustomerController from "../hooks/useCustomerController";
+import BusinessPublicHeader from "../components/customer/BusinessPublicHeader";
+import MenuSkeleton from "../components/customer/MenuSkeleton";
+import MenuStateCard from "../components/customer/MenuStateCard";
 
 function getBusinessTypeLabel(type) {
   return (
@@ -39,13 +40,15 @@ function getBusinessInitials(name) {
 
 function getBusinessHeroCopy(business) {
   const type = business?.type || "pizzeria";
-  const name = business?.branding?.publicName || business?.name || "Mucho Gusto";
+  const name =
+    business?.branding?.publicName || business?.name || "Mucho Gusto";
   const typeLabel = getBusinessTypeLabel(type);
 
   if (type === "sushi") {
     return {
       eyebrow: `${name} - ${typeLabel}`,
-      title: "Ordina i tuoi piatti preferiti, scegli l'orario e ritira al banco.",
+      title:
+        "Ordina i tuoi piatti preferiti, scegli l'orario e ritira al banco.",
       subtitle:
         "Sfoglia il menu, aggiungi cio che vuoi e passa a ritirare quando e pronto.",
     };
@@ -62,7 +65,8 @@ function getBusinessHeroCopy(business) {
 
   return {
     eyebrow: `${name} - ${typeLabel}`,
-    title: "Scopri prodotti e servizi, scegli l'orario e completa la richiesta.",
+    title:
+      "Scopri prodotti e servizi, scegli l'orario e completa la richiesta.",
     subtitle:
       "Consulta la disponibilita, prepara la richiesta e segui tutto da questa pagina.",
   };
@@ -96,22 +100,6 @@ function isBusinessOpenNow(business) {
 
   if (start === null || end === null) return isCounterOpenNow();
   return current >= start && current <= end;
-}
-
-function MenuSkeleton() {
-  return (
-    <div className="menu-skeleton" aria-label="Caricamento menu">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <article className="menu-skeleton-card" key={index}>
-          <i />
-          <span />
-          <strong />
-          <p />
-          <b />
-        </article>
-      ))}
-    </div>
-  );
 }
 
 export default function CustomerView() {
@@ -259,38 +247,21 @@ export default function CustomerView() {
         "--business-accent": businessAccent,
       }}
     >
-      <header className="business-public-header">
-        <a
-          className="business-home-link"
-          href="/"
-          aria-label="Torna a tutte le attivita Cagli"
-        >
-          <span aria-hidden="true">&lt;</span>
-          Tutte le attivita
-        </a>
-        <a className="business-header-brand" href={businessHref(businessSlug)}>
-          {businessLogoUrl ? (
-            <img src={businessLogoUrl} alt="" loading="lazy" />
-          ) : (
-            <span>{getBusinessInitials(businessName)}</span>
-          )}
-          <div>
-            <strong>{businessName}</strong>
-            <small>{businessTypeLabel}</small>
-          </div>
-        </a>
-        <div className="business-header-actions">
-          <span className={`business-status-pill ${counterOpen ? "open" : "closed"}`}>
-            {counterOpen ? "Aperto" : "Chiuso"}
-          </span>
-          <a href={businessAdminHref(businessSlug)}>Admin</a>
-        </div>
-      </header>
+      <BusinessPublicHeader
+        businessLogoUrl={businessLogoUrl}
+        businessName={businessName}
+        businessSlug={businessSlug}
+        businessTypeLabel={businessTypeLabel}
+        counterOpen={counterOpen}
+        getInitials={getBusinessInitials}
+      />
       <section className="brand-panel">
         <p className="eyebrow">{heroCopy.eyebrow}</p>
         <h1>{heroCopy.title}</h1>
         <p className="lead">{heroCopy.subtitle}</p>
-        <div className={`opening-hours-card ${counterOpen ? "open" : "closed"}`}>
+        <div
+          className={`opening-hours-card ${counterOpen ? "open" : "closed"}`}
+        >
           <span className="opening-status-pill">
             {counterOpen ? "Aperto ora" : "Chiuso ora"}
           </span>
@@ -395,27 +366,27 @@ export default function CustomerView() {
           {loading ? (
             <MenuSkeleton />
           ) : menuError ? (
-            <div className="menu-state-card error">
-              <p className="eyebrow">Menu non disponibile</p>
-              <h3>Non riusciamo a caricare il menu</h3>
-              <p>{menuError}</p>
-              <div>
+            <MenuStateCard
+              tone="error"
+              eyebrow="Menu non disponibile"
+              title="Non riusciamo a caricare il menu"
+              description={menuError}
+              action={
+                <>
                 <button type="button" onClick={loadPublicData}>
                   Riprova
                 </button>
                 <a href="/">Torna alla home</a>
-              </div>
-            </div>
+                </>
+              }
+            />
           ) : menu.length === 0 ? (
-            <div className="menu-state-card">
-              <p className="eyebrow">Menu in aggiornamento</p>
-              <h3>Menu non ancora disponibile</h3>
-              <p>
-                Il locale sta aggiornando i prodotti. Riprova piu tardi o torna
-                alle attivita di Cagli.
-              </p>
-              <a href="/">Torna alle attivita</a>
-            </div>
+            <MenuStateCard
+              eyebrow="Menu in aggiornamento"
+              title="Menu non ancora disponibile"
+              description="Il locale sta aggiornando i prodotti. Riprova piu tardi o torna alle attivita di Cagli."
+              action={<a href="/">Torna alle attivita</a>}
+            />
           ) : (
             <div className="menu-sections">
               <div className="menu-tools">
@@ -497,164 +468,169 @@ export default function CustomerView() {
                     </div>
 
                     <div className="menu-grid">
-                      {activeMenu.id === "pizze-tonde" && customPizzaEnabled && (
-                        <article
-                          className={[
-                            "menu-card",
-                            "custom-pizza-card",
-                            customPizzaOpen ? "expanded" : "",
-                            addedItemId.startsWith("custom-pizza")
-                              ? "just-added"
-                              : "",
-                          ].join(" ")}
-                          ref={customPizzaRef}
-                        >
-                          <div className="menu-card-head">
-                            <span className="menu-emoji">{"\u{1F355}"}</span>
-                            <div>
-                              <span className="menu-featured custom">
-                                Personalizzabile
-                              </span>
-                              <span className="menu-name">Pizza su misura</span>
-                              <span className="menu-desc">
-                                Scegli base e ingredienti, la prepariamo noi al
-                                momento.
-                              </span>
-                              <span className="menu-unit">
-                                da {money(CUSTOM_PIZZA_BASES[0].price)}
-                              </span>
-                            </div>
-                          </div>
-
-                          <button
-                            className="menu-add-button custom-toggle"
-                            type="button"
-                            onClick={toggleCustomPizzaBuilder}
-                            aria-expanded={customPizzaOpen}
+                      {activeMenu.id === "pizze-tonde" &&
+                        customPizzaEnabled && (
+                          <article
+                            className={[
+                              "menu-card",
+                              "custom-pizza-card",
+                              customPizzaOpen ? "expanded" : "",
+                              addedItemId.startsWith("custom-pizza")
+                                ? "just-added"
+                                : "",
+                            ].join(" ")}
+                            ref={customPizzaRef}
                           >
-                            {customPizzaOpen ? "Chiudi" : "Configura"}
-                          </button>
-
-                          <div
-                            className={`custom-pizza-accordion ${
-                              customPizzaOpen ? "open" : ""
-                            }`}
-                          >
-                            <hr />
-                            <p className="custom-pizza-inner-title">
-                              Componi la tua pizza
-                            </p>
-
-                            <div className="custom-pizza-group">
-                              <span className="custom-pizza-label">
-                                Scegli la base
-                              </span>
-                              <div className="custom-base-grid">
-                                {CUSTOM_PIZZA_BASES.map((base) => (
-                                  <button
-                                    type="button"
-                                    className={
-                                      base.id === customPizzaBaseId
-                                        ? "active"
-                                        : ""
-                                    }
-                                    key={base.id}
-                                    onClick={() =>
-                                      setCustomPizzaBaseId(base.id)
-                                    }
-                                  >
-                                    <strong>
-                                      {base.id === customPizzaBaseId
-                                        ? "Scelta - "
-                                        : ""}
-                                      {base.name}
-                                    </strong>
-                                    <small>{base.description}</small>
-                                    <b>{money(base.price)}</b>
-                                  </button>
-                                ))}
+                            <div className="menu-card-head">
+                              <span className="menu-emoji">{"\u{1F355}"}</span>
+                              <div>
+                                <span className="menu-featured custom">
+                                  Personalizzabile
+                                </span>
+                                <span className="menu-name">
+                                  Pizza su misura
+                                </span>
+                                <span className="menu-desc">
+                                  Scegli base e ingredienti, la prepariamo noi
+                                  al momento.
+                                </span>
+                                <span className="menu-unit">
+                                  da {money(CUSTOM_PIZZA_BASES[0].price)}
+                                </span>
                               </div>
                             </div>
 
-                            {customPizzaBase && (
-                              <>
-                                <div className="custom-pizza-group">
-                                  <span className="custom-pizza-label">
-                                    Aggiungi ingredienti (
-                                    {customPizzaToppings.length}/
-                                    {CUSTOM_PIZZA_MAX_TOPPINGS})
-                                  </span>
-                                  <div className="topping-grid">
-                                    {CUSTOM_PIZZA_TOPPINGS.map((topping) => (
-                                      <button
-                                        type="button"
-                                        className={
-                                          customPizzaToppings.includes(
-                                            topping.id,
-                                          )
-                                            ? "active"
-                                            : ""
-                                        }
-                                        key={topping.id}
-                                        onClick={() =>
-                                          toggleCustomPizzaTopping(topping.id)
-                                        }
-                                      >
-                                        <span>{topping.name}</span>
-                                        <b>+ {money(topping.price)}</b>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <label className="custom-pizza-notes">
-                                  Note pizza
-                                  <textarea
-                                    placeholder="Es. ben cotta, poca mozzarella..."
-                                    maxLength={160}
-                                    rows="2"
-                                    value={customPizzaNotes}
-                                    onChange={(event) =>
-                                      setCustomPizzaNotes(event.target.value)
-                                    }
-                                  />
-                                </label>
-
-                                <div className="custom-pizza-summary">
-                                  <span>
-                                    <small>Base {customPizzaBase.name}</small>
-                                    <strong>
-                                      {money(customPizzaBase.price)}
-                                    </strong>
-                                  </span>
-                                  {customPizzaSelectedToppings.map(
-                                    (topping) => (
-                                      <span key={topping.id}>
-                                        <small>+ {topping.name}</small>
-                                        <strong>{money(topping.price)}</strong>
-                                      </span>
-                                    ),
-                                  )}
-                                  <b>
-                                    <span>Totale pizza</span>
-                                    <strong>{money(customPizzaPrice)}</strong>
-                                  </b>
-                                </div>
-                              </>
-                            )}
-
                             <button
-                              className="custom-pizza-submit"
+                              className="menu-add-button custom-toggle"
                               type="button"
-                              onClick={addCustomPizzaToCart}
-                              disabled={!customPizzaBase}
-                              aria-disabled={!customPizzaBase}
+                              onClick={toggleCustomPizzaBuilder}
+                              aria-expanded={customPizzaOpen}
                             >
-                              Aggiungi al carrello - {money(customPizzaPrice)}
+                              {customPizzaOpen ? "Chiudi" : "Configura"}
                             </button>
-                          </div>
-                        </article>
-                      )}
+
+                            <div
+                              className={`custom-pizza-accordion ${
+                                customPizzaOpen ? "open" : ""
+                              }`}
+                            >
+                              <hr />
+                              <p className="custom-pizza-inner-title">
+                                Componi la tua pizza
+                              </p>
+
+                              <div className="custom-pizza-group">
+                                <span className="custom-pizza-label">
+                                  Scegli la base
+                                </span>
+                                <div className="custom-base-grid">
+                                  {CUSTOM_PIZZA_BASES.map((base) => (
+                                    <button
+                                      type="button"
+                                      className={
+                                        base.id === customPizzaBaseId
+                                          ? "active"
+                                          : ""
+                                      }
+                                      key={base.id}
+                                      onClick={() =>
+                                        setCustomPizzaBaseId(base.id)
+                                      }
+                                    >
+                                      <strong>
+                                        {base.id === customPizzaBaseId
+                                          ? "Scelta - "
+                                          : ""}
+                                        {base.name}
+                                      </strong>
+                                      <small>{base.description}</small>
+                                      <b>{money(base.price)}</b>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {customPizzaBase && (
+                                <>
+                                  <div className="custom-pizza-group">
+                                    <span className="custom-pizza-label">
+                                      Aggiungi ingredienti (
+                                      {customPizzaToppings.length}/
+                                      {CUSTOM_PIZZA_MAX_TOPPINGS})
+                                    </span>
+                                    <div className="topping-grid">
+                                      {CUSTOM_PIZZA_TOPPINGS.map((topping) => (
+                                        <button
+                                          type="button"
+                                          className={
+                                            customPizzaToppings.includes(
+                                              topping.id,
+                                            )
+                                              ? "active"
+                                              : ""
+                                          }
+                                          key={topping.id}
+                                          onClick={() =>
+                                            toggleCustomPizzaTopping(topping.id)
+                                          }
+                                        >
+                                          <span>{topping.name}</span>
+                                          <b>+ {money(topping.price)}</b>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <label className="custom-pizza-notes">
+                                    Note pizza
+                                    <textarea
+                                      placeholder="Es. ben cotta, poca mozzarella..."
+                                      maxLength={160}
+                                      rows="2"
+                                      value={customPizzaNotes}
+                                      onChange={(event) =>
+                                        setCustomPizzaNotes(event.target.value)
+                                      }
+                                    />
+                                  </label>
+
+                                  <div className="custom-pizza-summary">
+                                    <span>
+                                      <small>Base {customPizzaBase.name}</small>
+                                      <strong>
+                                        {money(customPizzaBase.price)}
+                                      </strong>
+                                    </span>
+                                    {customPizzaSelectedToppings.map(
+                                      (topping) => (
+                                        <span key={topping.id}>
+                                          <small>+ {topping.name}</small>
+                                          <strong>
+                                            {money(topping.price)}
+                                          </strong>
+                                        </span>
+                                      ),
+                                    )}
+                                    <b>
+                                      <span>Totale pizza</span>
+                                      <strong>{money(customPizzaPrice)}</strong>
+                                    </b>
+                                  </div>
+                                </>
+                              )}
+
+                              <button
+                                className="custom-pizza-submit"
+                                type="button"
+                                onClick={addCustomPizzaToCart}
+                                disabled={!customPizzaBase}
+                                aria-disabled={!customPizzaBase}
+                              >
+                                Aggiungi al carrello - {money(customPizzaPrice)}
+                              </button>
+                            </div>
+                          </article>
+                        )}
 
                       {activeMenu.items.map((item) => {
                         const cartItem = getCartItem(item._id);
@@ -739,7 +715,9 @@ export default function CustomerView() {
           <div className="section-heading">
             <p className="eyebrow">Ritiro al banco</p>
             <h2>Il tuo ordine</h2>
-            <span className="checkout-subtitle">Ritiro presso {businessName}</span>
+            <span className="checkout-subtitle">
+              Ritiro presso {businessName}
+            </span>
           </div>
 
           <div className="cart-list">
@@ -936,7 +914,7 @@ export default function CustomerView() {
 
           <div className="payment-note">
             <strong>Pagamento al banco</strong>
-            <span>Paghi quando passi a ritirare il sacchetto.</span>
+            <span>Paghi quando passi a ritirare.</span>
           </div>
 
           <button
@@ -978,6 +956,3 @@ export default function CustomerView() {
     </main>
   );
 }
-
-
-

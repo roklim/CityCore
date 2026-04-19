@@ -21,6 +21,10 @@ import {
 } from "../utils/format";
 import Toast from "../components/Toast";
 import useAdminController from "../hooks/useAdminController";
+import AdminHeader from "../components/admin/AdminHeader";
+import AdminSidebar from "../components/admin/AdminSidebar";
+import AdminStatsGrid from "../components/admin/AdminStatsGrid";
+import InlineNotice from "../components/ui/InlineNotice";
 export default function AdminView() {
   const {
     activeAdminSection,
@@ -131,81 +135,43 @@ export default function AdminView() {
 
   return (
     <main className="admin-shell">
-      <aside className="admin-sidebar">
-        <div>
-          <p className="eyebrow">
-            {currentBusiness?.name || "Platform"}
-          </p>
-          <strong>Banco admin</strong>
-          <span className="admin-business-slug">
-            {getBusinessSlug()}
-          </span>
-        </div>
-        <nav>
-          {visibleAdminNav.map((item) => (
-            <button
-              className={activeAdminSection === item.id ? "active" : ""}
-              key={item.id}
-              type="button"
-              onClick={() => setActiveAdminSection(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <a href={`/${getBusinessSlug()}`}>Menu cliente</a>
-      </aside>
+      <AdminSidebar
+        activeSection={activeAdminSection}
+        businessName={currentBusiness?.name || "Platform"}
+        businessSlug={getBusinessSlug()}
+        navItems={visibleAdminNav}
+        onSelect={setActiveAdminSection}
+      />
 
       <section className="admin-main">
-        <header className="admin-header">
-          <div>
-            <p className="eyebrow">
-              {activeAdminSection === "businesses"
-                ? "Controllo piattaforma"
-                : `Operativita ${currentBusiness?.name || getBusinessSlug()}`}
-            </p>
-            <h1>
-              {visibleAdminNav.find((item) => item.id === activeAdminSection)?.label}
-            </h1>
-          </div>
-          <div className="admin-actions">
-            <span className="refresh-note">
-              {lastUpdatedAt ? `Aggiornato ${lastUpdatedAt}` : "Non aggiornato"}
-            </span>
-            <button type="button" onClick={refresh} disabled={refreshing}>
-              {refreshing ? "Aggiorno..." : "Aggiorna"}
-            </button>
-            <input
-              type="date"
-              value={pickupDate}
-              onChange={(e) => setPickupDate(e.target.value)}
-            />
-            <button type="button" onClick={logout}>
-              Logout
-            </button>
-          </div>
-        </header>
+        <AdminHeader
+          activeLabel={
+            visibleAdminNav.find((item) => item.id === activeAdminSection)
+              ?.label
+          }
+          contextLabel={
+            activeAdminSection === "businesses"
+              ? "Controllo piattaforma"
+              : `Operativita ${currentBusiness?.name || getBusinessSlug()}`
+          }
+          lastUpdatedAt={lastUpdatedAt}
+          onDateChange={setPickupDate}
+          onLogout={logout}
+          onRefresh={refresh}
+          pickupDate={pickupDate}
+          refreshing={refreshing}
+        />
 
         {isGlobalAdmin && activeAdminSection === "businesses" && (
           <>
-            <section className="admin-stats-grid">
-              <article>
-                <span>Business</span>
-                <strong>{platformStats.businesses}</strong>
-              </article>
-              <article>
-                <span>Attivi</span>
-                <strong>{platformStats.active}</strong>
-              </article>
-              <article>
-                <span>Ordini totali</span>
-                <strong>{platformStats.orders}</strong>
-              </article>
-              <article>
-                <span>GMV stimato</span>
-                <strong>{money(platformStats.revenue)}</strong>
-              </article>
-            </section>
+            <AdminStatsGrid
+              items={[
+                { label: "Business", value: platformStats.businesses },
+                { label: "Attivi", value: platformStats.active },
+                { label: "Ordini totali", value: platformStats.orders },
+                { label: "GMV stimato", value: money(platformStats.revenue) },
+              ]}
+            />
 
             <section className="admin-menu-manager">
               <form className="menu-editor-panel" onSubmit={saveBusiness}>
@@ -463,7 +429,10 @@ export default function AdminView() {
                   <h2>Business gestiti</h2>
                 </div>
                 {platformBusinesses.length === 0 ? (
-                  <p className="muted">Nessun business creato.</p>
+                  <InlineNotice
+                    title="Nessun business creato"
+                    description="Crea il primo locale per iniziare a usare la piattaforma."
+                  />
                 ) : (
                   <div className="business-admin-list">
                     {platformBusinesses.map((business) => (
@@ -651,7 +620,10 @@ export default function AdminView() {
                   </form>
                   <div className="business-admin-list">
                     {businessUsers.length === 0 ? (
-                      <p className="muted">Nessun utente creato.</p>
+                      <InlineNotice
+                        title="Nessun utente creato"
+                        description="Aggiungi owner, admin o staff per dare accesso al locale."
+                      />
                     ) : (
                       businessUsers.map((user) => (
                         <article className="business-admin-card" key={user._id}>
@@ -683,24 +655,14 @@ export default function AdminView() {
 
         {(activeAdminSection === "dashboard" ||
           activeAdminSection === "orders") && (
-          <section className="admin-stats-grid">
-            <article>
-              <span>Ordini oggi</span>
-              <strong>{dashboardStats.total}</strong>
-            </article>
-            <article>
-              <span>Incasso</span>
-              <strong>{money(dashboardStats.revenue)}</strong>
-            </article>
-            <article>
-              <span>In attesa</span>
-              <strong>{dashboardStats.pending}</strong>
-            </article>
-            <article>
-              <span>Ritirati</span>
-              <strong>{dashboardStats.done}</strong>
-            </article>
-          </section>
+          <AdminStatsGrid
+            items={[
+              { label: "Ordini oggi", value: dashboardStats.total },
+              { label: "Incasso", value: money(dashboardStats.revenue) },
+              { label: "In attesa", value: dashboardStats.pending },
+              { label: "Ritirati", value: dashboardStats.done },
+            ]}
+          />
         )}
 
         {activeAdminSection === "dashboard" && (
@@ -712,7 +674,10 @@ export default function AdminView() {
               </div>
               <div className="admin-table">
                 {recentOrders.length === 0 ? (
-                  <p className="muted">Nessun ordine registrato oggi.</p>
+                  <InlineNotice
+                    title="Nessun ordine registrato oggi"
+                    description="Gli ordini in arrivo appariranno qui in tempo reale."
+                  />
                 ) : (
                   recentOrders.map((order) => (
                     <article
@@ -741,7 +706,10 @@ export default function AdminView() {
               </div>
               <div className="top-products">
                 {topProducts.length === 0 ? (
-                  <p className="muted">Ancora nessun prodotto venduto oggi.</p>
+                  <InlineNotice
+                    title="Ancora nessun prodotto venduto"
+                    description="La classifica si aggiorna appena arrivano ordini."
+                  />
                 ) : (
                   topProducts.map((item) => (
                     <span className="top-product-row" key={item.name}>
@@ -812,7 +780,10 @@ export default function AdminView() {
 
             <section className="slot-columns">
               {visibleOrders.length === 0 ? (
-                <p className="muted">Nessun ordine con questi filtri.</p>
+                <InlineNotice
+                  title="Nessun ordine con questi filtri"
+                  description="Cambia stato, ricerca o data per vedere altri ordini."
+                />
               ) : (
                 Object.entries(groupedOrders).map(([slot, slotOrders]) => (
                   <div className="slot-column" key={slot}>
@@ -1217,7 +1188,10 @@ export default function AdminView() {
             />
             <div className="customer-admin-list">
               {customers.length === 0 ? (
-                <p className="muted">Nessun cliente trovato.</p>
+                <InlineNotice
+                  title="Nessun cliente trovato"
+                  description="Prova con un altro nome o numero di telefono."
+                />
               ) : (
                 customers.map((customer) => (
                   <article key={customer._id}>
@@ -1338,7 +1312,10 @@ export default function AdminView() {
                 <h2>Codici sconto</h2>
               </div>
               {coupons.length === 0 ? (
-                <p className="muted">Nessun coupon creato.</p>
+                <InlineNotice
+                  title="Nessun coupon creato"
+                  description="Crea un codice sconto quando vuoi attivare una promozione."
+                />
               ) : (
                 <div className="menu-admin-items">
                   {coupons.map((coupon) => (

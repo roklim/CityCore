@@ -6,6 +6,8 @@ import {
 } from "../lib/api";
 import { money } from "../utils/format";
 import Toast from "../components/Toast";
+import EmptyState from "../components/ui/EmptyState";
+import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 
 const PUBLIC_TYPE_FILTERS = [
   { id: "all", label: "Tutti" },
@@ -660,27 +662,14 @@ function CagliFooter({ onLogin }) {
 }
 
 function SkeletonCards({ admin = false }) {
-  return Array.from({ length: admin ? 8 : 6 }, (_, index) => (
-    <div className="cagli-skeleton-card" key={index}>
-      <i />
-      <span />
-      <strong />
-      <p />
-    </div>
-  ));
+  return <LoadingSkeleton variant="card" count={admin ? 8 : 6} />;
 }
 
 function EmptyDirectory() {
   return (
-    <div className="cagli-empty-state">
-      <svg viewBox="0 0 120 80" aria-hidden="true">
-        <rect x="18" y="34" width="84" height="36" rx="8" />
-        <path d="M24 34 L38 14 H82 L96 34" />
-        <circle cx="48" cy="54" r="5" />
-        <circle cx="72" cy="54" r="5" />
-      </svg>
-      <strong>Nessuna attivita trovata</strong>
-      <span>Prova con un altro termine</span>
-    </div>
+    <EmptyState
+      title="Nessuna attivita trovata"
+      description="Prova con un altro termine o cambia categoria."
+    />
   );
 }
