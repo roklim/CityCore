@@ -91,6 +91,12 @@ const businessSchema = new mongoose.Schema(
       locale: { type: String, default: "it-IT" },
       publicMessage: { type: String, default: "" },
       openingHours: { type: String, default: "Mar-Dom 18:00-22:30" },
+      openingDays: {
+        type: [String],
+        default: ["mar", "mer", "gio", "ven", "sab", "dom"],
+      },
+      openingTimeStart: { type: String, default: "18:00" },
+      openingTimeEnd: { type: String, default: "22:30" },
     },
   },
   { timestamps: true },
@@ -238,6 +244,12 @@ const storeSettingsSchema = new mongoose.Schema(
   {
     businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", index: true },
     openingHours: { type: String, default: "Mar-Dom 18:00-22:30" },
+    openingDays: {
+      type: [String],
+      default: ["mar", "mer", "gio", "ven", "sab", "dom"],
+    },
+    openingTimeStart: { type: String, default: "18:00" },
+    openingTimeEnd: { type: String, default: "22:30" },
     deliveryCost: { type: Number, default: 0, min: 0 },
     minimumOrder: { type: Number, default: 0, min: 0 },
     serviceZones: { type: [String], default: [] },

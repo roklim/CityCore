@@ -34,6 +34,7 @@ import {
   EMPTY_BUSINESS_USER_FORM,
   EMPTY_MENU_FORM,
   MENU_CATEGORY_OPTIONS,
+  OPENING_DAY_OPTIONS,
 } from "../constants";
 import {
   businessFormToPayload,
@@ -48,6 +49,55 @@ import {
   slugify,
   todayISO,
 } from "../utils/format";
+
+const DEFAULT_OPENING_DAYS = ["mar", "mer", "gio", "ven", "sab", "dom"];
+const DAY_LABEL_BY_ID = Object.fromEntries(
+  OPENING_DAY_OPTIONS.map((day) => [day.id, day.label]),
+);
+const DAY_ORDER = OPENING_DAY_OPTIONS.map((day) => day.id);
+
+function compactDayLabel(days) {
+  const ordered = DAY_ORDER.filter((day) => days.includes(day));
+  if (ordered.length === 0) return "Chiuso";
+  if (ordered.length === DAY_ORDER.length) return "Tutti i giorni";
+
+  const firstIndex = DAY_ORDER.indexOf(ordered[0]);
+  const isContiguous = ordered.every(
+    (day, index) => DAY_ORDER[firstIndex + index] === day,
+  );
+
+  if (ordered.length > 1 && isContiguous) {
+    return `${DAY_LABEL_BY_ID[ordered[0]]}-${DAY_LABEL_BY_ID[ordered[ordered.length - 1]]}`;
+  }
+
+  return ordered.map((day) => DAY_LABEL_BY_ID[day]).join(", ");
+}
+
+function formatOpeningHours(days, start, end) {
+  const safeDays = Array.isArray(days) ? days : [];
+  if (safeDays.length === 0) return "Chiuso";
+  const safeStart = start || "18:00";
+  const safeEnd = end || "22:30";
+  return `${compactDayLabel(safeDays)} ${safeStart}-${safeEnd}`;
+}
+
+function parseOpeningDays(openingHours = "") {
+  const value = openingHours.toLowerCase();
+  if (value.includes("chiuso")) return [];
+  if (value.includes("tutti")) return DAY_ORDER;
+  if (value.includes("mar-dom")) return DEFAULT_OPENING_DAYS;
+  if (value.includes("lun-sab")) return ["lun", "mar", "mer", "gio", "ven", "sab"];
+  if (value.includes("lun-dom")) return DAY_ORDER;
+  return DEFAULT_OPENING_DAYS;
+}
+
+function parseOpeningTimes(openingHours = "") {
+  const match = String(openingHours).match(/(\d{1,2}:\d{2})\s*[-/]\s*(\d{1,2}:\d{2})/);
+  return {
+    openingTimeStart: match?.[1] || "18:00",
+    openingTimeEnd: match?.[2] || "22:30",
+  };
+}
 
 export default function useAdminController() {
   // Pannello operativo admin. Il ruolo dell'utente decide quali sezioni sono
@@ -84,6 +134,9 @@ export default function useAdminController() {
   const [editingCouponId, setEditingCouponId] = useState("");
   const [settingsForm, setSettingsForm] = useState({
     openingHours: "",
+    openingDays: DEFAULT_OPENING_DAYS,
+    openingTimeStart: "18:00",
+    openingTimeEnd: "22:30",
     deliveryCost: "",
     minimumOrder: "",
     serviceZones: "",
@@ -262,8 +315,22 @@ export default function useAdminController() {
   async function loadSettings() {
     try {
       const settings = await getStoreSettings(token);
+      const parsedTimes = parseOpeningTimes(settings.openingHours || "");
+      const openingDays =
+        Array.isArray(settings.openingDays) && settings.openingDays.length > 0
+          ? settings.openingDays
+          : parseOpeningDays(settings.openingHours || "");
+      const openingTimeStart =
+        settings.openingTimeStart || parsedTimes.openingTimeStart;
+      const openingTimeEnd =
+        settings.openingTimeEnd || parsedTimes.openingTimeEnd;
       setSettingsForm({
-        openingHours: settings.openingHours || "",
+        openingHours:
+          settings.openingHours ||
+          formatOpeningHours(openingDays, openingTimeStart, openingTimeEnd),
+        openingDays,
+        openingTimeStart,
+        openingTimeEnd,
         deliveryCost: settings.deliveryCost ?? "",
         minimumOrder: settings.minimumOrder ?? "",
         serviceZones: (settings.serviceZones || []).join(", "),
@@ -273,6 +340,75 @@ export default function useAdminController() {
       if (error.status === 401) logout();
       else notify(error.message);
     }
+  }
+
+  function updateSettingsForm(patch) {
+    setSettingsForm((current) => {
+      const next = { ...current, ...patch };
+      if (
+        patch.openingDays !== undefined ||
+        patch.openingTimeStart !== undefined ||
+        patch.openingTimeEnd !== undefined
+      ) {
+        next.openingHours = formatOpeningHours(
+          next.openingDays,
+          next.openingTimeStart,
+          next.openingTimeEnd,
+        );
+      }
+      return next;
+    });
+  }
+
+  function toggleOpeningDay(dayId) {
+    updateSettingsForm({
+      openingDays: settingsForm.openingDays.includes(dayId)
+        ? settingsForm.openingDays.filter((day) => day !== dayId)
+        : [...settingsForm.openingDays, dayId],
+    });
+  }
+
+  function applyOpeningPreset(preset) {
+    const next = {
+      daily: {
+        openingDays: DAY_ORDER,
+        openingTimeStart: "18:00",
+        openingTimeEnd: "22:30",
+      },
+      takeaway: {
+        openingDays: DEFAULT_OPENING_DAYS,
+        openingTimeStart: "18:00",
+        openingTimeEnd: "22:30",
+      },
+      weekend: {
+        openingDays: ["ven", "sab", "dom"],
+        openingTimeStart: "18:00",
+        openingTimeEnd: "23:00",
+      },
+      weekly: {
+        openingDays: ["lun", "mar", "mer", "gio", "ven", "sab"],
+        openingTimeStart: "12:00",
+        openingTimeEnd: "15:00",
+      },
+      closed: {
+        openingDays: [],
+        openingTimeStart: settingsForm.openingTimeStart || "18:00",
+        openingTimeEnd: settingsForm.openingTimeEnd || "22:30",
+        openingHours: "Chiuso per ferie",
+      },
+    }[preset];
+
+    setSettingsForm((current) => ({
+      ...current,
+      ...next,
+      openingHours:
+        next.openingHours ||
+        formatOpeningHours(
+          next.openingDays,
+          next.openingTimeStart,
+          next.openingTimeEnd,
+        ),
+    }));
   }
 
   async function login(event) {
@@ -446,11 +582,22 @@ export default function useAdminController() {
 
   async function saveSettings(event) {
     event.preventDefault();
+    if (
+      settingsForm.openingDays.length > 0 &&
+      settingsForm.openingTimeStart >= settingsForm.openingTimeEnd
+    ) {
+      notify("L'orario di chiusura deve essere dopo l'apertura.");
+      return;
+    }
+
     setSettingsSaving(true);
     try {
       await updateStoreSettings(
         {
           openingHours: settingsForm.openingHours,
+          openingDays: settingsForm.openingDays,
+          openingTimeStart: settingsForm.openingTimeStart,
+          openingTimeEnd: settingsForm.openingTimeEnd,
           deliveryCost: Number(settingsForm.deliveryCost) || 0,
           minimumOrder: Number(settingsForm.minimumOrder) || 0,
           serviceZones: parseCommaList(settingsForm.serviceZones),
@@ -815,11 +962,11 @@ export default function useAdminController() {
     setOrderSearch,
     setPassword,
     setPickupDate,
-    setSettingsForm,
     setUsername,
     settingsForm,
     settingsSaving,
     toast,
+    toggleOpeningDay,
     token,
     topProductMax,
     topProducts,
@@ -827,6 +974,8 @@ export default function useAdminController() {
     updateBusinessForm,
     updateCouponForm,
     updateMenuForm,
+    updateSettingsForm,
+    applyOpeningPreset,
     username,
     visibleAdminNav,
     visibleOrders,

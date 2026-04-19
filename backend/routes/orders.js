@@ -2,7 +2,7 @@
 
 const router = require("express").Router();
 const mongoose = require("mongoose");
-const { Customer, Order } = require("../db");
+const { Customer, Order, StoreSettings } = require("../db");
 const config = require("../config");
 const { requireAuth } = require("../middleware/auth");
 const { businessScope, resolveBusiness } = require("../middleware/business");
@@ -13,6 +13,7 @@ const VALID_STATUSES = ["preparing", "ready", "done", "cancelled"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
 const POINTS_PER_COMPLETED_ORDER = 1;
+const WEEKDAY_CODE_BY_INDEX = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
 
 // Ogni route ordini viene risolta su un business prima di leggere/scrivere dati.
 // Per utenti business il resolver usa il businessId del JWT, non quello inviato
@@ -92,15 +93,40 @@ function isPastSlot(date, time) {
   );
 }
 
-function isClosedDate(date) {
-  const weekday = new Date(`${date}T12:00:00`).getDay();
-  return config.pickup.closedWeekdays.includes(weekday);
+async function getPickupSettings(req) {
+  const settings = await StoreSettings.findOne(businessScope(req)).lean();
+  return {
+    closedWeekdays: config.pickup.closedWeekdays,
+    endTime:
+      settings?.openingTimeEnd ||
+      req.business?.settings?.openingTimeEnd ||
+      config.pickup.endTime,
+    maxOrdersPerSlot: config.pickup.maxOrdersPerSlot,
+    openingDays: Array.isArray(settings?.openingDays)
+      ? settings.openingDays
+      : Array.isArray(req.business?.settings?.openingDays)
+        ? req.business.settings.openingDays
+        : null,
+    slotMinutes: config.pickup.slotMinutes,
+    startTime:
+      settings?.openingTimeStart ||
+      req.business?.settings?.openingTimeStart ||
+      config.pickup.startTime,
+  };
 }
 
-function generateSlots(date) {
-  const start = timeToMinutes(config.pickup.startTime);
-  const end = timeToMinutes(config.pickup.endTime);
-  const step = Math.max(Number(config.pickup.slotMinutes) || 15, 5);
+function isClosedDate(date, pickupSettings) {
+  const weekday = new Date(`${date}T12:00:00`).getDay();
+  if (Array.isArray(pickupSettings.openingDays)) {
+    return !pickupSettings.openingDays.includes(WEEKDAY_CODE_BY_INDEX[weekday]);
+  }
+  return pickupSettings.closedWeekdays.includes(weekday);
+}
+
+function generateSlots(date, pickupSettings) {
+  const start = timeToMinutes(pickupSettings.startTime);
+  const end = timeToMinutes(pickupSettings.endTime);
+  const step = Math.max(Number(pickupSettings.slotMinutes) || 15, 5);
   const slots = [];
 
   for (let current = start; current <= end; current += step) {
@@ -114,14 +140,16 @@ function generateSlots(date) {
 async function buildAvailability(req, date) {
   // Calcola disponibilita slot per il tenant corrente contando solo ordini non
   // annullati dello stesso business.
-  if (isClosedDate(date)) {
+  const pickupSettings = await getPickupSettings(req);
+
+  if (isClosedDate(date, pickupSettings)) {
     return {
       date,
       closed: true,
-      maxOrdersPerSlot: config.pickup.maxOrdersPerSlot,
-      slotMinutes: config.pickup.slotMinutes,
-      startTime: config.pickup.startTime,
-      endTime: config.pickup.endTime,
+      maxOrdersPerSlot: pickupSettings.maxOrdersPerSlot,
+      slotMinutes: pickupSettings.slotMinutes,
+      startTime: pickupSettings.startTime,
+      endTime: pickupSettings.endTime,
       slots: [],
     };
   }
@@ -142,9 +170,9 @@ async function buildAvailability(req, date) {
   ]);
 
   const countBySlot = new Map(counts.map((slot) => [slot._id, slot.count]));
-  const maxOrdersPerSlot = config.pickup.maxOrdersPerSlot;
+  const maxOrdersPerSlot = pickupSettings.maxOrdersPerSlot;
 
-  const slots = generateSlots(date).map((slot) => {
+  const slots = generateSlots(date, pickupSettings).map((slot) => {
     const count = countBySlot.get(slot.pickupSlot) || 0;
     const remaining = Math.max(maxOrdersPerSlot - count, 0);
 
@@ -161,14 +189,14 @@ async function buildAvailability(req, date) {
   return {
     date,
     maxOrdersPerSlot,
-    slotMinutes: config.pickup.slotMinutes,
-    startTime: config.pickup.startTime,
-    endTime: config.pickup.endTime,
+    slotMinutes: pickupSettings.slotMinutes,
+    startTime: pickupSettings.startTime,
+    endTime: pickupSettings.endTime,
     slots,
   };
 }
 
-function validatePickup({ pickupDate, pickupTime, pickupSlot }) {
+async function validatePickup(req, { pickupDate, pickupTime, pickupSlot }) {
   // La validazione e' server-side: il client puo' suggerire gli slot, ma non e'
   // fonte affidabile per orari passati, giorni chiusi o slot non generati.
   if (!DATE_RE.test(pickupDate || "")) {
@@ -181,12 +209,13 @@ function validatePickup({ pickupDate, pickupTime, pickupSlot }) {
     return "pickupSlot non corrisponde a pickupDate e pickupTime";
   }
 
+  const pickupSettings = await getPickupSettings(req);
   const allowedSlots = new Set(
-    generateSlots(pickupDate).map((slot) => slot.pickupSlot),
+    generateSlots(pickupDate, pickupSettings).map((slot) => slot.pickupSlot),
   );
 
   if (!allowedSlots.has(pickupSlot)) return "Fascia oraria non disponibile";
-  if (isClosedDate(pickupDate)) return "Giorno di chiusura";
+  if (isClosedDate(pickupDate, pickupSettings)) return "Giorno di chiusura";
   if (isPastSlot(pickupDate, pickupTime)) return "Fascia oraria gia passata";
   return "";
 }
@@ -390,7 +419,11 @@ router.post(
         .json({ error: "Almeno un articolo è obbligatorio" });
     }
 
-    const pickupError = validatePickup({ pickupDate, pickupTime, pickupSlot });
+    const pickupError = await validatePickup(req, {
+      pickupDate,
+      pickupTime,
+      pickupSlot,
+    });
     if (pickupError) {
       return res.status(400).json({ error: pickupError });
     }

@@ -4,6 +4,7 @@ import {
   BUSINESS_USER_ROLES,
   MENU_CATEGORY_OPTIONS,
   MENU_UNIT_OPTIONS,
+  OPENING_DAY_OPTIONS,
   ORDER_FILTERS,
   PLAN_OPTIONS,
   STATUSES,
@@ -86,11 +87,11 @@ export default function AdminView() {
     setOrderSearch,
     setPassword,
     setPickupDate,
-    setSettingsForm,
     setUsername,
     settingsForm,
     settingsSaving,
     toast,
+    toggleOpeningDay,
     token,
     topProductMax,
     topProducts,
@@ -98,6 +99,8 @@ export default function AdminView() {
     updateBusinessForm,
     updateCouponForm,
     updateMenuForm,
+    updateSettingsForm,
+    applyOpeningPreset,
     username,
     visibleAdminNav,
     visibleOrders,
@@ -1405,35 +1408,68 @@ export default function AdminView() {
                 <strong>{settingsForm.openingHours || "Non impostati"}</strong>
                 <div className="settings-hour-presets">
                   {[
-                    "Tutti i giorni 18:00-22:30",
-                    "Mar-Dom 18:00-22:30",
-                    "Lun-Sab 12:00-15:00 / 18:00-22:30",
-                    "Chiuso per ferie",
-                  ].map((preset) => (
+                    ["daily", "Tutti i giorni"],
+                    ["takeaway", "Mar-Dom sera"],
+                    ["weekend", "Weekend"],
+                    ["weekly", "Pranzo Lun-Sab"],
+                    ["closed", "Chiuso"],
+                  ].map(([preset, label]) => (
                     <button
                       type="button"
                       key={preset}
-                      onClick={() =>
-                        setSettingsForm((current) => ({
-                          ...current,
-                          openingHours: preset,
-                        }))
-                      }
+                      onClick={() => applyOpeningPreset(preset)}
                     >
-                      {preset}
+                      {label}
                     </button>
                   ))}
                 </div>
               </div>
+              <div className="settings-full settings-days-editor">
+                <span className="settings-field-title">Giorni di apertura</span>
+                <div className="settings-day-grid">
+                  {OPENING_DAY_OPTIONS.map((day) => {
+                    const active = settingsForm.openingDays.includes(day.id);
+                    return (
+                      <button
+                        type="button"
+                        key={day.id}
+                        className={active ? "active" : ""}
+                        aria-pressed={active}
+                        onClick={() => toggleOpeningDay(day.id)}
+                      >
+                        <strong>{day.label}</strong>
+                        <span>{day.fullLabel}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <label>
-                Orari apertura
+                Ora apertura
+                <input
+                  type="time"
+                  value={settingsForm.openingTimeStart}
+                  onChange={(event) =>
+                    updateSettingsForm({ openingTimeStart: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Ora chiusura
+                <input
+                  type="time"
+                  value={settingsForm.openingTimeEnd}
+                  onChange={(event) =>
+                    updateSettingsForm({ openingTimeEnd: event.target.value })
+                  }
+                />
+              </label>
+              <label className="settings-full">
+                Testo mostrato sul menu
                 <input
                   value={settingsForm.openingHours}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({
-                      ...current,
-                      openingHours: event.target.value,
-                    }))
+                    updateSettingsForm({ openingHours: event.target.value })
                   }
                   placeholder="Es. Mar-Dom 18:00-22:30"
                 />
@@ -1446,10 +1482,7 @@ export default function AdminView() {
                   type="number"
                   value={settingsForm.deliveryCost}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({
-                      ...current,
-                      deliveryCost: event.target.value,
-                    }))
+                    updateSettingsForm({ deliveryCost: event.target.value })
                   }
                 />
               </label>
@@ -1461,10 +1494,7 @@ export default function AdminView() {
                   type="number"
                   value={settingsForm.minimumOrder}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({
-                      ...current,
-                      minimumOrder: event.target.value,
-                    }))
+                    updateSettingsForm({ minimumOrder: event.target.value })
                   }
                 />
               </label>
@@ -1473,10 +1503,7 @@ export default function AdminView() {
                 <input
                   value={settingsForm.serviceZones}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({
-                      ...current,
-                      serviceZones: event.target.value,
-                    }))
+                    updateSettingsForm({ serviceZones: event.target.value })
                   }
                   placeholder="Centro, San Paolo, Eur"
                 />
@@ -1486,10 +1513,7 @@ export default function AdminView() {
                 <textarea
                   value={settingsForm.customerMessage}
                   onChange={(event) =>
-                    setSettingsForm((current) => ({
-                      ...current,
-                      customerMessage: event.target.value,
-                    }))
+                    updateSettingsForm({ customerMessage: event.target.value })
                   }
                   placeholder="Siamo chiusi per ferie"
                 />

@@ -182,6 +182,11 @@ function toBusinessPayload(body = {}) {
       openingHours: String(
         body.settings?.openingHours || "Mar-Dom 18:00-22:30",
       ).trim(),
+      openingDays: Array.isArray(body.settings?.openingDays)
+        ? body.settings.openingDays
+        : ["mar", "mer", "gio", "ven", "sab", "dom"],
+      openingTimeStart: String(body.settings?.openingTimeStart || "18:00").trim(),
+      openingTimeEnd: String(body.settings?.openingTimeEnd || "22:30").trim(),
     },
   };
 
@@ -359,6 +364,9 @@ router.post(
       await StoreSettings.create({
         businessId: business._id,
         openingHours: payload.settings.openingHours,
+        openingDays: payload.settings.openingDays,
+        openingTimeStart: payload.settings.openingTimeStart,
+        openingTimeEnd: payload.settings.openingTimeEnd,
         customerMessage: payload.settings.publicMessage,
       });
 
@@ -418,6 +426,9 @@ router.put(
           {
             $set: {
               openingHours: update.settings.openingHours,
+              openingDays: update.settings.openingDays,
+              openingTimeStart: update.settings.openingTimeStart,
+              openingTimeEnd: update.settings.openingTimeEnd,
               customerMessage: update.settings.publicMessage,
             },
             $setOnInsert: { businessId: business._id },

@@ -50,6 +50,15 @@ export const MENU_UNIT_OPTIONS = [
   "lattina",
   "bottiglia",
 ];
+export const OPENING_DAY_OPTIONS = [
+  { id: "lun", label: "Lun", fullLabel: "Lunedi" },
+  { id: "mar", label: "Mar", fullLabel: "Martedi" },
+  { id: "mer", label: "Mer", fullLabel: "Mercoledi" },
+  { id: "gio", label: "Gio", fullLabel: "Giovedi" },
+  { id: "ven", label: "Ven", fullLabel: "Venerdi" },
+  { id: "sab", label: "Sab", fullLabel: "Sabato" },
+  { id: "dom", label: "Dom", fullLabel: "Domenica" },
+];
 export const EMPTY_MENU_FORM = {
   name: "",
   description: "",
@@ -76,6 +85,9 @@ export const EMPTY_BUSINESS_FORM = {
   primaryColor: "#2C5F2E",
   accentColor: "#C0392B",
   openingHours: "Mar-Dom 18:00-22:30",
+  openingDays: ["mar", "mer", "gio", "ven", "sab", "dom"],
+  openingTimeStart: "18:00",
+  openingTimeEnd: "22:30",
   publicMessage: "",
   ownerName: "",
   ownerEmail: "",
