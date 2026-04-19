@@ -621,6 +621,30 @@ a:focus-visible {
   color: white;
 }
 
+.menu-filter-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(47, 103, 70, 0.24);
+  border-radius: 10px;
+  background: rgba(234, 243, 222, 0.7);
+  color: var(--basil);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.menu-filter-summary button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--mg-basil);
+  color: white;
+  font-weight: 900;
+  padding: 8px 11px;
+}
+
 .menu-category-nav {
   position: sticky;
   top: 10px;
@@ -2311,9 +2335,20 @@ a:focus-visible {
 }
 
 .menu-admin-category h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin: 0;
   font-family: "Playfair Display", serif;
   font-size: 28px;
+}
+
+.menu-admin-category h3 span {
+  font-family: "DM Sans", sans-serif;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .menu-admin-items {

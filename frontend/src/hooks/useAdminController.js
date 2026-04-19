@@ -99,6 +99,14 @@ function parseOpeningTimes(openingHours = "") {
   };
 }
 
+function businessSlugFromAdminPath() {
+  const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts[1] !== "admin") return "";
+  if (["admin", "ordine", "p"].includes(parts[0])) return "";
+  return parts[0] || "";
+}
+
 export default function useAdminController() {
   // Pannello operativo admin. Il ruolo dell'utente decide quali sezioni sono
   // visibili; il backend resta comunque la fonte di verita per i permessi.
@@ -186,6 +194,17 @@ export default function useAdminController() {
     if (!token) return;
     loadCurrentBusiness();
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !currentBusiness?.slug || currentUser?.role === "global_admin") {
+      return;
+    }
+
+    const routeSlug = businessSlugFromAdminPath();
+    if (routeSlug && routeSlug !== currentBusiness.slug) {
+      window.location.replace(`/${currentBusiness.slug}/admin`);
+    }
+  }, [token, currentBusiness?.slug, currentUser?.role]);
 
   useEffect(() => {
     if (!token) return;

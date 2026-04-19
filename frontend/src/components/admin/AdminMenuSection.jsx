@@ -1,5 +1,7 @@
-import { MENU_CATEGORY_OPTIONS, MENU_UNIT_OPTIONS } from "../../constants";
+﻿import { MENU_CATEGORY_OPTIONS, MENU_UNIT_OPTIONS } from "../../constants";
 import { money } from "../../utils/format";
+import InlineNotice from "../ui/InlineNotice";
+import StatusPill from "../ui/StatusPill";
 
 export default function AdminMenuSection({
   adminMenu,
@@ -15,6 +17,10 @@ export default function AdminMenuSection({
   unavailableItems,
   updateMenuForm,
 }) {
+  const publishedItems = MENU_CATEGORY_OPTIONS.flatMap(
+    (category) => groupedMenu[category.value] || [],
+  );
+
   return (
     <section className="admin-menu-manager">
       <div className="admin-menu-overview">
@@ -43,7 +49,7 @@ export default function AdminMenuSection({
         <div className="menu-live-preview">
           <span>Anteprima cliente</span>
           <article>
-            <b>{menuForm.emoji || "•"}</b>
+            <b>{menuForm.emoji || "\u{1F355}"}</b>
             <div>
               <strong>{menuForm.name || "Nome prodotto"}</strong>
               <p>
@@ -201,13 +207,22 @@ export default function AdminMenuSection({
           <p className="eyebrow">Prodotti pubblicati</p>
           <h2>Menu della pizzeria</h2>
         </div>
+        {publishedItems.length === 0 && (
+          <InlineNotice
+            title="Nessun prodotto pubblicato"
+            description="Aggiungi il primo prodotto: comparira subito nel menu cliente del locale."
+          />
+        )}
         {MENU_CATEGORY_OPTIONS.map((category) => {
           const items = groupedMenu[category.value] || [];
           if (items.length === 0) return null;
 
           return (
             <section className="menu-admin-category" key={category.value}>
-              <h3>{category.label}</h3>
+              <h3>
+                {category.label}
+                <span>{items.length} prodotti</span>
+              </h3>
               <div className="menu-admin-items">
                 {items.map((item) => (
                   <article
@@ -230,6 +245,9 @@ export default function AdminMenuSection({
                         {money(item.price)} - {item.unit || "pezzo"} - ordine{" "}
                         {item.sortOrder || 0}
                       </small>
+                      <StatusPill tone={item.available ? "success" : "warning"}>
+                        {item.available ? "Visibile" : "Nascosto"}
+                      </StatusPill>
                     </div>
                     <div className="menu-admin-actions">
                       <button type="button" onClick={() => editMenuItem(item)}>

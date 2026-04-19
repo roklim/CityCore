@@ -5,6 +5,7 @@ import {
   QUICK_FILTERS,
 } from "../../constants";
 import { money } from "../../utils/format";
+import InlineNotice from "../ui/InlineNotice";
 import MenuSkeleton from "./MenuSkeleton";
 import MenuStateCard from "./MenuStateCard";
 
@@ -41,6 +42,13 @@ export default function CustomerMenuArea({
   toggleCustomPizzaTopping,
   toggleFilter,
 }) {
+  const hasActiveSearch = searchTerm.trim().length > 0;
+  const hasActiveFilters = activeFilters.length > 0;
+  const resultCount = menuBySection.reduce(
+    (total, section) => total + section.items.length,
+    0,
+  );
+
   return (
     <div className="menu-area">
       <div className="section-heading">
@@ -107,6 +115,23 @@ export default function CustomerMenuArea({
                 </button>
               ))}
             </div>
+            {(hasActiveSearch || hasActiveFilters) && (
+              <div className="menu-filter-summary">
+                <span>
+                  {resultCount} prodotti trovati
+                  {hasActiveSearch ? ` per "${searchTerm.trim()}"` : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setActiveFilters([]);
+                  }}
+                >
+                  Azzera filtri
+                </button>
+              </div>
+            )}
           </div>
 
           <nav className="menu-category-nav" aria-label="Categorie menu">
@@ -124,10 +149,10 @@ export default function CustomerMenuArea({
           </nav>
 
           {menuBySection.length === 0 ? (
-            <p className="menu-empty">
-              Niente al banco con questi filtri: prova a cercare un altro
-              trancio o sfizio.
-            </p>
+            <InlineNotice
+              title="Nessun prodotto trovato"
+              description="Prova a cambiare ricerca o rimuovere i filtri attivi."
+            />
           ) : (
             activeMenu && (
               <section

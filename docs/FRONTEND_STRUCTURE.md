@@ -1,86 +1,124 @@
 # Frontend Structure
 
-Il frontend React e' diviso per responsabilita, cosi' le modifiche future non
-devono passare da un unico file enorme.
+Questa app usa React + Vite con un router minimale in `frontend/src/App.jsx`.
+Non usa React Router: la view viene scelta leggendo `window.location.pathname`.
 
-## Entry Point
+## Route principali
 
-- `frontend/src/main.jsx`
-  - monta React
-  - importa `App`
-  - importa il CSS globale
+- `/` mostra la home piattaforma Cagli con directory business.
+- `/admin` mostra login/console globale.
+- `/:businessSlug` mostra il menu pubblico del business.
+- `/:businessSlug/admin` mostra l'admin operativo del business.
+- `/:businessSlug/ordine/:id` mostra il tracking ordine.
+- `/:businessSlug?ordine=id` resta compatibile con tracking via query string.
 
-- `frontend/src/App.jsx`
-  - router minimale senza librerie
-  - decide tra:
-    - pagina cliente
-    - tracking ordine
-    - area admin
+## View principali
 
-## Views
+- `frontend/src/views/PlatformHome.jsx`
+  - Home pubblica, login globale, directory attivita.
+  - Usa componenti UI comuni per loading/empty state.
 
 - `frontend/src/views/CustomerView.jsx`
-  - rendering esperienza cliente
-  - menu, pizza su misura, carrello, checkout, recupero ordine
-  - non contiene piu' la maggior parte della logica dati
+  - Contenitore della pagina cliente.
+  - Mantiene wiring e stato proveniente da `useCustomerController`.
+  - Delega il markup a componenti in `components/customer`.
 
 - `frontend/src/views/AdminView.jsx`
-  - rendering area admin
-  - sidebar, dashboard, ordini, menu, disponibilita, clienti, coupon, settings,
-    business
-  - la logica admin e' in `useAdminController`
+  - Contenitore del pannello admin.
+  - Mantiene wiring e stato proveniente da `useAdminController`.
+  - Delega le sezioni operative a componenti in `components/admin`.
 
 - `frontend/src/views/TrackingView.jsx`
-  - tracking pubblico dell'ordine
+  - Tracking pubblico ordine.
+  - Usa stati loading/error/empty condivisi.
 
-## Hooks
+## Componenti customer
 
-- `frontend/src/hooks/useCustomerController.js`
-  - stato cliente
-  - caricamento menu
-  - disponibilita slot
-  - gestione carrello
-  - pizza su misura
-  - submit ordine
-  - lookup cliente
+- `BusinessPublicHeader.jsx`
+  - Header del menu pubblico business con link a Cagli, nome locale, stato e admin.
 
-- `frontend/src/hooks/useAdminController.js`
-  - sessione admin
-  - refresh ordini/dashboard
-  - gestione menu
-  - gestione business e utenti business
-  - gestione coupon, settings, clienti
-  - memo derivati per dashboard e filtri
+- `CustomerHero.jsx`
+  - Hero del business, orari di apertura e CTA principali.
 
-## Shared
+- `RecoverOrderPanel.jsx`
+  - Recupero ordini tramite telefono.
 
-- `frontend/src/constants.js`
-  - stati ordine
-  - nav admin
-  - categorie/menu
-  - form vuoti
-  - opzioni business
-  - configuratore pizza su misura
+- `CustomerMenuArea.jsx`
+  - Menu pubblico, ricerca, filtri, categorie, prodotti e pizza su misura.
 
-- `frontend/src/utils/format.js`
-  - date
-  - valuta
-  - slug
-  - mapping categorie
-  - trasformazioni form/payload
+- `CustomerCheckoutPanel.jsx`
+  - Carrello, dati cliente, fedelta, date, slot e conferma ordine.
 
-- `frontend/src/components/Toast.jsx`
-  - feedback globale semplice
+- `CustomerConfirmation.jsx`
+  - Schermata di conferma dopo invio ordine.
 
-- `frontend/src/lib/api.js`
-  - unico punto per chiamate API
-  - aggiunge `X-Business-Slug`
-  - gestisce errori fetch
+- `MenuSkeleton.jsx` e `MenuStateCard.jsx`
+  - Stati di caricamento, errore e menu vuoto.
 
-## Regola pratica
+## Componenti admin
 
-- Nuova UI visibile: aggiungerla in `views` o `components`.
-- Nuovo stato/flusso dati: aggiungerlo nel relativo hook.
-- Nuova chiamata backend: aggiungerla in `lib/api.js`.
-- Nuove opzioni condivise: aggiungerle in `constants.js`.
-- Nuove conversioni/date/formattazioni: aggiungerle in `utils/format.js`.
+- `AdminSidebar.jsx`
+  - Navigazione laterale admin.
+
+- `AdminHeader.jsx`
+  - Header admin con contesto, refresh, data e logout.
+
+- `AdminStatsGrid.jsx`
+  - Metriche riutilizzabili.
+
+- `AdminDashboardSection.jsx`
+  - Vista "Oggi": ordini in arrivo, prodotti piu ordinati, fasce orarie.
+
+- `AdminOrdersSection.jsx`
+  - Gestione ordini con filtri, ricerca e cambio stato.
+
+- `AdminMenuSection.jsx`
+  - CRUD prodotti, anteprima live, lista prodotti e visibilita.
+
+- `AdminAvailabilitySection.jsx`
+  - Toggle rapido prodotti disponibili/esauriti.
+
+- `AdminCustomersSection.jsx`
+  - Ricerca e lista clienti.
+
+- `AdminCouponsSection.jsx`
+  - CRUD coupon.
+
+- `AdminSettingsSection.jsx`
+  - Orari, giorni apertura e impostazioni operative locale.
+
+## Componenti UI comuni
+
+- `EmptyState.jsx`
+- `InlineNotice.jsx`
+- `LoadingSkeleton.jsx`
+- `SectionHeading.jsx`
+- `StatusPill.jsx`
+
+Questi componenti sono volutamente semplici. La regola e': usarli per
+ridurre duplicazione e rendere chiari loading, empty, error e stati semantici,
+senza creare un design system troppo astratto.
+
+## Dove modificare cosa
+
+- Vuoi cambiare il menu pubblico? Parti da `CustomerMenuArea.jsx`.
+- Vuoi cambiare checkout/carrello? Parti da `CustomerCheckoutPanel.jsx`.
+- Vuoi cambiare dashboard admin? Parti da `AdminDashboardSection.jsx`.
+- Vuoi cambiare gestione menu admin? Parti da `AdminMenuSection.jsx`.
+- Vuoi cambiare orari/impostazioni locale? Parti da `AdminSettingsSection.jsx`.
+- Vuoi cambiare routing? Parti da `App.jsx`.
+- Vuoi cambiare API/fetch? Parti da `frontend/src/lib/api.js`.
+
+## Regole di manutenzione
+
+- Non spostare logica API nei componenti presentazionali.
+- Lascia gli hook (`useCustomerController`, `useAdminController`) come fonte
+  principale dello stato operativo.
+- Evita nuove librerie se il problema si risolve con componenti piccoli.
+- Mantieni link principali nel formato `/:businessSlug` e
+  `/:businessSlug/admin`.
+- Dopo modifiche importanti esegui sempre:
+
+```bash
+npm --prefix frontend run build
+```

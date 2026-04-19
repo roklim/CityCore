@@ -287,6 +287,17 @@ export default function PlatformHome({ mode }) {
         />
       )}
 
+      {isBusinessUser && (
+        <PublicHero
+          businesses={filteredBusinesses}
+          loading={loading}
+          search={search}
+          setSearch={setSearch}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+        />
+      )}
+
       <CagliFooter onLogin={() => setLoginOpen(true)} />
 
       {loginOpen && (
@@ -358,7 +369,7 @@ function PublicHero({
           centro.
         </p>
         <label className="cagli-search">
-          <span aria-hidden="true">⌕</span>
+          <span aria-hidden="true">Cerca</span>
           <input
             placeholder="Cerca pizzeria, sushi, bar..."
             value={search}
@@ -420,7 +431,7 @@ function GlobalAdminView({
         <MetricCard icon="B" label="Business" value={platformStats.businesses} />
         <MetricCard icon="A" label="Attivi" value={platformStats.active} />
         <MetricCard icon="O" label="Ordini" value={platformStats.orders} />
-        <MetricCard icon="€" label="GMV" value={money(platformStats.revenue)} />
+        <MetricCard icon="EUR" label="GMV" value={money(platformStats.revenue)} />
       </section>
 
       <section className="cagli-admin-directory-head">
@@ -507,7 +518,7 @@ function OwnerHome({ business, user }) {
           <a href={`/${slug}/admin?section=${action.href}`} key={action.href}>
             <span>{action.icon}</span>
             <strong>{action.label}</strong>
-            <i>→</i>
+            <i>-&gt;</i>
           </a>
         ))}
       </section>
@@ -549,7 +560,7 @@ function PublicBusinessCard({ business, index, search }) {
         <h2><Highlight text={name} search={search} /></h2>
         <p>{description}</p>
       </div>
-      <strong>{active ? "Apri menu →" : "Non disponibile"}</strong>
+      <strong>{active ? "Apri menu ->" : "Non disponibile"}</strong>
     </a>
   );
 }
@@ -613,7 +624,7 @@ function LoginModal({
     <div className="cagli-login-overlay" onMouseDown={onClose}>
       <section className="cagli-login-modal" onMouseDown={(event) => event.stopPropagation()}>
         <button className="cagli-modal-close" type="button" onClick={onClose}>
-          ×
+          x
         </button>
         <div className="cagli-login-logo">C</div>
         <h2>Accedi</h2>
@@ -655,7 +666,7 @@ function LoginModal({
 function CagliFooter({ onLogin }) {
   return (
     <footer className="cagli-footer">
-      <span>Cagli Platform · © 2025</span>
+      <span>Cagli Platform - 2026</span>
       <button type="button" onClick={onLogin}>Accedi come gestore</button>
     </footer>
   );
