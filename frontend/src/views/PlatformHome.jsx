@@ -7,6 +7,21 @@ import {
 import { money } from "../utils/format";
 import Toast from "../components/Toast";
 
+const PUBLIC_TYPE_FILTERS = [
+  { id: "all", label: "Tutti" },
+  { id: "pizzeria", label: "Pizzeria" },
+  { id: "sushi", label: "Sushi" },
+  { id: "bar", label: "Bar" },
+  { id: "other", label: "Altro" },
+];
+
+const QUICK_ACTIONS = [
+  { label: "Gestisci menu", icon: "M", href: "menu" },
+  { label: "Vedi ordini", icon: "O", href: "orders" },
+  { label: "Configura fasce", icon: "D", href: "availability" },
+  { label: "Vedi clienti", icon: "C", href: "customers" },
+];
+
 function readAdminSession() {
   try {
     return {
@@ -18,23 +33,76 @@ function readAdminSession() {
   }
 }
 
-function businessIcon(business) {
-  const type = business?.type || "";
-  if (type.includes("sushi")) return "S";
-  if (type.includes("bike") || type.includes("rental")) return "R";
-  if (type.includes("bar")) return "B";
-  if (type.includes("service")) return "A";
-  if (type.includes("restaurant")) return "T";
-  return "M";
-}
-
 function businessName(business) {
   return business?.branding?.publicName || business?.name || business?.slug || "App";
+}
+
+function businessInitials(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "C";
+  return parts.slice(0, 2).map((part) => part[0].toUpperCase()).join("");
+}
+
+function businessTypeLabel(type = "") {
+  const labels = {
+    pizzeria: "Pizzeria",
+    sushi: "Sushi",
+    restaurant: "Ristorante",
+    bar: "Bar",
+    bike_rental: "Noleggio",
+    service: "Servizi",
+    custom: "Altro",
+  };
+  return labels[type] || "Altro";
+}
+
+function typeBucket(type = "") {
+  if (["pizzeria", "sushi", "bar"].includes(type)) return type;
+  return "other";
+}
+
+function statusLabel(status = "") {
+  if (status === "active") return "Attivo";
+  if (status === "trialing") return "Trial";
+  if (status === "past_due") return "Da verificare";
+  if (status === "cancelled") return "Inattivo";
+  return "Pubblico";
+}
+
+function isBusinessActive(business) {
+  return business.subscriptionStatus !== "cancelled";
 }
 
 function readRouteMode(mode) {
   if (mode) return mode;
   return window.location.pathname === "/admin" ? "admin" : "home";
+}
+
+function Highlight({ text, search }) {
+  const value = String(text || "");
+  const needle = search.trim();
+  if (!needle) return value;
+  const index = value.toLowerCase().indexOf(needle.toLowerCase());
+  if (index === -1) return value;
+  return (
+    <>
+      {value.slice(0, index)}
+      <mark>{value.slice(index, index + needle.length)}</mark>
+      {value.slice(index + needle.length)}
+    </>
+  );
+}
+
+function BusinessLogo({ business, size = "md" }) {
+  const name = businessName(business);
+  const logoUrl = business.branding?.logoUrl;
+  const color = business.branding?.primaryColor || "var(--cagli-basil)";
+
+  return (
+    <span className={`cagli-business-logo ${size}`} style={{ background: color }}>
+      {logoUrl ? <img src={logoUrl} alt="" loading="lazy" /> : businessInitials(name)}
+    </span>
+  );
 }
 
 export default function PlatformHome({ mode }) {
@@ -43,6 +111,10 @@ export default function PlatformHome({ mode }) {
   const [publicBusinesses, setPublicBusinesses] = useState([]);
   const [platformBusinesses, setPlatformBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loginOpen, setLoginOpen] = useState(routeMode === "admin" && !session.token);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [search, setSearch] = useState("");
@@ -82,6 +154,10 @@ export default function PlatformHome({ mode }) {
   }, [session.token, isGlobalAdmin]);
 
   useEffect(() => {
+    setLoginOpen(routeMode === "admin" && !session.token);
+  }, [routeMode, session.token]);
+
+  useEffect(() => {
     if (routeMode !== "admin" || !isBusinessUser || !ownSlug) return;
     window.location.replace(`/${ownSlug}/admin`);
   }, [routeMode, isBusinessUser, ownSlug]);
@@ -90,15 +166,11 @@ export default function PlatformHome({ mode }) {
     ? platformBusinesses
     : publicBusinesses;
 
-  const businessTypes = useMemo(() => {
-    return Array.from(new Set(businesses.map((business) => business.type).filter(Boolean)))
-      .sort();
-  }, [businesses]);
-
   const filteredBusinesses = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return businesses.filter((business) => {
-      const matchesType = typeFilter === "all" || business.type === typeFilter;
+      const matchesType =
+        typeFilter === "all" || typeBucket(business.type) === typeFilter;
       if (!matchesType) return false;
       if (!needle) return true;
       return [
@@ -126,8 +198,15 @@ export default function PlatformHome({ mode }) {
     );
   }, [platformBusinesses]);
 
+  const ownerBusiness = useMemo(() => {
+    if (!isBusinessUser || !ownSlug) return null;
+    return businesses.find((business) => business.slug === ownSlug) || session.business;
+  }, [businesses, isBusinessUser, ownSlug, session.business]);
+
   async function handleLogin(event) {
     event.preventDefault();
+    setLoginError("");
+    setLoginLoading(true);
     try {
       const data = await loginAdmin(username, password);
       const nextSession = {
@@ -148,12 +227,15 @@ export default function PlatformHome({ mode }) {
       );
 
       setSession(nextSession);
+      setLoginOpen(false);
 
       if (data.role !== "global_admin" && data.business?.slug) {
         window.location.replace(`/${data.business.slug}/admin`);
       }
     } catch (error) {
-      setToast(error.message);
+      setLoginError(error.message || "Credenziali non valide");
+    } finally {
+      setLoginLoading(false);
     }
   }
 
@@ -165,92 +247,186 @@ export default function PlatformHome({ mode }) {
   }
 
   return (
-    <main className="platform-home">
-      <header className="platform-hero">
-        <div>
-          <p className="eyebrow">Cagli platform</p>
-          <h1>{routeMode === "admin" ? "Console Cagli" : "Attivita Cagli"}</h1>
-          <p>
-            Un unico dominio per menu pubblici, banco operativo e gestione
-            delle attivita locali.
-          </p>
-        </div>
-        <div className="platform-actions">
-          {session.token ? (
-            <>
-              {isGlobalAdmin && (
-                <a className="platform-secondary" href="/admin">
-                  Console globale
-                </a>
-              )}
-              {isGlobalAdmin && (
-                <a
-                  className="platform-secondary"
-                  href="/admin/businesses?section=businesses"
-                >
-                  Gestione business
-                </a>
-              )}
-              <button type="button" onClick={logout}>
-                Esci
-              </button>
-            </>
-          ) : routeMode === "admin" ? null : (
-            <a className="platform-primary" href="/admin">
-              Accedi admin
-            </a>
-          )}
-        </div>
-      </header>
+    <main className={`cagli-page ${isGlobalAdmin ? "admin" : "public"}`}>
+      <CagliHeader
+        isGlobalAdmin={isGlobalAdmin}
+        isLogged={Boolean(session.token)}
+        onLogin={() => setLoginOpen(true)}
+        onLogout={logout}
+      />
 
-      {routeMode === "admin" && !session.token && (
-        <section className="platform-login-panel">
-          <form onSubmit={handleLogin}>
-            <p className="eyebrow">Accesso piattaforma</p>
-            <h2>Entra nella console</h2>
-            <input
-              placeholder="Email o username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-            />
-            <input
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-            <button type="submit">Accedi</button>
-          </form>
-        </section>
+      {!session.token && (
+        <PublicHero
+          businesses={filteredBusinesses}
+          loading={loading}
+          search={search}
+          setSearch={setSearch}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+        />
       )}
 
       {isGlobalAdmin && (
-        <section className="platform-stats-grid">
-          <article>
-            <span>Business</span>
-            <strong>{platformStats.businesses}</strong>
-          </article>
-          <article>
-            <span>Attivi</span>
-            <strong>{platformStats.active}</strong>
-          </article>
-          <article>
-            <span>Ordini</span>
-            <strong>{platformStats.orders}</strong>
-          </article>
-          <article>
-            <span>GMV</span>
-            <strong>{money(platformStats.revenue)}</strong>
-          </article>
-        </section>
+        <GlobalAdminView
+          businesses={filteredBusinesses}
+          loading={loading}
+          platformStats={platformStats}
+          search={search}
+          setSearch={setSearch}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+        />
       )}
 
-      <section className="platform-directory-head">
+      {isBusinessUser && ownerBusiness && (
+        <OwnerHome
+          business={ownerBusiness}
+          user={session.user}
+        />
+      )}
+
+      <CagliFooter onLogin={() => setLoginOpen(true)} />
+
+      {loginOpen && (
+        <LoginModal
+          error={loginError}
+          loading={loginLoading}
+          onClose={() => {
+            setLoginOpen(false);
+            setLoginError("");
+          }}
+          onSubmit={handleLogin}
+          password={password}
+          setPassword={setPassword}
+          setShowPassword={setShowPassword}
+          setUsername={setUsername}
+          showPassword={showPassword}
+          username={username}
+        />
+      )}
+
+      <Toast message={toast} />
+    </main>
+  );
+}
+
+function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
+  return (
+    <header className={`cagli-header ${isGlobalAdmin ? "admin" : ""}`}>
+      <a className="cagli-brand" href="/">
+        <strong>Cagli</strong>
+        <span>Scopri le attivita locali di Cagli</span>
+      </a>
+      <nav>
+        {isGlobalAdmin && (
+          <>
+            <a className="active" href="/admin">Console globale</a>
+            <a href="/admin/businesses?section=businesses">Gestione business</a>
+            <span className="cagli-notification">0</span>
+          </>
+        )}
+        {isLogged ? (
+          <button className="cagli-text-button" type="button" onClick={onLogout}>
+            Esci
+          </button>
+        ) : (
+          <button className="cagli-outline-button" type="button" onClick={onLogin}>
+            Accedi
+          </button>
+        )}
+      </nav>
+    </header>
+  );
+}
+
+function PublicHero({
+  businesses,
+  loading,
+  search,
+  setSearch,
+  typeFilter,
+  setTypeFilter,
+}) {
+  return (
+    <>
+      <section className="cagli-public-hero">
+        <h1>Le attivita di Cagli, tutte in un posto</h1>
+        <p>
+          Sfoglia menu, scopri novita e ordina direttamente dai locali del
+          centro.
+        </p>
+        <label className="cagli-search">
+          <span aria-hidden="true">⌕</span>
+          <input
+            placeholder="Cerca pizzeria, sushi, bar..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
+        <div className="cagli-filter-pills">
+          {PUBLIC_TYPE_FILTERS.map((filter) => (
+            <button
+              className={typeFilter === filter.id ? "active" : ""}
+              key={filter.id}
+              type="button"
+              onClick={() => setTypeFilter(filter.id)}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="cagli-public-grid">
+        {loading ? (
+          <SkeletonCards />
+        ) : businesses.length === 0 ? (
+          <EmptyDirectory />
+        ) : (
+          businesses.map((business, index) => (
+            <PublicBusinessCard
+              business={business}
+              index={index}
+              key={business._id || business.slug}
+              search={search}
+            />
+          ))
+        )}
+      </section>
+    </>
+  );
+}
+
+function GlobalAdminView({
+  businesses,
+  loading,
+  platformStats,
+  search,
+  setSearch,
+  typeFilter,
+  setTypeFilter,
+}) {
+  return (
+    <section className="cagli-admin-console">
+      <div className="cagli-admin-title">
+        <p>CAGLI PLATFORM</p>
+        <h1>Console globale</h1>
+        <span>Platform / Tutte le attivita</span>
+      </div>
+
+      <section className="cagli-admin-metrics">
+        <MetricCard icon="B" label="Business" value={platformStats.businesses} />
+        <MetricCard icon="A" label="Attivi" value={platformStats.active} />
+        <MetricCard icon="O" label="Ordini" value={platformStats.orders} />
+        <MetricCard icon="€" label="GMV" value={money(platformStats.revenue)} />
+      </section>
+
+      <section className="cagli-admin-directory-head">
         <div>
-          <p className="eyebrow">Directory</p>
+          <p>DIRECTORY</p>
           <h2>Tutte le attivita</h2>
         </div>
-        <div className="platform-filters">
+        <div className="cagli-admin-tools">
           <input
             placeholder="Cerca nome, slug o owner"
             value={search}
@@ -260,79 +436,251 @@ export default function PlatformHome({ mode }) {
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value)}
           >
-            <option value="all">Tutti i tipi</option>
-            {businessTypes.map((type) => (
-              <option value={type} key={type}>
-                {type}
+            {PUBLIC_TYPE_FILTERS.map((filter) => (
+              <option value={filter.id} key={filter.id}>
+                {filter.label}
               </option>
             ))}
           </select>
+          <a href="/admin/businesses?section=businesses">+ Aggiungi business</a>
         </div>
       </section>
 
-      <section className="platform-grid" aria-busy={loading}>
+      <section className="cagli-admin-grid">
         {loading ? (
-          <p className="platform-muted">Caricamento attivita...</p>
-        ) : filteredBusinesses.length === 0 ? (
-          <p className="platform-muted">Nessuna attivita trovata.</p>
+          <SkeletonCards admin />
+        ) : businesses.length === 0 ? (
+          <EmptyDirectory admin />
         ) : (
-          filteredBusinesses.map((business) => (
-            <BusinessTile
-              business={business}
-              isGlobalAdmin={isGlobalAdmin}
-              isOwnBusiness={ownSlug === business.slug}
-              key={business._id || business.slug}
-            />
+          businesses.map((business) => (
+            <AdminBusinessCard business={business} key={business._id || business.slug} />
           ))
         )}
       </section>
-
-      <Toast message={toast} />
-    </main>
+    </section>
   );
 }
 
-function BusinessTile({ business, isGlobalAdmin, isOwnBusiness }) {
+function OwnerHome({ business, user }) {
   const slug = business.slug || "";
-  const name = businessName(business);
-  const color = business.branding?.primaryColor || "#2C5F2E";
   const metrics = business.metrics || {};
-  const canOpenAdmin = isGlobalAdmin || isOwnBusiness;
+  const name = businessName(business);
 
   return (
-    <article className={`platform-app-card ${isOwnBusiness ? "own" : ""}`}>
-      <div className="platform-app-top">
-        <div className="platform-app-icon" style={{ background: color }}>
-          <span>{businessIcon(business)}</span>
+    <section className="cagli-owner-home">
+      <header className="cagli-owner-header">
+        <BusinessLogo business={business} size="lg" />
+        <div>
+          <span>Ciao, {user?.name || user?.email || "gestore"}</span>
+          <h1>{name}</h1>
         </div>
-        {isOwnBusiness && <strong className="platform-own-badge">La tua</strong>}
+        <nav>
+          <a className="active" href={`/${slug}/admin`}>Il mio banco</a>
+          <a href={`/${slug}/admin?section=menu`}>Menu</a>
+          <a href={`/${slug}/admin?section=orders`}>Ordini</a>
+          <a href={`/${slug}/admin?section=settings`}>Impostazioni</a>
+        </nav>
+        <a className="cagli-outline-link" href={`/${slug}`}>Apri menu pubblico</a>
+      </header>
+
+      <article className="cagli-owner-hero-card">
+        <BusinessLogo business={business} size="xl" />
+        <div>
+          <span className="cagli-type-badge">{businessTypeLabel(business.type)}</span>
+          <h2>{name}</h2>
+          <p>/{slug}</p>
+          <strong>{statusLabel(business.subscriptionStatus)}</strong>
+        </div>
+        <div className="cagli-owner-inline-metrics">
+          <span><b>{metrics.orders || 0}</b>Ordini oggi</span>
+          <span><b>{money(metrics.revenue || 0)}</b>Incasso</span>
+          <span><b>{metrics.availableProducts || 0}</b>Prodotti attivi</span>
+          <span><b>{metrics.customers || 0}</b>Clienti</span>
+        </div>
+        <a href={`/${slug}/admin`}>Vai all'admin</a>
+      </article>
+
+      <section className="cagli-owner-quick-grid">
+        {QUICK_ACTIONS.map((action) => (
+          <a href={`/${slug}/admin?section=${action.href}`} key={action.href}>
+            <span>{action.icon}</span>
+            <strong>{action.label}</strong>
+            <i>→</i>
+          </a>
+        ))}
+      </section>
+    </section>
+  );
+}
+
+function MetricCard({ icon, label, value }) {
+  return (
+    <article>
+      <span aria-hidden="true">{icon}</span>
+      <small>{label}</small>
+      <strong>{value}</strong>
+    </article>
+  );
+}
+
+function PublicBusinessCard({ business, index, search }) {
+  const slug = business.slug || "";
+  const name = businessName(business);
+  const active = isBusinessActive(business);
+  const description =
+    business.settings?.publicMessage ||
+    business.settings?.openingHours ||
+    "Scopri il menu e ordina dal locale.";
+
+  return (
+    <a
+      className={`cagli-public-card ${active ? "" : "disabled"}`}
+      href={active ? `/${slug}` : undefined}
+      style={{ animationDelay: `${250 + index * 60}ms` }}
+      aria-disabled={!active}
+    >
+      <BusinessLogo business={business} />
+      <div>
+        <span className="cagli-type-badge">
+          {active ? businessTypeLabel(business.type) : "Temporaneamente chiuso"}
+        </span>
+        <h2><Highlight text={name} search={search} /></h2>
+        <p>{description}</p>
+      </div>
+      <strong>{active ? "Apri menu →" : "Non disponibile"}</strong>
+    </a>
+  );
+}
+
+function AdminBusinessCard({ business }) {
+  const slug = business.slug || "";
+  const name = businessName(business);
+  const metrics = business.metrics || {};
+  const status = statusLabel(business.subscriptionStatus);
+
+  return (
+    <article className="cagli-admin-card">
+      <header>
+        <BusinessLogo business={business} />
+        <div>
+          <span className="cagli-type-badge">{businessTypeLabel(business.type)}</span>
+          <h2>{name}</h2>
+          <p>/{slug}</p>
+        </div>
+        <strong className={`cagli-status ${business.subscriptionStatus || "public"}`}>
+          {status}
+        </strong>
+      </header>
+
+      <div className="cagli-admin-card-metrics">
+        <span><small>Ordini</small><b>{metrics.orders || 0}</b></span>
+        <span><small>GMV</small><b>{money(metrics.revenue || 0)}</b></span>
+        <span><small>Prodotti</small><b>{metrics.products || 0}</b></span>
+        <span><small>Clienti</small><b>{metrics.customers || 0}</b></span>
       </div>
 
-      <div className="platform-app-body">
-        <span>{business.type || "business"}</span>
-        <h2>{name}</h2>
-        <p>/{slug}</p>
-      </div>
-
-      <div className="platform-app-meta">
+      <div className="cagli-admin-tags">
         <span>{business.plan || "free"}</span>
         <span>{business.subscriptionStatus || "public"}</span>
-        {business.owner?.email && <span>{business.owner.email}</span>}
+        {business.owner?.email && <small>{business.owner.email}</small>}
       </div>
 
-      <div className="platform-app-metrics">
-        <span>{metrics.orders || 0} ordini</span>
-        <span>{money(metrics.revenue || 0)}</span>
-        {isGlobalAdmin && <span>{metrics.products || 0} prodotti</span>}
-        {isGlobalAdmin && <span>{metrics.customers || 0} clienti</span>}
-      </div>
-
-      <div className="platform-card-actions">
+      <div className="cagli-admin-card-actions">
         <a href={`/${slug}`}>Apri menu</a>
-        {canOpenAdmin && <a href={`/${slug}/admin`}>Apri admin</a>}
-        {isGlobalAdmin && <a href="/admin/businesses?section=businesses">Gestisci</a>}
-        {isGlobalAdmin && <a href="/admin/businesses?section=businesses">Utenti</a>}
+        <a href={`/${slug}/admin`}>Apri admin</a>
+        <a href="/admin/businesses?section=businesses">Gestisci</a>
+        <a href="/admin/businesses?section=businesses">Utenti</a>
       </div>
     </article>
+  );
+}
+
+function LoginModal({
+  error,
+  loading,
+  onClose,
+  onSubmit,
+  password,
+  setPassword,
+  setShowPassword,
+  setUsername,
+  showPassword,
+  username,
+}) {
+  return (
+    <div className="cagli-login-overlay" onMouseDown={onClose}>
+      <section className="cagli-login-modal" onMouseDown={(event) => event.stopPropagation()}>
+        <button className="cagli-modal-close" type="button" onClick={onClose}>
+          ×
+        </button>
+        <div className="cagli-login-logo">C</div>
+        <h2>Accedi</h2>
+        <p>Area riservata a gestori e amministratori</p>
+        <form onSubmit={onSubmit}>
+          <label>
+            <span>Email</span>
+            <input
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>Password</span>
+            <div className="cagli-password-row">
+              <input
+                autoComplete="current-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <button type="button" onClick={() => setShowPassword((value) => !value)}>
+                {showPassword ? "Nascondi" : "Mostra"}
+              </button>
+            </div>
+          </label>
+          {error && <strong className="cagli-login-error">{error}</strong>}
+          <button type="submit" disabled={loading}>
+            {loading ? "Accesso..." : "Accedi"}
+          </button>
+          <a href="/admin">Password dimenticata?</a>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function CagliFooter({ onLogin }) {
+  return (
+    <footer className="cagli-footer">
+      <span>Cagli Platform · © 2025</span>
+      <button type="button" onClick={onLogin}>Accedi come gestore</button>
+    </footer>
+  );
+}
+
+function SkeletonCards({ admin = false }) {
+  return Array.from({ length: admin ? 8 : 6 }, (_, index) => (
+    <div className="cagli-skeleton-card" key={index}>
+      <i />
+      <span />
+      <strong />
+      <p />
+    </div>
+  ));
+}
+
+function EmptyDirectory() {
+  return (
+    <div className="cagli-empty-state">
+      <svg viewBox="0 0 120 80" aria-hidden="true">
+        <rect x="18" y="34" width="84" height="36" rx="8" />
+        <path d="M24 34 L38 14 H82 L96 34" />
+        <circle cx="48" cy="54" r="5" />
+        <circle cx="72" cy="54" r="5" />
+      </svg>
+      <strong>Nessuna attivita trovata</strong>
+      <span>Prova con un altro termine</span>
+    </div>
   );
 }
