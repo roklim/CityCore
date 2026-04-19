@@ -1,8 +1,18 @@
-const API_BASE_URL =
+function normalizeApiBaseUrl(raw) {
+  // Su Vercel e' facile impostare per errore `VITE_API_BASE_URL` senza `/api`.
+  // Normalizziamo qui cosi' tutte le chiamate restano consistenti.
+  if (!raw) return "";
+  const trimmed = String(raw).trim().replace(/\/+$/, "");
+  if (!trimmed) return "";
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV
-    ? "http://localhost:3000/api"
-    : "https://mucho-gusto-mg5y.onrender.com/api");
+    (import.meta.env.DEV
+      ? "http://localhost:3000/api"
+      : "https://mucho-gusto-mg5y.onrender.com/api"),
+);
 
 const DEFAULT_BUSINESS_SLUG = import.meta.env.VITE_BUSINESS_SLUG || "mucho-gusto";
 
