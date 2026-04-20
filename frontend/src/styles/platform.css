@@ -429,6 +429,8 @@
   background-position: center 60%;
   filter: brightness(0.38) saturate(0.7);
   z-index: 0;
+
+  border-radius: 20px;
 }
 .cagli-public-hero-inner {
   position: relative;
