@@ -1,9 +1,3 @@
-# Mucho Gusto SaaS Foundation
-
-Pizza ordering app evolving into a configurable multi-tenant SaaS for local businesses.
-
-The current production vertical is food ordering for a small takeaway pizzeria. The first SaaS foundation keeps that flow working while introducing a `Business` tenant, feature flags, and per-business data ownership.
-
 ## Stack
 
 - Frontend: React + Vite
@@ -52,24 +46,6 @@ The platform is designed around:
 - a migration path from single pizzeria app to multi-business SaaS
 - one backend/database with multiple businesses
 - one frontend codebase deployed as separate Vercel apps per business
-
-## Multi-Business Vercel Apps
-
-Each customer-facing app can be a separate Vercel project that points to the same backend.
-
-Example for Mucho Gusto:
-
-```env
-VITE_API_BASE_URL=https://your-api.example.com/api
-VITE_BUSINESS_SLUG=mucho-gusto
-```
-
-Example for another business:
-
-```env
-VITE_API_BASE_URL=https://your-api.example.com/api
-VITE_BUSINESS_SLUG=sushi-centro
-```
 
 The global admin is available from `/admin`. The new `Business` section lets the platform owner create and monitor businesses, store Vercel URLs, and copy the slug env variable for each app.
 
