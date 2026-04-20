@@ -31,6 +31,10 @@ export default function App() {
     return <PlatformHome mode="admin" />;
   }
 
+  if (path === "/admin/businesses") {
+    return <AdminView />;
+  }
+
   if (orderIdFromQuery) {
     return <TrackingView orderId={orderIdFromQuery} />;
   }

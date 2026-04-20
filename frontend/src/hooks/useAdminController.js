@@ -154,7 +154,12 @@ export default function useAdminController() {
   const [currentBusiness, setCurrentBusiness] = useState(null);
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("admin_session") || "{}").user || null;
+      const session = JSON.parse(localStorage.getItem("admin_session") || "{}");
+      if (!session.user && !session.role) return null;
+      return {
+        ...(session.user || {}),
+        role: session.user?.role || session.role,
+      };
     } catch {
       return null;
     }
@@ -174,6 +179,7 @@ export default function useAdminController() {
   const [businessSaving, setBusinessSaving] = useState(false);
   const [businessUserSaving, setBusinessUserSaving] = useState(false);
   const isGlobalAdmin = currentUser?.role === "global_admin";
+  const sessionRoleKnown = !token || Boolean(currentUser?.role);
 
   useEffect(() => {
     if (!token) return;
@@ -213,10 +219,14 @@ export default function useAdminController() {
   }, [customerSearch, token]);
 
   useEffect(() => {
-    if (!isGlobalAdmin && activeAdminSection === "businesses") {
+    if (
+      sessionRoleKnown &&
+      !isGlobalAdmin &&
+      activeAdminSection === "businesses"
+    ) {
       setActiveAdminSection("dashboard");
     }
-  }, [activeAdminSection, isGlobalAdmin]);
+  }, [activeAdminSection, isGlobalAdmin, sessionRoleKnown]);
 
   function notify(message) {
     setToast(message);
@@ -287,7 +297,10 @@ export default function useAdminController() {
         business: session.business,
       };
       localStorage.setItem("admin_session", JSON.stringify(nextSession));
-      setCurrentUser(session.user);
+      setCurrentUser({
+        ...(session.user || {}),
+        role: session.user?.role || nextSession.role,
+      });
       setCurrentBusiness(session.business || (await getCurrentBusiness()));
     } catch (error) {
       if (error.status === 401) logout();
@@ -877,13 +890,14 @@ export default function useAdminController() {
   }, [currentUser?.role, isGlobalAdmin]);
   useEffect(() => {
     if (
+      sessionRoleKnown &&
       token &&
       visibleAdminNav.length > 0 &&
       !visibleAdminNav.some((item) => item.id === activeAdminSection)
     ) {
       setActiveAdminSection(visibleAdminNav[0].id);
     }
-  }, [activeAdminSection, token, visibleAdminNav]);
+  }, [activeAdminSection, sessionRoleKnown, token, visibleAdminNav]);
 
   const topProducts = useMemo(() => {
     if (stats?.topProducts?.length) return stats.topProducts;

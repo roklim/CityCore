@@ -732,6 +732,12 @@ export default function AdminView() {
             updateSettingsForm={updateSettingsForm}
           />
         )}
+        {activeAdminSection === "businesses" && !isGlobalAdmin && (
+          <InlineNotice
+            title="Caricamento console business"
+            description="Stiamo verificando la sessione amministratore. Se non hai accesso globale, torna alla dashboard del locale."
+          />
+        )}
       </section>
 
       <Toast message={toast} />
