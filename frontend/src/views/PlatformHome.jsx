@@ -408,6 +408,7 @@ export default function PlatformHome({ mode }) {
         <GlobalAdminView
           businesses={filteredBusinesses}
           loading={loading}
+          onToast={setToast}
           platformStats={platformStats}
           search={search}
           setSearch={setSearch}
@@ -588,6 +589,7 @@ function PublicHero({
 function GlobalAdminView({
   businesses,
   loading,
+  onToast,
   platformStats,
   search,
   setSearch,
@@ -596,10 +598,16 @@ function GlobalAdminView({
 }) {
   return (
     <section className="cagli-admin-console">
-      <div className="cagli-admin-title">
-        <p>CONSOLE PIATTAFORMA</p>
-        <h1>Console globale</h1>
-        <span>Gestione attivita locali</span>
+      <div className="cagli-admin-overview">
+        <div className="cagli-admin-title">
+          <p>Console piattaforma</p>
+          <h1>Console globale</h1>
+          <span>Gestisci locali, immagini, menu e accessi da un unico punto.</span>
+        </div>
+        <div className="cagli-admin-quick-actions">
+          <a href="/admin/businesses?section=businesses">Aggiungi business</a>
+          <a href="/">Vedi directory</a>
+        </div>
       </div>
 
       <section className="cagli-admin-metrics">
@@ -611,8 +619,9 @@ function GlobalAdminView({
 
       <section className="cagli-admin-directory-head">
         <div>
-          <p>DIRECTORY</p>
-          <h2>Tutte le attivita</h2>
+          <p>Directory</p>
+          <h2>Tutti i locali</h2>
+          <span>{loading ? "Caricamento..." : `${businesses.length} risultati filtrati`}</span>
         </div>
         <div className="cagli-admin-tools">
           <input
@@ -630,7 +639,7 @@ function GlobalAdminView({
               </option>
             ))}
           </select>
-          <a href="/admin/businesses?section=businesses">+ Aggiungi business</a>
+          <a href="/admin/businesses?section=businesses">Nuovo locale</a>
         </div>
       </section>
 
@@ -641,7 +650,11 @@ function GlobalAdminView({
           <EmptyDirectory admin />
         ) : (
           businesses.map((business) => (
-            <AdminBusinessCard business={business} key={business._id || business.slug} />
+            <AdminBusinessCard
+              business={business}
+              key={business._id || business.slug}
+              onToast={onToast}
+            />
           ))
         )}
       </section>
@@ -762,25 +775,49 @@ function PublicBusinessCard({ business, index, search }) {
   );
 }
 
-function AdminBusinessCard({ business }) {
+function AdminBusinessCard({ business, onToast }) {
   const slug = business.slug || "";
   const name = businessName(business);
   const metrics = business.metrics || {};
   const status = statusLabel(business.subscriptionStatus);
+  const typeIcon = businessTypeIcon(business.type);
+  const coverUrl = businessCoverUrl(business);
+  const logoUrl = business.branding?.logoUrl || "";
+  const bucket = typeBucket(business.type);
+  const publicPath = `/${slug}`;
+  const adminPath = `/${slug}/admin`;
+  const logoPath = `/businesses/${slug}/logo.png`;
+  const coverPath = `/businesses/${slug}/cover.jpg`;
+
+  async function copyText(text, message) {
+    try {
+      await navigator.clipboard.writeText(text);
+      onToast?.(message);
+    } catch {
+      onToast?.("Non riesco a copiare automaticamente. Seleziona il testo manualmente.");
+    }
+  }
 
   return (
     <article className="cagli-admin-card">
-      <header>
+      <header
+        className={`cagli-card-media cagli-admin-card-media ${coverUrl ? "has-image" : ""} ${bucket}`}
+        style={coverUrl ? { backgroundImage: `url("${coverUrl}")` } : undefined}
+      >
         <BusinessLogo business={business} />
-        <div>
-          <span className="cagli-type-badge">{businessTypeLabel(business.type)}</span>
-          <h2>{name}</h2>
-          <p>/{slug}</p>
-        </div>
         <strong className={`cagli-status ${business.subscriptionStatus || "public"}`}>
           {status}
         </strong>
       </header>
+
+      <div className="cagli-admin-card-main">
+        <span className="cagli-type-badge">
+          <Icon name={typeIcon} />
+          {businessTypeLabel(business.type)}
+        </span>
+        <h2>{name}</h2>
+        <p>{publicPath}</p>
+      </div>
 
       <div className="cagli-admin-card-metrics">
         <span><small>Ordini</small><b>{metrics.orders || 0}</b></span>
@@ -792,14 +829,41 @@ function AdminBusinessCard({ business }) {
       <div className="cagli-admin-tags">
         <span>{business.plan || "free"}</span>
         <span>{business.subscriptionStatus || "public"}</span>
-        {business.owner?.email && <small>{business.owner.email}</small>}
+        <span>{logoUrl ? "Logo ok" : "Logo mancante"}</span>
+        <span>{coverUrl ? "Cover ok" : "Cover mancante"}</span>
+        {business.owner?.email && <small title={business.owner.email}>{business.owner.email}</small>}
       </div>
 
       <div className="cagli-admin-card-actions">
-        <a href={`/${slug}`}>Apri menu</a>
-        <a href={`/${slug}/admin`}>Apri admin</a>
-        <a href="/admin/businesses?section=businesses">Gestisci</a>
-        <a href="/admin/businesses?section=businesses">Utenti</a>
+        <a href={publicPath}>Pubblico</a>
+        <a href={adminPath}>Admin</a>
+        <a href="/admin/businesses?section=businesses">Modifica</a>
+        <button
+          type="button"
+          onClick={() =>
+            copyText(
+              `${window.location.origin}${publicPath}\n${window.location.origin}${adminPath}`,
+              `Link copiati per ${name}`,
+            )
+          }
+        >
+          Copia link
+        </button>
+      </div>
+
+      <div className="cagli-admin-asset-actions">
+        <button
+          type="button"
+          onClick={() => copyText(logoPath, `Percorso logo copiato per ${name}`)}
+        >
+          Copia logo
+        </button>
+        <button
+          type="button"
+          onClick={() => copyText(coverPath, `Percorso cover copiato per ${name}`)}
+        >
+          Copia cover
+        </button>
       </div>
     </article>
   );

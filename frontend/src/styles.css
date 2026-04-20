@@ -3833,11 +3833,19 @@ a:focus-visible {
 .cagli-owner-home {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 34px 0 70px;
+  padding: 30px 0 70px;
+}
+
+.cagli-admin-overview {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
 .cagli-admin-title {
-  margin-bottom: 20px;
+  min-width: 0;
 }
 
 .cagli-admin-title p,
@@ -3847,6 +3855,14 @@ a:focus-visible {
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.18em;
+}
+
+.cagli-admin-directory-head > div > span {
+  display: inline-flex;
+  margin-top: 6px;
+  color: var(--cagli-ash);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .cagli-admin-title h1,
@@ -3859,7 +3875,7 @@ a:focus-visible {
 }
 
 .cagli-admin-title h1 {
-  font-size: 28px;
+  font-size: 34px;
 }
 
 .cagli-admin-title span {
@@ -3867,24 +3883,53 @@ a:focus-visible {
   font-size: 13px;
 }
 
+.cagli-admin-quick-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cagli-admin-quick-actions a {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cagli-border);
+  border-radius: 8px;
+  padding: 0 13px;
+  color: var(--cagli-char);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.cagli-admin-quick-actions a:first-child {
+  border-color: var(--cagli-basil);
+  background: var(--cagli-basil);
+  color: #fff;
+}
+
 .cagli-admin-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .cagli-admin-metrics article {
   display: grid;
   gap: 8px;
   padding: 16px;
-  border-radius: 10px;
-  background: var(--cagli-sand);
-  transition: transform 150ms ease;
+  border: 1px solid var(--cagli-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 2px 10px rgba(28, 28, 26, 0.04);
+  transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
 .cagli-admin-metrics article:hover {
   transform: scale(1.01);
+  box-shadow: 0 10px 24px rgba(28, 28, 26, 0.08);
 }
 
 .cagli-admin-metrics span {
@@ -3920,7 +3965,7 @@ a:focus-visible {
 
 .cagli-admin-tools {
   display: grid;
-  grid-template-columns: 280px 140px auto;
+  grid-template-columns: minmax(240px, 300px) 140px auto;
   gap: 10px;
 }
 
@@ -3955,28 +4000,30 @@ a:focus-visible {
 }
 
 .cagli-admin-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .cagli-admin-card {
   display: grid;
-  gap: 16px;
-  padding: 20px;
+  grid-template-rows: auto auto auto auto auto;
+  gap: 14px;
+  padding: 12px;
   border: 1px solid var(--cagli-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--cagli-white);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 10px rgba(28, 28, 26, 0.04);
   transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 
 .cagli-admin-card header {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
-  align-items: start;
 }
 
 .cagli-admin-card h2 {
+  margin: 8px 0 4px;
   font-size: 18px;
 }
 
@@ -3986,15 +4033,33 @@ a:focus-visible {
   font-size: 12px;
 }
 
+.cagli-admin-card-main {
+  padding: 0 6px;
+}
+
+.cagli-admin-card-media {
+  min-height: 118px;
+}
+
+.cagli-admin-card-media .cagli-status {
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 20px rgba(28, 28, 26, 0.08);
+}
+
 .cagli-admin-card-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
+  padding: 0 6px;
 }
 
 .cagli-admin-card-metrics span {
   display: grid;
   gap: 4px;
+  border: 1px solid var(--cagli-border);
+  border-radius: 8px;
+  padding: 9px;
+  background: rgba(250, 248, 241, 0.72);
 }
 
 .cagli-admin-card-metrics small {
@@ -4012,6 +4077,7 @@ a:focus-visible {
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+  padding: 0 6px;
 }
 
 .cagli-admin-tags span,
@@ -4035,28 +4101,60 @@ a:focus-visible {
   opacity: 1;
 }
 
-.cagli-admin-card-actions {
+.cagli-admin-card-actions,
+.cagli-admin-asset-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  padding: 0 6px;
 }
 
-.cagli-admin-card-actions a {
+.cagli-admin-asset-actions {
+  padding-bottom: 4px;
+}
+
+.cagli-admin-card-actions a,
+.cagli-admin-card-actions button,
+.cagli-admin-asset-actions button {
   min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--cagli-border);
   border-radius: 8px;
+  background: transparent;
   color: var(--cagli-char);
   font-weight: 900;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .cagli-admin-card-actions a:nth-child(2) {
   border-color: var(--cagli-tomato);
   background: var(--cagli-tomato);
   color: #fff;
+}
+
+.cagli-admin-card-actions a:hover,
+.cagli-admin-card-actions button:hover,
+.cagli-admin-asset-actions button:hover,
+.cagli-admin-card-actions a:focus-visible,
+.cagli-admin-card-actions button:focus-visible,
+.cagli-admin-asset-actions button:focus-visible {
+  border-color: var(--cagli-basil-lt);
+  color: var(--cagli-basil);
+  outline: 0;
+}
+
+.cagli-admin-card-actions a:nth-child(2):hover,
+.cagli-admin-card-actions a:nth-child(2):focus-visible {
+  color: #fff;
+}
+
+.cagli-admin-asset-actions button {
+  min-height: 34px;
+  color: var(--cagli-ash);
+  font-size: 12px;
 }
 
 .cagli-owner-header,
@@ -5091,6 +5189,26 @@ a:focus-visible {
     flex-direction: column;
   }
 
+  .cagli-admin-overview,
+  .cagli-admin-directory-head {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .cagli-admin-quick-actions,
+  .cagli-admin-tools {
+    justify-content: stretch;
+  }
+
+  .cagli-admin-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .cagli-admin-quick-actions a {
+    flex: 1 1 160px;
+  }
+
   .cagli-public-grid,
   .cagli-admin-grid,
   .cagli-admin-metrics,
@@ -5118,12 +5236,12 @@ a:focus-visible {
     grid-column: auto;
   }
 
-  .cagli-admin-card header,
   .cagli-owner-hero-card {
     grid-template-columns: 1fr;
   }
 
-  .cagli-admin-card-actions {
+  .cagli-admin-card-actions,
+  .cagli-admin-asset-actions {
     grid-template-columns: 1fr;
   }
 
