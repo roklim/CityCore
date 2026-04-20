@@ -533,12 +533,23 @@
   display: flex;
   justify-content: flex-start;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
   margin-top: 0;
 }
 
+.cagli-filter-pills::-webkit-scrollbar {
+  display: none;
+}
+
+/* DOPO */
 .cagli-filter-pills button {
   min-height: 38px;
+  min-width: max-content;
   display: inline-flex;
   align-items: center;
   gap: 7px;
