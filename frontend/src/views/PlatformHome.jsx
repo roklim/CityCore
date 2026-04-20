@@ -10,11 +10,11 @@ import EmptyState from "../components/ui/EmptyState";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 
 const PUBLIC_TYPE_FILTERS = [
-  { id: "all", label: "Tutti" },
-  { id: "pizzeria", label: "Pizzeria" },
-  { id: "sushi", label: "Sushi" },
-  { id: "bar", label: "Bar" },
-  { id: "other", label: "Altro" },
+  { id: "all", label: "Tutti", icon: "grid" },
+  { id: "pizzeria", label: "Pizzeria", icon: "slice" },
+  { id: "sushi", label: "Sushi", icon: "roll" },
+  { id: "bar", label: "Bar", icon: "cup" },
+  { id: "other", label: "Altro", icon: "tag" },
 ];
 
 const QUICK_ACTIONS = [
@@ -58,6 +58,13 @@ function businessTypeLabel(type = "") {
   return labels[type] || "Altro";
 }
 
+function businessTypeIcon(type = "") {
+  if (type === "pizzeria") return "slice";
+  if (type === "sushi") return "roll";
+  if (type === "bar") return "cup";
+  return "tag";
+}
+
 function typeBucket(type = "") {
   if (["pizzeria", "sushi", "bar"].includes(type)) return type;
   return "other";
@@ -73,6 +80,17 @@ function statusLabel(status = "") {
 
 function isBusinessActive(business) {
   return business.subscriptionStatus !== "cancelled";
+}
+
+function hasMenuReady(business) {
+  if (!business?.metrics) return true;
+  const metrics = business.metrics;
+  return Boolean(
+    metrics.products ||
+      metrics.availableProducts ||
+      metrics.menuItems ||
+      metrics.activeProducts,
+  );
 }
 
 function readRouteMode(mode) {
@@ -104,6 +122,82 @@ function BusinessLogo({ business, size = "md" }) {
     <span className={`cagli-business-logo ${size}`} style={{ background: color }}>
       {logoUrl ? <img src={logoUrl} alt="" loading="lazy" /> : businessInitials(name)}
     </span>
+  );
+}
+
+function Icon({ name }) {
+  const common = {
+    "aria-hidden": "true",
+    viewBox: "0 0 24 24",
+    focusable: "false",
+  };
+
+  if (name === "user") {
+    return (
+      <svg {...common}>
+        <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+      </svg>
+    );
+  }
+
+  if (name === "search") {
+    return (
+      <svg {...common}>
+        <circle cx="11" cy="11" r="6" />
+        <path d="m16 16 4 4" />
+      </svg>
+    );
+  }
+
+  if (name === "clock") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    );
+  }
+
+  if (name === "slice") {
+    return (
+      <svg {...common}>
+        <path d="M5 20 19 4l-3 16H5Z" />
+        <path d="M9 16h.01M13 11h.01" />
+      </svg>
+    );
+  }
+
+  if (name === "roll") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="7" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+
+  if (name === "cup") {
+    return (
+      <svg {...common}>
+        <path d="M7 8h9v6a4 4 0 0 1-4 4h-1a4 4 0 0 1-4-4V8Z" />
+        <path d="M16 10h2a2 2 0 0 1 0 4h-2M7 5h9" />
+      </svg>
+    );
+  }
+
+  if (name === "grid") {
+    return (
+      <svg {...common}>
+        <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M5 7h14M7 12h10M9 17h6" />
+    </svg>
   );
 }
 
@@ -342,7 +436,7 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
     <header className={`cagli-header ${isGlobalAdmin ? "admin" : ""}`}>
       <a className="cagli-brand" href="/">
         <strong>Cagli Local</strong>
-        <span>Scopri le attivita locali di Cagli</span>
+        <span>Scopri le attività locali di Cagli</span>
       </a>
       <nav>
         {isGlobalAdmin && (
@@ -357,8 +451,14 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
             Esci
           </button>
         ) : (
-          <button className="cagli-outline-button" type="button" onClick={onLogin}>
-            Accedi
+          <button
+            className="cagli-manager-button"
+            type="button"
+            onClick={onLogin}
+            aria-label="Area gestori"
+            title="Area gestori"
+          >
+            <Icon name="user" />
           </button>
         )}
       </nav>
@@ -381,30 +481,32 @@ function PublicHero({
       <section className="cagli-public-hero">
         <div className="cagli-hero-copy">
           <span className="cagli-hero-kicker">Cagli Local</span>
-          <h1>Menu e ordini dei locali di Cagli, in un unico posto.</h1>
+          <h1>Scegli un locale, ordina e ritira a Cagli.</h1>
           <p>
-            Scopri pizzerie, sushi bar e attivita del quartiere. Apri il menu,
-            scegli cosa vuoi e ordina direttamente dal locale.
+            Trova pizzerie, sushi bar e attività del quartiere. Apri il locale,
+            scegli dal menu e prepara il ritiro senza installare app.
           </p>
-          <div className="cagli-hero-stats" aria-label="Riepilogo attivita">
+          <div className="cagli-hero-stats" aria-label="Riepilogo attività">
             <span>
               <strong>{visibleCount}</strong>
-              locali visibili
+              locali
             </span>
             <span>
               <strong>24/7</strong>
-              menu consultabili
+              menu online
             </span>
             <span>
               <strong>0</strong>
-              app da installare
+              download
             </span>
           </div>
         </div>
 
         <div className="cagli-hero-search-card">
           <label className="cagli-search">
-            <span aria-hidden="true">Cerca</span>
+            <span aria-hidden="true">
+              <Icon name="search" />
+            </span>
             <input
               placeholder="Cerca pizzeria, sushi, bar..."
               value={search}
@@ -419,6 +521,7 @@ function PublicHero({
                 type="button"
                 onClick={() => setTypeFilter(filter.id)}
               >
+                <Icon name={filter.icon} />
                 {filter.label}
               </button>
             ))}
@@ -428,8 +531,8 @@ function PublicHero({
 
       <section className="cagli-directory-title">
         <div>
-          <p>Directory</p>
-          <h2>Attivita disponibili</h2>
+          <p>Locali</p>
+          <h2>Scegli un locale</h2>
         </div>
         <span>{loading ? "Caricamento..." : `${visibleCount} risultati`}</span>
       </section>
@@ -585,9 +688,11 @@ function PublicBusinessCard({ business, index, search }) {
   const name = businessName(business);
   const active = isBusinessActive(business);
   const typeLabel = businessTypeLabel(business.type);
+  const typeIcon = businessTypeIcon(business.type);
+  const menuReady = hasMenuReady(business);
   const description =
     business.settings?.publicMessage ||
-    business.settings?.openingHours ||
+    (menuReady ? business.settings?.openingHours : "Menu in preparazione") ||
     "Scopri il menu e ordina dal locale.";
   const openingHours = business.settings?.openingHours || "Orari da verificare";
 
@@ -597,19 +702,27 @@ function PublicBusinessCard({ business, index, search }) {
       href={active ? `/${slug}` : undefined}
       style={{ animationDelay: `${250 + index * 60}ms` }}
       aria-disabled={!active}
+      aria-label={`${active ? "Apri" : "Non disponibile"} ${name}`}
     >
       <header>
         <BusinessLogo business={business} />
-        <span className="cagli-type-badge">
-          {active ? typeLabel : "Temporaneamente chiuso"}
-        </span>
+        <span className="cagli-open-arrow" aria-hidden="true">-&gt;</span>
       </header>
       <div>
+        <span className="cagli-type-badge">
+          <Icon name={typeIcon} />
+          {active ? typeLabel : "Temporaneamente chiuso"}
+        </span>
         <h2><Highlight text={name} search={search} /></h2>
         <p>{description}</p>
-        <small>{openingHours}</small>
+        <small>
+          <Icon name="clock" />
+          {openingHours}
+        </small>
       </div>
-      <strong>{active ? "Apri menu ->" : "Non disponibile"}</strong>
+      <strong className={menuReady ? "ready" : "soon"}>
+        {menuReady ? "Menu disponibile" : "Disponibile a breve"}
+      </strong>
     </a>
   );
 }
@@ -715,7 +828,9 @@ function CagliFooter({ onLogin }) {
   return (
     <footer className="cagli-footer">
       <span>Cagli Local - 2026</span>
-      <button type="button" onClick={onLogin}>Accedi come gestore</button>
+      <button type="button" onClick={onLogin}>
+        Area gestori
+      </button>
     </footer>
   );
 }
