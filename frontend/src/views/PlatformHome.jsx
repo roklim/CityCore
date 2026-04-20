@@ -20,12 +20,31 @@ const PUBLIC_TYPE_FILTERS = [
   { id: "report", label: "Segnalazioni", icon: "alert" },
 ];
 
+const SECTION_LABELS = {
+  all: "Tutte le attività",
+  food: "Ristoranti e pizzerie",
+  bar: "Bar e locali",
+  rental: "Noleggi",
+  shop: "Negozi",
+  service: "Servizi",
+  event: "Eventi",
+  report: "Segnalazioni",
+};
+
+const EMPTY_MESSAGES = {
+  event: "Nessun evento in programma al momento.",
+  report: "Nessuna segnalazione attiva.",
+  rental: "Nessun noleggio disponibile.",
+};
+
 const QUICK_ACTIONS = [
   { label: "Gestisci menu", icon: "M", href: "menu" },
   { label: "Vedi ordini", icon: "O", href: "orders" },
   { label: "Configura fasce", icon: "D", href: "availability" },
   { label: "Vedi clienti", icon: "C", href: "customers" },
 ];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function readAdminSession() {
   try {
@@ -49,7 +68,7 @@ function businessInitials(name = "") {
   if (parts.length === 0) return "C";
   return parts
     .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
+    .map((p) => p[0].toUpperCase())
     .join("");
 }
 
@@ -117,7 +136,7 @@ function isBusinessActive(business) {
 
 function hasMenuReady(business) {
   if (!business?.metrics) return true;
-  const metrics = business.metrics;
+  const { metrics } = business;
   return Boolean(
     metrics.products ||
     metrics.availableProducts ||
@@ -126,10 +145,20 @@ function hasMenuReady(business) {
   );
 }
 
+function cardFooterLabel(type, menuReady) {
+  if (type === "event") return "Vedi dettagli";
+  if (type === "report") return "Vedi segnalazione";
+  if (type === "rental" || type === "bike_rental")
+    return "Controlla disponibilità";
+  return menuReady ? "Menu disponibile" : "Disponibile a breve";
+}
+
 function readRouteMode(mode) {
   if (mode) return mode;
   return window.location.pathname === "/admin" ? "admin" : "home";
 }
+
+// ── Highlight ─────────────────────────────────────────────────────────────────
 
 function Highlight({ text, search }) {
   const value = String(text || "");
@@ -145,6 +174,8 @@ function Highlight({ text, search }) {
     </>
   );
 }
+
+// ── BusinessLogo ──────────────────────────────────────────────────────────────
 
 function BusinessLogo({ business, size = "md" }) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -172,126 +203,94 @@ function BusinessLogo({ business, size = "md" }) {
   );
 }
 
-function Icon({ name }) {
-  const common = {
-    "aria-hidden": "true",
-    viewBox: "0 0 24 24",
-    focusable: "false",
-  };
+// ── Icon ──────────────────────────────────────────────────────────────────────
 
-  if (name === "user") {
+function Icon({ name }) {
+  const p = { "aria-hidden": "true", viewBox: "0 0 24 24", focusable: "false" };
+  if (name === "user")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
         <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
       </svg>
     );
-  }
-
-  if (name === "search") {
+  if (name === "search")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <circle cx="11" cy="11" r="6" />
         <path d="m16 16 4 4" />
       </svg>
     );
-  }
-
-  if (name === "clock") {
+  if (name === "clock")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <circle cx="12" cy="12" r="8" />
         <path d="M12 7v5l3 2" />
       </svg>
     );
-  }
-
-  if (name === "slice") {
+  if (name === "slice")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <path d="M5 20 19 4l-3 16H5Z" />
         <path d="M9 16h.01M13 11h.01" />
       </svg>
     );
-  }
-
-  if (name === "roll") {
+  if (name === "cup")
     return (
-      <svg {...common}>
-        <circle cx="12" cy="12" r="7" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    );
-  }
-
-  if (name === "cup") {
-    return (
-      <svg {...common}>
+      <svg {...p}>
         <path d="M7 8h9v6a4 4 0 0 1-4 4h-1a4 4 0 0 1-4-4V8Z" />
         <path d="M16 10h2a2 2 0 0 1 0 4h-2M7 5h9" />
       </svg>
     );
-  }
-
-  if (name === "grid") {
+  if (name === "grid")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z" />
       </svg>
     );
-  }
-
-  if (name === "bike") {
+  if (name === "bike")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <circle cx="5.5" cy="17.5" r="3.5" />
         <circle cx="18.5" cy="17.5" r="3.5" />
         <path d="M15 6h-3l-3 7h8l-2-7zM5.5 17.5l4.5-7" />
       </svg>
     );
-  }
-
-  if (name === "bag") {
+  if (name === "bag")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <path d="M6 2 3 6v14h18V6l-3-4z" />
         <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
       </svg>
     );
-  }
-
-  if (name === "wrench") {
+  if (name === "wrench")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
       </svg>
     );
-  }
-
-  if (name === "calendar") {
+  if (name === "calendar")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <rect x="3" y="4" width="18" height="18" rx="2" />
         <path d="M16 2v4M8 2v4M3 10h18" />
       </svg>
     );
-  }
-
-  if (name === "alert") {
+  if (name === "alert")
     return (
-      <svg {...common}>
+      <svg {...p}>
         <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
         <path d="M12 9v4M12 17h.01" />
       </svg>
     );
-  }
-
   return (
-    <svg {...common}>
+    <svg {...p}>
       <path d="M5 7h14M7 12h10M9 17h6" />
     </svg>
   );
 }
+
+// ── PlatformHome (root) ───────────────────────────────────────────────────────
 
 export default function PlatformHome({ mode }) {
   const routeMode = readRouteMode(mode);
@@ -310,6 +309,7 @@ export default function PlatformHome({ mode }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [toast, setToast] = useState("");
+
   const isGlobalAdmin = session.role === "global_admin";
   const isBusinessUser =
     session.role && ["owner", "admin", "staff"].includes(session.role);
@@ -317,13 +317,11 @@ export default function PlatformHome({ mode }) {
 
   useEffect(() => {
     let cancelled = false;
-
     async function loadDirectory() {
       setLoading(true);
       try {
         const publicList = await getPublicBusinesses();
         if (!cancelled) setPublicBusinesses(publicList);
-
         if (session.token && isGlobalAdmin) {
           const platformList = await getPlatformBusinesses(session.token);
           if (!cancelled) setPlatformBusinesses(platformList);
@@ -336,7 +334,6 @@ export default function PlatformHome({ mode }) {
         if (!cancelled) setLoading(false);
       }
     }
-
     loadDirectory();
     return () => {
       cancelled = true;
@@ -372,39 +369,34 @@ export default function PlatformHome({ mode }) {
         business.owner?.email,
       ]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(needle));
+        .some((v) => String(v).toLowerCase().includes(needle));
     });
   }, [businesses, search, typeFilter]);
 
   const platformStats = useMemo(() => {
     return platformBusinesses.reduce(
-      (totals, business) => {
-        totals.businesses += 1;
-        totals.orders += business.metrics?.orders || 0;
-        totals.revenue += business.metrics?.revenue || 0;
-        if (business.subscriptionStatus === "active") totals.active += 1;
-        return totals;
+      (t, b) => {
+        t.businesses += 1;
+        t.orders += b.metrics?.orders || 0;
+        t.revenue += b.metrics?.revenue || 0;
+        if (b.subscriptionStatus === "active") t.active += 1;
+        return t;
       },
       { businesses: 0, active: 0, orders: 0, revenue: 0 },
     );
   }, [platformBusinesses]);
 
-  // ── MODIFICA 5: calcolo heroStats da dati reali ──────────────────────────
-  const heroStats = useMemo(() => {
-    const openNow = businesses.filter(
-      (b) => b.isOpen || b.settings?.isOpen,
-    ).length;
-    const rentals = businesses.filter((b) => b.type === "bike_rental").length;
-    return { openNow, rentals };
-  }, [businesses]);
-  // ────────────────────────────────────────────────────────────────────────
+  const heroStats = useMemo(
+    () => ({
+      openNow: businesses.filter((b) => b.isOpen || b.settings?.isOpen).length,
+      rentals: businesses.filter((b) => b.type === "bike_rental").length,
+    }),
+    [businesses],
+  );
 
   const ownerBusiness = useMemo(() => {
     if (!isBusinessUser || !ownSlug) return null;
-    return (
-      businesses.find((business) => business.slug === ownSlug) ||
-      session.business
-    );
+    return businesses.find((b) => b.slug === ownSlug) || session.business;
   }, [businesses, isBusinessUser, ownSlug, session.business]);
 
   useEffect(() => {
@@ -412,17 +404,14 @@ export default function PlatformHome({ mode }) {
       document.title = "Console piattaforma - Cagli Local";
       return;
     }
-
     if (isBusinessUser && ownerBusiness) {
       document.title = `${businessName(ownerBusiness)} - Area gestione`;
       return;
     }
-
     if (routeMode === "admin") {
       document.title = "Area gestori - Cagli Local";
       return;
     }
-
     document.title = "Cagli Local - Attività locali";
   }, [isBusinessUser, isGlobalAdmin, ownerBusiness, routeMode]);
 
@@ -438,7 +427,6 @@ export default function PlatformHome({ mode }) {
         user: data.user,
         business: data.business,
       };
-
       localStorage.setItem("admin_token", data.token);
       localStorage.setItem(
         "admin_session",
@@ -448,10 +436,8 @@ export default function PlatformHome({ mode }) {
           business: data.business,
         }),
       );
-
       setSession(nextSession);
       setLoginOpen(false);
-
       if (data.role !== "global_admin" && data.business?.slug) {
         window.location.replace(`/${data.business.slug}/admin`);
       }
@@ -544,6 +530,8 @@ export default function PlatformHome({ mode }) {
   );
 }
 
+// ── CagliHeader ───────────────────────────────────────────────────────────────
+
 function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
   return (
     <header className={`cagli-header ${isGlobalAdmin ? "admin" : ""}`}>
@@ -585,7 +573,8 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
   );
 }
 
-// ── MODIFICA 5: firma aggiornata con heroStats, stats calcolate da businesses ──
+// ── PublicHero ────────────────────────────────────────────────────────────────
+
 function PublicHero({
   businesses,
   heroStats = {},
@@ -599,33 +588,30 @@ function PublicHero({
   const totalActive = businesses.filter((b) => isBusinessActive(b)).length;
   const events = businesses.filter((b) => b.type === "event").length;
   const visibleCount = businesses.length;
+  const sectionLabel = SECTION_LABELS[typeFilter] || "Tutte le attività";
 
   return (
     <>
       <section className="cagli-public-hero">
         <div className="cagli-hero-copy">
           <span className="cagli-hero-kicker">Cagli Local</span>
-          <h1>Scegli un locale, ordina e ritira a Cagli.</h1>
+          <h1>Cagli a portata di mano.</h1>
           <p>
-            Trova pizzerie, sushi bar e attività del quartiere. Apri il locale,
-            scegli dal menu e prepara il ritiro senza installare app.
+            Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota e
+            scopri cosa succede in città.
           </p>
           <div className="cagli-hero-stats" aria-label="Riepilogo attività">
             <span>
-              <strong>{totalActive}</strong>
-              attività attive
+              <strong>{totalActive}</strong>attività attive
             </span>
             <span>
-              <strong>{openNow}</strong>
-              aperti ora
+              <strong>{openNow}</strong>aperti ora
             </span>
             <span>
-              <strong>{events}</strong>
-              eventi
+              <strong>{events}</strong>eventi
             </span>
             <span>
-              <strong>{rentals}</strong>
-              noleggi
+              <strong>{rentals}</strong>noleggi
             </span>
           </div>
         </div>
@@ -636,9 +622,9 @@ function PublicHero({
               <Icon name="search" />
             </span>
             <input
-              placeholder="Cerca pizzeria, sushi, bar..."
+              placeholder="Cerca un locale, evento, noleggio..."
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </label>
           <div className="cagli-filter-pills">
@@ -658,10 +644,7 @@ function PublicHero({
       </section>
 
       <section className="cagli-directory-title">
-        <div>
-          <p>Locali</p>
-          <h2>Scegli un locale</h2>
-        </div>
+        <h2>{sectionLabel}</h2>
         <span>{loading ? "Caricamento..." : `${visibleCount} risultati`}</span>
       </section>
 
@@ -669,7 +652,7 @@ function PublicHero({
         {loading ? (
           <SkeletonCards />
         ) : businesses.length === 0 ? (
-          <EmptyDirectory />
+          <EmptyDirectory typeFilter={typeFilter} />
         ) : (
           businesses.map((business, index) => (
             <PublicBusinessCard
@@ -684,7 +667,8 @@ function PublicHero({
     </>
   );
 }
-// ────────────────────────────────────────────────────────────────────────────
+
+// ── GlobalAdminView ───────────────────────────────────────────────────────────
 
 function GlobalAdminView({
   businesses,
@@ -741,15 +725,15 @@ function GlobalAdminView({
           <input
             placeholder="Cerca nome, slug o owner"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
           <select
             value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value)}
+            onChange={(e) => setTypeFilter(e.target.value)}
           >
-            {PUBLIC_TYPE_FILTERS.map((filter) => (
-              <option value={filter.id} key={filter.id}>
-                {filter.label}
+            {PUBLIC_TYPE_FILTERS.map((f) => (
+              <option value={f.id} key={f.id}>
+                {f.label}
               </option>
             ))}
           </select>
@@ -761,7 +745,7 @@ function GlobalAdminView({
         {loading ? (
           <SkeletonCards admin />
         ) : businesses.length === 0 ? (
-          <EmptyDirectory admin />
+          <EmptyDirectory typeFilter={typeFilter} />
         ) : (
           businesses.map((business) => (
             <AdminBusinessCard
@@ -775,6 +759,8 @@ function GlobalAdminView({
     </section>
   );
 }
+
+// ── OwnerHome ─────────────────────────────────────────────────────────────────
 
 function OwnerHome({ business, user }) {
   const slug = business.slug || "";
@@ -842,6 +828,8 @@ function OwnerHome({ business, user }) {
   );
 }
 
+// ── MetricCard ────────────────────────────────────────────────────────────────
+
 function MetricCard({ icon, label, value }) {
   return (
     <article>
@@ -852,6 +840,8 @@ function MetricCard({ icon, label, value }) {
   );
 }
 
+// ── PublicBusinessCard ────────────────────────────────────────────────────────
+
 function PublicBusinessCard({ business, index, search }) {
   const slug = business.slug || "";
   const name = businessName(business);
@@ -861,10 +851,11 @@ function PublicBusinessCard({ business, index, search }) {
   const coverUrl = businessCoverUrl(business);
   const bucket = typeBucket(business.type);
   const menuReady = hasMenuReady(business);
+  const footerLabel = cardFooterLabel(business.type, menuReady);
   const description =
     business.settings?.publicMessage ||
-    (menuReady ? business.settings?.openingHours : "Menu in preparazione") ||
-    "Scopri il menu e ordina dal locale.";
+    (menuReady ? business.settings?.openingHours : "In preparazione") ||
+    "Scopri le offerte e prenota.";
   const openingHours = business.settings?.openingHours || "Orari da verificare";
 
   return (
@@ -898,12 +889,12 @@ function PublicBusinessCard({ business, index, search }) {
           {openingHours}
         </small>
       </div>
-      <strong className={menuReady ? "ready" : "soon"}>
-        {menuReady ? "Menu disponibile" : "Disponibile a breve"}
-      </strong>
+      <strong className={menuReady ? "ready" : "soon"}>{footerLabel}</strong>
     </a>
   );
 }
+
+// ── AdminBusinessCard ─────────────────────────────────────────────────────────
 
 function AdminBusinessCard({ business, onToast }) {
   const slug = business.slug || "";
@@ -1021,6 +1012,8 @@ function AdminBusinessCard({ business, onToast }) {
   );
 }
 
+// ── LoginModal ────────────────────────────────────────────────────────────────
+
 function LoginModal({
   error,
   loading,
@@ -1037,7 +1030,7 @@ function LoginModal({
     <div className="cagli-login-overlay" onMouseDown={onClose}>
       <section
         className="cagli-login-modal"
-        onMouseDown={(event) => event.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <button className="cagli-modal-close" type="button" onClick={onClose}>
           x
@@ -1051,7 +1044,7 @@ function LoginModal({
             <input
               autoComplete="username"
               value={username}
-              onChange={(event) => setUsername(event.target.value)}
+              onChange={(e) => setUsername(e.target.value)}
             />
           </label>
           <label>
@@ -1061,12 +1054,9 @@ function LoginModal({
                 autoComplete="current-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((value) => !value)}
-              >
+              <button type="button" onClick={() => setShowPassword((v) => !v)}>
                 {showPassword ? "Nascondi" : "Mostra"}
               </button>
             </div>
@@ -1081,6 +1071,8 @@ function LoginModal({
   );
 }
 
+// ── CagliFooter ───────────────────────────────────────────────────────────────
+
 function CagliFooter({ onLogin }) {
   return (
     <footer className="cagli-footer">
@@ -1092,15 +1084,17 @@ function CagliFooter({ onLogin }) {
   );
 }
 
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
 function SkeletonCards({ admin = false }) {
   return <LoadingSkeleton variant="card" count={admin ? 8 : 6} />;
 }
 
-function EmptyDirectory() {
+function EmptyDirectory({ typeFilter = "all" }) {
+  const description =
+    EMPTY_MESSAGES[typeFilter] ||
+    "Prova con un altro termine o cambia categoria.";
   return (
-    <EmptyState
-      title="Nessuna attivita trovata"
-      description="Prova con un altro termine o cambia categoria."
-    />
+    <EmptyState title="Nessuna attività trovata" description={description} />
   );
 }
