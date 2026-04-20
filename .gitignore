@@ -7,3 +7,5 @@ frontend/dist/
 backend/.env
 .vercel/
 *.log
+
+.vercel

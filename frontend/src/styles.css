@@ -56,6 +56,47 @@ body.drawer-open {
   overflow: hidden;
 }
 
+.app-error-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.app-error-card {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 250, 241, 0.96);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.app-error-card h1 {
+  margin: 0;
+  font-family: "Playfair Display", serif;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.app-error-card p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+}
+
+.app-error-card button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--mg-basil);
+  color: white;
+  font-weight: 900;
+  padding: 0 16px;
+}
+
 button,
 input,
 select,
