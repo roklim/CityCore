@@ -768,7 +768,7 @@
 }
 
 .cagli-card-media {
-  min-height: 118px;
+  min-height: 140px;
   position: relative;
   overflow: hidden;
   border-radius: 10px;
@@ -1004,7 +1004,34 @@
   width: 14px;
   height: 14px;
 }
+/* Riga badge: tipo + aperto/chiuso affiancati */
+.cagli-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
+/* Badge aperto/chiuso */
+.cagli-open-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.cagli-open-badge.open {
+  background: rgba(44, 95, 46, 0.1);
+  color: var(--cagli-basil);
+}
+
+.cagli-open-badge.closed {
+  background: rgba(184, 50, 40, 0.08);
+  color: var(--cagli-tomato);
+}
 .cagli-status.trialing {
   background: #faeeda;
   color: #633806;

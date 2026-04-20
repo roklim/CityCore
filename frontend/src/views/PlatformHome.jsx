@@ -863,10 +863,8 @@ function PublicBusinessCard({ business, index, search }) {
   const bucket = typeBucket(business.type);
   const menuReady = hasMenuReady(business);
   const footerLabel = cardFooterLabel(business.type, menuReady);
-  const description =
-    business.settings?.publicMessage ||
-    (menuReady ? business.settings?.openingHours : "In preparazione") ||
-    "Scopri le offerte e prenota.";
+  const description = business.settings?.publicMessage || "";
+  const isOpen = business.isOpen || business.settings?.isOpen;
   const openingHours = business.settings?.openingHours || "Orari da verificare";
 
   return (
@@ -887,14 +885,21 @@ function PublicBusinessCard({ business, index, search }) {
         </span>
       </header>
       <div>
-        <span className="cagli-type-badge">
-          <Icon name={typeIcon} />
-          {active ? typeLabel : "Temporaneamente chiuso"}
-        </span>
+        <div className="cagli-card-badges">
+          <span className="cagli-type-badge">
+            <Icon name={typeIcon} />
+            {active ? typeLabel : "Temporaneamente chiuso"}
+          </span>
+          {active && (
+            <span className={`cagli-open-badge ${isOpen ? "open" : "closed"}`}>
+              {isOpen ? "Aperto" : "Chiuso"}
+            </span>
+          )}
+        </div>
         <h2>
           <Highlight text={name} search={search} />
         </h2>
-        <p>{description}</p>
+        {description && <p>{description}</p>}
         <small>
           <Icon name="clock" />
           {openingHours}
