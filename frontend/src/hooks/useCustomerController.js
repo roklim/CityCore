@@ -408,10 +408,11 @@ export default function useCustomerController() {
     event.preventDefault();
 
     if (!customer.trim()) return notify("Inserisci il tuo nome.");
+    if (!phone.trim()) return notify("Inserisci il tuo numero di telefono.");
     if (cart.length === 0) return notify("Aggiungi almeno un prodotto.");
     if (!selectedSlot) return notify("Scegli un orario di ritiro.");
 
-    const slot = availability.slots.find(
+    const slot = availability?.slots?.find(
       (item) => item.pickupSlot === selectedSlot,
     );
     if (!slot || slot.full || slot.past) {
@@ -491,6 +492,7 @@ export default function useCustomerController() {
     getCartItem,
     loadPublicData,
     loading,
+    menu,
     loyaltyCyclePoints,
     loyaltyPoints,
     loyaltyRemaining,

@@ -327,7 +327,7 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
   return (
     <header className={`cagli-header ${isGlobalAdmin ? "admin" : ""}`}>
       <a className="cagli-brand" href="/">
-        <strong>Cagli</strong>
+        <strong>Cagli Local</strong>
         <span>Scopri le attivita locali di Cagli</span>
       </a>
       <nav>
@@ -452,9 +452,9 @@ function GlobalAdminView({
   return (
     <section className="cagli-admin-console">
       <div className="cagli-admin-title">
-        <p>CAGLI PLATFORM</p>
+        <p>CONSOLE PIATTAFORMA</p>
         <h1>Console globale</h1>
-        <span>Platform / Tutte le attivita</span>
+        <span>Gestione attivita locali</span>
       </div>
 
       <section className="cagli-admin-metrics">
@@ -540,7 +540,7 @@ function OwnerHome({ business, user }) {
           <span><b>{metrics.availableProducts || 0}</b>Prodotti attivi</span>
           <span><b>{metrics.customers || 0}</b>Clienti</span>
         </div>
-        <a href={`/${slug}/admin`}>Vai all'admin</a>
+        <a href={`/${slug}/admin`}>Vai all'area gestione</a>
       </article>
 
       <section className="cagli-owner-quick-grid">
@@ -691,7 +691,6 @@ function LoginModal({
           <button type="submit" disabled={loading}>
             {loading ? "Accesso..." : "Accedi"}
           </button>
-          <a href="/admin">Password dimenticata?</a>
         </form>
       </section>
     </div>
@@ -701,7 +700,7 @@ function LoginModal({
 function CagliFooter({ onLogin }) {
   return (
     <footer className="cagli-footer">
-      <span>Cagli Platform - 2026</span>
+      <span>Cagli Local - 2026</span>
       <button type="button" onClick={onLogin}>Accedi come gestore</button>
     </footer>
   );

@@ -79,21 +79,28 @@ export default function AdminDashboardSection({
           <h2>Fasce orarie</h2>
         </div>
         <div className="capacity-strip compact">
-          {(availability?.slots || []).map((slot) => (
-            <div
-              className={[
-                "capacity-pill",
-                slot.full ? "full" : "",
-                slot.almostFull ? "almost" : "",
-              ].join(" ")}
-              key={slot.pickupSlot}
-            >
-              <strong>{slot.time}</strong>
-              <span>
-                {slot.count}/{availability.maxOrdersPerSlot}
-              </span>
-            </div>
-          ))}
+          {(availability?.slots || []).length === 0 ? (
+            <InlineNotice
+              title="Fasce non configurate"
+              description="Imposta giorni e orari per mostrare la capienza del banco."
+            />
+          ) : (
+            availability.slots.map((slot) => (
+              <div
+                className={[
+                  "capacity-pill",
+                  slot.full ? "full" : "",
+                  slot.almostFull ? "almost" : "",
+                ].join(" ")}
+                key={slot.pickupSlot}
+              >
+                <strong>{slot.time}</strong>
+                <span>
+                  {slot.count}/{availability.maxOrdersPerSlot}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </section>

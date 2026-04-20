@@ -8,8 +8,8 @@ export default function AdminSidebar({
   return (
     <aside className="admin-sidebar">
       <div>
-        <p className="eyebrow">{businessName || "Platform"}</p>
-        <strong>Banco admin</strong>
+        <p className="eyebrow">{businessName || "Console piattaforma"}</p>
+        <strong>Area gestione</strong>
         <span className="admin-business-slug">{businessSlug}</span>
       </div>
       <nav>
@@ -24,7 +24,7 @@ export default function AdminSidebar({
           </button>
         ))}
       </nav>
-      <a href={`/${businessSlug}`}>Menu cliente</a>
+      <a href={`/${businessSlug}`}>Apri menu pubblico</a>
     </aside>
   );
 }

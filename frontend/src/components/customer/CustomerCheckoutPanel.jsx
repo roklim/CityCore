@@ -33,6 +33,16 @@ export default function CustomerCheckoutPanel({
   updateCartItemNote,
   visibleCustomerSlots,
 }) {
+  const missingRequirements = [
+    cart.length === 0 ? "Aggiungi almeno un prodotto" : "",
+    !customer.trim() ? "Inserisci il nome" : "",
+    !phone.trim() ? "Inserisci il telefono" : "",
+    !selectedSlot ? "Scegli l'orario di ritiro" : "",
+  ].filter(Boolean);
+  const submitTitle = missingRequirements.length
+    ? missingRequirements.join(" - ")
+    : "Conferma ordine";
+
   return (
     <form
       className={`checkout-panel ${mobileCartOpen ? "mobile-open" : ""}`}
@@ -108,11 +118,22 @@ export default function CustomerCheckoutPanel({
 
       <label>
         Nome
-        <input value={customer} onChange={(event) => setCustomer(event.target.value)} />
+        <input
+          autoComplete="name"
+          placeholder="Es. Marco"
+          value={customer}
+          onChange={(event) => setCustomer(event.target.value)}
+        />
       </label>
       <label>
         Telefono
-        <input value={phone} onChange={(event) => setPhone(event.target.value)} />
+        <input
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder="Es. 333 123 4567"
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+        />
       </label>
       <p className="privacy-note">
         Usiamo il numero solo per riconoscerti, gestire l'ordine e mostrarti i
@@ -170,6 +191,7 @@ export default function CustomerCheckoutPanel({
       <label>
         Note
         <textarea
+          placeholder="Allergie, preferenze o indicazioni per il banco"
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
         />
@@ -233,11 +255,19 @@ export default function CustomerCheckoutPanel({
         <span>Paghi quando passi a ritirare.</span>
       </div>
 
+      {missingRequirements.length > 0 && (
+        <div className="checkout-requirements" aria-live="polite">
+          <strong>Per confermare manca:</strong>
+          <span>{missingRequirements.join(", ")}</span>
+        </div>
+      )}
+
       <button
         className="submit-button"
         type="submit"
         disabled={checkoutDisabled}
         aria-disabled={checkoutDisabled}
+        title={submitTitle}
       >
         Conferma ordine - {money(total)}
       </button>

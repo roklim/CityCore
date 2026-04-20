@@ -61,6 +61,30 @@ function getBusinessHeroCopy(business) {
   };
 }
 
+function getBusinessServiceHighlights(type) {
+  if (type === "sushi") {
+    return [
+      ["Asporto", "ritiro al banco"],
+      ["Sushi", "box e piatti pronti"],
+      ["Pagamento", "al ritiro"],
+    ];
+  }
+
+  if (["pizzeria", "restaurant"].includes(type || "pizzeria")) {
+    return [
+      ["Asporto", "ritiro al banco"],
+      ["Menu", "trancio, teglia o pizza"],
+      ["Pagamento", "in pizzeria"],
+    ];
+  }
+
+  return [
+    ["Prenotazione", "richiesta rapida"],
+    ["Orario", "scelto da te"],
+    ["Conferma", "subito online"],
+  ];
+}
+
 function timeToMinutes(time) {
   const [hours, minutes] = String(time || "")
     .split(":")
@@ -165,6 +189,7 @@ export default function CustomerView() {
   const businessSlug = currentBusiness?.slug || getBusinessSlug();
   const businessTypeLabel = getBusinessTypeLabel(currentBusiness?.type);
   const heroCopy = getBusinessHeroCopy(currentBusiness);
+  const serviceHighlights = getBusinessServiceHighlights(currentBusiness?.type);
   const businessPrimary =
     currentBusiness?.branding?.primaryColor || "var(--mg-basil)";
   const businessAccent =
@@ -211,6 +236,7 @@ export default function CustomerView() {
         heroCopy={heroCopy}
         openingHours={openingHours}
         publicMessage={publicMessage}
+        serviceHighlights={serviceHighlights}
       />
 
       <RecoverOrderPanel

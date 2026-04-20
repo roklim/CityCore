@@ -19,15 +19,16 @@ export default function AdminHeader({
           {lastUpdatedAt ? `Aggiornato ${lastUpdatedAt}` : "Non aggiornato"}
         </span>
         <button type="button" onClick={onRefresh} disabled={refreshing}>
-          {refreshing ? "Aggiorno..." : "Aggiorna"}
+          {refreshing ? "Aggiornamento..." : "Aggiorna"}
         </button>
         <input
+          aria-label="Data ordini"
           type="date"
           value={pickupDate}
           onChange={(event) => onDateChange(event.target.value)}
         />
         <button type="button" onClick={onLogout}>
-          Logout
+          Esci
         </button>
       </div>
     </header>

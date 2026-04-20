@@ -376,8 +376,6 @@ export default function AdminView() {
                     ["seedTemplate", "Menu demo automatico"],
                     ["customPizza", "Pizza su misura"],
                     ["coupons", "Coupon"],
-                    ["booking", "Booking"],
-                    ["rental", "Rental"],
                   ].map(([field, label]) => (
                     <label className="menu-featured-check" key={field}>
                       <input

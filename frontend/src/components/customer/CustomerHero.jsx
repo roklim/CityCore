@@ -3,6 +3,7 @@ export default function CustomerHero({
   heroCopy,
   openingHours,
   publicMessage,
+  serviceHighlights,
 }) {
   return (
     <section className="brand-panel">
@@ -37,16 +38,12 @@ export default function CustomerHero({
           Recupera il tuo ordine
         </button>
       </div>
-      <div className="service-strip" aria-label="Servizio pizzeria">
-        <span>
-          <strong>Asporto</strong> ritiro al banco
-        </span>
-        <span>
-          <strong>Pizza</strong> trancio o teglia
-        </span>
-        <span>
-          <strong>Pagamento</strong> in pizzeria
-        </span>
+      <div className="service-strip" aria-label="Riepilogo servizio">
+        {serviceHighlights.map(([label, value]) => (
+          <span key={label}>
+            <strong>{label}</strong> {value}
+          </span>
+        ))}
       </div>
     </section>
   );
