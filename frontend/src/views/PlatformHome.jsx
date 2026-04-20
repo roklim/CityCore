@@ -11,10 +11,13 @@ import LoadingSkeleton from "../components/ui/LoadingSkeleton";
 
 const PUBLIC_TYPE_FILTERS = [
   { id: "all", label: "Tutti", icon: "grid" },
-  { id: "pizzeria", label: "Pizzeria", icon: "slice" },
-  { id: "sushi", label: "Sushi", icon: "roll" },
+  { id: "food", label: "Mangia", icon: "slice" },
   { id: "bar", label: "Bar", icon: "cup" },
-  { id: "other", label: "Altro", icon: "tag" },
+  { id: "rental", label: "Noleggi", icon: "bike" },
+  { id: "shop", label: "Negozi", icon: "bag" },
+  { id: "service", label: "Servizi", icon: "wrench" },
+  { id: "event", label: "Eventi", icon: "calendar" },
+  { id: "report", label: "Segnalazioni", icon: "alert" },
 ];
 
 const QUICK_ACTIONS = [
@@ -36,13 +39,18 @@ function readAdminSession() {
 }
 
 function businessName(business) {
-  return business?.branding?.publicName || business?.name || business?.slug || "App";
+  return (
+    business?.branding?.publicName || business?.name || business?.slug || "App"
+  );
 }
 
 function businessInitials(name = "") {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "C";
-  return parts.slice(0, 2).map((part) => part[0].toUpperCase()).join("");
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
 }
 
 function businessTypeLabel(type = "") {
@@ -51,17 +59,24 @@ function businessTypeLabel(type = "") {
     sushi: "Sushi",
     restaurant: "Ristorante",
     bar: "Bar",
-    bike_rental: "Noleggio",
-    service: "Servizi",
+    bike_rental: "Noleggio bici",
+    shop: "Negozio",
+    service: "Servizio",
+    event: "Evento",
+    report: "Segnalazione",
     custom: "Altro",
   };
   return labels[type] || "Altro";
 }
 
 function businessTypeIcon(type = "") {
-  if (type === "pizzeria") return "slice";
-  if (type === "sushi") return "roll";
+  if (["pizzeria", "sushi", "restaurant"].includes(type)) return "slice";
   if (type === "bar") return "cup";
+  if (type === "bike_rental") return "bike";
+  if (type === "shop") return "bag";
+  if (type === "service") return "wrench";
+  if (type === "event") return "calendar";
+  if (type === "report") return "alert";
   return "tag";
 }
 
@@ -78,7 +93,13 @@ function businessCoverUrl(business) {
 }
 
 function typeBucket(type = "") {
-  if (["pizzeria", "sushi", "bar"].includes(type)) return type;
+  if (["pizzeria", "sushi", "restaurant"].includes(type)) return "food";
+  if (type === "bar") return "bar";
+  if (type === "bike_rental") return "rental";
+  if (type === "shop") return "shop";
+  if (type === "service") return "service";
+  if (type === "event") return "event";
+  if (type === "report") return "report";
   return "other";
 }
 
@@ -99,9 +120,9 @@ function hasMenuReady(business) {
   const metrics = business.metrics;
   return Boolean(
     metrics.products ||
-      metrics.availableProducts ||
-      metrics.menuItems ||
-      metrics.activeProducts,
+    metrics.availableProducts ||
+    metrics.menuItems ||
+    metrics.activeProducts,
   );
 }
 
@@ -133,7 +154,10 @@ function BusinessLogo({ business, size = "md" }) {
   const showLogo = logoUrl && !imageFailed;
 
   return (
-    <span className={`cagli-business-logo ${size}`} style={{ background: color }}>
+    <span
+      className={`cagli-business-logo ${size}`}
+      style={{ background: color }}
+    >
       {showLogo ? (
         <img
           src={logoUrl}
@@ -217,6 +241,51 @@ function Icon({ name }) {
     );
   }
 
+  if (name === "bike") {
+    return (
+      <svg {...common}>
+        <circle cx="5.5" cy="17.5" r="3.5" />
+        <circle cx="18.5" cy="17.5" r="3.5" />
+        <path d="M15 6h-3l-3 7h8l-2-7zM5.5 17.5l4.5-7" />
+      </svg>
+    );
+  }
+
+  if (name === "bag") {
+    return (
+      <svg {...common}>
+        <path d="M6 2 3 6v14h18V6l-3-4z" />
+        <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
+      </svg>
+    );
+  }
+
+  if (name === "wrench") {
+    return (
+      <svg {...common}>
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+      </svg>
+    );
+  }
+
+  if (name === "calendar") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+    );
+  }
+
+  if (name === "alert") {
+    return (
+      <svg {...common}>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <path d="M12 9v4M12 17h.01" />
+      </svg>
+    );
+  }
+
   return (
     <svg {...common}>
       <path d="M5 7h14M7 12h10M9 17h6" />
@@ -230,7 +299,9 @@ export default function PlatformHome({ mode }) {
   const [publicBusinesses, setPublicBusinesses] = useState([]);
   const [platformBusinesses, setPlatformBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loginOpen, setLoginOpen] = useState(routeMode === "admin" && !session.token);
+  const [loginOpen, setLoginOpen] = useState(
+    routeMode === "admin" && !session.token,
+  );
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -281,9 +352,10 @@ export default function PlatformHome({ mode }) {
     window.location.replace(`/${ownSlug}/admin`);
   }, [routeMode, isBusinessUser, ownSlug]);
 
-  const businesses = isGlobalAdmin && platformBusinesses.length
-    ? platformBusinesses
-    : publicBusinesses;
+  const businesses =
+    isGlobalAdmin && platformBusinesses.length
+      ? platformBusinesses
+      : publicBusinesses;
 
   const filteredBusinesses = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -317,9 +389,22 @@ export default function PlatformHome({ mode }) {
     );
   }, [platformBusinesses]);
 
+  // ── MODIFICA 5: calcolo heroStats da dati reali ──────────────────────────
+  const heroStats = useMemo(() => {
+    const openNow = businesses.filter(
+      (b) => b.isOpen || b.settings?.isOpen,
+    ).length;
+    const rentals = businesses.filter((b) => b.type === "bike_rental").length;
+    return { openNow, rentals };
+  }, [businesses]);
+  // ────────────────────────────────────────────────────────────────────────
+
   const ownerBusiness = useMemo(() => {
     if (!isBusinessUser || !ownSlug) return null;
-    return businesses.find((business) => business.slug === ownSlug) || session.business;
+    return (
+      businesses.find((business) => business.slug === ownSlug) ||
+      session.business
+    );
   }, [businesses, isBusinessUser, ownSlug, session.business]);
 
   useEffect(() => {
@@ -396,6 +481,7 @@ export default function PlatformHome({ mode }) {
       {!session.token && (
         <PublicHero
           businesses={filteredBusinesses}
+          heroStats={heroStats}
           loading={loading}
           search={search}
           setSearch={setSearch}
@@ -418,15 +504,13 @@ export default function PlatformHome({ mode }) {
       )}
 
       {isBusinessUser && ownerBusiness && (
-        <OwnerHome
-          business={ownerBusiness}
-          user={session.user}
-        />
+        <OwnerHome business={ownerBusiness} user={session.user} />
       )}
 
       {isBusinessUser && (
         <PublicHero
           businesses={filteredBusinesses}
+          heroStats={heroStats}
           loading={loading}
           search={search}
           setSearch={setSearch}
@@ -470,13 +554,19 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
       <nav>
         {isGlobalAdmin && (
           <>
-            <a className="active" href="/admin">Console globale</a>
+            <a className="active" href="/admin">
+              Console globale
+            </a>
             <a href="/admin/businesses?section=businesses">Gestione business</a>
             <span className="cagli-notification">0</span>
           </>
         )}
         {isLogged ? (
-          <button className="cagli-text-button" type="button" onClick={onLogout}>
+          <button
+            className="cagli-text-button"
+            type="button"
+            onClick={onLogout}
+          >
             Esci
           </button>
         ) : (
@@ -495,14 +585,19 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
   );
 }
 
+// ── MODIFICA 5: firma aggiornata con heroStats, stats calcolate da businesses ──
 function PublicHero({
   businesses,
+  heroStats = {},
   loading,
   search,
   setSearch,
   typeFilter,
   setTypeFilter,
 }) {
+  const { openNow = 0, rentals = 0 } = heroStats;
+  const totalActive = businesses.filter((b) => isBusinessActive(b)).length;
+  const events = businesses.filter((b) => b.type === "event").length;
   const visibleCount = businesses.length;
 
   return (
@@ -517,16 +612,20 @@ function PublicHero({
           </p>
           <div className="cagli-hero-stats" aria-label="Riepilogo attività">
             <span>
-              <strong>{visibleCount}</strong>
-              locali
+              <strong>{totalActive}</strong>
+              attività attive
             </span>
             <span>
-              <strong>24/7</strong>
-              menu online
+              <strong>{openNow}</strong>
+              aperti ora
             </span>
             <span>
-              <strong>0</strong>
-              download
+              <strong>{events}</strong>
+              eventi
+            </span>
+            <span>
+              <strong>{rentals}</strong>
+              noleggi
             </span>
           </div>
         </div>
@@ -585,6 +684,7 @@ function PublicHero({
     </>
   );
 }
+// ────────────────────────────────────────────────────────────────────────────
 
 function GlobalAdminView({
   businesses,
@@ -602,7 +702,9 @@ function GlobalAdminView({
         <div className="cagli-admin-title">
           <p>Console piattaforma</p>
           <h1>Console globale</h1>
-          <span>Gestisci locali, immagini, menu e accessi da un unico punto.</span>
+          <span>
+            Gestisci locali, immagini, menu e accessi da un unico punto.
+          </span>
         </div>
         <div className="cagli-admin-quick-actions">
           <a href="/admin/businesses?section=businesses">Aggiungi business</a>
@@ -611,17 +713,29 @@ function GlobalAdminView({
       </div>
 
       <section className="cagli-admin-metrics">
-        <MetricCard icon="B" label="Business" value={platformStats.businesses} />
+        <MetricCard
+          icon="B"
+          label="Business"
+          value={platformStats.businesses}
+        />
         <MetricCard icon="A" label="Attivi" value={platformStats.active} />
         <MetricCard icon="O" label="Ordini" value={platformStats.orders} />
-        <MetricCard icon="EUR" label="GMV" value={money(platformStats.revenue)} />
+        <MetricCard
+          icon="EUR"
+          label="GMV"
+          value={money(platformStats.revenue)}
+        />
       </section>
 
       <section className="cagli-admin-directory-head">
         <div>
           <p>Directory</p>
           <h2>Tutti i locali</h2>
-          <span>{loading ? "Caricamento..." : `${businesses.length} risultati filtrati`}</span>
+          <span>
+            {loading
+              ? "Caricamento..."
+              : `${businesses.length} risultati filtrati`}
+          </span>
         </div>
         <div className="cagli-admin-tools">
           <input
@@ -676,27 +790,41 @@ function OwnerHome({ business, user }) {
           <h1>{name}</h1>
         </div>
         <nav>
-          <a className="active" href={`/${slug}/admin`}>Il mio banco</a>
+          <a className="active" href={`/${slug}/admin`}>
+            Il mio banco
+          </a>
           <a href={`/${slug}/admin?section=menu`}>Menu</a>
           <a href={`/${slug}/admin?section=orders`}>Ordini</a>
           <a href={`/${slug}/admin?section=settings`}>Impostazioni</a>
         </nav>
-        <a className="cagli-outline-link" href={`/${slug}`}>Apri menu pubblico</a>
+        <a className="cagli-outline-link" href={`/${slug}`}>
+          Apri menu pubblico
+        </a>
       </header>
 
       <article className="cagli-owner-hero-card">
         <BusinessLogo business={business} size="xl" />
         <div>
-          <span className="cagli-type-badge">{businessTypeLabel(business.type)}</span>
+          <span className="cagli-type-badge">
+            {businessTypeLabel(business.type)}
+          </span>
           <h2>{name}</h2>
           <p>/{slug}</p>
           <strong>{statusLabel(business.subscriptionStatus)}</strong>
         </div>
         <div className="cagli-owner-inline-metrics">
-          <span><b>{metrics.orders || 0}</b>Ordini oggi</span>
-          <span><b>{money(metrics.revenue || 0)}</b>Incasso</span>
-          <span><b>{metrics.availableProducts || 0}</b>Prodotti attivi</span>
-          <span><b>{metrics.customers || 0}</b>Clienti</span>
+          <span>
+            <b>{metrics.orders || 0}</b>Ordini oggi
+          </span>
+          <span>
+            <b>{money(metrics.revenue || 0)}</b>Incasso
+          </span>
+          <span>
+            <b>{metrics.availableProducts || 0}</b>Prodotti attivi
+          </span>
+          <span>
+            <b>{metrics.customers || 0}</b>Clienti
+          </span>
         </div>
         <a href={`/${slug}/admin`}>Vai all'area gestione</a>
       </article>
@@ -761,7 +889,9 @@ function PublicBusinessCard({ business, index, search }) {
           <Icon name={typeIcon} />
           {active ? typeLabel : "Temporaneamente chiuso"}
         </span>
-        <h2><Highlight text={name} search={search} /></h2>
+        <h2>
+          <Highlight text={name} search={search} />
+        </h2>
         <p>{description}</p>
         <small>
           <Icon name="clock" />
@@ -794,7 +924,9 @@ function AdminBusinessCard({ business, onToast }) {
       await navigator.clipboard.writeText(text);
       onToast?.(message);
     } catch {
-      onToast?.("Non riesco a copiare automaticamente. Seleziona il testo manualmente.");
+      onToast?.(
+        "Non riesco a copiare automaticamente. Seleziona il testo manualmente.",
+      );
     }
   }
 
@@ -805,7 +937,9 @@ function AdminBusinessCard({ business, onToast }) {
         style={coverUrl ? { backgroundImage: `url("${coverUrl}")` } : undefined}
       >
         <BusinessLogo business={business} />
-        <strong className={`cagli-status ${business.subscriptionStatus || "public"}`}>
+        <strong
+          className={`cagli-status ${business.subscriptionStatus || "public"}`}
+        >
           {status}
         </strong>
       </header>
@@ -820,10 +954,22 @@ function AdminBusinessCard({ business, onToast }) {
       </div>
 
       <div className="cagli-admin-card-metrics">
-        <span><small>Ordini</small><b>{metrics.orders || 0}</b></span>
-        <span><small>GMV</small><b>{money(metrics.revenue || 0)}</b></span>
-        <span><small>Prodotti</small><b>{metrics.products || 0}</b></span>
-        <span><small>Clienti</small><b>{metrics.customers || 0}</b></span>
+        <span>
+          <small>Ordini</small>
+          <b>{metrics.orders || 0}</b>
+        </span>
+        <span>
+          <small>GMV</small>
+          <b>{money(metrics.revenue || 0)}</b>
+        </span>
+        <span>
+          <small>Prodotti</small>
+          <b>{metrics.products || 0}</b>
+        </span>
+        <span>
+          <small>Clienti</small>
+          <b>{metrics.customers || 0}</b>
+        </span>
       </div>
 
       <div className="cagli-admin-tags">
@@ -831,7 +977,9 @@ function AdminBusinessCard({ business, onToast }) {
         <span>{business.subscriptionStatus || "public"}</span>
         <span>{logoUrl ? "Logo ok" : "Logo mancante"}</span>
         <span>{coverUrl ? "Cover ok" : "Cover mancante"}</span>
-        {business.owner?.email && <small title={business.owner.email}>{business.owner.email}</small>}
+        {business.owner?.email && (
+          <small title={business.owner.email}>{business.owner.email}</small>
+        )}
       </div>
 
       <div className="cagli-admin-card-actions">
@@ -854,13 +1002,17 @@ function AdminBusinessCard({ business, onToast }) {
       <div className="cagli-admin-asset-actions">
         <button
           type="button"
-          onClick={() => copyText(logoPath, `Percorso logo copiato per ${name}`)}
+          onClick={() =>
+            copyText(logoPath, `Percorso logo copiato per ${name}`)
+          }
         >
           Copia logo
         </button>
         <button
           type="button"
-          onClick={() => copyText(coverPath, `Percorso cover copiato per ${name}`)}
+          onClick={() =>
+            copyText(coverPath, `Percorso cover copiato per ${name}`)
+          }
         >
           Copia cover
         </button>
@@ -883,7 +1035,10 @@ function LoginModal({
 }) {
   return (
     <div className="cagli-login-overlay" onMouseDown={onClose}>
-      <section className="cagli-login-modal" onMouseDown={(event) => event.stopPropagation()}>
+      <section
+        className="cagli-login-modal"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <button className="cagli-modal-close" type="button" onClick={onClose}>
           x
         </button>
@@ -908,7 +1063,10 @@ function LoginModal({
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
-              <button type="button" onClick={() => setShowPassword((value) => !value)}>
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+              >
                 {showPassword ? "Nascondi" : "Mostra"}
               </button>
             </div>
