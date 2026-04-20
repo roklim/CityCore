@@ -271,6 +271,8 @@ export function businessToForm(business) {
     plan: business.plan || "free",
     subscriptionStatus: business.subscriptionStatus || "trialing",
     publicName: business.branding?.publicName || business.name || "",
+    logoUrl: business.branding?.logoUrl || "",
+    coverImageUrl: business.branding?.coverImageUrl || "",
     publicUrl: business.deployment?.publicUrl || "",
     vercelProjectName: business.deployment?.vercelProjectName || business.slug || "",
     apiBaseUrl: business.deployment?.apiBaseUrl || "",
@@ -312,7 +314,8 @@ export function businessFormToPayload(form) {
       publicName: form.publicName.trim() || form.name.trim(),
       primaryColor: form.primaryColor,
       accentColor: form.accentColor,
-      logoUrl: "",
+      logoUrl: form.logoUrl.trim(),
+      coverImageUrl: form.coverImageUrl.trim(),
     },
     deployment: {
       publicUrl: form.publicUrl.trim(),

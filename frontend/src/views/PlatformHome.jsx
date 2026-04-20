@@ -65,6 +65,18 @@ function businessTypeIcon(type = "") {
   return "tag";
 }
 
+function businessCoverUrl(business) {
+  return (
+    business?.branding?.coverImageUrl ||
+    business?.branding?.heroImageUrl ||
+    business?.branding?.imageUrl ||
+    business?.settings?.coverImageUrl ||
+    business?.settings?.heroImageUrl ||
+    business?.settings?.imageUrl ||
+    ""
+  );
+}
+
 function typeBucket(type = "") {
   if (["pizzeria", "sushi", "bar"].includes(type)) return type;
   return "other";
@@ -114,13 +126,24 @@ function Highlight({ text, search }) {
 }
 
 function BusinessLogo({ business, size = "md" }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const name = businessName(business);
   const logoUrl = business.branding?.logoUrl;
   const color = business.branding?.primaryColor || "var(--cagli-basil)";
+  const showLogo = logoUrl && !imageFailed;
 
   return (
     <span className={`cagli-business-logo ${size}`} style={{ background: color }}>
-      {logoUrl ? <img src={logoUrl} alt="" loading="lazy" /> : businessInitials(name)}
+      {showLogo ? (
+        <img
+          src={logoUrl}
+          alt=""
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        businessInitials(name)
+      )}
     </span>
   );
 }
@@ -694,6 +717,8 @@ function PublicBusinessCard({ business, index, search }) {
   const active = isBusinessActive(business);
   const typeLabel = businessTypeLabel(business.type);
   const typeIcon = businessTypeIcon(business.type);
+  const coverUrl = businessCoverUrl(business);
+  const bucket = typeBucket(business.type);
   const menuReady = hasMenuReady(business);
   const description =
     business.settings?.publicMessage ||
@@ -709,9 +734,14 @@ function PublicBusinessCard({ business, index, search }) {
       aria-disabled={!active}
       aria-label={`${active ? "Apri" : "Non disponibile"} ${name}`}
     >
-      <header>
+      <header
+        className={`cagli-card-media ${coverUrl ? "has-image" : ""} ${bucket}`}
+        style={coverUrl ? { backgroundImage: `url("${coverUrl}")` } : undefined}
+      >
         <BusinessLogo business={business} />
-        <span className="cagli-open-arrow" aria-hidden="true">-&gt;</span>
+        <span className="cagli-media-icon" aria-hidden="true">
+          <Icon name={typeIcon} />
+        </span>
       </header>
       <div>
         <span className="cagli-type-badge">

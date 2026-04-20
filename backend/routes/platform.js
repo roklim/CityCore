@@ -154,6 +154,7 @@ function toBusinessPayload(body = {}) {
     branding: {
       publicName: String(body.branding?.publicName || name).trim(),
       logoUrl: String(body.branding?.logoUrl || "").trim(),
+      coverImageUrl: String(body.branding?.coverImageUrl || "").trim(),
       primaryColor: String(body.branding?.primaryColor || "#2C5F2E").trim(),
       accentColor: String(body.branding?.accentColor || "#C0392B").trim(),
     },

@@ -79,6 +79,8 @@ export const EMPTY_BUSINESS_FORM = {
   plan: "free",
   subscriptionStatus: "trialing",
   publicName: "",
+  logoUrl: "",
+  coverImageUrl: "",
   publicUrl: "",
   vercelProjectName: "",
   apiBaseUrl: "",

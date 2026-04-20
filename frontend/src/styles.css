@@ -3357,8 +3357,8 @@ a:focus-visible {
 }
 
 .cagli-manager-button {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   display: inline-grid;
   place-items: center;
   border: 1px solid var(--cagli-border);
@@ -3591,11 +3591,11 @@ a:focus-visible {
 }
 
 .cagli-public-card {
-  min-height: 238px;
+  min-height: 288px;
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 14px;
-  padding: 18px;
+  padding: 12px;
   border: 1px solid var(--cagli-border);
   border-radius: 12px;
   background: var(--cagli-white);
@@ -3643,6 +3643,10 @@ a:focus-visible {
   font-size: 20px;
 }
 
+.cagli-public-card > div {
+  padding: 0 6px;
+}
+
 .cagli-public-card p {
   display: -webkit-box;
   margin: 0;
@@ -3668,19 +3672,14 @@ a:focus-visible {
   min-height: 34px;
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   border-top: 1px solid var(--cagli-border);
+  margin: 0 6px;
   padding-top: 12px;
   color: var(--cagli-basil);
   font-size: 13px;
   font-weight: 900;
   transition: color 150ms ease;
-}
-
-.cagli-public-card > strong::after {
-  content: "->";
-  font-family: "DM Sans", sans-serif;
-  color: currentColor;
 }
 
 .cagli-public-card > strong.soon {
@@ -3697,9 +3696,80 @@ a:focus-visible {
   font-weight: 900;
 }
 
+.cagli-card-media {
+  min-height: 118px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  padding: 14px;
+  background-color: var(--cagli-sand);
+  background-position: center;
+  background-size: cover;
+  isolation: isolate;
+}
+
+.cagli-card-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.28)),
+    radial-gradient(circle at 82% 22%, rgba(192, 57, 43, 0.18), transparent 28%),
+    radial-gradient(circle at 18% 76%, rgba(40, 91, 43, 0.16), transparent 30%);
+}
+
+.cagli-card-media.pizzeria::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 245, 226, 0.36)),
+    radial-gradient(circle at 78% 26%, rgba(192, 57, 43, 0.28), transparent 30%),
+    radial-gradient(circle at 20% 78%, rgba(235, 183, 74, 0.26), transparent 34%);
+}
+
+.cagli-card-media.sushi::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(236, 250, 246, 0.38)),
+    radial-gradient(circle at 78% 25%, rgba(31, 111, 91, 0.24), transparent 30%),
+    radial-gradient(circle at 18% 78%, rgba(216, 79, 63, 0.18), transparent 34%);
+}
+
+.cagli-card-media.bar::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(239, 248, 241, 0.4)),
+    radial-gradient(circle at 78% 25%, rgba(87, 122, 73, 0.24), transparent 30%),
+    radial-gradient(circle at 18% 78%, rgba(217, 184, 100, 0.2), transparent 34%);
+}
+
+.cagli-card-media.has-image::before {
+  z-index: -1;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.04));
+}
+
+.cagli-card-media.has-image .cagli-business-logo {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.cagli-media-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  align-self: flex-end;
+  margin-top: auto;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--cagli-basil);
+  box-shadow: 0 8px 20px rgba(28, 28, 26, 0.08);
+}
+
+.cagli-media-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
 .cagli-business-logo {
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -3708,24 +3778,6 @@ a:focus-visible {
   font-family: "Playfair Display", serif;
   font-size: 28px;
   font-weight: 700;
-}
-
-.cagli-open-arrow {
-  width: 36px;
-  height: 36px;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid var(--cagli-border);
-  border-radius: 999px;
-  color: var(--cagli-basil);
-  font-weight: 900;
-  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
-}
-
-.cagli-public-card:hover .cagli-open-arrow {
-  border-color: var(--cagli-basil-lt);
-  background: var(--cagli-basil-pale);
-  transform: translateX(2px);
 }
 
 .cagli-business-logo.lg {
@@ -5056,6 +5108,10 @@ a:focus-visible {
 
   .cagli-public-card header {
     width: 100%;
+  }
+
+  .cagli-card-media {
+    min-height: 108px;
   }
 
   .cagli-public-card > strong {

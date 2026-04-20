@@ -265,6 +265,26 @@ export default function AdminView() {
                     />
                   </label>
                   <label>
+                    Logo locale
+                    <input
+                      value={businessForm.logoUrl}
+                      onChange={(event) =>
+                        updateBusinessForm("logoUrl", event.target.value)
+                      }
+                      placeholder="https://.../logo.png"
+                    />
+                  </label>
+                  <label>
+                    Immagine attività
+                    <input
+                      value={businessForm.coverImageUrl}
+                      onChange={(event) =>
+                        updateBusinessForm("coverImageUrl", event.target.value)
+                      }
+                      placeholder="https://.../pizza.jpg"
+                    />
+                  </label>
+                  <label>
                     Nome owner
                     <input
                       value={businessForm.ownerName}

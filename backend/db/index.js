@@ -66,6 +66,7 @@ const businessSchema = new mongoose.Schema(
     trialEndsAt: { type: Date },
     branding: {
       logoUrl: { type: String, default: "" },
+      coverImageUrl: { type: String, default: "" },
       primaryColor: { type: String, default: "#2C5F2E" },
       accentColor: { type: String, default: "#C0392B" },
       publicName: { type: String, default: "" },
