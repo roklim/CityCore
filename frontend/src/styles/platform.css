@@ -512,7 +512,12 @@
   font-size: 22px;
   line-height: 1;
 }
-
+.cagli-logo {
+  height: 42px; /* regola qui */
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
 .cagli-hero-search-card {
   display: grid;
   gap: 14px;

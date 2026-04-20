@@ -536,7 +536,11 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
   return (
     <header className={`cagli-header ${isGlobalAdmin ? "admin" : ""}`}>
       <a className="cagli-brand" href="/">
-        <strong>Cagli Local</strong>
+        <img
+          src="/public/businesses/home/logo.png"
+          alt="Cagli"
+          className="cagli-logo"
+        />
         <span>Scopri le attività locali di Cagli</span>
       </a>
       <nav>
@@ -595,7 +599,6 @@ function PublicHero({
       <section className="cagli-public-hero">
         <div className="cagli-public-hero-inner">
           <div className="cagli-hero-copy">
-           
             <h1>La tua citta a portata di mano.</h1>
             <p>
               Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota
