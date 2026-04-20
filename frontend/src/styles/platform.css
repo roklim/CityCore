@@ -453,12 +453,6 @@
   color: rgba(255, 255, 255, 0.82);
 }
 
-.cagli-public-hero .cagli-hero-kicker {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
 .cagli-public-hero .cagli-hero-stats span {
   color: rgba(255, 255, 255, 0.75);
   border-right-color: rgba(255, 255, 255, 0.25);
@@ -487,20 +481,6 @@
 
 .cagli-hero-copy {
   min-width: 0;
-}
-
-.cagli-hero-kicker {
-  width: fit-content;
-  display: inline-flex;
-  margin-bottom: 14px;
-  padding: 7px 11px;
-  border-radius: 999px;
-  background: var(--cagli-basil-pale);
-  color: var(--cagli-basil);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
 
 .cagli-hero-stats {

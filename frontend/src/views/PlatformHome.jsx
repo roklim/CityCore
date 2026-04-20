@@ -595,8 +595,8 @@ function PublicHero({
       <section className="cagli-public-hero">
         <div className="cagli-public-hero-inner">
           <div className="cagli-hero-copy">
-            <span className="cagli-hero-kicker">Cagli Local</span>
-            <h1>Cagli a portata di mano.</h1>
+           
+            <h1>La tua citta a portata di mano.</h1>
             <p>
               Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota
               e scopri cosa succede in città.
