@@ -419,7 +419,7 @@
   display: grid;
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
+  border-radius: 0 0 20px 20px;
 }
 .cagli-public-hero::before {
   content: "";
@@ -431,7 +431,7 @@
   filter: brightness(0.38) saturate(0.7);
   z-index: 0;
 
-  border-radius: 20px;
+  border-radius: inherit;
 }
 .cagli-public-hero-inner {
   position: relative;
@@ -443,6 +443,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(350px, 450px);
   gap: 32px;
   align-items: center;
+  overflow: hidden;
 }
 .cagli-public-hero .cagli-hero-copy h1 {
   color: #ffffff;
