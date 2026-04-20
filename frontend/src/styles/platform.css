@@ -419,6 +419,7 @@
   display: grid;
   position: relative;
   overflow: hidden;
+  border-radius: 20px;
 }
 .cagli-public-hero::before {
   content: "";
