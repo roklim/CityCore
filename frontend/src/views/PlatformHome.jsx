@@ -310,8 +310,13 @@ export default function PlatformHome({ mode }) {
       return;
     }
 
-    document.title = "Cagli Local - Attivita locali";
-  }, [isBusinessUser, isGlobalAdmin, ownerBusiness]);
+    if (routeMode === "admin") {
+      document.title = "Area gestori - Cagli Local";
+      return;
+    }
+
+    document.title = "Cagli Local - Attività locali";
+  }, [isBusinessUser, isGlobalAdmin, ownerBusiness, routeMode]);
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -789,7 +794,7 @@ function LoginModal({
           x
         </button>
         <div className="cagli-login-logo">C</div>
-        <h2>Accedi</h2>
+        <h2>Area gestori</h2>
         <p>Area riservata a gestori e amministratori</p>
         <form onSubmit={onSubmit}>
           <label>
