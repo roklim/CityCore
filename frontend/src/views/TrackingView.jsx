@@ -26,6 +26,12 @@ export default function TrackingView({ orderId }) {
     refreshOrder();
   }, [orderId]);
 
+  useEffect(() => {
+    document.title = order
+      ? `Ordine ${String(order._id).slice(-6).toUpperCase()} - Tracking`
+      : "Tracking ordine - Cagli Local";
+  }, [order]);
+
   function notify(message) {
     setToast(message);
     window.clearTimeout(notify.timer);

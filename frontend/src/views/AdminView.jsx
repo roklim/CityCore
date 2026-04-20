@@ -103,6 +103,13 @@ export default function AdminView() {
     visibleAdminNav,
     visibleOrders,
   } = useAdminController();
+
+  const adminTitleName = currentBusiness?.name || getBusinessSlug() || "Cagli Local";
+  document.title =
+    activeAdminSection === "businesses"
+      ? "Console piattaforma - Cagli Local"
+      : `${adminTitleName} - Area gestione`;
+
   if (!token) {
     return (
       <main className="admin-login">

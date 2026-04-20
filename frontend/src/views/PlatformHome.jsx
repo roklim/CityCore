@@ -205,6 +205,20 @@ export default function PlatformHome({ mode }) {
     return businesses.find((business) => business.slug === ownSlug) || session.business;
   }, [businesses, isBusinessUser, ownSlug, session.business]);
 
+  useEffect(() => {
+    if (isGlobalAdmin) {
+      document.title = "Console piattaforma - Cagli Local";
+      return;
+    }
+
+    if (isBusinessUser && ownerBusiness) {
+      document.title = `${businessName(ownerBusiness)} - Area gestione`;
+      return;
+    }
+
+    document.title = "Cagli Local - Attivita locali";
+  }, [isBusinessUser, isGlobalAdmin, ownerBusiness]);
+
   async function handleLogin(event) {
     event.preventDefault();
     setLoginError("");

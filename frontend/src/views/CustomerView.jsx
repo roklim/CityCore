@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BUSINESS_TYPE_OPTIONS } from "../constants";
 import { isCounterOpenNow, money } from "../utils/format";
 import { getBusinessSlug } from "../lib/api";
@@ -205,6 +206,10 @@ export default function CustomerView() {
     ["pizzeria", "restaurant"].includes(currentBusiness?.type || "pizzeria");
   const checkoutDisabled =
     !customer.trim() || !phone.trim() || cart.length === 0 || !selectedSlot;
+
+  useEffect(() => {
+    document.title = `${businessName} - Menu e ordini`;
+  }, [businessName]);
 
   if (confirmation) {
     return (
