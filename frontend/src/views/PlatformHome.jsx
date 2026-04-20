@@ -537,7 +537,7 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
     <header className={`cagli-header ${isGlobalAdmin ? "admin" : ""}`}>
       <a className="cagli-brand" href="/">
         <img
-          src="/public/businesses/home/logo.png"
+          src="/businesses/home/logo.png"
           alt="Cagli"
           className="cagli-logo"
         />
