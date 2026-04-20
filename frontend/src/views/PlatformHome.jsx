@@ -600,20 +600,30 @@ function PublicHero({
             Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota e
             scopri cosa succede in città.
           </p>
-          <div className="cagli-hero-stats" aria-label="Riepilogo attività">
-            <span>
-              <strong>{totalActive}</strong>attività attive
-            </span>
-            <span>
-              <strong>{openNow}</strong>aperti ora
-            </span>
-            <span>
-              <strong>{events}</strong>eventi
-            </span>
-            <span>
-              <strong>{rentals}</strong>noleggi
-            </span>
-          </div>
+          {(totalActive > 0 || openNow > 0 || events > 0 || rentals > 0) && (
+            <div className="cagli-hero-stats" aria-label="Riepilogo attività">
+              {totalActive > 0 && (
+                <span>
+                  <strong>{totalActive}</strong>attività attive
+                </span>
+              )}
+              {openNow > 0 && (
+                <span>
+                  <strong>{openNow}</strong>aperti ora
+                </span>
+              )}
+              {events > 0 && (
+                <span>
+                  <strong>{events}</strong>eventi
+                </span>
+              )}
+              {rentals > 0 && (
+                <span>
+                  <strong>{rentals}</strong>noleggi
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="cagli-hero-search-card">
