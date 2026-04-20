@@ -146,6 +146,7 @@ export default function CustomerView() {
     getCartItem,
     loadPublicData,
     loading,
+    menu,
     loyaltyCyclePoints,
     loyaltyPoints,
     loyaltyRemaining,
