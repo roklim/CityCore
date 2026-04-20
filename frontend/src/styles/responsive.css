@@ -438,6 +438,10 @@
   }
 
   .cagli-public-hero {
+    width: 100%;
+  }
+
+  .cagli-public-hero-inner {
     width: min(100% - 24px, 880px);
     grid-template-columns: 1fr;
     gap: 18px;

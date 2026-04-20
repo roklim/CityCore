@@ -412,13 +412,56 @@
 }
 
 .cagli-public-hero {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  display: grid;
+  position: relative;
+  overflow: hidden;
+}
+.cagli-public-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Cagli_panorama.jpg/1280px-Cagli_panorama.jpg");
+  background-size: cover;
+  background-position: center 60%;
+  filter: brightness(0.38) saturate(0.7);
+  z-index: 0;
+}
+.cagli-public-hero-inner {
+  position: relative;
+  z-index: 1;
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 42px 0 22px;
+  padding: 52px 0 32px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(350px, 450px);
   gap: 32px;
   align-items: center;
+}
+.cagli-public-hero .cagli-hero-copy h1 {
+  color: #ffffff;
+}
+
+.cagli-public-hero .cagli-hero-copy p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.cagli-public-hero .cagli-hero-kicker {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cagli-public-hero .cagli-hero-stats span {
+  color: rgba(255, 255, 255, 0.75);
+  border-right-color: rgba(255, 255, 255, 0.25);
+}
+
+.cagli-public-hero .cagli-hero-stats strong {
+  color: #ffffff;
 }
 
 .cagli-public-hero h1 {

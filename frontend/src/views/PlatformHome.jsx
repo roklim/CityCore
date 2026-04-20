@@ -593,39 +593,40 @@ function PublicHero({
   return (
     <>
       <section className="cagli-public-hero">
-        <div className="cagli-hero-copy">
-          <span className="cagli-hero-kicker">Cagli Local</span>
-          <h1>Cagli a portata di mano.</h1>
-          <p>
-            Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota e
-            scopri cosa succede in città.
-          </p>
-          {(totalActive > 0 || openNow > 0 || events > 0 || rentals > 0) && (
-            <div className="cagli-hero-stats" aria-label="Riepilogo attività">
-              {totalActive > 0 && (
-                <span>
-                  <strong>{totalActive}</strong>attività attive
-                </span>
-              )}
-              {openNow > 0 && (
-                <span>
-                  <strong>{openNow}</strong>aperti ora
-                </span>
-              )}
-              {events > 0 && (
-                <span>
-                  <strong>{events}</strong>eventi
-                </span>
-              )}
-              {rentals > 0 && (
-                <span>
-                  <strong>{rentals}</strong>noleggi
-                </span>
-              )}
-            </div>
-          )}
+        <div className="cagli-public-hero-inner">
+          <div className="cagli-hero-copy">
+            <span className="cagli-hero-kicker">Cagli Local</span>
+            <h1>Cagli a portata di mano.</h1>
+            <p>
+              Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota
+              e scopri cosa succede in città.
+            </p>
+            {(totalActive > 0 || openNow > 0 || events > 0 || rentals > 0) && (
+              <div className="cagli-hero-stats" aria-label="Riepilogo attività">
+                {totalActive > 0 && (
+                  <span>
+                    <strong>{totalActive}</strong>attività attive
+                  </span>
+                )}
+                {openNow > 0 && (
+                  <span>
+                    <strong>{openNow}</strong>aperti ora
+                  </span>
+                )}
+                {events > 0 && (
+                  <span>
+                    <strong>{events}</strong>eventi
+                  </span>
+                )}
+                {rentals > 0 && (
+                  <span>
+                    <strong>{rentals}</strong>noleggi
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-
         <div className="cagli-hero-search-card">
           <label className="cagli-search">
             <span aria-hidden="true">
