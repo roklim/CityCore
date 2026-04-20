@@ -541,7 +541,6 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
           alt="Cagli"
           className="cagli-logo"
         />
-        <span>Scopri le attività locali di Cagli</span>
       </a>
       <nav>
         {isGlobalAdmin && (

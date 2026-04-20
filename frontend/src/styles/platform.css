@@ -513,10 +513,15 @@
   line-height: 1;
 }
 .cagli-logo {
-  height: 42px; /* regola qui */
+  height: 57px; /* regola qui */
   width: auto;
   display: block;
   object-fit: contain;
+}
+.cagli-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .cagli-hero-search-card {
   display: grid;
