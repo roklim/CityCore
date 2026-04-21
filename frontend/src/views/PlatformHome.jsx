@@ -595,16 +595,16 @@ function PublicHero({
 
   return (
     <>
-      <section className="cagli-public-hero">
-        <div className="cagli-public-hero-inner">
-          <div className="cagli-hero-copy">
+      <section className="city-hero">
+        <div className="city-hero-inner">
+          <div className="city-hero-copy">
             <h1>La tua citta a portata di mano.</h1>
             <p>
               Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota
               e scopri cosa succede in città.
             </p>
             {(totalActive > 0 || openNow > 0 || events > 0 || rentals > 0) && (
-              <div className="cagli-hero-stats" aria-label="Riepilogo attività">
+              <div className="city-hero-stats" aria-label="Riepilogo attività">
                 {totalActive > 0 && (
                   <span>
                     <strong>{totalActive}</strong>attività attive
@@ -629,8 +629,8 @@ function PublicHero({
             )}
           </div>
         </div>
-        <div className="cagli-hero-search-card">
-          <label className="cagli-search">
+        <div className="city-search-panel">
+          <label className="city-search">
             <span aria-hidden="true">
               <Icon name="search" />
             </span>
@@ -640,7 +640,7 @@ function PublicHero({
               onChange={(e) => setSearch(e.target.value)}
             />
           </label>
-          <div className="cagli-filter-pills">
+          <div className="city-filter-pills">
             {PUBLIC_TYPE_FILTERS.map((filter) => (
               <button
                 className={typeFilter === filter.id ? "active" : ""}
@@ -656,12 +656,12 @@ function PublicHero({
         </div>
       </section>
 
-      <section className="cagli-directory-title">
+      <section className="city-directory-title">
         <h2>{sectionLabel}</h2>
         <span>{loading ? "Caricamento..." : `${visibleCount} risultati`}</span>
       </section>
 
-      <section className="cagli-public-grid">
+      <section className="city-business-grid">
         {loading ? (
           <SkeletonCards />
         ) : businesses.length === 0 ? (
@@ -871,7 +871,7 @@ function PublicBusinessCard({ business, index, search }) {
 
   return (
     <a
-      className={`cagli-public-card ${active ? "" : "disabled"}`}
+      className={`city-business-card ${active ? "" : "disabled"}`}
       href={active ? `/${slug}` : undefined}
       style={{ animationDelay: `${250 + index * 60}ms` }}
       aria-disabled={!active}
@@ -882,18 +882,18 @@ function PublicBusinessCard({ business, index, search }) {
         style={coverUrl ? { backgroundImage: `url("${coverUrl}")` } : undefined}
       >
         <BusinessLogo business={business} />
-        <span className="cagli-media-icon" aria-hidden="true">
+        <span className="city-card-icon" aria-hidden="true">
           <Icon name={typeIcon} />
         </span>
       </header>
       <div>
-        <div className="cagli-card-badges">
+        <div className="city-card-badges">
           <span className="cagli-type-badge">
             <Icon name={typeIcon} />
             {active ? typeLabel : "Temporaneamente chiuso"}
           </span>
           {active && (
-            <span className={`cagli-open-badge ${isOpen ? "open" : "closed"}`}>
+            <span className={`city-open-badge ${isOpen ? "open" : "closed"}`}>
               {isOpen ? "Aperto" : "Chiuso"}
             </span>
           )}

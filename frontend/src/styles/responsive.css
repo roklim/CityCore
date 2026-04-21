@@ -34,7 +34,7 @@
     grid-template-columns: 1fr;
   }
 
-  .cagli-public-grid {
+  .city-business-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -405,35 +405,35 @@
     padding-bottom: 2px;
   }
 
-  .cagli-public-hero {
+  .city-hero {
     width: 100%;
   }
 
-  .cagli-public-hero-inner {
+  .city-hero-inner {
     width: min(100% - 24px, 880px);
     grid-template-columns: 1fr;
     gap: 18px;
     padding: 36px 0 22px;
   }
 
-  .cagli-public-hero h1 {
+  .city-hero h1 {
     font-size: 26px;
   }
 
-  .cagli-public-hero p {
+  .city-hero p {
     font-size: 15px;
   }
 
-  .cagli-hero-search-card {
+  .city-search-panel {
     padding: 14px;
     border-radius: 14px;
   }
 
-  .cagli-hero-stats {
+  .city-hero-stats {
     gap: 8px;
   }
 
-  .cagli-search {
+  .city-search {
     min-height: 50px;
     border-radius: 12px;
     grid-template-columns: auto 1fr;
@@ -441,30 +441,30 @@
     padding: 10px 12px;
   }
 
-  .cagli-search span {
+  .city-search span {
     font-size: 12px;
   }
 
-  .cagli-filter-pills {
+  .city-filter-pills {
     justify-content: flex-start;
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 4px;
   }
 
-  .cagli-filter-pills button {
+  .city-filter-pills button {
     min-width: max-content;
   }
 
-  .cagli-public-grid,
+  .city-business-grid,
   .cagli-admin-grid,
   .cagli-admin-console,
   .cagli-owner-home,
-  .cagli-directory-title {
+  .city-directory-title {
     width: min(100% - 20px, 1180px);
   }
 
-  .cagli-directory-title {
+  .city-directory-title {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -489,7 +489,7 @@
     flex: 1 1 160px;
   }
 
-  .cagli-public-grid,
+  .city-business-grid,
   .cagli-admin-grid,
   .cagli-admin-metrics,
   .cagli-owner-quick-grid,
@@ -497,14 +497,14 @@
     grid-template-columns: 1fr;
   }
 
-  .cagli-public-card {
+  .city-business-card {
     min-height: 0;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     padding: 14px;
   }
 
-  .cagli-public-card header {
+  .city-business-card header {
     width: 100%;
   }
 
@@ -512,7 +512,7 @@
     min-height: 108px;
   }
 
-  .cagli-public-card > strong {
+  .city-business-card > strong {
     grid-column: auto;
   }
 
