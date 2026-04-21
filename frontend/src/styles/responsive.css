@@ -34,16 +34,6 @@
     grid-template-columns: 1fr;
   }
 
-  .platform-hero {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .platform-directory-head,
-  .platform-stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .cagli-public-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -386,8 +376,7 @@
   .business-color-row,
   .business-feature-grid,
   .business-card-metrics,
-  .business-deploy-box,
-  .platform-app-metrics {
+  .business-deploy-box {
     grid-template-columns: 1fr;
   }
 
@@ -401,27 +390,6 @@
 
   .settings-day-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .platform-home {
-    width: min(100% - 20px, 1120px);
-    padding: 26px 0 76px;
-  }
-
-  .platform-hero h1 {
-    font-size: 34px;
-  }
-
-  .platform-directory-head,
-  .platform-filters,
-  .platform-stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .platform-actions,
-  .platform-card-actions {
-    align-items: stretch;
-    flex-direction: column;
   }
 
   .cagli-header {
