@@ -84,7 +84,6 @@
   text-decoration-thickness: 2px;
 }
 
-.cagli-outline-button,
 .cagli-outline-link {
   min-height: 42px;
   display: inline-flex;
@@ -99,7 +98,6 @@
   text-decoration: none;
 }
 
-.cagli-outline-button:hover,
 .cagli-outline-link:hover {
   background: var(--cagli-sand);
 }
@@ -141,7 +139,7 @@
 }
 
 .cagli-logo {
-  height: 57px; /* regola qui */
+  height: 57px;
   width: auto;
   display: block;
   object-fit: contain;
@@ -997,51 +995,6 @@
 .cagli-footer button:focus-visible {
   color: var(--cagli-basil);
   outline: 0;
-}
-
-.cagli-empty-state,
-.cagli-skeleton-card {
-  min-height: 220px;
-  display: grid;
-  place-items: center;
-  gap: 8px;
-  grid-column: 1 / -1;
-  border: 1px dashed var(--cagli-border);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--cagli-ash);
-  text-align: center;
-}
-
-.cagli-empty-state svg {
-  width: 120px;
-  fill: none;
-  stroke: var(--cagli-border);
-  stroke-width: 4;
-}
-
-.cagli-skeleton-card {
-  grid-column: auto;
-  align-content: start;
-  place-items: stretch;
-  padding: 20px;
-}
-
-.cagli-skeleton-card i,
-.cagli-skeleton-card span,
-.cagli-skeleton-card strong,
-.cagli-skeleton-card p {
-  display: block;
-  height: 16px;
-  border-radius: 999px;
-  background: var(--cagli-sand);
-  animation: cagliPulse 1.1s ease-in-out infinite;
-}
-
-.cagli-skeleton-card i {
-  width: 64px;
-  height: 64px;
-  border-radius: 14px;
 }
 
 @keyframes cagliSlideUp {
