@@ -30,7 +30,7 @@ The product is not yet a complete marketplace SaaS because guided onboarding, bi
 
 - Business settings exist both in `Business.settings` and `StoreSettings`; keep the split intentional: platform metadata in `Business`, operational counter settings in `StoreSettings`.
 - Booking and rental are scaffolded, not real modules yet.
-- `PlatformHome.jsx` still carries legacy public-directory helpers and should eventually be trimmed further now that `/admin` has its own console.
+- `PlatformHome.jsx` has been trimmed to the city directory; root search and platform admin are now isolated in their dedicated views.
 - There is no automated regression suite beyond build, smoke checks and manual browser checks.
 
 ## Recommended Refactor Order
@@ -39,8 +39,7 @@ The product is not yet a complete marketplace SaaS because guided onboarding, bi
 2. Add audit logs for platform actions: city status changes, business edits, user provisioning.
 3. Extract platform API/business/city logic from `backend/routes/platform.js` into services.
 4. Add regression tests for routing, tenant isolation and role permissions.
-5. Trim legacy helpers from `PlatformHome.jsx` after the city directory stabilizes.
-6. Add billing lifecycle handling for `plan` and `subscriptionStatus`.
+5. Add billing lifecycle handling for `plan` and `subscriptionStatus`.
 
 ## Current Frontend Structure
 

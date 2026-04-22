@@ -29,7 +29,7 @@ Il menu piattaforma non deve comparire nel banco del gestore locale. Il banco lo
 ## View principali
 
 - `frontend/src/views/PlatformHome.jsx`
-  - Directory pubblica e home citta legacy.
+  - Directory pubblica della citta per `/:citySlug`.
   - Usa componenti UI comuni per loading/empty state.
 
 - `frontend/src/views/PlatformLanding.jsx`
@@ -39,7 +39,7 @@ Il menu piattaforma non deve comparire nel banco del gestore locale. Il banco lo
   - Wrapper della directory pubblica per `/:citySlug`.
 
 - `frontend/src/views/PlatformAdminView.jsx`
-  - Wrapper della console globale `/admin/*`.
+  - Wrapper della console piattaforma `/admin/*`.
 
 - `frontend/src/views/PlatformConsoleView.jsx`
   - Dashboard piattaforma, citta, business, utenti e impostazioni.

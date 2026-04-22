@@ -70,22 +70,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .cagli-admin-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .cagli-admin-metrics,
-  .cagli-owner-quick-grid,
-  .cagli-owner-inline-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .cagli-admin-directory-head,
-  .cagli-admin-tools,
-  .cagli-owner-header {
-    grid-template-columns: 1fr;
-  }
-
   .admin-sidebar {
     position: static;
   }
@@ -528,9 +512,6 @@
   }
 
   .city-business-grid,
-  .cagli-admin-grid,
-  .cagli-admin-console,
-  .cagli-owner-home,
   .city-directory-title {
     width: min(100% - 20px, 1180px);
   }
@@ -540,31 +521,7 @@
     flex-direction: column;
   }
 
-  .cagli-admin-overview,
-  .cagli-admin-directory-head {
-    align-items: stretch;
-    grid-template-columns: 1fr;
-    flex-direction: column;
-  }
-
-  .cagli-admin-quick-actions,
-  .cagli-admin-tools {
-    justify-content: stretch;
-  }
-
-  .cagli-admin-tools {
-    grid-template-columns: 1fr;
-  }
-
-  .cagli-admin-quick-actions a {
-    flex: 1 1 160px;
-  }
-
-  .city-business-grid,
-  .cagli-admin-grid,
-  .cagli-admin-metrics,
-  .cagli-owner-quick-grid,
-  .cagli-owner-inline-metrics {
+  .city-business-grid {
     grid-template-columns: 1fr;
   }
 
@@ -585,15 +542,6 @@
 
   .city-business-card > strong {
     grid-column: auto;
-  }
-
-  .cagli-owner-hero-card {
-    grid-template-columns: 1fr;
-  }
-
-  .cagli-admin-card-actions,
-  .cagli-admin-asset-actions {
-    grid-template-columns: 1fr;
   }
 
   .cagli-login-modal {
