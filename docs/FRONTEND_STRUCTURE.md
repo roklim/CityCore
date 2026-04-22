@@ -5,18 +5,45 @@ Non usa React Router: la view viene scelta leggendo `window.location.pathname`.
 
 ## Route principali
 
-- `/` mostra la home piattaforma Cagli con directory business.
-- `/admin` mostra login/console globale.
-- `/:businessSlug` mostra il menu pubblico del business.
-- `/:businessSlug/admin` mostra l'admin operativo del business.
-- `/:businessSlug/ordine/:id` mostra il tracking ordine.
-- `/:businessSlug?ordine=id` resta compatibile con tracking via query string.
+- `/` mostra la home piattaforma con ricerca delle citta attive.
+- `/admin` mostra login/dashboard piattaforma.
+- `/admin/cities` mostra ricerca `CityRegistry`, attivazione citta e stati mercato.
+- `/admin/businesses` mostra lista, creazione, modifica, owner e asset dei business.
+- `/admin/users` mostra owner/admin/staff dei tenant.
+- `/admin/settings` mostra configurazione e note operative piattaforma.
+- `/:citySlug` mostra la home/directory della citta.
+- `/:citySlug/:businessSlug` mostra il menu pubblico del business.
+- `/:citySlug/:businessSlug/admin` mostra l'admin operativo del business.
+- `/:citySlug/:businessSlug/ordine/:id` mostra il tracking ordine.
+- `/:businessSlug` e `/:businessSlug/admin` restano compatibili come route legacy.
+
+## Menu Admin Separati
+
+Ci sono due esperienze admin distinte:
+
+- Global Admin: `/admin/*`, con menu piattaforma per dashboard, citta, business, utenti e impostazioni.
+- Gestore locale: `/:citySlug/:businessSlug/admin`, con menu operativo per oggi, ordini, menu, disponibilita, clienti e impostazioni.
+
+Il menu piattaforma non deve comparire nel banco del gestore locale. Il banco locale non deve contenere controlli di piattaforma.
 
 ## View principali
 
 - `frontend/src/views/PlatformHome.jsx`
-  - Home pubblica, login globale, directory attivita.
+  - Directory pubblica e home citta legacy.
   - Usa componenti UI comuni per loading/empty state.
+
+- `frontend/src/views/PlatformLanding.jsx`
+  - Root pubblica `/`: ricerca solo citta attive.
+
+- `frontend/src/views/CityHome.jsx`
+  - Wrapper della directory pubblica per `/:citySlug`.
+
+- `frontend/src/views/PlatformAdminView.jsx`
+  - Wrapper della console globale `/admin/*`.
+
+- `frontend/src/views/PlatformConsoleView.jsx`
+  - Dashboard piattaforma, citta, business, utenti e impostazioni.
+  - Usa `usePlatformConsoleController` e non carica stato operativo del banco locale.
 
 - `frontend/src/views/CustomerView.jsx`
   - Contenitore della pagina cliente.
@@ -24,7 +51,7 @@ Non usa React Router: la view viene scelta leggendo `window.location.pathname`.
   - Delega il markup a componenti in `components/customer`.
 
 - `frontend/src/views/AdminView.jsx`
-  - Contenitore del pannello admin.
+  - Contenitore del banco operativo locale.
   - Mantiene wiring e stato proveniente da `useAdminController`.
   - Delega le sezioni operative a componenti in `components/admin`.
 
@@ -108,17 +135,19 @@ senza creare un design system troppo astratto.
 - Vuoi cambiare orari/impostazioni locale? Parti da `AdminSettingsSection.jsx`.
 - Vuoi cambiare routing? Parti da `App.jsx`.
 - Vuoi cambiare API/fetch? Parti da `frontend/src/lib/api.js`.
+- Vuoi cambiare attivazione citta? Parti da `usePlatformConsoleController.js` e `PlatformConsoleView.jsx`.
 
 ## Regole di manutenzione
 
 - Non spostare logica API nei componenti presentazionali.
-- Lascia gli hook (`useCustomerController`, `useAdminController`) come fonte
+- Lascia gli hook (`useCustomerController`, `useAdminController`, `usePlatformConsoleController`) come fonte
   principale dello stato operativo.
 - Evita nuove librerie se il problema si risolve con componenti piccoli.
-- Mantieni link principali nel formato `/:businessSlug` e
-  `/:businessSlug/admin`.
+- Mantieni i link principali nel formato `/:citySlug/:businessSlug` e
+  `/:citySlug/:businessSlug/admin`; le route `/:businessSlug` sono legacy.
 - Dopo modifiche importanti esegui sempre:
 
 ```bash
 npm --prefix frontend run build
+npm --prefix backend run smoke
 ```

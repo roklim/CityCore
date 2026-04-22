@@ -35,6 +35,26 @@ The app ships with a default tenant:
 - Enabled modules: ordering, custom pizza, coupons, analytics
 
 Frontend requests send `X-Business-Slug`. If no slug is provided, the backend falls back to `DEFAULT_BUSINESS_SLUG`.
+When the route is city-based, frontend requests also send `X-City-Slug`, so the same business slug can exist in different cities over time.
+
+## City Registry
+
+The app now separates:
+
+- `CityRegistry`: verified Italian municipalities imported from ISTAT/SITUAS or another trusted provider.
+- `City`: active platform markets visible in the public app.
+
+The public home `/` searches only active platform cities. The global admin can search the registry and activate a municipality before assigning businesses to it.
+
+Useful commands:
+
+```bash
+cd backend
+npm run cities:import
+npm run cities:import -- path/to/istat-comuni.csv
+```
+
+`npm run cities:import` without a file verifies the bootstrap registry seed. With a CSV/JSON file it upserts municipalities into MongoDB.
 
 ## SaaS Direction
 
@@ -45,9 +65,16 @@ The platform is designed around:
 - feature flags for ordering, booking and rental modules
 - a migration path from single pizzeria app to multi-business SaaS
 - one backend/database with multiple businesses
-- one frontend codebase deployed as separate Vercel apps per business
+- one frontend codebase deployed primarily as one central Vercel app, with optional dedicated projects only for clients that need separate domains or deploys
 
-The global admin is available from `/admin`. The new `Business` section lets the platform owner create and monitor businesses, store Vercel URLs, and copy the slug env variable for each app.
+The global admin is available from `/admin`. It is a dedicated platform console, not the local counter UI. The console has explicit sections for dashboard, cities, businesses, users and settings.
+
+Admin menus are intentionally split:
+
+- `/admin`, `/admin/cities`, `/admin/businesses`, `/admin/users` and `/admin/settings` use the platform console menu.
+- `/:citySlug/:businessSlug/admin` uses the local business operations menu.
+
+The business owner should never see platform-only items such as city activation or tenant creation inside the local counter UI.
 
 ## Admin Roles
 
@@ -62,31 +89,40 @@ The legacy `.env` admin login still works as `global_admin`. Business owners are
 
 Tenant isolation rule: for `owner`, `admin`, and `staff`, the backend uses `businessId` from the JWT and ignores conflicting frontend slugs.
 
-For day-to-day convenience, you can manage a specific business without changing env files:
+Current public routing:
 
 ```txt
-/admin/mucho-gusto
-/admin/sushi-centro
+/                         city search
+/admin                    platform dashboard
+/admin/cities             city registry and active markets
+/admin/businesses         tenant, owner and asset management
+/admin/users              owner/admin/staff management
+/admin/settings           platform settings and routing notes
+/:citySlug                city home/directory
+/:citySlug/:businessSlug  business public app
+/:citySlug/:businessSlug/admin
+/:citySlug/:businessSlug/ordine/:id
 ```
 
-Customer previews use:
+Legacy direct business URLs remain compatible during migration:
 
 ```txt
-/p/mucho-gusto
-/p/sushi-centro
+/:businessSlug
+/:businessSlug/admin
 ```
 
 Owner example:
 
 1. Create business `Mucho Gusto`.
 2. Add owner `mario@muchogusto.it` with a temporary password.
-3. Mario logs in at `/admin` or `/admin/mucho-gusto`.
+3. Mario logs in from the public manager entry or directly at `/:citySlug/:businessSlug/admin`.
 4. Mario sees only Mucho Gusto data.
 
 See:
 
 - `docs/ARCHITECTURE.md`
 - `docs/BUSINESS_METRICS.md`
+- `docs/CITY_REGISTRY.md`
 - `docs/VERCEL_BUSINESS_APPS.md`
 - `docs/TROUBLESHOOTING.md`
 - `docs/TECHNICAL_REVIEW.md`
@@ -102,6 +138,9 @@ npm run build
 
 ```bash
 node --check backend/db/index.js
+node --check backend/middleware/business.js
+node --check backend/routes/platform.js
+node --check backend/routes/businesses.js
 node --check backend/routes/orders.js
 node --check backend/routes/menu.js
 ```

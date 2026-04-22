@@ -7,6 +7,7 @@
     "start": "node server.js",
     "check:db": "node scripts/check-db.js",
     "check:indexes": "node scripts/index-report.js",
+    "cities:import": "node scripts/import-city-registry.js",
     "smoke": "node scripts/smoke-test.js"
   },
   "dependencies": {

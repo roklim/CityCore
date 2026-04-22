@@ -39,6 +39,7 @@ function publicBusiness(business) {
     branding: business.branding,
     features: business.features,
     settings: business.settings,
+    location: business.location,
   };
 }
 

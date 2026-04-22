@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const {
   Business,
+  City,
+  CityRegistry,
   Customer,
   MenuItem,
   Order,
@@ -95,6 +97,169 @@ function publicUser(user) {
     lastLoginAt: user.lastLoginAt,
     createdAt: user.createdAt,
   };
+}
+
+function publicCity(city) {
+  if (!city) return null;
+  return {
+    _id: city._id,
+    registryId: city.registryId,
+    name: city.name,
+    slug: city.slug,
+    province: city.province,
+    region: city.region,
+    country: city.country,
+    lat: city.lat,
+    lng: city.lng,
+    active: city.active,
+    status: city.status || "active",
+    heroTitle: city.heroTitle || "",
+    heroDescription: city.heroDescription || "",
+    sortOrder: city.sortOrder || 0,
+    enabledModules: city.enabledModules || {},
+  };
+}
+
+function publicRegistryCity(city, activeCity = null) {
+  if (!city) return null;
+  return {
+    _id: city._id,
+    name: city.name,
+    slug: city.slug,
+    provinceCode: city.provinceCode,
+    provinceName: city.provinceName,
+    regionCode: city.regionCode,
+    regionName: city.regionName,
+    country: city.country,
+    istatCode: city.istatCode,
+    cadastralCode: city.cadastralCode,
+    activeMunicipality: city.activeMunicipality,
+    source: city.source,
+    sourceVersion: city.sourceVersion,
+    lat: city.lat,
+    lng: city.lng,
+    activeCity: publicCity(activeCity),
+  };
+}
+
+function escapeRegex(value = "") {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function locationFromCity(city, current = {}) {
+  return {
+    cityName: city.name,
+    citySlug: city.slug,
+    province: city.province || "",
+    region: city.region || "",
+    country: city.country || "IT",
+    address: String(current.address || "").trim(),
+    lat: city.lat,
+    lng: city.lng,
+  };
+}
+
+async function resolveCity(body = {}) {
+  const cityId = body.cityId || body.location?.cityId;
+  const citySlug = normalizeSlug(body.citySlug || body.location?.citySlug || "");
+  const base = { active: true, status: { $ne: "disabled" } };
+  const query = cityId && mongoose.Types.ObjectId.isValid(cityId)
+    ? { ...base, _id: cityId }
+    : citySlug
+      ? { ...base, slug: citySlug }
+      : { ...base, slug: "cagli" };
+  return City.findOne(query).lean();
+}
+
+async function applyVerifiedCity(payload, body = {}) {
+  const city = await resolveCity(body);
+  if (!city) {
+    throw Object.assign(new Error("Seleziona una citta verificata"), { status: 400 });
+  }
+  payload.cityId = city._id;
+  payload.location = locationFromCity(city, body.location);
+  return payload;
+}
+
+async function resolveRegistryCity(body = {}) {
+  const registryId = body.registryId || body.cityRegistryId;
+  const istatCode = String(body.istatCode || "").trim();
+  const slug = normalizeSlug(body.slug || body.citySlug || "");
+  const provinceCode = String(body.provinceCode || "").trim().toUpperCase();
+
+  const filters = [];
+  if (registryId && mongoose.Types.ObjectId.isValid(registryId)) {
+    filters.push({ _id: registryId });
+  }
+  if (istatCode) filters.push({ istatCode });
+  if (slug && provinceCode) filters.push({ slug, provinceCode });
+  if (slug) filters.push({ slug });
+
+  if (filters.length === 0) return null;
+  return CityRegistry.findOne({
+    activeMunicipality: true,
+    $or: filters,
+  }).lean();
+}
+
+function cityPayloadFromRegistry(registryCity, body = {}) {
+  const status = ["active", "coming_soon", "disabled"].includes(body.status)
+    ? body.status
+    : "active";
+  return {
+    registryId: registryCity._id,
+    name: registryCity.name,
+    slug: normalizeSlug(body.citySlug || body.slug || registryCity.slug),
+    province: registryCity.provinceCode || "",
+    region: registryCity.regionName || "",
+    country: registryCity.country || "IT",
+    provider: "registry",
+    providerPlaceId: registryCity.istatCode || String(registryCity._id),
+    lat: registryCity.lat,
+    lng: registryCity.lng,
+    active: body.active === undefined ? status !== "disabled" : body.active !== false,
+    status,
+    heroTitle: String(body.heroTitle || "").trim(),
+    heroDescription: String(body.heroDescription || "").trim(),
+    sortOrder: Number(body.sortOrder) || 0,
+    lastVerifiedAt: new Date(),
+  };
+}
+
+async function searchRegistryCities(req, res) {
+  const q = String(req.query.q || "").trim();
+  const normalized = normalizeSlug(q);
+  const filter = { activeMunicipality: true };
+
+  if (q) {
+    const safe = escapeRegex(q.toLowerCase());
+    const normalizedSafe = escapeRegex(normalized);
+    filter.$or = [
+      { searchText: new RegExp(safe, "i") },
+      { slug: new RegExp(normalizedSafe, "i") },
+      { name: new RegExp(escapeRegex(q), "i") },
+      { provinceCode: new RegExp(escapeRegex(q), "i") },
+      { provinceName: new RegExp(escapeRegex(q), "i") },
+      { regionName: new RegExp(escapeRegex(q), "i") },
+      { istatCode: new RegExp(escapeRegex(q), "i") },
+    ];
+  }
+
+  const registryCities = await CityRegistry.find(filter)
+    .sort({ name: 1, provinceCode: 1 })
+    .limit(q ? 30 : 12)
+    .lean();
+  const registryIds = registryCities.map((city) => city._id);
+  const activeCities = await City.find({ registryId: { $in: registryIds } }).lean();
+  const activeByRegistry = new Map(
+    activeCities.map((city) => [String(city.registryId), city]),
+  );
+
+  res.json({
+    cities: registryCities.map((city) =>
+      publicRegistryCity(city, activeByRegistry.get(String(city._id))),
+    ),
+  });
 }
 
 // Crea o aggiorna un utente business. L'email e' unica dentro il tenant, quindi
@@ -211,6 +376,118 @@ function buildBusinessUpdate(body = {}) {
   return update;
 }
 
+router.get(
+  "/cities",
+  asyncHandler(async (req, res) => {
+    const cities = await City.find()
+      .sort({ sortOrder: 1, name: 1 })
+      .lean();
+    res.json({ cities: cities.map(publicCity) });
+  }),
+);
+
+router.get(
+  "/cities/search",
+  asyncHandler(async (req, res) => {
+    const q = String(req.query.q || "").trim();
+    const filter = { active: true, status: { $ne: "disabled" } };
+    if (q) {
+      const safe = escapeRegex(q);
+      filter.$or = [
+        { name: new RegExp(safe, "i") },
+        { slug: new RegExp(escapeRegex(normalizeSlug(q)), "i") },
+        { province: new RegExp(safe, "i") },
+        { region: new RegExp(safe, "i") },
+      ];
+    }
+    const cities = await City.find(filter)
+      .sort({ sortOrder: 1, name: 1 })
+      .limit(20)
+      .lean();
+    res.json({ cities: cities.map(publicCity) });
+  }),
+);
+
+router.get(
+  "/registry/cities",
+  asyncHandler(searchRegistryCities),
+);
+
+router.get(
+  "/registry/cities/search",
+  asyncHandler(searchRegistryCities),
+);
+
+router.post(
+  "/cities/activate",
+  asyncHandler(async (req, res) => {
+    const registryCity = await resolveRegistryCity(req.body);
+    if (!registryCity) {
+      return res.status(404).json({
+        error: "Comune non trovato nel registro nazionale",
+      });
+    }
+
+    const payload = cityPayloadFromRegistry(registryCity, req.body);
+    if (!payload.slug) return res.status(400).json({ error: "Slug citta non valido" });
+
+    const slugOwner = await City.findOne({
+      slug: payload.slug,
+      registryId: { $ne: registryCity._id },
+    }).lean();
+    if (slugOwner) {
+      return res.status(409).json({
+        error: "Slug citta gia usato da un altro comune attivo",
+      });
+    }
+
+    const city = await City.findOneAndUpdate(
+      { registryId: registryCity._id },
+      { $set: payload },
+      {
+        returnDocument: "after",
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+
+    res.status(201).json({ city: publicCity(city) });
+  }),
+);
+
+router.patch(
+  "/cities/:id/status",
+  asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "ID citta non valido" });
+    }
+
+    const status = ["active", "coming_soon", "disabled"].includes(req.body.status)
+      ? req.body.status
+      : "";
+    if (!status) return res.status(400).json({ error: "Stato citta non valido" });
+
+    const city = await City.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          status,
+          active: req.body.active === undefined ? status !== "disabled" : req.body.active !== false,
+          heroTitle: String(req.body.heroTitle || "").trim(),
+          heroDescription: String(req.body.heroDescription || "").trim(),
+          sortOrder: Number(req.body.sortOrder) || 0,
+          lastVerifiedAt: new Date(),
+        },
+      },
+      { returnDocument: "after", runValidators: true },
+    );
+
+    if (!city) return res.status(404).json({ error: "Citta non trovata" });
+    res.json({ city: publicCity(city) });
+  }),
+);
+
 // Seed per nuovi tenant: crea prodotti demo solo se il business non ha ancora
 // articoli. Rende comoda la prova immediata su una nuova app Vercel.
 async function seedBusinessMenu(business) {
@@ -243,8 +520,9 @@ router.get(
     // tenant. Questa route e' protetta da requireGlobalAdmin a livello router.
     const businesses = await Business.find().sort({ createdAt: -1 }).lean();
     const businessIds = businesses.map((business) => business._id);
+    const cityIds = businesses.map((business) => business.cityId).filter(Boolean);
 
-    const [orders, menuItems, customers, lastOrders, owners] = await Promise.all([
+    const [orders, menuItems, customers, lastOrders, owners, cities] = await Promise.all([
       Order.aggregate([
         { $match: { businessId: { $in: businessIds } } },
         {
@@ -298,6 +576,7 @@ router.get(
       User.find({ businessId: { $in: businessIds }, role: "owner" })
         .sort({ createdAt: 1 })
         .lean(),
+      City.find({ _id: { $in: cityIds } }).lean(),
     ]);
 
     const ordersByBusiness = asBusinessIdMap(orders);
@@ -307,6 +586,7 @@ router.get(
     const ownersByBusiness = new Map(
       owners.map((owner) => [String(owner.businessId), owner]),
     );
+    const citiesById = new Map(cities.map((city) => [String(city._id), city]));
 
     res.json({
       businesses: businesses.map((business) => {
@@ -316,9 +596,11 @@ router.get(
         const customerStats = customersByBusiness.get(key) || {};
         const lastOrder = lastOrdersByBusiness.get(key) || {};
         const owner = ownersByBusiness.get(key);
+        const city = business.cityId ? citiesById.get(String(business.cityId)) : null;
 
         return {
           ...business,
+          city: publicCity(city) || null,
           owner: publicUser(owner),
           metrics: {
             orders: orderStats.orders || 0,
@@ -340,9 +622,18 @@ router.get(
 router.post(
   "/businesses",
   asyncHandler(async (req, res) => {
-    const payload = toBusinessPayload(req.body);
+    const payload = await applyVerifiedCity(toBusinessPayload(req.body), req.body);
     if (!payload.name) return res.status(400).json({ error: "Nome obbligatorio" });
     if (!payload.slug) return res.status(400).json({ error: "Slug obbligatorio" });
+    const duplicate = await Business.findOne({
+      slug: payload.slug,
+      "location.citySlug": payload.location.citySlug,
+    }).lean();
+    if (duplicate) {
+      return res
+        .status(409)
+        .json({ error: "Slug business gia usato in questa citta" });
+    }
 
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 14);
@@ -391,7 +682,7 @@ router.post(
       if (error.code === 11000) {
         return res
           .status(409)
-          .json({ error: "Slug business gia utilizzato" });
+          .json({ error: "Slug business gia utilizzato. Verifica gli indici Mongo legacy." });
       }
       throw error;
     }
@@ -406,8 +697,32 @@ router.put(
     }
 
     const update = buildBusinessUpdate(req.body);
+    if (
+      req.body.cityId !== undefined ||
+      req.body.citySlug !== undefined ||
+      req.body.location !== undefined
+    ) {
+      await applyVerifiedCity(update, req.body);
+    }
     if (Object.keys(update).length === 0) {
       return res.status(400).json({ error: "Nessuna modifica valida" });
+    }
+    if (update.slug || update.location) {
+      const current = await Business.findById(req.params.id).lean();
+      if (!current) return res.status(404).json({ error: "Business non trovato" });
+      const nextSlug = update.slug || current.slug;
+      const nextCitySlug =
+        update.location?.citySlug || current.location?.citySlug || "cagli";
+      const duplicate = await Business.findOne({
+        _id: { $ne: current._id },
+        slug: nextSlug,
+        "location.citySlug": nextCitySlug,
+      }).lean();
+      if (duplicate) {
+        return res
+          .status(409)
+          .json({ error: "Slug business gia usato in questa citta" });
+      }
     }
 
     try {
@@ -456,7 +771,7 @@ router.put(
       if (error.code === 11000) {
         return res
           .status(409)
-          .json({ error: "Slug business gia utilizzato" });
+          .json({ error: "Slug business gia utilizzato. Verifica gli indici Mongo legacy." });
       }
       throw error;
     }

@@ -13,7 +13,9 @@ Track these metrics before positioning the app as a sellable micro-SaaS.
 ## Usage
 
 - active businesses
-- active Vercel apps
+- active city markets
+- active business routes
+- dedicated Vercel projects, only when a client needs one
 - active modules per business
 - orders processed
 - bookings created

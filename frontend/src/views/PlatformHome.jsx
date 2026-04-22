@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  getPlatformBusinesses,
   getPublicBusinesses,
+  getPublicCities,
+  getPublicCity,
   loginAdmin,
 } from "../lib/api";
-import { money } from "../utils/format";
+import { businessAdminHref, businessHref, money } from "../utils/format";
 import Toast from "../components/Toast";
 import EmptyState from "../components/ui/EmptyState";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton";
@@ -292,11 +293,12 @@ function Icon({ name }) {
 
 // ── PlatformHome (root) ───────────────────────────────────────────────────────
 
-export default function PlatformHome({ mode }) {
+export default function PlatformHome({ mode, citySlug = "", loadingRoute = false }) {
   const routeMode = readRouteMode(mode);
   const [session, setSession] = useState(() => readAdminSession());
+  const [publicCities, setPublicCities] = useState([]);
+  const [currentCity, setCurrentCity] = useState(null);
   const [publicBusinesses, setPublicBusinesses] = useState([]);
-  const [platformBusinesses, setPlatformBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loginOpen, setLoginOpen] = useState(
     routeMode === "admin" && !session.token,
@@ -314,19 +316,23 @@ export default function PlatformHome({ mode }) {
   const isBusinessUser =
     session.role && ["owner", "admin", "staff"].includes(session.role);
   const ownSlug = session.business?.slug || "";
+  const isCityMode = routeMode === "city";
+  const isRootMode = routeMode === "home";
 
   useEffect(() => {
     let cancelled = false;
     async function loadDirectory() {
       setLoading(true);
       try {
-        const publicList = await getPublicBusinesses();
-        if (!cancelled) setPublicBusinesses(publicList);
-        if (session.token && isGlobalAdmin) {
-          const platformList = await getPlatformBusinesses(session.token);
-          if (!cancelled) setPlatformBusinesses(platformList);
-        } else {
-          setPlatformBusinesses([]);
+        const [cityList, selectedCity, publicList] = await Promise.all([
+          getPublicCities(),
+          citySlug ? getPublicCity(citySlug) : Promise.resolve(null),
+          isCityMode ? getPublicBusinesses(citySlug) : Promise.resolve([]),
+        ]);
+        if (!cancelled) {
+          setPublicCities(cityList);
+          setCurrentCity(selectedCity);
+          setPublicBusinesses(publicList);
         }
       } catch (error) {
         if (!cancelled) setToast(error.message);
@@ -338,7 +344,7 @@ export default function PlatformHome({ mode }) {
     return () => {
       cancelled = true;
     };
-  }, [session.token, isGlobalAdmin]);
+  }, [citySlug, isCityMode]);
 
   useEffect(() => {
     setLoginOpen(routeMode === "admin" && !session.token);
@@ -346,13 +352,13 @@ export default function PlatformHome({ mode }) {
 
   useEffect(() => {
     if (routeMode !== "admin" || !isBusinessUser || !ownSlug) return;
-    window.location.replace(`/${ownSlug}/admin`);
+    const citySlug = session.business?.location?.citySlug || "";
+    window.location.replace(
+      citySlug ? `/${citySlug}/${ownSlug}/admin` : `/${ownSlug}/admin`,
+    );
   }, [routeMode, isBusinessUser, ownSlug]);
 
-  const businesses =
-    isGlobalAdmin && platformBusinesses.length
-      ? platformBusinesses
-      : publicBusinesses;
+  const businesses = publicBusinesses;
 
   const filteredBusinesses = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -366,25 +372,14 @@ export default function PlatformHome({ mode }) {
         business.branding?.publicName,
         business.slug,
         business.type,
+        business.location?.cityName,
+        business.location?.citySlug,
         business.owner?.email,
       ]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(needle));
     });
   }, [businesses, search, typeFilter]);
-
-  const platformStats = useMemo(() => {
-    return platformBusinesses.reduce(
-      (t, b) => {
-        t.businesses += 1;
-        t.orders += b.metrics?.orders || 0;
-        t.revenue += b.metrics?.revenue || 0;
-        if (b.subscriptionStatus === "active") t.active += 1;
-        return t;
-      },
-      { businesses: 0, active: 0, orders: 0, revenue: 0 },
-    );
-  }, [platformBusinesses]);
 
   const heroStats = useMemo(
     () => ({
@@ -439,7 +434,12 @@ export default function PlatformHome({ mode }) {
       setSession(nextSession);
       setLoginOpen(false);
       if (data.role !== "global_admin" && data.business?.slug) {
-        window.location.replace(`/${data.business.slug}/admin`);
+        const citySlug = data.business.location?.citySlug || "";
+        window.location.replace(
+          citySlug
+            ? `/${citySlug}/${data.business.slug}/admin`
+            : `/${data.business.slug}/admin`,
+        );
       }
     } catch (error) {
       setLoginError(error.message || "Credenziali non valide");
@@ -464,24 +464,31 @@ export default function PlatformHome({ mode }) {
         onLogout={logout}
       />
 
-      {!session.token && (
-        <PublicHero
-          businesses={filteredBusinesses}
-          heroStats={heroStats}
+      {loadingRoute && !session.token && (
+        <section className="city-picker-home">
+          <div>
+            <p>Caricamento</p>
+            <h1>Sto preparando la pagina...</h1>
+          </div>
+        </section>
+      )}
+
+      {!loadingRoute && !session.token && isRootMode && (
+        <CitySearchHome
+          cities={publicCities}
           loading={loading}
           search={search}
           setSearch={setSearch}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
         />
       )}
 
-      {isGlobalAdmin && (
-        <GlobalAdminView
+      {!loadingRoute && isCityMode && (
+        <PublicHero
           businesses={filteredBusinesses}
+          city={currentCity}
+          citySlug={citySlug}
+          heroStats={heroStats}
           loading={loading}
-          onToast={setToast}
-          platformStats={platformStats}
           search={search}
           setSearch={setSearch}
           typeFilter={typeFilter}
@@ -491,18 +498,6 @@ export default function PlatformHome({ mode }) {
 
       {isBusinessUser && ownerBusiness && (
         <OwnerHome business={ownerBusiness} user={session.user} />
-      )}
-
-      {isBusinessUser && (
-        <PublicHero
-          businesses={filteredBusinesses}
-          heroStats={heroStats}
-          loading={loading}
-          search={search}
-          setSearch={setSearch}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-        />
       )}
 
       <CagliFooter onLogin={() => setLoginOpen(true)} />
@@ -546,10 +541,10 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
         {isGlobalAdmin && (
           <>
             <a className="active" href="/admin">
-              Console globale
+              Console
             </a>
-            <a href="/admin/businesses?section=businesses">Gestione business</a>
-            <span className="cagli-notification">0</span>
+            <a href="/admin/cities">Citta</a>
+            <a href="/admin/businesses">Business</a>
           </>
         )}
         {isLogged ? (
@@ -578,8 +573,61 @@ function CagliHeader({ isGlobalAdmin, isLogged, onLogin, onLogout }) {
 
 // ── PublicHero ────────────────────────────────────────────────────────────────
 
+function CitySearchHome({ cities, loading, search, setSearch }) {
+  const needle = search.trim().toLowerCase();
+  const visibleCities = cities.filter((city) => {
+    if (!needle) return true;
+    return [city.name, city.slug, city.province, city.region]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(needle));
+  });
+
+  return (
+    <section className="city-picker-home">
+      <div className="city-picker-copy">
+        <p>Cagli Local</p>
+        <h1>Trova la tua citta.</h1>
+        <span>
+          Scegli il territorio e scopri locali, ordini, servizi, eventi e
+          segnalazioni disponibili nella tua zona.
+        </span>
+        <label className="city-search city-picker-search">
+          <Icon name="search" />
+          <input
+            placeholder="Cerca Cagli, Roma, Milano..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
+      </div>
+      <div className="city-picker-grid">
+        {loading ? (
+          <LoadingSkeleton count={3} />
+        ) : visibleCities.length === 0 ? (
+          <EmptyState
+            title="Citta non ancora disponibile"
+            description="Prova un'altra ricerca o chiedi al gestore di attivare la tua zona."
+          />
+        ) : (
+          visibleCities.map((city) => (
+            <a className="city-picker-card" href={`/${city.slug}`} key={city.slug}>
+              <span>{city.province || city.country || "IT"}</span>
+              <strong>{city.name}</strong>
+              <small>
+                {[city.region, city.country].filter(Boolean).join(" - ")}
+              </small>
+            </a>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
 function PublicHero({
   businesses,
+  city,
+  citySlug,
   heroStats = {},
   loading,
   search,
@@ -591,6 +639,11 @@ function PublicHero({
   const totalActive = businesses.filter((b) => isBusinessActive(b)).length;
   const events = businesses.filter((b) => b.type === "event").length;
   const visibleCount = businesses.length;
+  const heroTitle =
+    city?.heroTitle || `${city?.name || "La tua citta"} a portata di mano.`;
+  const heroDescription =
+    city?.heroDescription ||
+    "Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota e scopri cosa succede in citta.";
   const sectionLabel = SECTION_LABELS[typeFilter] || "Tutte le attività";
 
   return (
@@ -598,11 +651,15 @@ function PublicHero({
       <section className="city-hero">
         <div className="city-hero-inner">
           <div className="city-hero-copy">
-            <h1>La tua citta a portata di mano.</h1>
+            <h1>{heroTitle}</h1>
+            {city?.heroDescription ? (
+              <p>{heroDescription}</p>
+            ) : (
             <p>
               Locali, negozi, noleggi ed eventi del territorio. Ordina, prenota
               e scopri cosa succede in città.
             </p>
+            )}
             {(totalActive > 0 || openNow > 0 || events > 0 || rentals > 0) && (
               <div className="city-hero-stats" aria-label="Riepilogo attività">
                 {totalActive > 0 && (
@@ -670,6 +727,7 @@ function PublicHero({
           businesses.map((business, index) => (
             <PublicBusinessCard
               business={business}
+              citySlug={citySlug}
               index={index}
               key={business._id || business.slug}
               search={search}
@@ -685,6 +743,7 @@ function PublicHero({
 
 function GlobalAdminView({
   businesses,
+  cities = [],
   loading,
   onToast,
   platformStats,
@@ -698,13 +757,13 @@ function GlobalAdminView({
       <div className="cagli-admin-overview">
         <div className="cagli-admin-title">
           <p>Console piattaforma</p>
-          <h1>Console globale</h1>
+          <h1>Console piattaforma</h1>
           <span>
             Gestisci locali, immagini, menu e accessi da un unico punto.
           </span>
         </div>
         <div className="cagli-admin-quick-actions">
-          <a href="/admin/businesses?section=businesses">Aggiungi business</a>
+          <a href="/admin/businesses">Aggiungi business</a>
           <a href="/">Vedi directory</a>
         </div>
       </div>
@@ -716,6 +775,11 @@ function GlobalAdminView({
           value={platformStats.businesses}
         />
         <MetricCard icon="A" label="Attivi" value={platformStats.active} />
+        <MetricCard
+          icon="C"
+          label="Citta"
+          value={cities.length || platformStats.cities?.size || 0}
+        />
         <MetricCard icon="O" label="Ordini" value={platformStats.orders} />
         <MetricCard
           icon="EUR"
@@ -750,7 +814,7 @@ function GlobalAdminView({
               </option>
             ))}
           </select>
-          <a href="/admin/businesses?section=businesses">Nuovo locale</a>
+          <a href="/admin/businesses">Nuovo locale</a>
         </div>
       </section>
 
@@ -777,6 +841,9 @@ function GlobalAdminView({
 
 function OwnerHome({ business, user }) {
   const slug = business.slug || "";
+  const citySlug = business.location?.citySlug || business.city?.slug || "";
+  const publicPath = businessHref(slug, citySlug);
+  const adminPath = businessAdminHref(slug, citySlug);
   const metrics = business.metrics || {};
   const name = businessName(business);
 
@@ -789,14 +856,14 @@ function OwnerHome({ business, user }) {
           <h1>{name}</h1>
         </div>
         <nav>
-          <a className="active" href={`/${slug}/admin`}>
+          <a className="active" href={adminPath}>
             Il mio banco
           </a>
-          <a href={`/${slug}/admin?section=menu`}>Menu</a>
-          <a href={`/${slug}/admin?section=orders`}>Ordini</a>
-          <a href={`/${slug}/admin?section=settings`}>Impostazioni</a>
+          <a href={`${adminPath}?section=menu`}>Menu</a>
+          <a href={`${adminPath}?section=orders`}>Ordini</a>
+          <a href={`${adminPath}?section=settings`}>Impostazioni</a>
         </nav>
-        <a className="cagli-outline-link" href={`/${slug}`}>
+        <a className="cagli-outline-link" href={publicPath}>
           Apri menu pubblico
         </a>
       </header>
@@ -808,7 +875,7 @@ function OwnerHome({ business, user }) {
             {businessTypeLabel(business.type)}
           </span>
           <h2>{name}</h2>
-          <p>/{slug}</p>
+          <p>{publicPath}</p>
           <strong>{statusLabel(business.subscriptionStatus)}</strong>
         </div>
         <div className="cagli-owner-inline-metrics">
@@ -825,12 +892,12 @@ function OwnerHome({ business, user }) {
             <b>{metrics.customers || 0}</b>Clienti
           </span>
         </div>
-        <a href={`/${slug}/admin`}>Vai all'area gestione</a>
+        <a href={adminPath}>Vai all'area gestione</a>
       </article>
 
       <section className="cagli-owner-quick-grid">
         {QUICK_ACTIONS.map((action) => (
-          <a href={`/${slug}/admin?section=${action.href}`} key={action.href}>
+          <a href={`${adminPath}?section=${action.href}`} key={action.href}>
             <span>{action.icon}</span>
             <strong>{action.label}</strong>
             <i>-&gt;</i>
@@ -855,7 +922,7 @@ function MetricCard({ icon, label, value }) {
 
 // ── PublicBusinessCard ────────────────────────────────────────────────────────
 
-function PublicBusinessCard({ business, index, search }) {
+function PublicBusinessCard({ business, citySlug = "", index, search }) {
   const slug = business.slug || "";
   const name = businessName(business);
   const active = isBusinessActive(business);
@@ -868,11 +935,12 @@ function PublicBusinessCard({ business, index, search }) {
   const description = business.settings?.publicMessage || "";
   const isOpen = business.isOpen || business.settings?.isOpen;
   const openingHours = business.settings?.openingHours || "Orari da verificare";
+  const publicPath = citySlug ? `/${citySlug}/${slug}` : `/${slug}`;
 
   return (
     <a
       className={`city-business-card ${active ? "" : "disabled"}`}
-      href={active ? `/${slug}` : undefined}
+      href={active ? publicPath : undefined}
       style={{ animationDelay: `${250 + index * 60}ms` }}
       aria-disabled={!active}
       aria-label={`${active ? "Apri" : "Non disponibile"} ${name}`}
@@ -923,8 +991,9 @@ function AdminBusinessCard({ business, onToast }) {
   const coverUrl = businessCoverUrl(business);
   const logoUrl = business.branding?.logoUrl || "";
   const bucket = typeBucket(business.type);
-  const publicPath = `/${slug}`;
-  const adminPath = `/${slug}/admin`;
+  const citySlug = business.location?.citySlug || "";
+  const publicPath = citySlug ? `/${citySlug}/${slug}` : `/${slug}`;
+  const adminPath = citySlug ? `/${citySlug}/${slug}/admin` : `/${slug}/admin`;
   const logoPath = `/businesses/${slug}/logo.png`;
   const coverPath = `/businesses/${slug}/cover.jpg`;
 
@@ -960,6 +1029,7 @@ function AdminBusinessCard({ business, onToast }) {
         </span>
         <h2>{name}</h2>
         <p>{publicPath}</p>
+        <small>{business.location?.cityName || "Cagli"}</small>
       </div>
 
       <div className="cagli-admin-card-metrics">
@@ -983,6 +1053,7 @@ function AdminBusinessCard({ business, onToast }) {
 
       <div className="cagli-admin-tags">
         <span>{business.plan || "free"}</span>
+        <span>{business.location?.cityName || "Cagli"}</span>
         <span>{business.subscriptionStatus || "public"}</span>
         <span>{logoUrl ? "Logo ok" : "Logo mancante"}</span>
         <span>{coverUrl ? "Cover ok" : "Cover mancante"}</span>
@@ -994,7 +1065,7 @@ function AdminBusinessCard({ business, onToast }) {
       <div className="cagli-admin-card-actions">
         <a href={publicPath}>Pubblico</a>
         <a href={adminPath}>Admin</a>
-        <a href="/admin/businesses?section=businesses">Modifica</a>
+        <a href="/admin/businesses">Modifica</a>
         <button
           type="button"
           onClick={() =>

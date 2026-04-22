@@ -1,4 +1,4 @@
-import { businessAdminHref, businessHref } from "../../utils/format";
+import { businessAdminHref, businessHref, cityHomeHref } from "../../utils/format";
 
 export default function BusinessPublicHeader({
   businessName,
@@ -12,8 +12,8 @@ export default function BusinessPublicHeader({
     <header className="business-public-header">
       <a
         className="business-home-link"
-        href="/"
-        aria-label="Torna a tutte le attivita Cagli"
+        href={cityHomeHref()}
+        aria-label="Torna alle attivita della citta"
       >
         <span aria-hidden="true">&lt;</span>
         Tutte le attivita
