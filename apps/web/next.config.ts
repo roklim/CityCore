@@ -6,7 +6,12 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@platform/config", "@platform/ui"],
+  transpilePackages: [
+    "@platform/config",
+    "@platform/shared",
+    "@platform/templates",
+    "@platform/ui",
+  ],
   turbopack: {
     root: join(currentDir, "../.."),
   },

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MODULE_DEFINITIONS, BUSINESS_TEMPLATE_DEFINITIONS } from "@platform/templates";
 import { platformShellNavigation } from "@platform/ui";
 import { AppShell } from "../components/app-shell";
 
@@ -37,6 +38,9 @@ const readinessChecks = [
       "La V2 cresce accanto alla codebase attuale senza toccare il percorso di produzione esistente.",
   },
 ];
+
+const highlightedModules = MODULE_DEFINITIONS.slice(0, 4);
+const highlightedTemplates = BUSINESS_TEMPLATE_DEFINITIONS.slice(0, 6);
 
 export default function HomePage() {
   return (
@@ -97,6 +101,39 @@ export default function HomePage() {
           <article className="insight-card" key={check.title}>
             <strong>{check.title}</strong>
             <p>{check.description}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="section-header">
+        <p className="section-label">Shared packages</p>
+        <h2>Moduli e template ora vengono dai package condivisi</h2>
+        <p>
+          La foundation inizia a parlare con tipi e registri comuni, cosi web,
+          API e onboarding non duplicano lo stesso vocabolario di dominio.
+        </p>
+      </section>
+
+      <section className="surface-grid">
+        {highlightedModules.map((module) => (
+          <article className="surface-card" key={module.code}>
+            <strong>{module.label}</strong>
+            <p>{module.summary}</p>
+            <code>{module.code}</code>
+          </article>
+        ))}
+      </section>
+
+      <section className="section-grid">
+        {highlightedTemplates.map((template) => (
+          <article className="insight-card" key={template.code}>
+            <strong>{template.label}</strong>
+            <p>{template.summary}</p>
+            <div className="pill-row">
+              <span className="pill">{template.category}</span>
+              <span className="pill">{template.primaryModule}</span>
+              <span className="pill">{template.defaultCtaLabel}</span>
+            </div>
           </article>
         ))}
       </section>

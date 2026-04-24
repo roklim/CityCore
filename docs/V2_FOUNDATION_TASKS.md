@@ -291,6 +291,8 @@ Stabilizzare la base UI del nuovo web layer.
 
 ### F1-09 - Shared Package Hardening
 
+Status: completed
+
 **Obiettivo**  
 Rendere i package condivisi davvero utili, non solo placeholder.
 

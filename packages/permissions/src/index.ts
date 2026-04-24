@@ -1,15 +1,135 @@
+import type { ScopeType, UserRole } from "@platform/shared";
+
+export const PERMISSION_CODES = [
+  "platform.read",
+  "platform.manage",
+  "cities.read",
+  "cities.manage",
+  "businesses.read",
+  "businesses.manage",
+  "business_users.manage",
+  "orders.read",
+  "orders.manage",
+  "menu.manage",
+  "availability.manage",
+  "appointments.manage",
+  "stays.manage",
+  "mobility.manage",
+  "rentals.manage",
+  "customers.read",
+  "settings.manage",
+  "profile.manage",
+  "orders.own.read",
+] as const;
+
+export type PlatformPermission = (typeof PERMISSION_CODES)[number];
+
 export const ROLE_PERMISSIONS = {
-  global_admin: ["platform.manage", "cities.manage", "businesses.manage"],
-  city_admin: ["cities.read", "businesses.read", "businesses.manage"],
+  global_admin: PERMISSION_CODES,
+  city_admin: [
+    "platform.read",
+    "cities.read",
+    "cities.manage",
+    "businesses.read",
+    "businesses.manage",
+    "business_users.manage",
+  ],
   local_admin: [
-    "business.read",
+    "businesses.read",
+    "orders.read",
     "orders.manage",
     "menu.manage",
     "availability.manage",
+    "appointments.manage",
+    "stays.manage",
+    "mobility.manage",
+    "rentals.manage",
+    "customers.read",
     "settings.manage",
   ],
-  staff: ["business.read", "orders.manage", "availability.manage"],
+  staff: [
+    "businesses.read",
+    "orders.read",
+    "orders.manage",
+    "availability.manage",
+    "appointments.manage",
+    "stays.manage",
+    "mobility.manage",
+    "rentals.manage",
+  ],
   customer: ["profile.manage", "orders.own.read"],
-} as const;
+} as const satisfies Record<UserRole, readonly PlatformPermission[]>;
 
-export type PlatformRole = keyof typeof ROLE_PERMISSIONS;
+export type AccessGrantLike = {
+  role: UserRole;
+  scopeType: ScopeType;
+  cityId?: string | null;
+  businessId?: string | null;
+  active?: boolean;
+};
+
+export type PermissionContext = {
+  scopeType?: ScopeType;
+  cityId?: string | null;
+  businessId?: string | null;
+};
+
+export function getRolePermissions(role: UserRole) {
+  return ROLE_PERMISSIONS[role] as readonly PlatformPermission[];
+}
+
+export function roleHasPermission(
+  role: UserRole,
+  permission: PlatformPermission,
+) {
+  return getRolePermissions(role).includes(permission);
+}
+
+export function listPermissionsForRoles(roles: readonly UserRole[]) {
+  return [...new Set(roles.flatMap((role) => getRolePermissions(role)))];
+}
+
+export function scopeMatches(
+  grant: AccessGrantLike,
+  context: PermissionContext = {},
+) {
+  if (grant.active === false) {
+    return false;
+  }
+
+  if (!context.scopeType) {
+    return true;
+  }
+
+  if (grant.role === "global_admin" && grant.scopeType === "platform") {
+    return true;
+  }
+
+  if (context.scopeType === "platform") {
+    return grant.scopeType === "platform";
+  }
+
+  if (context.scopeType === "city") {
+    return grant.scopeType === "city" && grant.cityId === context.cityId;
+  }
+
+  if (context.scopeType === "business") {
+    if (grant.scopeType === "business") {
+      return grant.businessId === context.businessId;
+    }
+
+    if (grant.scopeType === "city") {
+      return Boolean(context.cityId) && grant.cityId === context.cityId;
+    }
+  }
+
+  return false;
+}
+
+export function canAccess(
+  grant: AccessGrantLike,
+  permission: PlatformPermission,
+  context: PermissionContext = {},
+) {
+  return roleHasPermission(grant.role, permission) && scopeMatches(grant, context);
+}
