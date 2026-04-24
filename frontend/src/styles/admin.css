@@ -93,6 +93,19 @@
   min-width: 0;
 }
 
+.platform-admin-shell {
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.platform-admin-shell .admin-sidebar {
+  background: #FFFFFF;
+  border-color: rgba(44, 95, 46, 0.22);
+}
+
+.platform-admin-shell .admin-sidebar strong {
+  color: var(--basil);
+}
+
 .admin-header {
   display: flex;
   justify-content: space-between;
@@ -602,6 +615,99 @@
   font-weight: 900;
 }
 
+.city-registry-manager {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 250, 241, 0.94);
+  box-shadow: 0 12px 34px rgba(64, 42, 27, 0.08);
+}
+
+.city-registry-search {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(220px, 340px);
+  gap: 14px;
+  align-items: end;
+}
+
+.city-registry-search label {
+  display: grid;
+  gap: 7px;
+  color: var(--mg-char);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.city-registry-search input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 12px 13px;
+  outline: none;
+}
+
+.city-registry-search span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.city-registry-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.city-registry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 82px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+}
+
+.city-registry-card div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.city-registry-card strong,
+.city-registry-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-registry-card small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.city-registry-card button,
+.city-registry-active {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: rgba(47, 103, 70, 0.12);
+  color: var(--basil);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.city-registry-active {
+  padding: 10px 12px;
+}
+
 /* Card tenant del global admin, con metriche e accesso gestione utenti. */
 .business-admin-list {
   display: grid;
@@ -1011,5 +1117,736 @@
 .toast.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Global Admin dedicato: console piattaforma separata dal banco locale. */
+.platform-console-shell {
+  width: min(1540px, 100%);
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: 0;
+  margin: 0 auto;
+  background: #F6F4ED;
+}
+
+.platform-console-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 22px;
+  padding: 22px 18px;
+  border-right: 1px solid rgba(28, 28, 26, 0.1);
+  background: #FFFFFF;
+}
+
+.platform-console-brand {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.platform-console-brand > span {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--mg-char);
+  color: #FFFFFF;
+  font-weight: 900;
+}
+
+.platform-console-brand strong {
+  display: block;
+  font-family: "Playfair Display", serif;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.platform-console-sidebar nav,
+.platform-console-sidebar-actions {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.platform-console-sidebar a,
+.platform-console-sidebar button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mg-char);
+  font-weight: 900;
+  padding: 10px 12px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.platform-console-sidebar svg,
+.platform-console-actions svg,
+.platform-quick-grid svg,
+.platform-business-actions svg,
+.platform-search-field svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+
+.platform-console-sidebar a.active,
+.platform-console-sidebar a:hover,
+.platform-console-sidebar button:hover {
+  background: var(--mg-char);
+  color: #FFFFFF;
+}
+
+.platform-console-sidebar-actions {
+  padding-top: 14px;
+  border-top: 1px solid rgba(28, 28, 26, 0.1);
+}
+
+.platform-console-sidebar-actions a {
+  border-color: rgba(28, 28, 26, 0.12);
+}
+
+.platform-console-sidebar-actions button {
+  color: var(--mg-tomato-dark);
+}
+
+.platform-console-main {
+  min-width: 0;
+  padding: 30px clamp(18px, 4vw, 46px) 70px;
+}
+
+.platform-console-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.platform-console-header h1 {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 54px);
+}
+
+.platform-console-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.platform-console-actions button,
+.platform-primary-link,
+.platform-form-actions button,
+.platform-business-actions a,
+.platform-business-actions button,
+.platform-registry-card button,
+.platform-city-card a,
+.platform-business-row button,
+.platform-users-list button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--mg-basil);
+  color: #FFFFFF;
+  font-weight: 900;
+  padding: 10px 13px;
+  text-decoration: none;
+}
+
+.platform-console-actions button:disabled,
+.platform-form-actions button:disabled,
+.platform-registry-card button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.platform-primary-link:hover,
+.platform-console-actions button:hover,
+.platform-form-actions button:hover,
+.platform-business-actions a:hover,
+.platform-business-actions button:hover,
+.platform-registry-card button:hover,
+.platform-city-card a:hover,
+.platform-business-row button:hover,
+.platform-users-list button:hover {
+  background: var(--mg-basil-light);
+}
+
+.platform-console-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.platform-console-metrics article,
+.platform-console-panel {
+  border: 1px solid rgba(28, 28, 26, 0.12);
+  border-radius: 8px;
+  background: #FFFFFF;
+  box-shadow: 0 14px 34px rgba(28, 28, 26, 0.07);
+}
+
+.platform-console-metrics article {
+  min-height: 104px;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  padding: 16px;
+}
+
+.platform-console-metrics article.warning {
+  border-color: rgba(186, 117, 23, 0.35);
+  background: #FFF8E8;
+}
+
+.platform-console-metrics small,
+.platform-business-facts small,
+.platform-business-metrics small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.platform-console-metrics strong {
+  font-family: "Playfair Display", serif;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.platform-console-panel {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 18px;
+}
+
+.platform-dashboard-grid,
+.platform-cities-layout,
+.platform-users-layout,
+.platform-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.platform-ops-list,
+.platform-quick-grid,
+.platform-recent-businesses,
+.platform-registry-results,
+.platform-city-list,
+.platform-user-business-list,
+.platform-users-list {
+  display: grid;
+  gap: 10px;
+}
+
+.platform-ops-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.platform-ops-list a,
+.platform-quick-grid a {
+  min-height: 84px;
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  border: 1px solid rgba(28, 28, 26, 0.1);
+  border-radius: 8px;
+  background: #F9F8F3;
+  color: var(--mg-char);
+  padding: 14px;
+  text-decoration: none;
+}
+
+.platform-ops-list a:hover,
+.platform-quick-grid a:hover {
+  border-color: rgba(44, 95, 46, 0.3);
+  background: #F1F7EA;
+}
+
+.platform-ops-list span {
+  color: var(--mg-basil);
+  font-family: "Playfair Display", serif;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.platform-quick-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.platform-quick-grid a {
+  min-height: 96px;
+}
+
+.platform-recent-businesses {
+  grid-template-columns: 1fr;
+}
+
+.platform-business-row,
+.platform-city-card,
+.platform-users-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(28, 28, 26, 0.1);
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.platform-business-row div,
+.platform-city-card div,
+.platform-users-list article div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.platform-business-row strong,
+.platform-business-row span,
+.platform-city-card strong,
+.platform-city-card span,
+.platform-users-list strong,
+.platform-users-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-business-row span,
+.platform-city-card span,
+.platform-users-list span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.platform-status,
+.platform-role-pill {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  background: rgba(49, 93, 128, 0.12);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 9px;
+}
+
+.platform-status.active {
+  background: rgba(44, 95, 46, 0.12);
+  color: var(--mg-basil);
+}
+
+.platform-status.trialing,
+.platform-status.coming_soon {
+  background: rgba(186, 117, 23, 0.14);
+  color: #8A5C11;
+}
+
+.platform-status.past_due,
+.platform-status.disabled,
+.platform-status.cancelled {
+  background: rgba(192, 57, 43, 0.12);
+  color: var(--mg-tomato-dark);
+}
+
+.platform-search-field {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(28, 28, 26, 0.14);
+  border-radius: 8px;
+  background: #FFFFFF;
+  padding: 0 12px;
+}
+
+.platform-search-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mg-char);
+  outline: 0;
+}
+
+.platform-registry-results {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.platform-registry-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 94px;
+  padding: 12px;
+  border: 1px solid rgba(28, 28, 26, 0.1);
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.platform-registry-card > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.platform-registry-card > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.platform-registry-card strong,
+.platform-registry-card span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-registry-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.platform-registry-card button:last-child {
+  background: rgba(49, 93, 128, 0.12);
+  color: var(--blue);
+}
+
+.platform-city-card {
+  grid-template-columns: minmax(0, 1fr) 170px auto;
+}
+
+.platform-city-card select,
+.platform-business-filters select,
+.platform-form-grid input,
+.platform-form-grid select,
+.platform-business-form textarea,
+.platform-user-form input,
+.platform-user-form select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(28, 28, 26, 0.14);
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: var(--mg-char);
+  padding: 11px 12px;
+  outline: 0;
+}
+
+.platform-business-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.platform-business-form {
+  position: sticky;
+  top: 22px;
+}
+
+.platform-business-form label,
+.platform-user-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--mg-basil);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.platform-form-grid,
+.platform-color-grid,
+.platform-feature-grid,
+.platform-user-form {
+  display: grid;
+  gap: 10px;
+}
+
+.platform-form-grid,
+.platform-user-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.platform-business-form textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.platform-color-grid,
+.platform-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.platform-color-grid input[type="color"] {
+  min-height: 46px;
+  padding: 4px;
+}
+
+.platform-check {
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center;
+  color: var(--mg-char) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.platform-check input {
+  width: auto;
+}
+
+.platform-env-preview {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px dashed rgba(44, 95, 46, 0.28);
+  border-radius: 8px;
+  background: #F1F7EA;
+}
+
+.platform-env-preview span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.platform-env-preview code {
+  color: var(--mg-basil);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.platform-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.platform-form-actions button:last-child {
+  background: rgba(28, 28, 26, 0.1);
+  color: var(--mg-char);
+}
+
+.platform-business-list-area {
+  display: grid;
+  gap: 14px;
+}
+
+.platform-business-filters {
+  grid-template-columns: minmax(240px, 1fr) repeat(3, minmax(150px, 190px));
+  align-items: center;
+}
+
+.platform-business-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 14px;
+}
+
+.platform-business-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(28, 28, 26, 0.12);
+  border-radius: 8px;
+  background: #FFFFFF;
+  box-shadow: 0 12px 28px rgba(28, 28, 26, 0.06);
+}
+
+.platform-business-card header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.platform-business-card header > span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-weight: 900;
+}
+
+.platform-business-card header div {
+  min-width: 0;
+}
+
+.platform-business-card header strong,
+.platform-business-card header small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-business-card header small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.platform-business-facts,
+.platform-business-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.platform-business-facts span,
+.platform-business-metrics span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #F9F8F3;
+}
+
+.platform-business-facts b,
+.platform-business-metrics b {
+  overflow: hidden;
+  color: var(--mg-char);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-business-metrics span.warning {
+  background: #FFF8E8;
+}
+
+.platform-business-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.platform-business-actions a,
+.platform-business-actions button {
+  min-width: 0;
+  background: rgba(44, 95, 46, 0.1);
+  color: var(--mg-basil);
+  font-size: 12px;
+}
+
+.platform-business-actions a:hover,
+.platform-business-actions button:hover {
+  background: var(--mg-basil);
+  color: #FFFFFF;
+}
+
+.platform-users-layout {
+  align-items: start;
+}
+
+.platform-user-business-list button {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  min-height: 62px;
+  border: 1px solid rgba(28, 28, 26, 0.1);
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: var(--mg-char);
+  padding: 12px;
+  text-align: left;
+}
+
+.platform-user-business-list button.active,
+.platform-user-business-list button:hover {
+  border-color: rgba(44, 95, 46, 0.28);
+  background: #F1F7EA;
+}
+
+.platform-user-business-list span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-users-panel.compact {
+  margin-top: 18px;
+}
+
+.platform-user-form {
+  align-items: end;
+}
+
+.platform-user-form .platform-check,
+.platform-user-form .platform-form-actions {
+  grid-column: 1 / -1;
+}
+
+.platform-users-list article {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.platform-role-pill {
+  background: rgba(28, 28, 26, 0.08);
+  color: var(--mg-char);
+}
+
+.platform-route-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.platform-route-list div {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.5fr) minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(28, 28, 26, 0.1);
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.platform-route-list dt {
+  color: var(--mg-basil);
+  font-weight: 900;
+}
+
+.platform-route-list dd {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
 }
 

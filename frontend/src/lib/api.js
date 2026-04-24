@@ -33,16 +33,28 @@ export function getBusinessSlug() {
   const session = getStoredAdminSession();
   const adminMatch = pathname.match(/^\/admin\/([^/]+)/);
   const publicMatch = pathname.match(/^\/p\/([^/]+)/);
+  const cityBusinessMatch = pathname.match(/^\/([^/]+)\/([^/]+)(?:\/admin|\/ordine\/|\/?$)/);
   const businessBaseMatch = pathname.match(/^\/([^/]+)(?:\/admin|\/ordine\/|\/?$)/);
-  const reservedSlugs = new Set(["admin", "ordine", "p", "businesses"]);
+  const reservedSlugs = new Set([
+    "admin",
+    "ordine",
+    "p",
+    "businesses",
+    "cities",
+    "users",
+    "settings",
+  ]);
   const adminSlug = reservedSlugs.has(adminMatch?.[1]) ? "" : adminMatch?.[1];
+  const nestedSlug = reservedSlugs.has(cityBusinessMatch?.[2])
+    ? ""
+    : cityBusinessMatch?.[2];
   const baseSlug = reservedSlugs.has(businessBaseMatch?.[1])
     ? ""
     : businessBaseMatch?.[1];
   const match = (adminSlug && { 1: adminSlug }) || publicMatch;
   if (
     session.role === "global_admin" &&
-    (pathname === "/" || pathname === "/admin" || pathname.startsWith("/admin/businesses"))
+    (pathname === "/" || pathname === "/admin" || pathname.startsWith("/admin/"))
   ) {
     return "";
   }
@@ -57,18 +69,45 @@ export function getBusinessSlug() {
     return session.business.slug;
   }
   if (params.get("business")) return params.get("business");
-  return match?.[1] || baseSlug || DEFAULT_BUSINESS_SLUG;
+  return match?.[1] || nestedSlug || baseSlug || DEFAULT_BUSINESS_SLUG;
+}
+
+export function getCitySlug() {
+  const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+  const search = typeof window === "undefined" ? "" : window.location.search;
+  const params = new URLSearchParams(search);
+  const parts = pathname.split("/").filter(Boolean);
+  const reservedSlugs = new Set([
+    "admin",
+    "ordine",
+    "p",
+    "businesses",
+    "cities",
+    "users",
+    "settings",
+  ]);
+  if (
+    parts.length >= 2 &&
+    !reservedSlugs.has(parts[0]) &&
+    !reservedSlugs.has(parts[1])
+  ) {
+    return parts[0];
+  }
+  return params.get("city") || "";
 }
 
 async function request(path, options = {}) {
   // Wrapper unico per fetch: aggiunge sempre lo slug business e normalizza gli
   // errori backend in Error leggibili dal resto dell'app.
-  const businessSlug = getBusinessSlug();
+  const { tenant = true, headers = {}, ...fetchOptions } = options;
+  const businessSlug = tenant ? getBusinessSlug() : "";
+  const citySlug = tenant ? getCitySlug() : "";
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
+    ...fetchOptions,
     headers: {
       ...(businessSlug ? { "X-Business-Slug": businessSlug } : {}),
-      ...(options.headers || {}),
+      ...(citySlug ? { "X-City-Slug": citySlug } : {}),
+      ...headers,
     },
   });
   const data = await response.json().catch(() => ({}));
@@ -94,14 +133,36 @@ export async function getCurrentBusiness() {
   return data.business;
 }
 
-export async function getPublicBusinesses() {
-  const data = await request("/business/public");
+export async function getPublicCities() {
+  const data = await request("/business/cities", { tenant: false });
+  return data.cities || [];
+}
+
+export async function getPublicCity(slug) {
+  const data = await request(`/business/cities/${encodeURIComponent(slug)}`, {
+    tenant: false,
+  });
+  return data.city;
+}
+
+export async function searchPublicCities(query = "") {
+  const params = query ? `?q=${encodeURIComponent(query)}` : "";
+  const data = await request(`/business/cities/search${params}`, {
+    tenant: false,
+  });
+  return data.cities || [];
+}
+
+export async function getPublicBusinesses(citySlug = "") {
+  const params = citySlug ? `?city=${encodeURIComponent(citySlug)}` : "";
+  const data = await request(`/business/public${params}`, { tenant: false });
   return data.businesses || [];
 }
 
 export async function getMe(token) {
   // Reidrata la sessione admin dopo refresh pagina.
   return request("/auth/me", {
+    tenant: false,
     headers: { Authorization: `Bearer ${token}` },
   });
 }
@@ -109,15 +170,64 @@ export async function getMe(token) {
 export async function getPlatformBusinesses(token) {
   // Solo global_admin: elenco e metriche cross-business.
   const data = await request("/platform/businesses", {
+    tenant: false,
     headers: { Authorization: `Bearer ${token}` },
   });
 
   return data.businesses || [];
 }
 
+export async function getPlatformCities(token) {
+  const data = await request("/platform/cities", {
+    tenant: false,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return data.cities || [];
+}
+
+export async function searchPlatformRegistryCities(token, query = "") {
+  const params = query ? `?q=${encodeURIComponent(query)}` : "";
+  const data = await request(`/platform/registry/cities${params}`, {
+    tenant: false,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return data.cities || [];
+}
+
+export async function activatePlatformCity(city, token) {
+  const data = await request("/platform/cities/activate", {
+    tenant: false,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(city),
+  });
+
+  return data.city;
+}
+
+export async function updatePlatformCityStatus(id, patch, token) {
+  const data = await request(`/platform/cities/${id}/status`, {
+    tenant: false,
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(patch),
+  });
+
+  return data.city;
+}
+
 export function createPlatformBusiness(business, token) {
   // Crea tenant e, se fornito, anche owner Mongo con password temporanea.
   return request("/platform/businesses", {
+    tenant: false,
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -129,6 +239,7 @@ export function createPlatformBusiness(business, token) {
 
 export function updatePlatformBusiness(id, business, token) {
   return request(`/platform/businesses/${id}`, {
+    tenant: false,
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -141,6 +252,7 @@ export function updatePlatformBusiness(id, business, token) {
 export async function getBusinessUsers(businessId, token) {
   // Solo global_admin: utenti owner/admin/staff del business selezionato.
   const data = await request(`/platform/businesses/${businessId}/users`, {
+    tenant: false,
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -149,6 +261,7 @@ export async function getBusinessUsers(businessId, token) {
 
 export function createBusinessUser(businessId, user, token) {
   return request(`/platform/businesses/${businessId}/users`, {
+    tenant: false,
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -160,6 +273,7 @@ export function createBusinessUser(businessId, user, token) {
 
 export function updateBusinessUser(userId, user, token) {
   return request(`/platform/users/${userId}`, {
+    tenant: false,
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

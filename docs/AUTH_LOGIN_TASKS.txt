@@ -1,0 +1,481 @@
+Cagli Local - Task Login e Ruoli
+================================
+
+Contesto veloce
+---------------
+
+Questa app ha 3 aree principali:
+
+1. Home pubblica
+   /
+   Serve per cercare una citta.
+
+2. Console piattaforma
+   /admin
+   Serve a gestire citta, business, utenti e impostazioni piattaforma.
+
+3. Banco locale
+   /:citySlug/:businessSlug/admin
+   Serve al locale per gestire ordini, menu, disponibilita, clienti e impostazioni.
+
+Oggi esistono gia questi ruoli:
+
+- global_admin
+- owner
+- admin
+- staff
+
+L'obiettivo e arrivare a questi ruoli piu chiari:
+
+- global_admin
+- city_admin
+- local_admin
+- staff
+- customer
+
+
+Idea importante
+---------------
+
+Oggi il sistema salva il ruolo direttamente nello user.
+
+Esempio semplificato:
+
+User {
+  email,
+  passwordHash,
+  role,
+  businessId
+}
+
+Questo va bene per ora, ma non scala bene.
+
+La versione migliore e:
+
+User {
+  email,
+  passwordHash,
+  name,
+  phone
+}
+
+piu:
+
+AccessGrant {
+  userId,
+  role,
+  scopeType,
+  cityId,
+  businessId
+}
+
+In pratica:
+
+- User dice chi sei
+- AccessGrant dice cosa puoi fare e dove
+
+Esempi:
+
+- Mario e city_admin della citta Cagli
+- Mario e local_admin del business Mucho Gusto
+- Mario e staff del business Sushi
+
+Cosi lo stesso utente puo avere piu accessi in futuro.
+
+
+Step 1 - Leggere questi file
+----------------------------
+
+Prima di scrivere codice, leggere questi file:
+
+backend/routes/auth.js
+backend/middleware/auth.js
+backend/middleware/business.js
+backend/db/index.js
+backend/routes/platform.js
+
+frontend/src/lib/api.js
+frontend/src/hooks/usePlatformConsoleController.js
+frontend/src/hooks/useAdminController.js
+frontend/src/views/PlatformConsoleView.jsx
+frontend/src/views/AdminView.jsx
+frontend/src/constants.js
+
+Obiettivo della lettura:
+
+- capire come funziona login oggi
+- capire come viene salvato admin_token
+- capire come vengono usati role e businessId
+- capire differenza tra /admin e /:citySlug/:businessSlug/admin
+
+
+Step 2 - Creare documento di piano
+----------------------------------
+
+Creare questo file:
+
+docs/AUTH_ROLES_PLAN.md
+
+Dentro scrivere in modo semplice:
+
+Ruoli:
+
+global_admin
+- gestisce tutta la piattaforma
+
+city_admin
+- gestisce una o piu citta
+
+local_admin
+- gestisce uno o piu locali
+
+staff
+- gestisce solo operativita veloce del locale
+
+customer
+- utente pubblico registrato
+
+Redirect dopo login:
+
+global_admin -> /admin
+city_admin -> /admin
+local_admin -> /:citySlug/:businessSlug/admin
+staff -> /:citySlug/:businessSlug/admin?section=orders
+customer -> /account
+
+Regola importante da scrivere nel documento:
+
+Il frontend puo nascondere menu e bottoni, ma la sicurezza vera deve stare sempre nel backend.
+
+Questo step e solo documentazione. Nessun codice funzionale ancora.
+
+
+Step 3 - Aggiungere modello AccessGrant
+---------------------------------------
+
+Nel file:
+
+backend/db/index.js
+
+aggiungere un nuovo schema Mongoose:
+
+const accessGrantSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    role: {
+      type: String,
+      enum: ["global_admin", "city_admin", "local_admin", "staff"],
+      required: true,
+    },
+    scopeType: {
+      type: String,
+      enum: ["platform", "city", "business"],
+      required: true,
+    },
+    cityId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "City",
+      index: true,
+    },
+    businessId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Business",
+      index: true,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+    lastUsedAt: {
+      type: Date,
+    },
+  },
+  { timestamps: true },
+);
+
+Poi esportarlo come gli altri modelli:
+
+const AccessGrant =
+  mongoose.models.AccessGrant ||
+  mongoose.model("AccessGrant", accessGrantSchema);
+
+E aggiungerlo al module.exports.
+
+Per ora NON rimuovere User.role e User.businessId.
+Devono restare per compatibilita.
+
+
+Step 4 - Creare permission map
+------------------------------
+
+Creare file:
+
+backend/security/permissions.js
+
+Contenuto base:
+
+"use strict";
+
+const ROLE_PERMISSIONS = {
+  global_admin: [
+    "platform.read",
+    "platform.manage",
+    "cities.read",
+    "cities.manage",
+    "businesses.read",
+    "businesses.manage",
+    "business_users.manage",
+    "orders.read",
+    "orders.manage",
+    "menu.manage",
+    "availability.manage",
+    "customers.read",
+    "settings.manage",
+  ],
+
+  city_admin: [
+    "platform.read",
+    "cities.read",
+    "businesses.read",
+    "businesses.manage",
+    "business_users.manage",
+  ],
+
+  local_admin: [
+    "business.read",
+    "orders.read",
+    "orders.manage",
+    "menu.manage",
+    "availability.manage",
+    "customers.read",
+    "settings.manage",
+  ],
+
+  staff: [
+    "business.read",
+    "orders.read",
+    "orders.manage",
+    "availability.manage",
+  ],
+
+  customer: [
+    "profile.manage",
+    "orders.own.read",
+  ],
+};
+
+function roleHasPermission(role, permission) {
+  return ROLE_PERMISSIONS[role]?.includes(permission) || false;
+}
+
+function isAdminRole(role) {
+  return ["global_admin", "city_admin", "local_admin", "staff"].includes(role);
+}
+
+function isCustomerRole(role) {
+  return role === "customer";
+}
+
+module.exports = {
+  ROLE_PERMISSIONS,
+  roleHasPermission,
+  isAdminRole,
+  isCustomerRole,
+};
+
+Non serve fare subito il sistema perfetto. Per ora basta avere una mappa centrale.
+
+
+Step 5 - Creare script migrazione dry-run
+-----------------------------------------
+
+Creare file:
+
+backend/scripts/migrate-users-to-access-grants.js
+
+Obiettivo:
+leggere gli utenti attuali e mostrare che grant verrebbero creati.
+
+Regole:
+
+global_admin -> global_admin / platform
+owner -> local_admin / business
+admin -> local_admin / business
+staff -> staff / business
+
+All'inizio deve funzionare solo cosi:
+
+node backend/scripts/migrate-users-to-access-grants.js --dry-run
+
+Output esempio:
+
+Utenti letti: 5
+Grant da creare: 5
+
+- marco@email.com owner -> local_admin business mucho-gusto
+- staff@email.com staff -> staff business mucho-gusto
+
+Non deve modificare il DB se c'e --dry-run.
+Solo dopo aggiungere --apply.
+
+
+Step 6 - Aggiornare login senza rompere niente
+----------------------------------------------
+
+Nel file:
+
+backend/routes/auth.js
+
+non rifare tutto.
+
+Prima aggiungere solo queste cose alla risposta login:
+
+{
+  accesses: [],
+  defaultAccess: null,
+  redirectTo: "..."
+}
+
+Per ora calcolare redirectTo cosi:
+
+global_admin -> /admin
+owner/admin -> /:citySlug/:businessSlug/admin
+staff -> /:citySlug/:businessSlug/admin?section=orders
+
+Mappa temporanea:
+
+owner -> local_admin
+admin -> local_admin
+staff -> staff
+
+La cosa importante e non rompere il login attuale.
+
+
+Step 7 - Frontend usa redirectTo
+--------------------------------
+
+Nei file:
+
+frontend/src/lib/api.js
+frontend/src/hooks/usePlatformConsoleController.js
+frontend/src/hooks/useAdminController.js
+frontend/src/views/PlatformLanding.jsx
+frontend/src/views/PlatformHome.jsx
+
+dove dopo login fai redirect manuale, preferire:
+
+if (data.redirectTo) {
+  window.location.href = data.redirectTo;
+}
+
+Se redirectTo non c'e, lasciare fallback attuale.
+
+Questo rende il backend piu autorevole.
+
+
+Step 8 - Staff piu chiaro
+-------------------------
+
+Controllare:
+
+frontend/src/hooks/useAdminController.js
+frontend/src/constants.js
+backend/routes/menu.js
+backend/routes/settings.js
+backend/routes/coupons.js
+backend/routes/customers.js
+
+Regola:
+
+staff vede solo:
+
+- Oggi
+- Ordini
+- Disponibilita
+
+Staff puo:
+
+- cambiare stato ordine
+- cambiare disponibilita prodotto
+
+Staff non puo:
+
+- modificare menu
+- modificare settings
+- gestire coupon
+- vedere/modificare utenti
+- entrare nella console piattaforma
+
+
+Step 9 - Non fare ancora customer account completo
+--------------------------------------------------
+
+Per ora NON implementare /account.
+
+Scrivere solo nel documento docs/AUTH_ROLES_PLAN.md come dovra funzionare:
+
+customer sara un account pubblico separato dagli admin.
+Potra vedere profilo, storico ordini, preferiti e fedelta.
+Non potra mai accedere ad /admin.
+
+Lo faremo dopo.
+
+
+Step 10 - Verifiche
+-------------------
+
+Alla fine eseguire:
+
+npm --prefix frontend run build
+
+Se il backend e avviabile:
+
+npm --prefix backend run smoke
+
+Verifica manuale:
+
+- global_admin entra in /admin
+- owner/admin entrano nel banco locale
+- staff entra nel banco locale e vede solo Oggi/Ordini/Disponibilita
+- utente non loggato vede home pubblica e menu pubblico
+
+
+Cose da non fare
+----------------
+
+Non fare queste cose:
+
+- non cancellare User.role
+- non cancellare User.businessId
+- non cambiare tutto il routing
+- non mischiare customer con admin
+- non proteggere solo lato frontend
+- non rompere login global_admin legacy da .env
+
+
+Risultato atteso
+----------------
+
+Alla fine di questo primo giro vogliamo:
+
+- piano auth documentato
+- AccessGrant creato nel DB
+- permission map pronta
+- script migrazione dry-run
+- login che ritorna redirectTo
+- frontend che usa redirectTo
+- staff piu coerente
+- zero regressioni sugli accessi attuali
+
+Questa e la base.
+Dopo questo si puo fare il secondo giro:
+
+- city admin vero
+- multi-accesso
+- customer account
+- schermata "scegli area"

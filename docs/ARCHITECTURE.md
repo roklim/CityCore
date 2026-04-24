@@ -4,7 +4,7 @@
 
 The project is now an early SaaS foundation. It remains a working food-ordering product, but core records can be scoped by business.
 
-It is not yet a complete multi-tenant marketplace SaaS because onboarding, per-business admin users, billing and non-food modules are still future phases.
+It is not yet a complete multi-tenant marketplace SaaS because guided onboarding, billing, audit logs and non-food modules are still future phases.
 
 ## Core Tenant
 
@@ -33,9 +33,20 @@ business slug.
 
 Every operational model should be scoped with `businessId` unless it is global platform configuration.
 
+## City And Market Layer
+
+The platform has two city levels:
+
+- `CityRegistry`: verified Italian municipalities imported from ISTAT/SITUAS or another trusted source.
+- `City`: activated platform market visible to public users.
+
+Public city search reads only active `City` records. The global admin can search `CityRegistry` and activate a city before assigning businesses to it.
+
 ## Implemented Tenant-Aware Models
 
 - `Business`
+- `CityRegistry`
+- `City`
 - `User` scaffold
 - `MenuItem`
 - `Order`
@@ -49,14 +60,15 @@ Every operational model should be scoped with `businessId` unless it is global p
 
 Requests are resolved in this order:
 
-1. `X-Business-Slug` header
-2. `?business=` query parameter
-3. `/<slug>` frontend route
-4. `/<slug>/admin` frontend route
-5. `/<slug>/ordine/<id>` frontend route
-6. `/admin/<slug>` legacy frontend route
-7. `/p/<slug>` legacy frontend route
-8. `DEFAULT_BUSINESS_SLUG`
+1. owner/admin/staff JWT `businessId`
+2. `X-City-Slug` + `X-Business-Slug` headers
+3. `?city=` + `?business=` query parameters
+4. `/:citySlug/:businessSlug` frontend route
+5. `/:citySlug/:businessSlug/admin` frontend route
+6. `/:citySlug/:businessSlug/ordine/:id` frontend route
+7. legacy `/:businessSlug` frontend route
+8. legacy `/:businessSlug/admin` frontend route
+9. `DEFAULT_BUSINESS_SLUG`
 
 The default fallback keeps the current pizza app working during the transition.
 
@@ -81,28 +93,44 @@ VITE_BUSINESS_SLUG=mucho-gusto
 uses path-based routing:
 
 ```txt
-/                         platform directory
+/                         city search
 /admin                    global login/platform console
+/admin/cities             platform city registry and market status
 /admin/businesses         global business/user management
-/:businessSlug            public menu/app
-/:businessSlug/admin      business admin
-/:businessSlug/ordine/:id order tracking
+/admin/users              global tenant users
+/admin/settings           global platform settings
+/:citySlug                city directory
+/:citySlug/:businessSlug  public menu/app
+/:citySlug/:businessSlug/admin      business admin
+/:citySlug/:businessSlug/ordine/:id order tracking
 ```
+
+Legacy direct business routes remain available during migration.
 
 ## Platform Admin
 
-The platform owner can use `/` or `/admin` to see the Cagli platform console.
+The platform owner uses `/admin` to see the Cagli platform console.
 `/admin` no longer opens the default Mucho Gusto operational dashboard.
 
 From the platform console the global admin can:
 
+- open a dashboard with platform metrics and operational priorities
+- search verified municipalities in the registry
+- activate a city/market and set `active`, `coming_soon` or `disabled`
 - list all businesses
 - create a new business
 - edit plan/status/type/branding/deployment metadata
+- manage owner/admin/staff users for each business
 - see total orders, estimated GMV, products and customers
-- copy the Vercel slug variable
-- open any business menu with `/:slug`
-- open any operational admin with `/:slug/admin`
+- open any business menu with `/:citySlug/:slug`
+- open any operational admin with `/:citySlug/:slug/admin`
+
+Platform administration and local business administration use separate menus:
+
+- `/admin`, `/admin/cities`, `/admin/businesses`, `/admin/users` and `/admin/settings` are platform-level surfaces.
+- `/:citySlug/:businessSlug/admin` is the local operational counter for the selected business.
+
+Platform-only actions such as city activation, tenant creation and owner provisioning should not appear in the local business sidebar.
 
 The current global admin can still use env credentials. Per-business users are Mongo-backed and receive JWTs containing `businessId` and `businessSlug`.
 
@@ -118,7 +146,7 @@ Roles:
 Security rule:
 
 - public routes resolve the tenant from slug/header/query.
-- global admins may choose a tenant with `X-Business-Slug`, `/admin/<slug>`, or `?business=`.
+- global admins may choose a tenant with `X-City-Slug` + `X-Business-Slug` or `?city=` + `?business=`.
 - business users are locked to the `businessId` in their JWT.
 - if a business user sends another slug, the backend ignores it and uses the token tenant.
 
@@ -169,7 +197,7 @@ Scaffold only. Intended for:
 
 ### Phase 2: Multi-Business Food SaaS
 
-- public routes like `/p/:slug`
+- city-based public routes like `/:citySlug/:slug`
 - owner/admin users per business
 - platform admin business creation
 - onboarding polish
@@ -190,7 +218,8 @@ Scaffold only. Intended for:
 ## Risks To Handle Before Real Multi-Tenant Sales
 
 - Drop legacy global unique indexes in MongoDB and replace them with compound tenant indexes.
-- Replace single admin credentials with real per-business users.
+- Drop any legacy global unique index on `businesses.slug`; the target uniqueness is `location.citySlug + slug`.
+- Keep the legacy env global admin only as bootstrap/fallback; day-to-day business access should use Mongo-backed owner/admin/staff users.
 - Add stronger authorization checks.
 - Add onboarding and business provisioning.
 - Add billing lifecycle handling.
@@ -198,6 +227,7 @@ Scaffold only. Intended for:
 ## Supporting Docs
 
 - `docs/VERCEL_BUSINESS_APPS.md`
+- `docs/CITY_REGISTRY.md`
 - `docs/BUSINESS_METRICS.md`
 - `docs/TROUBLESHOOTING.md`
 - `docs/TECHNICAL_REVIEW.md`

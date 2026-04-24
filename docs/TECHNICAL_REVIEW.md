@@ -2,65 +2,78 @@
 
 ## Current Maturity
 
-The project is an early multi-tenant SaaS foundation. The ordering vertical is usable, and the platform now has business-aware data, a platform admin, Vercel-per-business routing, and starter menu templates.
+The project is now an early multi-tenant SaaS foundation with a working ordering vertical, city-based routing, a verified city registry, Mongo-backed business users, and a dedicated platform console.
 
-It is not yet production multi-tenant SaaS because billing, automated migrations, and automated tests are still incomplete. Per-business user auth now exists, but should keep receiving security review as permissions become more granular.
+The product is not yet a complete marketplace SaaS because guided onboarding, billing, audit logs, automated migrations, automated regression tests, and real booking/rental modules are still incomplete.
+
+## What Is Now In Place
+
+- Central public home at `/` for active city search.
+- City directory at `/:citySlug`.
+- Public business app at `/:citySlug/:businessSlug`.
+- Local business counter at `/:citySlug/:businessSlug/admin`.
+- Dedicated platform console at `/admin`, `/admin/cities`, `/admin/businesses`, `/admin/users`, `/admin/settings`.
+- Platform controller separated from the local admin controller.
+- City activation from `CityRegistry` into `City` with `active`, `coming_soon`, and `disabled` states.
+- Business creation/editing with verified city assignment.
+- Owner/admin/staff users scoped to one business.
 
 ## Critical Risks
 
-- Per-business owner/admin/staff authentication exists, but password reset and invitation flows are not implemented yet.
+- Password reset and invitation flows are not implemented yet.
 - Granular role permissions are intentionally minimal; expand them as staff workflows become clearer.
-- Existing MongoDB deployments may still have legacy global unique indexes such as `name_1`, `phone_1`, or `code_1`.
-- The frontend is concentrated in `frontend/src/main.jsx`, which makes regression risk higher as features grow.
+- Existing MongoDB deployments may still have legacy global unique indexes such as `name_1`, `phone_1`, `code_1`, or `businesses.slug_1`.
+- Platform actions do not yet have audit logs.
+- Billing and plan lifecycle enforcement are not implemented yet.
 
 ## Important Risks
 
-- `frontend/src/styles.css` is large and mixes customer, admin, platform, and responsive styles.
-- Business settings exist both in `Business.settings` and `StoreSettings`; the split is workable, but should be documented and kept intentional.
+- Business settings exist both in `Business.settings` and `StoreSettings`; keep the split intentional: platform metadata in `Business`, operational counter settings in `StoreSettings`.
 - Booking and rental are scaffolded, not real modules yet.
-- The platform admin and business admin share one screen and should eventually be separated into clearer components.
-- There is no automated regression suite beyond build and syntax checks.
+- `PlatformHome.jsx` has been trimmed to the city directory; root search and platform admin are now isolated in their dedicated views.
+- There is no automated regression suite beyond build, smoke checks and manual browser checks.
 
 ## Recommended Refactor Order
 
-1. Add owner invitation/password reset flows.
-2. Extract frontend constants and helpers from `main.jsx`.
-3. Extract platform admin, business admin, and customer UI into separate components.
-4. Split CSS into `tokens`, `customer`, `admin`, `platform`, and `responsive`.
-5. Extract backend business/platform/order stats logic into services.
-6. Add smoke tests and migration scripts to CI/deploy checklist.
+1. Add owner invitation and password reset flows.
+2. Add audit logs for platform actions: city status changes, business edits, user provisioning.
+3. Extract platform API/business/city logic from `backend/routes/platform.js` into services.
+4. Add regression tests for routing, tenant isolation and role permissions.
+5. Add billing lifecycle handling for `plan` and `subscriptionStatus`.
 
-## Suggested Frontend Structure
+## Current Frontend Structure
 
 ```txt
 frontend/src/
-  main.jsx
   App.jsx
   lib/
     api.js
-    business.js
-    format.js
-  constants/
-    menu.js
-    statuses.js
+  constants.js
   components/
-    customer/
     admin/
-    platform/
+    customer/
     ui/
   hooks/
-    useBusinessSlug.js
-    useCart.js
-    useAdminData.js
+    useAdminController.js
+    useCustomerController.js
+    usePlatformConsoleController.js
+  views/
+    PlatformLanding.jsx
+    CityHome.jsx
+    PlatformHome.jsx
+    PlatformAdminView.jsx
+    PlatformConsoleView.jsx
+    AdminView.jsx
+    CustomerView.jsx
+    TrackingView.jsx
   styles/
-    tokens.css
+    base.css
+    city.css
     customer.css
     admin.css
     platform.css
     responsive.css
 ```
-
-Do not do this as one huge move. Start with constants and helpers first, then components.
 
 ## Suggested Backend Structure
 
@@ -72,10 +85,13 @@ backend/
   routes/
   services/
     businessService.js
+    cityRegistryService.js
     menuTemplateService.js
     orderStatsService.js
+    platformService.js
   scripts/
     check-db.js
+    import-city-registry.js
     index-report.js
     smoke-test.js
   utils/
@@ -85,17 +101,19 @@ backend/
 
 ## Verification Checklist
 
-- `node --check` on changed backend files.
-- `npm run build` in `frontend`.
-- `npm run check:db` in `backend`.
-- `npm run check:indexes` in `backend`.
-- `npm run smoke` in `backend` while the API server is running.
+- `npm --prefix frontend run build`
+- `npm --prefix backend run smoke` while the API server is running.
+- `npm --prefix backend run check:db`
+- `npm --prefix backend run check:indexes`
+- Manual login check for `global_admin`, owner/admin/staff.
+- Manual route check for `/admin`, `/admin/cities`, `/admin/businesses`, `/admin/users`, and `/:citySlug/:businessSlug/admin`.
 
 ## Next Best Milestone
 
-Next milestone should improve auth operations:
+The next milestone should improve auth operations and governance:
 
-- password reset or invitation emails
-- owner self-service profile
+- owner invitations
+- password reset
 - clearer staff permission matrix
-- audit logs for platform actions
+- platform audit log
+- minimal automated regression suite for tenant isolation

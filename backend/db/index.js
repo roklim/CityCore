@@ -5,6 +5,17 @@ const config = require("../config");
 
 let isConnected = false;
 const DEFAULT_BUSINESS_SLUG = config.business.defaultSlug || "mucho-gusto";
+const DEFAULT_CITY_SLUG = "cagli";
+
+function localSlugify(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 // Mantiene una sola connessione Mongoose per processo Node. Su ambienti cloud
 // evita riconnessioni inutili quando il server viene risvegliato o riavviato.
@@ -30,6 +41,90 @@ async function connect() {
   isConnected = true;
 }
 
+// Registro nazionale/comunale importato da fonti autorevoli. Questo livello non
+// significa "citta attiva nell'app": e' solo la fonte verificata da cui il global
+// admin puo' abilitare nuovi mercati locali senza inventare luoghi a mano.
+const cityRegistrySchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    },
+    provinceCode: { type: String, default: "", trim: true, uppercase: true },
+    provinceName: { type: String, default: "", trim: true, maxlength: 120 },
+    regionCode: { type: String, default: "", trim: true },
+    regionName: { type: String, default: "", trim: true, maxlength: 120 },
+    country: { type: String, default: "IT", trim: true, uppercase: true },
+    istatCode: { type: String, default: "", trim: true },
+    cadastralCode: { type: String, default: "", trim: true, uppercase: true },
+    activeMunicipality: { type: Boolean, default: true },
+    source: {
+      type: String,
+      enum: ["istat", "openapi", "manual_seed", "csv_import", "json_import"],
+      default: "manual_seed",
+    },
+    sourceVersion: { type: String, default: "", trim: true },
+    providerPlaceId: { type: String, default: "", trim: true },
+    lat: { type: Number },
+    lng: { type: Number },
+    lastSyncedAt: { type: Date },
+    searchText: { type: String, default: "", trim: true, lowercase: true },
+  },
+  { timestamps: true },
+);
+
+// Citta/mercati abilitati nella piattaforma. Sono un sottoinsieme editoriale e
+// operativo del registro: solo questi appaiono nella home pubblica.
+const citySchema = new mongoose.Schema(
+  {
+    registryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CityRegistry",
+    },
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    },
+    province: { type: String, default: "", trim: true, maxlength: 20 },
+    region: { type: String, default: "", trim: true, maxlength: 80 },
+    country: { type: String, default: "IT", trim: true, uppercase: true },
+    provider: {
+      type: String,
+      enum: ["istat", "google", "osm", "manual_seed", "registry"],
+      default: "registry",
+    },
+    providerPlaceId: { type: String, default: "", trim: true },
+    lat: { type: Number },
+    lng: { type: Number },
+    active: { type: Boolean, default: true },
+    status: {
+      type: String,
+      enum: ["active", "coming_soon", "disabled"],
+      default: "active",
+    },
+    heroTitle: { type: String, default: "", trim: true, maxlength: 160 },
+    heroDescription: { type: String, default: "", trim: true, maxlength: 420 },
+    sortOrder: { type: Number, default: 0 },
+    enabledModules: {
+      ordering: { type: Boolean, default: true },
+      directory: { type: Boolean, default: true },
+      events: { type: Boolean, default: false },
+      reports: { type: Boolean, default: false },
+      rentals: { type: Boolean, default: true },
+    },
+    lastVerifiedAt: { type: Date },
+  },
+  { timestamps: true },
+);
+
 // Business e' il tenant principale della piattaforma: ogni pizzeria/attivita
 // ha il proprio slug, branding, piano, feature abilitate e impostazioni base.
 const businessSchema = new mongoose.Schema(
@@ -38,7 +133,6 @@ const businessSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       lowercase: true,
       match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
@@ -55,6 +149,17 @@ const businessSchema = new mongoose.Schema(
         "custom",
       ],
       default: "pizzeria",
+    },
+    cityId: { type: mongoose.Schema.Types.ObjectId, ref: "City", index: true },
+    location: {
+      cityName: { type: String, default: "Cagli", trim: true },
+      citySlug: { type: String, default: DEFAULT_CITY_SLUG, trim: true, lowercase: true },
+      province: { type: String, default: "PU", trim: true },
+      region: { type: String, default: "Marche", trim: true },
+      country: { type: String, default: "IT", trim: true, uppercase: true },
+      address: { type: String, default: "", trim: true, maxlength: 240 },
+      lat: { type: Number },
+      lng: { type: Number },
     },
     ownerUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     plan: { type: String, enum: ["free", "pro", "premium"], default: "free" },
@@ -314,7 +419,22 @@ orderSchema.index({ businessId: 1, pickupDate: 1, pickupTime: 1 });
 customerSchema.index({ businessId: 1, phone: 1 }, { unique: true, sparse: true });
 couponSchema.index({ businessId: 1, active: 1, expiresAt: 1 });
 couponSchema.index({ businessId: 1, code: 1 }, { unique: true, sparse: true });
+cityRegistrySchema.index({ slug: 1, provinceCode: 1 });
+cityRegistrySchema.index({ searchText: 1 });
+cityRegistrySchema.index(
+  { istatCode: 1 },
+  { unique: true, sparse: true, partialFilterExpression: { istatCode: { $gt: "" } } },
+);
+citySchema.index({ active: 1, status: 1, name: 1 });
+citySchema.index({ registryId: 1 }, { unique: true, sparse: true });
+businessSchema.index({ slug: 1 });
+businessSchema.index({ "location.citySlug": 1, slug: 1 }, { unique: true });
+businessSchema.index({ "location.citySlug": 1, subscriptionStatus: 1 });
 
+const CityRegistry =
+  mongoose.models.CityRegistry ||
+  mongoose.model("CityRegistry", cityRegistrySchema);
+const City = mongoose.models.City || mongoose.model("City", citySchema);
 const Business =
   mongoose.models.Business || mongoose.model("Business", businessSchema);
 const User = mongoose.models.User || mongoose.model("User", userSchema);
@@ -330,9 +450,227 @@ const StoreSettings =
 const Booking = mongoose.models.Booking || mongoose.model("Booking", bookingSchema);
 const Rental = mongoose.models.Rental || mongoose.model("Rental", rentalSchema);
 
+const DEFAULT_REGISTRY_CITIES = [
+  {
+    name: "Cagli",
+    slug: "cagli",
+    provinceCode: "PU",
+    provinceName: "Pesaro e Urbino",
+    regionCode: "11",
+    regionName: "Marche",
+    country: "IT",
+    istatCode: "041007",
+    cadastralCode: "B352",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+    lat: 43.5473,
+    lng: 12.6474,
+  },
+  {
+    name: "Pesaro",
+    slug: "pesaro",
+    provinceCode: "PU",
+    provinceName: "Pesaro e Urbino",
+    regionCode: "11",
+    regionName: "Marche",
+    country: "IT",
+    istatCode: "041044",
+    cadastralCode: "G479",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Urbino",
+    slug: "urbino",
+    provinceCode: "PU",
+    provinceName: "Pesaro e Urbino",
+    regionCode: "11",
+    regionName: "Marche",
+    country: "IT",
+    istatCode: "041067",
+    cadastralCode: "L500",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Fano",
+    slug: "fano",
+    provinceCode: "PU",
+    provinceName: "Pesaro e Urbino",
+    regionCode: "11",
+    regionName: "Marche",
+    country: "IT",
+    istatCode: "041013",
+    cadastralCode: "D488",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Roma",
+    slug: "roma",
+    provinceCode: "RM",
+    provinceName: "Roma",
+    regionCode: "12",
+    regionName: "Lazio",
+    country: "IT",
+    istatCode: "058091",
+    cadastralCode: "H501",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Milano",
+    slug: "milano",
+    provinceCode: "MI",
+    provinceName: "Milano",
+    regionCode: "03",
+    regionName: "Lombardia",
+    country: "IT",
+    istatCode: "015146",
+    cadastralCode: "F205",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Torino",
+    slug: "torino",
+    provinceCode: "TO",
+    provinceName: "Torino",
+    regionCode: "01",
+    regionName: "Piemonte",
+    country: "IT",
+    istatCode: "001272",
+    cadastralCode: "L219",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Bologna",
+    slug: "bologna",
+    provinceCode: "BO",
+    provinceName: "Bologna",
+    regionCode: "08",
+    regionName: "Emilia-Romagna",
+    country: "IT",
+    istatCode: "037006",
+    cadastralCode: "A944",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Firenze",
+    slug: "firenze",
+    provinceCode: "FI",
+    provinceName: "Firenze",
+    regionCode: "09",
+    regionName: "Toscana",
+    country: "IT",
+    istatCode: "048017",
+    cadastralCode: "D612",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+  {
+    name: "Napoli",
+    slug: "napoli",
+    provinceCode: "NA",
+    provinceName: "Napoli",
+    regionCode: "15",
+    regionName: "Campania",
+    country: "IT",
+    istatCode: "063049",
+    cadastralCode: "F839",
+    activeMunicipality: true,
+    source: "manual_seed",
+    sourceVersion: "bootstrap-2026-02-21",
+  },
+];
+
+function registrySearchText(city) {
+  return [
+    city.name,
+    city.slug,
+    city.provinceCode,
+    city.provinceName,
+    city.regionName,
+    city.istatCode,
+    city.cadastralCode,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+async function ensureRegistrySeed() {
+  const syncedAt = new Date();
+  await Promise.all(
+    DEFAULT_REGISTRY_CITIES.map((city) =>
+      CityRegistry.findOneAndUpdate(
+        city.istatCode ? { istatCode: city.istatCode } : { slug: city.slug },
+        {
+          $setOnInsert: {
+            ...city,
+            searchText: registrySearchText(city),
+            lastSyncedAt: syncedAt,
+          },
+        },
+        { upsert: true, setDefaultsOnInsert: true },
+      ),
+    ),
+  );
+}
+
+async function ensureDefaultCityRegistry() {
+  await ensureRegistrySeed();
+  return CityRegistry.findOne({
+    $or: [{ istatCode: "041007" }, { slug: DEFAULT_CITY_SLUG }],
+    activeMunicipality: true,
+  });
+}
+
+async function ensureDefaultCity() {
+  const registryCity = await ensureDefaultCityRegistry();
+  return City.findOneAndUpdate(
+    { slug: DEFAULT_CITY_SLUG },
+    {
+      $setOnInsert: {
+        name: "Cagli",
+        slug: DEFAULT_CITY_SLUG,
+        province: "PU",
+        region: "Marche",
+        country: "IT",
+        lat: 43.5473,
+        lng: 12.6474,
+      },
+      $set: {
+        registryId: registryCity?._id,
+        active: true,
+        status: "active",
+        provider: "registry",
+        providerPlaceId: registryCity?.istatCode || "manual-seed:cagli-pu-it",
+        heroTitle: "Cagli a portata di mano",
+        heroDescription:
+          "Attivita, menu, servizi e ordini locali in una directory unica.",
+        lastVerifiedAt: new Date(),
+      },
+    },
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
+  );
+}
+
 // Crea il tenant Mucho Gusto di fallback. Serve per far continuare a girare la
 // vecchia app single-business mentre il progetto diventa SaaS multi-business.
 async function ensureDefaultBusiness() {
+  const defaultCity = await ensureDefaultCity();
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
@@ -343,6 +681,16 @@ async function ensureDefaultBusiness() {
         name: "Mucho Gusto",
         slug: DEFAULT_BUSINESS_SLUG,
         type: "pizzeria",
+        cityId: defaultCity._id,
+        location: {
+          cityName: defaultCity.name,
+          citySlug: defaultCity.slug,
+          province: defaultCity.province,
+          region: defaultCity.region,
+          country: defaultCity.country,
+          lat: defaultCity.lat,
+          lng: defaultCity.lng,
+        },
         plan: "free",
         subscriptionStatus: "trialing",
         trialEndsAt,
@@ -399,6 +747,31 @@ async function attachLegacyDataToDefaultBusiness(businessId) {
 async function seedMenu() {
   try {
     const defaultBusiness = await ensureDefaultBusiness();
+    const defaultCity = await ensureDefaultCity();
+    await Business.updateMany(
+      {
+        $or: [
+          { cityId: { $exists: false } },
+          { cityId: null },
+          { "location.citySlug": { $exists: false } },
+          { "location.citySlug": "" },
+        ],
+      },
+      {
+        $set: {
+          cityId: defaultCity._id,
+          location: {
+            cityName: defaultCity.name,
+            citySlug: defaultCity.slug,
+            province: defaultCity.province,
+            region: defaultCity.region,
+            country: defaultCity.country,
+            lat: defaultCity.lat,
+            lng: defaultCity.lng,
+          },
+        },
+      },
+    );
     await attachLegacyDataToDefaultBusiness(defaultBusiness._id);
 
     const count = await MenuItem.countDocuments({ businessId: defaultBusiness._id });
@@ -512,7 +885,13 @@ module.exports = {
   connect,
   seedMenu,
   ensureDefaultBusiness,
+  ensureDefaultCity,
+  ensureDefaultCityRegistry,
+  ensureRegistrySeed,
   DEFAULT_BUSINESS_SLUG,
+  DEFAULT_CITY_SLUG,
+  CityRegistry,
+  City,
   Business,
   User,
   MenuItem,

@@ -42,10 +42,26 @@ async function main() {
   });
   console.log("[smoke] business/current ok");
 
+  await request("/api/business/cities/search?q=cagli");
+  console.log("[smoke] public city search ok");
+
+  await request("/api/business/public?city=cagli");
+  console.log("[smoke] public city businesses ok");
+
   await request("/api/platform/businesses", {
     headers: { Authorization: `Bearer ${login.token}` },
   });
   console.log("[smoke] platform/businesses ok");
+
+  await request("/api/platform/cities", {
+    headers: { Authorization: `Bearer ${login.token}` },
+  });
+  console.log("[smoke] platform/cities ok");
+
+  await request("/api/platform/registry/cities?q=cagli", {
+    headers: { Authorization: `Bearer ${login.token}` },
+  });
+  console.log("[smoke] platform city registry ok");
 }
 
 main().catch((error) => {

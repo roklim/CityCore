@@ -6,14 +6,14 @@ Il modello consigliato ora e' una sola app Vercel centrale:
 https://cagli.vercel.app/
 ```
 
-La root e' la console piattaforma per il global admin. Ogni business vive sotto
-il proprio slug:
+La root e' la ricerca delle citta attive. Ogni business vive sotto la propria
+citta:
 
 ```txt
-https://cagli.vercel.app/mucho-gusto
-https://cagli.vercel.app/mucho-gusto/admin
-https://cagli.vercel.app/sushi
-https://cagli.vercel.app/sushi/admin
+https://cagli.vercel.app/cagli/mucho-gusto
+https://cagli.vercel.app/cagli/mucho-gusto/admin
+https://cagli.vercel.app/cagli/sushi
+https://cagli.vercel.app/cagli/sushi/admin
 ```
 
 ## Perche' Questo Modello
@@ -22,19 +22,22 @@ https://cagli.vercel.app/sushi/admin
 - Una sola configurazione CORS stabile.
 - Nessun URL preview Vercel diverso per ogni locale.
 - Il backend continua a isolare i dati tramite `businessId` e JWT.
-- Il global admin vede tutte le app dalla home piattaforma.
+- Il global admin gestisce la piattaforma da `/admin` e dalle sezioni `/admin/cities`, `/admin/businesses`, `/admin/users`.
 
 ## Route Principali
 
 ```txt
-/                         Console piattaforma
-/:businessSlug            Menu/app cliente del business
-/:businessSlug/admin      Banco admin del business
-/:businessSlug?ordine=id  Tracking ordine del business
-/admin                    Login/console globale
-/admin/businesses         Gestione business globale
-/admin/:businessSlug      Compatibilita legacy
-/p/:businessSlug          Compatibilita legacy
+/                         Ricerca citta attive
+/:citySlug                Directory cittadina
+/:citySlug/:businessSlug  Menu/app cliente del business
+/:citySlug/:businessSlug/admin      Banco admin del business
+/:citySlug/:businessSlug/ordine/:id Tracking ordine del business
+/admin                    Dashboard piattaforma
+/admin/cities             Registro citta e stati mercato
+/admin/businesses         Business piattaforma
+/admin/users              Owner/admin/staff dei tenant
+/:businessSlug            Compatibilita legacy
+/:businessSlug/admin      Compatibilita legacy
 ```
 
 ## Vercel Environment Variables
@@ -47,15 +50,15 @@ VITE_BUSINESS_SLUG=mucho-gusto
 ```
 
 `VITE_BUSINESS_SLUG` resta il fallback per vecchi link senza slug. Le route
-nuove prendono lo slug direttamente dal path.
+nuove prendono citta e business direttamente dal path.
 
 ## Permessi
 
-- `global_admin`: vede tutte le attivita, puo aprire ogni `/:slug/admin` e puo
+- `global_admin`: vede tutte le attivita, puo aprire ogni `/:citySlug/:slug/admin` e puo
   gestire business/utenti dalla console.
 - `owner`, `admin`, `staff`: possono vedere la directory pubblica, ma il banco
   admin e' disponibile solo per il proprio business.
-- pubblico: puo aprire `/` e tutti i menu `/:slug`, senza funzioni admin.
+- pubblico: puo aprire `/`, `/:citySlug` e tutti i menu `/:citySlug/:slug`, senza funzioni admin.
 
 ## Render CORS
 
@@ -75,20 +78,20 @@ CORS_ALLOW_VERCEL_APP=true
 
 1. Apri `https://cagli.vercel.app/admin`.
 2. Accedi come `global_admin`.
-3. Dalla console usa `Gestione business` oppure una card business.
-4. Crea il business con slug stabile, per esempio `sushi`.
-5. Crea o assegna l'owner con email e password temporanea.
-6. Apri `https://cagli.vercel.app/sushi` per il menu cliente.
-7. Apri `https://cagli.vercel.app/sushi/admin` per il banco admin.
+3. Vai in `/admin/cities`, cerca e attiva la citta dal registro.
+4. Vai in `/admin/businesses` e crea il business con slug stabile, per esempio `sushi`.
+5. Vai in `/admin/users` oppure usa `Utenti` nella card business per creare owner/admin/staff.
+6. Apri `https://cagli.vercel.app/cagli/sushi` per il menu cliente.
+7. Apri `https://cagli.vercel.app/cagli/sushi/admin` per il banco admin.
 
 ## Accesso Owner/Admin/Staff
 
-Quando un owner entra da `/:businessSlug/admin`, il frontend invia lo slug al
-backend. Dopo il login, il JWT contiene il `businessId`; quindi l'utente vede
-solo il proprio business anche se prova a cambiare URL manualmente.
+Quando un owner entra da `/:citySlug/:businessSlug/admin`, il frontend invia
+citta e slug al backend. Dopo il login, il JWT contiene il `businessId`; quindi
+l'utente vede solo il proprio business anche se prova a cambiare URL manualmente.
 
 ## Quando Usare Un Progetto Vercel Separato
 
 Usalo solo se un cliente richiede dominio, branding o deploy completamente
 separati. Per la gestione quotidiana e per ridurre problemi CORS, il modello
-centrale `cagli.vercel.app/:slug` e' preferibile.
+centrale `cagli.vercel.app/:citySlug/:slug` e' preferibile.

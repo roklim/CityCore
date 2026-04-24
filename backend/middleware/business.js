@@ -47,8 +47,18 @@ async function resolveBusiness(req, res, next) {
       normalizeSlug(req.header("X-Business-Slug")) ||
       normalizeSlug(req.query.business) ||
       DEFAULT_BUSINESS_SLUG;
+    const citySlug =
+      normalizeSlug(req.header("X-City-Slug")) ||
+      normalizeSlug(req.query.city) ||
+      "";
 
-    let business = await Business.findOne({ slug }).lean();
+    let business = citySlug
+      ? await Business.findOne({ slug, "location.citySlug": citySlug }).lean()
+      : null;
+
+    if (!business) {
+      business = await Business.findOne({ slug }).lean();
+    }
 
     if (!business && slug === DEFAULT_BUSINESS_SLUG) {
       business = (await ensureDefaultBusiness()).toObject();

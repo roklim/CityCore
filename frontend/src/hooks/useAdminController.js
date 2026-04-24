@@ -1,52 +1,40 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import {
-  createBusinessUser,
   createCoupon,
   createMenuItem,
-  createPlatformBusiness,
   deleteCoupon,
   deleteMenuItem,
   getAdminCustomers,
   getAdminMenu,
   getAvailability,
-  getBusinessUsers,
   getCoupons,
   getCurrentBusiness,
   getMe,
   getOrderStats,
   getOrders,
-  getPlatformBusinesses,
   getStoreSettings,
   loginAdmin,
   toggleCoupon,
   toggleMenuItem,
-  updateBusinessUser,
   updateCoupon,
   updateMenuItem,
   updateOrderStatus,
-  updatePlatformBusiness,
   updateStoreSettings,
 } from "../lib/api";
 import {
   ADMIN_NAV,
   ADMIN_REFRESH_INTERVAL_MS,
-  EMPTY_BUSINESS_FORM,
-  EMPTY_BUSINESS_USER_FORM,
   EMPTY_MENU_FORM,
   MENU_CATEGORY_OPTIONS,
   OPENING_DAY_OPTIONS,
 } from "../constants";
 import {
-  businessFormToPayload,
-  businessToForm,
   getAdminMenuCategory,
   isFreshOrder,
   isUrgentOrder,
   menuFormToPayload,
   menuItemToForm,
-  money,
   parseCommaList,
-  slugify,
   todayISO,
 } from "../utils/format";
 
@@ -102,8 +90,9 @@ function parseOpeningTimes(openingHours = "") {
 function businessSlugFromAdminPath() {
   const pathname = typeof window === "undefined" ? "" : window.location.pathname;
   const parts = pathname.split("/").filter(Boolean);
-  if (parts[1] !== "admin") return "";
   if (["admin", "ordine", "p"].includes(parts[0])) return "";
+  if (parts[2] === "admin") return parts[1] || "";
+  if (parts[1] !== "admin") return "";
   return parts[0] || "";
 }
 
@@ -150,7 +139,6 @@ export default function useAdminController() {
     serviceZones: "",
     customerMessage: "",
   });
-  const [platformBusinesses, setPlatformBusinesses] = useState([]);
   const [currentBusiness, setCurrentBusiness] = useState(null);
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -164,20 +152,12 @@ export default function useAdminController() {
       return null;
     }
   });
-  const [businessForm, setBusinessForm] = useState(EMPTY_BUSINESS_FORM);
-  const [editingBusinessId, setEditingBusinessId] = useState("");
-  const [businessUsers, setBusinessUsers] = useState([]);
-  const [selectedBusinessForUsers, setSelectedBusinessForUsers] = useState(null);
-  const [businessUserForm, setBusinessUserForm] = useState(EMPTY_BUSINESS_USER_FORM);
-  const [editingBusinessUserId, setEditingBusinessUserId] = useState("");
   const [toast, setToast] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [menuSaving, setMenuSaving] = useState(false);
   const [couponSaving, setCouponSaving] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
-  const [businessSaving, setBusinessSaving] = useState(false);
-  const [businessUserSaving, setBusinessUserSaving] = useState(false);
   const isGlobalAdmin = currentUser?.role === "global_admin";
   const sessionRoleKnown = !token || Boolean(currentUser?.role);
 
@@ -208,7 +188,12 @@ export default function useAdminController() {
 
     const routeSlug = businessSlugFromAdminPath();
     if (routeSlug && routeSlug !== currentBusiness.slug) {
-      window.location.replace(`/${currentBusiness.slug}/admin`);
+      const citySlug = currentBusiness.location?.citySlug || "";
+      window.location.replace(
+        citySlug
+          ? `/${citySlug}/${currentBusiness.slug}/admin`
+          : `/${currentBusiness.slug}/admin`,
+      );
     }
   }, [token, currentBusiness?.slug, currentUser?.role]);
 
@@ -217,16 +202,6 @@ export default function useAdminController() {
     const timer = window.setTimeout(() => loadCustomers(customerSearch), 350);
     return () => window.clearTimeout(timer);
   }, [customerSearch, token]);
-
-  useEffect(() => {
-    if (
-      sessionRoleKnown &&
-      !isGlobalAdmin &&
-      activeAdminSection === "businesses"
-    ) {
-      setActiveAdminSection("dashboard");
-    }
-  }, [activeAdminSection, isGlobalAdmin, sessionRoleKnown]);
 
   function notify(message) {
     setToast(message);
@@ -266,25 +241,14 @@ export default function useAdminController() {
 
   async function loadAdminResources() {
     // Staff vede solo operativita rapida; owner/admin caricano anche clienti,
-    // coupon e impostazioni. Il global admin carica inoltre la piattaforma.
+    // coupon e impostazioni. La console piattaforma ha un controller separato.
     const tasks = [loadAdminMenu()];
 
     if (currentUser?.role !== "staff") {
       tasks.push(loadCustomers(customerSearch), loadCoupons(), loadSettings());
     }
 
-    if (isGlobalAdmin) tasks.unshift(loadPlatformBusinesses());
     await Promise.all(tasks);
-  }
-
-  async function loadPlatformBusinesses() {
-    if (!isGlobalAdmin) return;
-    try {
-      setPlatformBusinesses(await getPlatformBusinesses(token));
-    } catch (error) {
-      if (error.status === 401) logout();
-      else notify(error.message);
-    }
   }
 
   async function hydrateSession() {
@@ -472,7 +436,6 @@ export default function useAdminController() {
     setToken("");
     setCurrentBusiness(null);
     setCurrentUser(null);
-    setPlatformBusinesses([]);
     setAdminMenu([]);
     setCustomers([]);
     setCoupons([]);
@@ -646,127 +609,6 @@ export default function useAdminController() {
     }
   }
 
-  function updateBusinessForm(field, value) {
-    setBusinessForm((current) => {
-      const next = { ...current, [field]: value };
-      if (field === "name" && !editingBusinessId) {
-        next.slug = slugify(value);
-        next.publicName = value;
-        next.vercelProjectName = slugify(value);
-      }
-      if (field === "slug") {
-        next.slug = slugify(value);
-        if (!next.vercelProjectName || next.vercelProjectName === current.slug) {
-          next.vercelProjectName = next.slug;
-        }
-      }
-      return next;
-    });
-  }
-
-  function editBusiness(business) {
-    setEditingBusinessId(business._id);
-    setBusinessForm(businessToForm(business));
-    setActiveAdminSection("businesses");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function resetBusinessForm() {
-    setEditingBusinessId("");
-    setBusinessForm(EMPTY_BUSINESS_FORM);
-  }
-
-  async function saveBusiness(event) {
-    event.preventDefault();
-    if (!businessForm.name.trim()) {
-      return notify("Inserisci il nome del business.");
-    }
-    if (!slugify(businessForm.slug || businessForm.name)) {
-      return notify("Inserisci uno slug valido.");
-    }
-
-    setBusinessSaving(true);
-    try {
-      // Solo il global admin puo' arrivare qui: crea/aggiorna tenant e owner.
-      const payload = businessFormToPayload(businessForm);
-      if (editingBusinessId) {
-        await updatePlatformBusiness(editingBusinessId, payload, token);
-        notify("Business aggiornato.");
-      } else {
-        await createPlatformBusiness(payload, token);
-        notify("Business creato.");
-      }
-      resetBusinessForm();
-      await loadPlatformBusinesses();
-    } catch (error) {
-      notify(error.message);
-    } finally {
-      setBusinessSaving(false);
-    }
-  }
-
-  async function openBusinessUsers(business) {
-    // Pannello laterale/logico per assegnare owner/admin/staff al tenant scelto.
-    setSelectedBusinessForUsers(business);
-    setBusinessUserForm(EMPTY_BUSINESS_USER_FORM);
-    setEditingBusinessUserId("");
-    try {
-      setBusinessUsers(await getBusinessUsers(business._id, token));
-    } catch (error) {
-      notify(error.message);
-    }
-  }
-
-  function editBusinessUser(user) {
-    setEditingBusinessUserId(user._id);
-    setBusinessUserForm({
-      name: user.name || "",
-      email: user.email || "",
-      password: "",
-      role: user.role || "admin",
-      active: user.active !== false,
-    });
-  }
-
-  function resetBusinessUserForm() {
-    setEditingBusinessUserId("");
-    setBusinessUserForm(EMPTY_BUSINESS_USER_FORM);
-  }
-
-  async function saveBusinessUser(event) {
-    event.preventDefault();
-    if (!selectedBusinessForUsers) return notify("Seleziona un business.");
-    if (!businessUserForm.email.trim()) return notify("Email utente obbligatoria.");
-
-    setBusinessUserSaving(true);
-    try {
-      // Password vuota in modifica significa "non cambiarla"; in creazione il
-      // backend la richiede per evitare utenti inutilizzabili.
-      const payload = {
-        ...businessUserForm,
-        email: businessUserForm.email.trim(),
-        name: businessUserForm.name.trim(),
-        password: businessUserForm.password.trim(),
-      };
-
-      if (editingBusinessUserId) {
-        await updateBusinessUser(editingBusinessUserId, payload, token);
-        notify("Utente aggiornato.");
-      } else {
-        await createBusinessUser(selectedBusinessForUsers._id, payload, token);
-        notify("Utente creato.");
-      }
-
-      resetBusinessUserForm();
-      setBusinessUsers(await getBusinessUsers(selectedBusinessForUsers._id, token));
-      await loadPlatformBusinesses();
-    } catch (error) {
-      notify(error.message);
-    } finally {
-      setBusinessUserSaving(false);
-    }
-  }
-
   async function changeMenuAvailability(id) {
     try {
       await toggleMenuItem(id, token);
@@ -854,40 +696,16 @@ export default function useAdminController() {
     };
   }, [orders, stats]);
 
-  const platformStats = useMemo(() => {
-    // Metriche aggregate del global admin per capire lo stato della piattaforma.
-    return platformBusinesses.reduce(
-      (totals, business) => {
-        totals.businesses += 1;
-        totals.orders += business.metrics?.orders || 0;
-        totals.revenue += business.metrics?.revenue || 0;
-        totals.pending += business.metrics?.pending || 0;
-        if (business.subscriptionStatus === "active") totals.active += 1;
-        if (business.subscriptionStatus === "trialing") totals.trialing += 1;
-        return totals;
-      },
-      {
-        businesses: 0,
-        orders: 0,
-        revenue: 0,
-        pending: 0,
-        active: 0,
-        trialing: 0,
-      },
-    );
-  }, [platformBusinesses]);
   const visibleAdminNav = useMemo(() => {
     // Difesa UX: nasconde sezioni non pertinenti al ruolo. Il backend applica
     // comunque i controlli reali, quindi questa non e' sicurezza primaria.
     return ADMIN_NAV.filter((item) => {
-      if (isGlobalAdmin) return true;
-      if (item.id === "businesses") return false;
       if (currentUser?.role === "staff") {
         return ["dashboard", "orders", "availability"].includes(item.id);
       }
       return true;
     });
-  }, [currentUser?.role, isGlobalAdmin]);
+  }, [currentUser?.role]);
   useEffect(() => {
     if (
       sessionRoleKnown &&
@@ -934,11 +752,6 @@ export default function useAdminController() {
     activeAdminSection,
     adminMenu,
     availability,
-    businessForm,
-    businessSaving,
-    businessUserForm,
-    businessUserSaving,
-    businessUsers,
     changeCouponStatus,
     changeMenuAvailability,
     changeStatus,
@@ -949,12 +762,8 @@ export default function useAdminController() {
     customerSearch,
     customers,
     dashboardStats,
-    editBusiness,
-    editBusinessUser,
     editCoupon,
     editMenuItem,
-    editingBusinessId,
-    editingBusinessUserId,
     editingCouponId,
     editingMenuId,
     groupedMenu,
@@ -966,30 +775,21 @@ export default function useAdminController() {
     menuForm,
     menuSaving,
     notify,
-    openBusinessUsers,
     orderFilter,
     orderSearch,
     password,
     pickupDate,
-    platformBusinesses,
-    platformStats,
     recentOrders,
     refresh,
     refreshing,
     removeCoupon,
     removeMenuItem,
-    resetBusinessForm,
-    resetBusinessUserForm,
     resetCouponForm,
     resetMenuForm,
-    saveBusiness,
-    saveBusinessUser,
     saveCoupon,
     saveMenuItem,
     saveSettings,
-    selectedBusinessForUsers,
     setActiveAdminSection,
-    setBusinessUserForm,
     setCustomerSearch,
     setOrderFilter,
     setOrderSearch,
@@ -1004,7 +804,6 @@ export default function useAdminController() {
     topProductMax,
     topProducts,
     unavailableItems,
-    updateBusinessForm,
     updateCouponForm,
     updateMenuForm,
     updateSettingsForm,

@@ -175,28 +175,52 @@ export function isCounterOpenNow() {
 }
 
 export function orderTrackingHref(orderId) {
-  return businessOrderHref(getCurrentBusinessSlugFromPath(), orderId);
+  return businessOrderHref(
+    getCurrentBusinessSlugFromPath(),
+    orderId,
+    getCurrentCitySlugFromPath(),
+  );
 }
 
 export function getCurrentBusinessSlugFromPath() {
   const pathname = typeof window === "undefined" ? "" : window.location.pathname;
-  const firstSegment = pathname.split("/").filter(Boolean)[0];
+  const parts = pathname.split("/").filter(Boolean);
   const reserved = new Set(["admin", "ordine", "p"]);
-  return firstSegment && !reserved.has(firstSegment) ? firstSegment : "";
+  if (parts.length >= 2 && !reserved.has(parts[0]) && !reserved.has(parts[1])) {
+    return parts[1];
+  }
+  return parts[0] && !reserved.has(parts[0]) ? parts[0] : "";
 }
 
-export function businessHref(slug) {
-  return slug ? `/${encodeURIComponent(slug)}` : "/";
+export function getCurrentCitySlugFromPath() {
+  const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+  const parts = pathname.split("/").filter(Boolean);
+  const reserved = new Set(["admin", "ordine", "p"]);
+  if (parts.length >= 2 && !reserved.has(parts[0]) && !reserved.has(parts[1])) {
+    return parts[0];
+  }
+  return "";
 }
 
-export function businessAdminHref(slug) {
-  return slug ? `/${encodeURIComponent(slug)}/admin` : "/admin";
+export function cityHomeHref(citySlug = getCurrentCitySlugFromPath()) {
+  return citySlug ? `/${encodeURIComponent(citySlug)}` : "/";
 }
 
-export function businessOrderHref(slug, orderId) {
+export function businessHref(slug, citySlug = getCurrentCitySlugFromPath()) {
+  if (!slug) return cityHomeHref(citySlug);
+  return citySlug
+    ? `/${encodeURIComponent(citySlug)}/${encodeURIComponent(slug)}`
+    : `/${encodeURIComponent(slug)}`;
+}
+
+export function businessAdminHref(slug, citySlug = getCurrentCitySlugFromPath()) {
+  return slug ? `${businessHref(slug, citySlug)}/admin` : "/admin";
+}
+
+export function businessOrderHref(slug, orderId, citySlug = getCurrentCitySlugFromPath()) {
   const encodedId = encodeURIComponent(orderId);
   return slug
-    ? `/${encodeURIComponent(slug)}/ordine/${encodedId}`
+    ? `${businessHref(slug, citySlug)}/ordine/${encodedId}`
     : `/ordine/${encodedId}`;
 }
 
@@ -270,6 +294,12 @@ export function businessToForm(business) {
     type: business.type || "custom",
     plan: business.plan || "free",
     subscriptionStatus: business.subscriptionStatus || "trialing",
+    cityId: business.cityId || business.city?._id || "",
+    citySlug: business.location?.citySlug || business.city?.slug || "cagli",
+    cityName: business.location?.cityName || business.city?.name || "Cagli",
+    province: business.location?.province || business.city?.province || "PU",
+    region: business.location?.region || business.city?.region || "Marche",
+    address: business.location?.address || "",
     publicName: business.branding?.publicName || business.name || "",
     logoUrl: business.branding?.logoUrl || "",
     coverImageUrl: business.branding?.coverImageUrl || "",
@@ -310,6 +340,16 @@ export function businessFormToPayload(form) {
     type: form.type,
     plan: form.plan,
     subscriptionStatus: form.subscriptionStatus,
+    cityId: form.cityId,
+    citySlug: form.citySlug,
+    location: {
+      cityId: form.cityId,
+      citySlug: form.citySlug,
+      cityName: form.cityName,
+      province: form.province,
+      region: form.region,
+      address: form.address,
+    },
     branding: {
       publicName: form.publicName.trim() || form.name.trim(),
       primaryColor: form.primaryColor,

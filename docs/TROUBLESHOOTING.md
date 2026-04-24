@@ -86,13 +86,17 @@ These should eventually be replaced by tenant-scoped indexes.
 Current routing model:
 
 ```txt
-/                  platform directory
-/admin             global login/platform console
-/<slug>            public menu
-/<slug>/admin      business admin
+/                  city search
+/admin             platform dashboard
+/admin/cities      platform city registry
+/admin/businesses  platform business management
+/admin/users       platform tenant users
+/<citySlug>        city directory
+/<citySlug>/<slug> public menu
+/<citySlug>/<slug>/admin business admin
 ```
 
-If `/admin` shows "Operativita Mucho Gusto", the frontend deployment is old.
+If `/admin` shows a public directory or "Operativita Mucho Gusto", the frontend deployment is old.
 Redeploy Vercel after pushing the route refactor.
 
 ## Vercel Business App Shows Wrong Menu
@@ -105,19 +109,19 @@ VITE_BUSINESS_SLUG=mucho-gusto
 ```
 
 `VITE_BUSINESS_SLUG` is only a fallback. The normal business is read from the
-path, for example `/sushi` or `/mucho-gusto/admin`.
+path, for example `/cagli/sushi` or `/cagli/mucho-gusto/admin`.
 
 For local testing, use:
 
 ```txt
-/<slug>
-/<slug>/admin
+/<citySlug>/<slug>
+/<citySlug>/<slug>/admin
 ?business=<slug>
 ```
 
 Legacy URLs still work:
 
 ```txt
-/p/<slug>
-/admin/<slug>
+/<slug>
+/<slug>/admin
 ```
