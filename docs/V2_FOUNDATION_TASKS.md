@@ -236,6 +236,8 @@ Separare bene configurazione local, staging e production.
 
 ### F1-07 - Healthcheck e Boot Logs
 
+Status: completed
+
 **Obiettivo**  
 Avere segnali minimi di vita del sistema.
 
@@ -261,6 +263,8 @@ Avere segnali minimi di vita del sistema.
 
 
 ### F1-08 - UI Foundation Web
+
+Status: completed
 
 **Obiettivo**  
 Stabilizzare la base UI del nuovo web layer.

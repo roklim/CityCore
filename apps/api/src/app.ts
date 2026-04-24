@@ -3,6 +3,10 @@ import helmet from "@fastify/helmet";
 import Fastify from "fastify";
 import { env } from "./config.js";
 
+const bootedAt = new Date().toISOString();
+const apiServiceName = "platform-api-v2";
+const releaseLabel = "foundation";
+
 export function buildApp() {
   const app = Fastify({
     logger: env.NODE_ENV !== "test",
@@ -16,9 +20,17 @@ export function buildApp() {
 
   app.get("/health", async () => ({
     status: "ok",
-    service: "platform-api-v2",
+    service: apiServiceName,
+    release: releaseLabel,
+    surface: "api",
     time: new Date().toISOString(),
     env: env.NODE_ENV,
+    bootedAt,
+    dependencies: {
+      databaseConfigured: Boolean(env.DATABASE_URL),
+      redisConfigured: Boolean(env.REDIS_URL),
+      authConfigured: Boolean(env.AUTH_SECRET),
+    },
   }));
 
   app.get("/api/v2", async () => ({

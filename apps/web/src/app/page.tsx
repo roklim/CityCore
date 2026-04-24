@@ -1,82 +1,105 @@
-const surfaces = [
+import Link from "next/link";
+import { platformShellNavigation } from "@platform/ui";
+import { AppShell } from "../components/app-shell";
+
+const foundationTracks = [
   {
-    href: "/admin",
-    title: "Global Admin",
+    title: "Core platform",
     description:
-      "Shell piattaforma per governance, citta, business, utenti, audit e onboarding.",
+      "Monorepo, Next.js web, Fastify API, worker dedicato e package condivisi gia allineati.",
   },
   {
-    href: "/demo-city",
-    title: "Marketplace Citta",
+    title: "Data layer",
     description:
-      "Directory city-first per attivita, moduli, ranking e discovery locale.",
+      "Prisma foundation con utenti, access grants, citta, business, template, moduli e audit.",
   },
   {
-    href: "/demo-city/demo-business",
-    title: "Business Page",
+    title: "Local bootstrap",
     description:
-      "Pagina pubblica template-driven del business con CTA e modulo attivo.",
+      "Compose locale, env strategy, package scripts e una base pronta a collegare Postgres e Redis.",
+  },
+];
+
+const readinessChecks = [
+  {
+    title: "Health e boot signals",
+    description:
+      "Web, API e worker parlano la stessa lingua operativa per essere monitorati meglio fin da subito.",
   },
   {
-    href: "/account",
-    title: "Customer Area",
+    title: "Shell V2",
     description:
-      "Area utente per ordini, prenotazioni, soggiorni e preferenze future.",
+      "La UI adesso espone superfici chiare e leggibili, non solo pagine placeholder scollegate.",
+  },
+  {
+    title: "Legacy protetta",
+    description:
+      "La V2 cresce accanto alla codebase attuale senza toccare il percorso di produzione esistente.",
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="shell">
-      <section className="hero">
-        <p className="eyebrow">Platform V2</p>
-        <h1>Foundation del nuovo platform layer.</h1>
+    <AppShell
+      activeSection="foundation"
+      eyebrow="Foundation"
+      title="Nuovo platform layer con basi gia professionali."
+      description="Questo cantiere apre la V2 con Next.js App Router, shell distinte per piattaforma, citta, business e account, e una struttura che puo reggere ordering, appointments, stays e mobility request."
+      routePath="/"
+      statusLabel="Milestone 1"
+      asideTitle="Focus attuale"
+      asideText="Stiamo chiudendo la foundation: health, shell UI, local infra e bootstrap dati prima di entrare nel platform core vero."
+    >
+      <section className="section-header">
+        <p className="section-label">Foundation tracks</p>
+        <h2>Dove stiamo rendendo il cantiere davvero usabile</h2>
         <p>
-          Questo cantiere avvia la V2 con Next.js App Router come web layer,
-          superfici separate per piattaforma, citta, business e account, e
-          spazio per i moduli ordering, appointments, stays e mobility request.
+          Ogni blocco qui sotto deve essere credibile gia da adesso, cosi il
+          passaggio alla platform core milestone non parte su fondamenta fragili.
         </p>
-        <div className="pill-row">
-          <span className="pill">Next.js 16</span>
-          <span className="pill">React 19</span>
-          <span className="pill">TypeScript</span>
-          <span className="pill">App Router</span>
-          <span className="pill">City-first</span>
-        </div>
       </section>
 
-      <div className="grid">
-        <article className="card">
-          <strong>Stack scelto</strong>
-          <p>
-            Web su Next.js, API separata, worker dedicato, Postgres come core,
-            Redis per queue e cache, template engine e AI onboarding.
-          </p>
-        </article>
-        <article className="card">
-          <strong>Principio guida</strong>
-          <p>
-            Non piu una pizzeria estesa, ma una piattaforma locale multi-citta
-            a moduli e template, pronta a crescere senza rifare il core.
-          </p>
-        </article>
-        <article className="card">
-          <strong>Legacy protetta</strong>
-          <p>
-            La V2 parte in parallelo alla codebase attuale. Possiamo costruire,
-            migrare e validare senza rompere il prodotto esistente.
-          </p>
-        </article>
-      </div>
-
-      <section className="link-grid">
-        {surfaces.map((surface) => (
-          <a className="link-card" href={surface.href} key={surface.href}>
-            <strong>{surface.title}</strong>
-            <span>{surface.description}</span>
-          </a>
+      <section className="section-grid">
+        {foundationTracks.map((track) => (
+          <article className="insight-card" key={track.title}>
+            <strong>{track.title}</strong>
+            <p>{track.description}</p>
+          </article>
         ))}
       </section>
-    </main>
+
+      <section className="section-header">
+        <p className="section-label">Surface map</p>
+        <h2>Le superfici principali sono gia leggibili</h2>
+        <p>
+          La shell V2 deve chiarire subito la separazione tra governance
+          piattaforma, discovery city-first, pagina business e banco locale.
+        </p>
+      </section>
+
+      <section className="surface-grid">
+        {platformShellNavigation.map((surface) => (
+          <Link className="surface-card" href={surface.href} key={surface.id}>
+            <strong>{surface.label}</strong>
+            <p>{surface.meta}</p>
+            <code>{surface.href}</code>
+          </Link>
+        ))}
+      </section>
+
+      <section className="section-header">
+        <p className="section-label">Readiness</p>
+        <h2>Segnali che stiamo passando da scaffold a piattaforma</h2>
+      </section>
+
+      <section className="section-grid">
+        {readinessChecks.map((check) => (
+          <article className="insight-card" key={check.title}>
+            <strong>{check.title}</strong>
+            <p>{check.description}</p>
+          </article>
+        ))}
+      </section>
+    </AppShell>
   );
 }
