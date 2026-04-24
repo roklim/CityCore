@@ -81,7 +81,7 @@ coupons.code_1
 
 These should eventually be replaced by tenant-scoped indexes.
 
-## Cagli Shows Wrong Business Or Admin
+## Platform Shows Wrong Business Or Admin
 
 Current routing model:
 

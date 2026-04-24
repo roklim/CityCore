@@ -5,6 +5,66 @@
 - Database: MongoDB + Mongoose
 - Hosting target: Vercel frontend, Render or similar backend
 
+## V2 Foundation
+
+The repository now also contains the first non-breaking scaffold for the future
+V2 platform:
+
+- `apps/web`: Next.js App Router web layer
+- `apps/api`: Fastify platform API foundation
+- `apps/worker`: async jobs foundation
+- `packages/*`: shared platform packages
+
+This scaffold lives alongside the current legacy app so the new architecture can
+grow without breaking the existing production path.
+
+### V2 Local Bootstrap
+
+Start local infra:
+
+```bash
+docker compose up -d
+```
+
+Copy the environment templates:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/worker/.env.example apps/worker/.env
+cp apps/web/.env.example apps/web/.env.local
+```
+
+Required V2 environment variables:
+
+- `apps/web`
+  - `NEXT_PUBLIC_API_BASE_URL`
+- `apps/api`
+  - `NODE_ENV`
+  - `PORT`
+  - `DATABASE_URL`
+  - `REDIS_URL`
+  - `AUTH_SECRET`
+- `apps/worker`
+  - `NODE_ENV`
+  - `DATABASE_URL`
+  - `REDIS_URL`
+  - `AUTH_SECRET`
+  - `WORKER_NAME`
+
+Default local infra endpoints expected by the V2 scaffold:
+
+- Postgres: `postgresql://postgres:postgres@localhost:5432/platform_v2?schema=public`
+- Redis: `redis://localhost:6379`
+- API: `http://localhost:4000`
+
+Useful V2 commands:
+
+```bash
+npm run infra:up
+npm run dev
+npm run typecheck
+```
+
 ## Local Setup
 
 Backend:
@@ -121,11 +181,14 @@ Owner example:
 See:
 
 - `docs/ARCHITECTURE.md`
-- `docs/BUSINESS_METRICS.md`
 - `docs/CITY_REGISTRY.md`
-- `docs/VERCEL_BUSINESS_APPS.md`
 - `docs/TROUBLESHOOTING.md`
-- `docs/TECHNICAL_REVIEW.md`
+- `docs/AUTH_ROADMAP.md`
+- `docs/V2_FOUNDATION_TASKS.md`
+- `docs/V2_PLATFORM_BLUEPRINT.md`
+- `docs/V2_DATA_MODEL.md`
+- `docs/V2_MIGRATION_PLAN.md`
+- `docs/V2_EXECUTION_ROADMAP.md`
 
 ## Verification
 

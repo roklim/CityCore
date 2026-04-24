@@ -1,0 +1,33 @@
+{
+  "name": "local-platform-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.9.0",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n web,api,worker \"npm:dev:web\" \"npm:dev:api\" \"npm:dev:worker\"",
+    "dev:web": "npm --workspace @platform/web run dev",
+    "dev:api": "npm --workspace @platform/api run dev",
+    "dev:worker": "npm --workspace @platform/worker run dev",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "build": "npm run build:web && npm run build:api && npm run build:worker",
+    "build:web": "npm --workspace @platform/web run build",
+    "build:api": "npm --workspace @platform/api run build",
+    "build:worker": "npm --workspace @platform/worker run build",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run typecheck && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

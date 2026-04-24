@@ -218,7 +218,6 @@ documentare il piano prima di modificare troppo codice.
 
 File:
 
-- `docs/AUTH_ROLES_PLAN.md`
 - `docs/AUTH_ROADMAP.md`
 
 Output:

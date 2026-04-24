@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  invited
+  active
+  disabled
+}
+
+enum AccessRole {
+  global_admin
+  city_admin
+  local_admin
+  staff
+}
+
+enum ScopeType {
+  platform
+  city
+  business
+}
+
+enum CityStatus {
+  active
+  coming_soon
+  disabled
+}
+
+enum TemplateCategory {
+  food
+  service
+  stays
+  mobility
+  rental
+  custom
+}
+
+enum ModuleCode {
+  ordering
+  appointments
+  stays
+  mobility_request
+  rentals
+  directory
+  events
+}
+
+enum BusinessStatus {
+  draft
+  active
+  paused
+  disabled
+}
+
+enum BusinessPlan {
+  free
+  pro
+  premium
+  enterprise
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  cancelled
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  passwordHash    String?       @map("password_hash")
+  name            String?
+  phone           String?
+  status          UserStatus    @default(invited)
+  emailVerifiedAt DateTime?     @map("email_verified_at")
+  phoneVerifiedAt DateTime?     @map("phone_verified_at")
+  lastLoginAt     DateTime?     @map("last_login_at")
+  authVersion     Int           @default(1) @map("auth_version")
+  accessGrants    AccessGrant[]
+  createdAccesses AccessGrant[] @relation("AccessGrantCreatedBy")
+  ownedBusinesses Business[]    @relation("BusinessOwner")
+  actorAuditLogs  AuditLog[]    @relation("AuditLogActor")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model AccessGrant {
+  id              String     @id @default(cuid())
+  userId          String     @map("user_id")
+  role            AccessRole
+  scopeType       ScopeType  @map("scope_type")
+  cityId          String?    @map("city_id")
+  businessId      String?    @map("business_id")
+  active          Boolean    @default(true)
+  createdByUserId String?    @map("created_by_user_id")
+  lastUsedAt      DateTime?  @map("last_used_at")
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdByUser   User?      @relation("AccessGrantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  city            City?      @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  business        Business?  @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  @@index([userId], map: "access_grants_user_id_idx")
+  @@index([cityId], map: "access_grants_city_id_idx")
+  @@index([businessId], map: "access_grants_business_id_idx")
+  @@index([role, scopeType], map: "access_grants_role_scope_type_idx")
+  @@map("access_grants")
+}
+
+model CityRegistry {
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String   @unique
+  provinceCode       String?  @map("province_code")
+  provinceName       String?  @map("province_name")
+  regionCode         String?  @map("region_code")
+  regionName         String?  @map("region_name")
+  country            String   @default("IT")
+  istatCode          String?  @unique @map("istat_code")
+  cadastralCode      String?  @unique @map("cadastral_code")
+  source             String?
+  sourceVersion      String?  @map("source_version")
+  lat                Float?
+  lng                Float?
+  activeMunicipality Boolean  @default(true) @map("active_municipality")
+  searchText         String?  @map("search_text")
+  cities             City[]
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([name], map: "city_registry_name_idx")
+  @@index([provinceCode], map: "city_registry_province_code_idx")
+  @@index([regionCode], map: "city_registry_region_code_idx")
+  @@map("city_registry")
+}
+
+model City {
+  id                   String        @id @default(cuid())
+  registryId           String?       @map("registry_id")
+  name                 String
+  slug                 String        @unique
+  province             String?
+  region               String?
+  country              String        @default("IT")
+  status               CityStatus    @default(coming_soon)
+  active               Boolean       @default(true)
+  heroTitle            String?       @map("hero_title")
+  heroDescription      String?       @map("hero_description")
+  sortOrder            Int           @default(0) @map("sort_order")
+  seoTitle             String?       @map("seo_title")
+  seoDescription       String?       @map("seo_description")
+  featuredImageAssetId String?       @map("featured_image_asset_id")
+  registry             CityRegistry? @relation(fields: [registryId], references: [id], onDelete: SetNull)
+  businesses           Business[]
+  accessGrants         AccessGrant[]
+  auditLogs            AuditLog[]
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, active], map: "cities_status_active_idx")
+  @@index([sortOrder], map: "cities_sort_order_idx")
+  @@map("cities")
+}
+
+model BusinessTemplate {
+  id                String           @id @default(cuid())
+  code              String           @unique
+  name              String
+  category          TemplateCategory
+  primaryModule     ModuleCode       @map("primary_module")
+  fieldSchemaJson   Json?            @map("field_schema_json")
+  sectionSchemaJson Json?            @map("section_schema_json")
+  defaultCtaLabel   String?          @map("default_cta_label")
+  active            Boolean          @default(true)
+  businesses        Business[]
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  @@index([category, active], map: "business_templates_category_active_idx")
+  @@map("business_templates")
+}
+
+model Business {
+  id                 String             @id @default(cuid())
+  cityId             String             @map("city_id")
+  templateId         String             @map("template_id")
+  name               String
+  slug               String
+  legalName          String?            @map("legal_name")
+  category           TemplateCategory?
+  status             BusinessStatus     @default(draft)
+  plan               BusinessPlan       @default(free)
+  subscriptionStatus SubscriptionStatus @default(trialing) @map("subscription_status")
+  publicEmail        String?            @map("public_email")
+  publicPhone        String?            @map("public_phone")
+  website            String?
+  addressLine1       String?            @map("address_line_1")
+  addressLine2       String?            @map("address_line_2")
+  postalCode         String?            @map("postal_code")
+  lat                Float?
+  lng                Float?
+  timezone           String             @default("Europe/Rome")
+  currency           String             @default("EUR")
+  locale             String             @default("it-IT")
+  ownerUserId        String?            @map("owner_user_id")
+  primaryColor       String?            @map("primary_color")
+  accentColor        String?            @map("accent_color")
+  logoAssetId        String?            @map("logo_asset_id")
+  coverAssetId       String?            @map("cover_asset_id")
+  publicTitle        String?            @map("public_title")
+  publicSubtitle     String?            @map("public_subtitle")
+  publicDescription  String?            @map("public_description")
+  seoTitle           String?            @map("seo_title")
+  seoDescription     String?            @map("seo_description")
+  bookingPolicy      String?            @map("booking_policy")
+  cancellationPolicy String?            @map("cancellation_policy")
+  notesInternal      String?            @map("notes_internal")
+  city               City               @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  template           BusinessTemplate   @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  ownerUser          User?              @relation("BusinessOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  modules            BusinessModule[]
+  accessGrants       AccessGrant[]
+  auditLogs          AuditLog[]
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  @@unique([cityId, slug], map: "businesses_city_id_slug_key")
+  @@index([cityId, status], map: "businesses_city_id_status_idx")
+  @@index([templateId], map: "businesses_template_id_idx")
+  @@index([ownerUserId], map: "businesses_owner_user_id_idx")
+  @@map("businesses")
+}
+
+model BusinessModule {
+  id           String     @id @default(cuid())
+  businessId   String     @map("business_id")
+  moduleCode   ModuleCode @map("module_code")
+  active       Boolean    @default(true)
+  settingsJson Json?      @map("settings_json")
+  business     Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@unique([businessId, moduleCode], map: "business_modules_business_id_module_code_key")
+  @@index([moduleCode, active], map: "business_modules_module_code_active_idx")
+  @@map("business_modules")
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  actorUserId  String?   @map("actor_user_id")
+  action       String
+  targetType   String    @map("target_type")
+  targetId     String?   @map("target_id")
+  scopeType    ScopeType @map("scope_type")
+  cityId       String?   @map("city_id")
+  businessId   String?   @map("business_id")
+  metadataJson Json?     @map("metadata_json")
+  ipAddress    String?   @map("ip_address")
+  userAgent    String?   @map("user_agent")
+  actorUser    User?     @relation("AuditLogActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  city         City?     @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  business     Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([actorUserId], map: "audit_logs_actor_user_id_idx")
+  @@index([scopeType, cityId, businessId], map: "audit_logs_scope_city_business_idx")
+  @@index([targetType, targetId], map: "audit_logs_target_type_target_id_idx")
+  @@index([action, createdAt], map: "audit_logs_action_created_at_idx")
+  @@map("audit_logs")
+}

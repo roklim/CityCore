@@ -109,7 +109,7 @@ Legacy direct business routes remain available during migration.
 
 ## Platform Admin
 
-The platform owner uses `/admin` to see the Cagli platform console.
+The platform owner uses `/admin` to see the platform console.
 `/admin` no longer opens the default Mucho Gusto operational dashboard.
 
 From the platform console the global admin can:
@@ -226,8 +226,10 @@ Scaffold only. Intended for:
 
 ## Supporting Docs
 
-- `docs/VERCEL_BUSINESS_APPS.md`
 - `docs/CITY_REGISTRY.md`
-- `docs/BUSINESS_METRICS.md`
 - `docs/TROUBLESHOOTING.md`
-- `docs/TECHNICAL_REVIEW.md`
+- `docs/AUTH_ROADMAP.md`
+- `docs/V2_PLATFORM_BLUEPRINT.md`
+- `docs/V2_DATA_MODEL.md`
+- `docs/V2_MIGRATION_PLAN.md`
+- `docs/V2_EXECUTION_ROADMAP.md`
