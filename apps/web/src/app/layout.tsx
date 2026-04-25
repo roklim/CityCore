@@ -19,15 +19,12 @@ export const metadata: Metadata = {
     default: "Platform V2",
     template: "%s | Platform V2",
   },
-  description:
-    "Foundation professionale del nuovo marketplace multi-citta e multi-modulo.",
+  description: "Foundation professionale del nuovo marketplace multi-citta e multi-modulo.",
 };
 
 const rootVariables = createCssVariables() as CSSProperties;
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="it" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="app-body" style={rootVariables}>

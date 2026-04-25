@@ -58,8 +58,8 @@ export default function HomePage() {
         <p className="section-label">Foundation tracks</p>
         <h2>Dove stiamo rendendo il cantiere davvero usabile</h2>
         <p>
-          Ogni blocco qui sotto deve essere credibile gia da adesso, cosi il
-          passaggio alla platform core milestone non parte su fondamenta fragili.
+          Ogni blocco qui sotto deve essere credibile gia da adesso, cosi il passaggio alla platform
+          core milestone non parte su fondamenta fragili.
         </p>
       </section>
 
@@ -76,8 +76,8 @@ export default function HomePage() {
         <p className="section-label">Surface map</p>
         <h2>Le superfici principali sono gia leggibili</h2>
         <p>
-          La shell V2 deve chiarire subito la separazione tra governance
-          piattaforma, discovery city-first, pagina business e banco locale.
+          La shell V2 deve chiarire subito la separazione tra governance piattaforma, discovery
+          city-first, pagina business e banco locale.
         </p>
       </section>
 
@@ -109,8 +109,8 @@ export default function HomePage() {
         <p className="section-label">Shared packages</p>
         <h2>Moduli e template ora vengono dai package condivisi</h2>
         <p>
-          La foundation inizia a parlare con tipi e registri comuni, cosi web,
-          API e onboarding non duplicano lo stesso vocabolario di dominio.
+          La foundation inizia a parlare con tipi e registri comuni, cosi web, API e onboarding non
+          duplicano lo stesso vocabolario di dominio.
         </p>
       </section>
 

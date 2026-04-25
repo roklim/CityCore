@@ -1,9 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import {
-  platformShellNavigation,
-  type ShellSectionId,
-} from "@platform/ui";
+import { platformShellNavigation, type ShellSectionId } from "@platform/ui";
 
 type AppShellProps = {
   activeSection: ShellSectionId;
@@ -17,10 +14,7 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-function getNavClassName(
-  sectionId: ShellSectionId,
-  activeSection: ShellSectionId,
-) {
+function getNavClassName(sectionId: ShellSectionId, activeSection: ShellSectionId) {
   return sectionId === activeSection ? "shell-nav-link active" : "shell-nav-link";
 }
 

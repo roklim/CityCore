@@ -6,9 +6,7 @@ const globalForPrisma = globalThis as typeof globalThis & {
 
 function ensureDatabaseUrl() {
   if (!process.env.DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL is required to initialize @platform/database.",
-    );
+    throw new Error("DATABASE_URL is required to initialize @platform/database.");
   }
 }
 
@@ -16,10 +14,7 @@ export function createPrismaClient() {
   ensureDatabaseUrl();
 
   return new PrismaClient({
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["warn", "error"]
-        : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   });
 }
 

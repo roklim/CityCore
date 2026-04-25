@@ -203,9 +203,7 @@ export function getTemplateDefinition(code: TemplateCode) {
 }
 
 export function getTemplatesByCategory(category: TemplateCategory) {
-  return BUSINESS_TEMPLATE_DEFINITIONS.filter(
-    (definition) => definition.category === category,
-  );
+  return BUSINESS_TEMPLATE_DEFINITIONS.filter((definition) => definition.category === category);
 }
 
 export function isTemplateCode(value: string): value is TemplateCode {

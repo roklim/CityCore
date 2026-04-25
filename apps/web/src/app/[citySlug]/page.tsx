@@ -20,7 +20,9 @@ export default async function CityPage({ params }: CityPageProps) {
       <section className="route-grid">
         <article className="route-card">
           <strong>Discovery</strong>
-          <p>Categorie, query locali, featured business e percorsi rapidi per ogni verticale attivo.</p>
+          <p>
+            Categorie, query locali, featured business e percorsi rapidi per ogni verticale attivo.
+          </p>
         </article>
         <article className="route-card">
           <strong>Coverage</strong>

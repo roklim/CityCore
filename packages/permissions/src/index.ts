@@ -78,10 +78,7 @@ export function getRolePermissions(role: UserRole) {
   return ROLE_PERMISSIONS[role] as readonly PlatformPermission[];
 }
 
-export function roleHasPermission(
-  role: UserRole,
-  permission: PlatformPermission,
-) {
+export function roleHasPermission(role: UserRole, permission: PlatformPermission) {
   return getRolePermissions(role).includes(permission);
 }
 
@@ -89,10 +86,7 @@ export function listPermissionsForRoles(roles: readonly UserRole[]) {
   return [...new Set(roles.flatMap((role) => getRolePermissions(role)))];
 }
 
-export function scopeMatches(
-  grant: AccessGrantLike,
-  context: PermissionContext = {},
-) {
+export function scopeMatches(grant: AccessGrantLike, context: PermissionContext = {}) {
   if (grant.active === false) {
     return false;
   }

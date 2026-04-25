@@ -4,9 +4,7 @@ type BusinessAdminPageProps = {
   params: Promise<{ citySlug: string; businessSlug: string }>;
 };
 
-export default async function BusinessAdminPage({
-  params,
-}: BusinessAdminPageProps) {
+export default async function BusinessAdminPage({ params }: BusinessAdminPageProps) {
   const { citySlug, businessSlug } = await params;
 
   return (
@@ -30,7 +28,9 @@ export default async function BusinessAdminPage({
         </article>
         <article className="route-card">
           <strong>Staff scope</strong>
-          <p>Permessi ridotti, workflow pratici e zero contaminazione con la console piattaforma.</p>
+          <p>
+            Permessi ridotti, workflow pratici e zero contaminazione con la console piattaforma.
+          </p>
         </article>
       </section>
     </AppShell>

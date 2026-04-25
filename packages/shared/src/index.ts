@@ -8,9 +8,10 @@ export const USER_ROLES = [
 
 export type UserRole = (typeof USER_ROLES)[number];
 
-export const ADMIN_ROLES = USER_ROLES.filter(
-  (role) => role !== "customer",
-) as readonly Exclude<UserRole, "customer">[];
+export const ADMIN_ROLES = USER_ROLES.filter((role) => role !== "customer") as readonly Exclude<
+  UserRole,
+  "customer"
+>[];
 
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 export type AccessRole = AdminRole;
@@ -24,23 +25,13 @@ export type UserStatus = (typeof USER_STATUSES)[number];
 export const CITY_STATUSES = ["active", "coming_soon", "disabled"] as const;
 export type CityStatus = (typeof CITY_STATUSES)[number];
 
-export const BUSINESS_STATUSES = [
-  "draft",
-  "active",
-  "paused",
-  "disabled",
-] as const;
+export const BUSINESS_STATUSES = ["draft", "active", "paused", "disabled"] as const;
 export type BusinessStatus = (typeof BUSINESS_STATUSES)[number];
 
 export const BUSINESS_PLANS = ["free", "pro", "premium", "enterprise"] as const;
 export type BusinessPlan = (typeof BUSINESS_PLANS)[number];
 
-export const SUBSCRIPTION_STATUSES = [
-  "trialing",
-  "active",
-  "past_due",
-  "cancelled",
-] as const;
+export const SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "cancelled"] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 export const TEMPLATE_CATEGORIES = [
@@ -98,10 +89,7 @@ export function buildCityPath(citySlug: string) {
   return `/${citySlug}`;
 }
 
-export function buildBusinessPath({
-  citySlug,
-  businessSlug,
-}: BusinessRouteParams) {
+export function buildBusinessPath({ citySlug, businessSlug }: BusinessRouteParams) {
   return `${buildCityPath(citySlug)}/${businessSlug}`;
 }
 
@@ -109,9 +97,7 @@ export function buildBusinessAdminPath(route: BusinessRouteParams) {
   return `${buildBusinessPath(route)}/admin`;
 }
 
-export function createLookup<TValue extends { code: string }>(
-  items: readonly TValue[],
-) {
+export function createLookup<TValue extends { code: string }>(items: readonly TValue[]) {
   return Object.fromEntries(items.map((item) => [item.code, item])) as Record<
     TValue["code"],
     TValue
