@@ -23,7 +23,7 @@
     "build:worker": "npm --workspace @platform/worker run build",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"package.json\" \"tsconfig.base.json\" \"compose.yml\" \".github/**/*.yml\" \"docs/V2_FOUNDATION_TASKS.md\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"package.json\" \"tsconfig.base.json\" \"compose.yml\" \"render.v2.yaml\" \".github/**/*.yml\" \"docs/V2_FOUNDATION_TASKS.md\" \"docs/V2_STAGING_RUNBOOK.md\"",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run build"
   },
   "devDependencies": {

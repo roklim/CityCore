@@ -1,0 +1,81 @@
+name: V2 Staging Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_web:
+        description: Deploy the V2 web staging project to Vercel
+        required: true
+        type: boolean
+        default: true
+      deploy_backend_hooks:
+        description: Trigger backend and worker deploy hooks after migrations
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  staging:
+    name: Staging Gate And Deploy
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.V2_STAGING_DATABASE_URL }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_V2_WEB_STAGING_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      RENDER_API_DEPLOY_HOOK_URL: ${{ secrets.RENDER_V2_API_STAGING_DEPLOY_HOOK_URL }}
+      RENDER_WORKER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_V2_WORKER_STAGING_DEPLOY_HOOK_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Quality gate
+        run: npm run check
+
+      - name: Verify staging database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Missing V2_STAGING_DATABASE_URL secret"
+            exit 1
+          fi
+
+      - name: Apply staging migrations
+        run: npx prisma migrate deploy --schema packages/database/prisma/schema.prisma
+
+      - name: Deploy V2 web staging to Vercel
+        if: ${{ inputs.deploy_web }}
+        working-directory: apps/web
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "Missing Vercel staging secrets"
+            exit 1
+          fi
+          npx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx vercel@latest build --prod --token="$VERCEL_TOKEN"
+          npx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      - name: Trigger Render staging deploy hooks
+        if: ${{ inputs.deploy_backend_hooks }}
+        run: |
+          if [ -n "$RENDER_API_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$RENDER_API_DEPLOY_HOOK_URL"
+          else
+            echo "RENDER_V2_API_STAGING_DEPLOY_HOOK_URL not configured; skipping API deploy hook"
+          fi
+
+          if [ -n "$RENDER_WORKER_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$RENDER_WORKER_DEPLOY_HOOK_URL"
+          else
+            echo "RENDER_V2_WORKER_STAGING_DEPLOY_HOOK_URL not configured; skipping worker deploy hook"
+          fi

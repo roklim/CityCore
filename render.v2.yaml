@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: platform-v2-api-staging
+    env: node
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run build:api
+    startCommand: npm --workspace @platform/api run start
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+
+  - type: worker
+    name: platform-v2-worker-staging
+    env: node
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run build:worker
+    startCommand: npm --workspace @platform/worker run start
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: WORKER_NAME
+        value: platform-v2-worker-staging

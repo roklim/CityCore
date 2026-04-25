@@ -49,13 +49,13 @@ fissate:
 - build e typecheck root verificati
 - lint e format check root per V2 presenti e verificati
 - workflow GitHub Actions V2 Foundation presente
+- staging shape V2 definita con runbook, env template e workflow manuale
 - README con bootstrap locale V2
 - pacchetti condivisi iniziali in [packages](/c:/Users/marco/Desktop/apppizzeria/packages)
 - docs V2 strategiche gia scritte
 
 ### Non ancora fatto
 
-- staging deploy shape
 - verification checklist automatizzata
 
 ## Sequenza Esecutiva
@@ -408,7 +408,7 @@ Far partire un altro sviluppatore senza chat infinita.
 
 ### F1-13 - Staging Shape
 
-Status: partially documented - implementation pending
+Status: completed
 
 **Obiettivo**  
 Definire subito come andra deployata la Foundation.
@@ -426,10 +426,15 @@ Definire subito come andra deployata la Foundation.
 - esiste una forma di deploy staging chiara
 - nomi app e env sono gia coerenti
 
-**Stato reale**
+**Verifica 2026-04-25**
 
-- La topologia e descritta in [V2_PLATFORM_BLUEPRINT.md](/c:/Users/marco/Desktop/apppizzeria/docs/V2_PLATFORM_BLUEPRINT.md): web su Vercel, api e worker su host backend, Postgres e Redis managed.
-- Mancano ancora configurazione concreta, nomi servizi staging e env staging operative.
+- Runbook operativo creato in [V2_STAGING_RUNBOOK.md](/c:/Users/marco/Desktop/apppizzeria/docs/V2_STAGING_RUNBOOK.md)
+- Web staging definito come progetto Vercel dedicato `platform-v2-web-staging`
+- API staging definita come servizio `platform-v2-api-staging`
+- Worker staging definito come servizio `platform-v2-worker-staging`
+- Env staging template creati per web, API e worker
+- Blueprint backend V2 staging creato in `render.v2.yaml`
+- Workflow manuale `.github/workflows/v2-staging.yml` creato per quality gate, migration e deploy staging
 
 ## Ordine di Esecuzione Raccomandato
 
@@ -462,7 +467,7 @@ La `Milestone 1 - Foundation` e davvero chiusa quando:
 - [x] healthcheck esistono
 - [x] lint/format root esistono e passano
 - [x] CI minima e definita
-- [ ] staging shape e definita operativamente
+- [x] staging shape e definita operativamente
 
 ## Prossimo Passo Dopo Foundation
 

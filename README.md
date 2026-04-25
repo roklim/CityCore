@@ -65,6 +65,18 @@ npm run dev
 npm run typecheck
 ```
 
+### V2 Staging
+
+The V2 staging shape is defined without touching the legacy production deploy:
+
+- web: dedicated Vercel project for `apps/web`
+- API: dedicated backend service for `apps/api`
+- worker: dedicated backend worker for `apps/worker`
+- data: managed Postgres and Redis for staging only
+
+See `docs/V2_STAGING_RUNBOOK.md` for service names, required secrets, deploy
+flow and post-deploy checks.
+
 ## Local Setup
 
 Backend:
