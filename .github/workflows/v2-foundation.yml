@@ -12,6 +12,36 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: platform_v2
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d platform_v2"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/platform_v2?schema=public
+      REDIS_URL: redis://localhost:6379
+      AUTH_SECRET: ci-foundation-auth-secret-change-before-prod
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4100
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,6 +54,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate Prisma schema
+        run: npm run db:validate
+
+      - name: Apply Prisma migrations
+        run: npm run db:migrate:deploy
+
+      - name: Check Prisma migration status
+        run: npm run db:migrate:status
+
+      - name: Generate Prisma client
+        run: npm run db:generate
 
       - name: Lint
         run: npm run lint

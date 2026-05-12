@@ -1,5 +1,8 @@
 # Roadmap Autenticazione Cagli Local
 
+> Historical note: i path `frontend/...` e `backend/...` sono riferimenti V1
+> ormai rimossi dal tree corrente del repo. Servono solo come contesto storico.
+
 Questa roadmap descrive l'autenticazione ideale per Cagli Local: login unica,
 ruoli scoped, account clienti, sicurezza backend e crescita futura senza dover
 rifare l'architettura.
@@ -103,8 +106,8 @@ Esempi:
 
 - global admin: `role=global_admin`, `scopeType=platform`
 - city admin Cagli: `role=city_admin`, `scopeType=city`, `cityId=Cagli`
-- local admin Mucho Gusto: `role=local_admin`, `scopeType=business`,
-  `businessId=MuchoGusto`
+- local admin business A: `role=local_admin`, `scopeType=business`,
+  `businessId=BusinessA`
 - staff Sushi: `role=staff`, `scopeType=business`, `businessId=Sushi`
 
 ### CustomerProfile

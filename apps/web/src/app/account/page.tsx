@@ -1,4 +1,4 @@
-import { AppShell } from "../../components/app-shell";
+import { PublicShell } from "../../components/public-shell";
 
 export const metadata = {
   title: "Account",
@@ -6,14 +6,11 @@ export const metadata = {
 
 export default function AccountPage() {
   return (
-    <AppShell
-      activeSection="customer_area"
-      eyebrow="Customer surface"
-      title="Customer account shell"
-      description="Questa superficie terra ordini, prenotazioni, soggiorni, preferiti e storico cliente senza mischiarli con gli accessi admin."
-      routePath="/account"
-      statusLabel="Customer"
-      asideText="L'account cliente deve restare pulito: riconoscibile, personale e separato da piattaforma e banco locale."
+    <PublicShell
+      toneLabel="Area cliente"
+      title="Un account personale pulito, separato da piattaforma e banco operativo."
+      description="Richieste, ordini, preferiti e storico cliente devono restare comprensibili anche da telefono, senza ereditare il tono della console admin."
+      accentNote="L'utente finale non deve mai sentirsi dentro un pannello di controllo travestito."
     >
       <section className="route-grid">
         <article className="route-card">
@@ -22,13 +19,13 @@ export default function AccountPage() {
         </article>
         <article className="route-card">
           <strong>Storico</strong>
-          <p>Ordini, prenotazioni e soggiorni organizzati per citta e attivita.</p>
+          <p>Ordini, richieste, prenotazioni e soggiorni organizzati per citta e attivita.</p>
         </article>
         <article className="route-card">
           <strong>Futuro loyalty</strong>
           <p>Preferiti, wallet locale, promemoria e identita cross-city per il cliente.</p>
         </article>
       </section>
-    </AppShell>
+    </PublicShell>
   );
 }

@@ -56,7 +56,8 @@ fissate:
 
 ### Non ancora fatto
 
-- verification checklist automatizzata
+- nessun blocco aperto sulla Foundation; la verification checklist automatizzata
+  vive in `npm run verify:foundation`
 
 ## Sequenza Esecutiva
 
@@ -183,6 +184,11 @@ Portare nel DB il minimo indispensabile per iniziare la V2.
 - Migration applicata a Postgres locale con `prisma migrate deploy`
 - `prisma migrate status` conferma database aggiornato
 - Prisma Client generato con `prisma generate`
+- Script root disponibili:
+  - `npm run db:validate`
+  - `npm run db:migrate:status`
+  - `npm run db:migrate:deploy`
+  - `npm run db:generate`
 
 ### F1-05 - Docker Compose Locale
 
@@ -271,6 +277,13 @@ Avere segnali minimi di vita del sistema.
 - api risponde con health JSON
 - worker logga boot chiaro
 
+**Verifica hardening**
+
+- `/health` API verifica connessione reale a Postgres con Prisma
+- `/health` API verifica connessione reale a Redis con `PING`
+- se una dipendenza critica non risponde, l'API restituisce `status: degraded`
+  e HTTP `503`
+
 ### F1-08 - UI Foundation Web
 
 Status: completed
@@ -352,6 +365,7 @@ Impedire che la V2 nasca gia disordinata.
 - `npm run lint` passa
 - `npm run format:check` passa
 - Il perimetro include `apps/*`, `packages/*`, config root V2 e questa checklist Foundation.
+- Il perimetro include anche `tools/**/*.mjs`, dove vive la verifica automatizzata.
 
 ### F1-11 - CI Minima
 
@@ -380,6 +394,9 @@ Avere una prima pipeline automatica.
 
 - Workflow creato in `.github/workflows/v2-foundation.yml`
 - La pipeline installa con `npm ci`
+- La pipeline avvia service container Postgres e Redis
+- La pipeline esegue `db:validate`, `db:migrate:deploy` e `db:migrate:status`
+- La pipeline genera Prisma Client con `db:generate`
 - Esegue `lint`, `format:check`, `typecheck`, `build:web`, `build:api`, `build:worker`
 
 ### F1-12 - Documentare Bootstrap Locale V2
@@ -405,6 +422,13 @@ Far partire un altro sviluppatore senza chat infinita.
 **Definition of done**
 
 - uno sviluppatore nuovo riesce ad avviare il cantiere V2
+
+**Nota operativa**
+
+- `npm run verify:foundation` richiede Docker Desktop avviato e Postgres/Redis
+  attivi tramite `npm run infra:up`
+- `next/font/google` puo richiedere accesso rete durante `next build` per
+  scaricare gli asset Geist se la cache locale non e gia popolata
 
 ### F1-13 - Staging Shape
 
@@ -468,6 +492,7 @@ La `Milestone 1 - Foundation` e davvero chiusa quando:
 - [x] lint/format root esistono e passano
 - [x] CI minima e definita
 - [x] staging shape e definita operativamente
+- [x] verification checklist automatizzata con `npm run verify:foundation`
 
 ## Prossimo Passo Dopo Foundation
 

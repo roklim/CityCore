@@ -1,5 +1,8 @@
 # Troubleshooting
 
+> Historical note: i path `frontend/...` e `backend/...` sono riferimenti V1
+> ormai rimossi dal tree corrente del repo. Servono solo come contesto storico.
+
 ## 404 On New API Routes
 
 Symptom:
@@ -96,7 +99,7 @@ Current routing model:
 /<citySlug>/<slug>/admin business admin
 ```
 
-If `/admin` shows a public directory or "Operativita Mucho Gusto", the frontend deployment is old.
+If `/admin` shows a public directory or an old single-business operational view, the frontend deployment is old.
 Redeploy Vercel after pushing the route refactor.
 
 ## Vercel Business App Shows Wrong Menu

@@ -72,6 +72,38 @@ enum SubscriptionStatus {
   cancelled
 }
 
+enum OrderStatus {
+  pending
+  confirmed
+  preparing
+  ready
+  completed
+  cancelled
+}
+
+enum FulfillmentType {
+  pickup
+  delivery
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum OrderSource {
+  web
+  admin
+  phone
+}
+
+enum CouponType {
+  percent
+  fixed
+}
+
 model User {
   id              String        @id @default(cuid())
   email           String        @unique
@@ -86,6 +118,8 @@ model User {
   accessGrants    AccessGrant[]
   createdAccesses AccessGrant[] @relation("AccessGrantCreatedBy")
   ownedBusinesses Business[]    @relation("BusinessOwner")
+  handledOrders   Order[]       @relation("OrderHandledBy")
+  availabilityRules AvailabilityRule[]
   actorAuditLogs  AuditLog[]    @relation("AuditLogActor")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
@@ -229,6 +263,12 @@ model Business {
   template           BusinessTemplate   @relation(fields: [templateId], references: [id], onDelete: Restrict)
   ownerUser          User?              @relation("BusinessOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   modules            BusinessModule[]
+  customerProfiles   CustomerProfile[]
+  menuCategories     MenuCategory[]
+  menuItems          MenuItem[]
+  orders             Order[]
+  coupons            Coupon[]
+  availabilityRules  AvailabilityRule[]
   accessGrants       AccessGrant[]
   auditLogs          AuditLog[]
   createdAt          DateTime           @default(now()) @map("created_at")
@@ -254,6 +294,169 @@ model BusinessModule {
   @@unique([businessId, moduleCode], map: "business_modules_business_id_module_code_key")
   @@index([moduleCode, active], map: "business_modules_module_code_active_idx")
   @@map("business_modules")
+}
+
+model CustomerProfile {
+  id              String   @id @default(cuid())
+  businessId      String   @map("business_id")
+  name            String?  @db.VarChar(160)
+  phone           String?  @db.VarChar(40)
+  email           String?  @db.VarChar(200)
+  points          Int      @default(0)
+  totalOrders     Int      @default(0) @map("total_orders")
+  completedOrders Int      @default(0) @map("completed_orders")
+  lastOrderAt     DateTime? @map("last_order_at")
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  orders          Order[]
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([businessId, name], map: "customer_profiles_business_id_name_idx")
+  @@unique([businessId, phone], map: "customer_profiles_business_id_phone_key")
+  @@map("customer_profiles")
+}
+
+model MenuCategory {
+  id        String    @id @default(cuid())
+  businessId String   @map("business_id")
+  name      String    @db.VarChar(160)
+  slug      String    @db.VarChar(160)
+  sortOrder Int       @default(0) @map("sort_order")
+  active    Boolean   @default(true)
+  business  Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items     MenuItem[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([businessId, sortOrder], map: "menu_categories_business_id_sort_order_idx")
+  @@unique([businessId, slug], map: "menu_categories_business_id_slug_key")
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id             String        @id @default(cuid())
+  businessId     String        @map("business_id")
+  categoryId     String?       @map("category_id")
+  name           String        @db.VarChar(160)
+  slug           String        @db.VarChar(160)
+  description    String?
+  price          Decimal       @db.Decimal(10, 2)
+  compareAtPrice Decimal?      @map("compare_at_price") @db.Decimal(10, 2)
+  available      Boolean       @default(true)
+  featured       Boolean       @default(false)
+  emoji          String?       @db.VarChar(16)
+  imageAssetId   String?       @map("image_asset_id")
+  imageUrl       String?       @map("image_url")
+  unit           String?       @db.VarChar(40)
+  tagsJson       Json?         @map("tags_json")
+  allergensJson  Json?         @map("allergens_json")
+  sortOrder      Int           @default(0) @map("sort_order")
+  business       Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category       MenuCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  orderItems     OrderItem[]
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([businessId, available, sortOrder], map: "menu_items_business_id_available_sort_order_idx")
+  @@index([categoryId, sortOrder], map: "menu_items_category_id_sort_order_idx")
+  @@unique([businessId, slug], map: "menu_items_business_id_slug_key")
+  @@map("menu_items")
+}
+
+model Order {
+  id                  String            @id @default(cuid())
+  businessId          String            @map("business_id")
+  customerProfileId   String?           @map("customer_profile_id")
+  couponId            String?           @map("coupon_id")
+  couponCode          String?           @map("coupon_code") @db.VarChar(80)
+  customerName        String            @map("customer_name") @db.VarChar(160)
+  customerPhone       String?           @map("customer_phone") @db.VarChar(40)
+  customerEmail       String?           @map("customer_email") @db.VarChar(200)
+  status              OrderStatus       @default(pending)
+  fulfillmentType     FulfillmentType   @default(pickup) @map("fulfillment_type")
+  pickupAt            DateTime?         @map("pickup_at")
+  deliveryAddressJson Json?             @map("delivery_address_json")
+  notes               String?
+  subtotal            Decimal           @db.Decimal(10, 2)
+  discountTotal       Decimal           @default(0) @map("discount_total") @db.Decimal(10, 2)
+  serviceFee          Decimal           @default(0) @map("service_fee") @db.Decimal(10, 2)
+  deliveryFee         Decimal           @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  grandTotal          Decimal           @map("grand_total") @db.Decimal(10, 2)
+  paymentStatus       PaymentStatus     @default(pending) @map("payment_status")
+  source              OrderSource       @default(web)
+  loyaltyAwarded      Boolean           @default(false) @map("loyalty_awarded")
+  handledByUserId     String?           @map("handled_by_user_id")
+  business            Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customerProfile     CustomerProfile?  @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  coupon              Coupon?           @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  handledByUser       User?             @relation("OrderHandledBy", fields: [handledByUserId], references: [id], onDelete: SetNull)
+  items               OrderItem[]
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  @@index([businessId, status, createdAt], map: "orders_business_id_status_created_at_idx")
+  @@index([customerProfileId], map: "orders_customer_profile_id_idx")
+  @@index([couponId], map: "orders_coupon_id_idx")
+  @@map("orders")
+}
+
+model Coupon {
+  id         String     @id @default(cuid())
+  businessId String     @map("business_id")
+  code       String     @db.VarChar(80)
+  type       CouponType
+  value      Decimal    @db.Decimal(10, 2)
+  expiresAt  DateTime?  @map("expires_at")
+  usageLimit Int        @default(0) @map("usage_limit")
+  usedCount  Int        @default(0) @map("used_count")
+  active     Boolean    @default(true)
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  orders     Order[]
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  @@unique([businessId, code], map: "coupons_business_id_code_key")
+  @@index([businessId, active], map: "coupons_business_id_active_idx")
+  @@map("coupons")
+}
+
+model OrderItem {
+  id            String    @id @default(cuid())
+  orderId       String    @map("order_id")
+  menuItemId    String?   @map("menu_item_id")
+  nameSnapshot  String    @map("name_snapshot") @db.VarChar(160)
+  priceSnapshot Decimal   @map("price_snapshot") @db.Decimal(10, 2)
+  qty           Int
+  notes         String?
+  lineTotal     Decimal   @map("line_total") @db.Decimal(10, 2)
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([orderId], map: "order_items_order_id_idx")
+  @@index([menuItemId], map: "order_items_menu_item_id_idx")
+  @@map("order_items")
+}
+
+model AvailabilityRule {
+  id          String   @id @default(cuid())
+  businessId  String   @map("business_id")
+  staffUserId String?  @map("staff_user_id")
+  weekday     Int?
+  startsAt    String   @map("starts_at") @db.VarChar(10)
+  endsAt      String   @map("ends_at") @db.VarChar(10)
+  slotMinutes Int      @default(15) @map("slot_minutes")
+  capacity    Int      @default(1)
+  active      Boolean  @default(true)
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staffUser   User?    @relation(fields: [staffUserId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([businessId, active], map: "availability_rules_business_id_active_idx")
+  @@index([staffUserId], map: "availability_rules_staff_user_id_idx")
+  @@map("availability_rules")
 }
 
 model AuditLog {

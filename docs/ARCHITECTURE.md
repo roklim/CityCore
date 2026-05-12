@@ -1,8 +1,11 @@
 # Architecture Notes
 
+> Historical note: i path `frontend/...` e `backend/...` sono riferimenti V1
+> ormai rimossi dal tree corrente del repo. Servono solo come contesto storico.
+
 ## Current Maturity
 
-The project is now an early SaaS foundation. It remains a working food-ordering product, but core records can be scoped by business.
+The project is now an early SaaS foundation. It remains a working local-commerce product, but core records can be scoped by business.
 
 It is not yet a complete multi-tenant marketplace SaaS because guided onboarding, billing, audit logs and non-food modules are still future phases.
 
@@ -70,7 +73,7 @@ Requests are resolved in this order:
 8. legacy `/:businessSlug/admin` frontend route
 9. `DEFAULT_BUSINESS_SLUG`
 
-The default fallback keeps the current pizza app working during the transition.
+The default fallback keeps the legacy single-business app working during the transition.
 
 ## Deployment Model
 
@@ -110,7 +113,7 @@ Legacy direct business routes remain available during migration.
 ## Platform Admin
 
 The platform owner uses `/admin` to see the platform console.
-`/admin` no longer opens the default Mucho Gusto operational dashboard.
+`/admin` no longer opens a default single-business operational dashboard.
 
 From the platform console the global admin can:
 
@@ -150,7 +153,7 @@ Security rule:
 - business users are locked to the `businessId` in their JWT.
 - if a business user sends another slug, the backend ignores it and uses the token tenant.
 
-This prevents an owner of Mucho Gusto from reading or modifying Sushi Centro data.
+This prevents an owner of one business from reading or modifying another business data.
 
 ## Modules
 

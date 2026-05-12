@@ -1,32 +1,47 @@
-## Stack
+## Platform V2
 
-- Frontend: React + Vite
-- Backend: Node.js + Express
-- Database: MongoDB + Mongoose
-- Hosting target: Vercel frontend, Render or similar backend
+Repository monorepo V2:
 
-## V2 Foundation
+- `apps/web`: Next.js App Router pubblico + shell admin
+- `apps/api`: Fastify + Prisma + Postgres
+- `apps/worker`: job asincroni
+- `packages/*`: moduli condivisi
 
-The repository now also contains the first non-breaking scaffold for the future
-V2 platform:
+Nota di prodotto:
 
-- `apps/web`: Next.js App Router web layer
-- `apps/api`: Fastify platform API foundation
-- `apps/worker`: async jobs foundation
-- `packages/*`: shared platform packages
+- il naming definitivo dell'app non e ancora stato scelto
+- la V2 va mantenuta brand-neutral finche il nome non viene deciso
+- il prodotto target e una piattaforma cittadina per scoprire attivita locali e un gestionale semplice per piccole imprese
 
-This scaffold lives alongside the current legacy app so the new architecture can
-grow without breaking the existing production path.
+La V1 non fa piu parte del tree corrente del repo.
 
-### V2 Local Bootstrap
+- `frontend/` e `backend/` sono stati rimossi dal percorso attivo
+- i manifest V1 (`vercel.json`, `render.v1.yaml`) non sono piu il riferimento di deploy
+- eventuali riferimenti storici restano solo nella documentazione di migrazione e nella history Git
 
-Start local infra:
+Il manifest Render primario del repo e ora [render.yaml](c:/Users/marco/Desktop/apppizzeria/render.yaml:1), allineato alla V2.
+
+### Stato
+
+La V2 oggi copre:
+
+- foundation monorepo
+- auth V2 iniziale
+- platform core iniziale: `templates`, `cities`, `businesses`, `access-grants`
+- surface pubblica read-only V2 per `cities` e `businesses`
+- shell web V2 separate: pubblico e admin
+
+La V1 non deve piu essere usata come percorso normale di sviluppo o deploy.
+
+### Bootstrap Locale
+
+Avvia l'infrastruttura:
 
 ```bash
-docker compose up -d
+npm run infra:up
 ```
 
-Copy the environment templates:
+Copia gli env:
 
 ```bash
 cp apps/api/.env.example apps/api/.env
@@ -34,7 +49,7 @@ cp apps/worker/.env.example apps/worker/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-Required V2 environment variables:
+Variabili minime:
 
 - `apps/web`
   - `NEXT_PUBLIC_API_BASE_URL`
@@ -51,194 +66,92 @@ Required V2 environment variables:
   - `AUTH_SECRET`
   - `WORKER_NAME`
 
-Default local infra endpoints expected by the V2 scaffold:
+Endpoint locali attesi:
 
 - Postgres: `postgresql://postgres:postgres@localhost:5432/platform_v2?schema=public`
 - Redis: `redis://localhost:6379`
 - API: `http://localhost:4000`
+- Web: `http://localhost:3000`
 
-Useful V2 commands:
+Comandi utili:
 
 ```bash
-npm run infra:up
 npm run dev
 npm run typecheck
+npm run lint
+npm run format:check
+npm run db:validate
+npm run db:migrate:status
+npm run db:migrate:deploy
+npm run db:generate
 ```
 
-### V2 Staging
+### Verifica
 
-The V2 staging shape is defined without touching the legacy production deploy:
-
-- web: dedicated Vercel project for `apps/web`
-- API: dedicated backend service for `apps/api`
-- worker: dedicated backend worker for `apps/worker`
-- data: managed Postgres and Redis for staging only
-
-See `docs/V2_STAGING_RUNBOOK.md` for service names, required secrets, deploy
-flow and post-deploy checks.
-
-## Local Setup
-
-Backend:
+Gate principali:
 
 ```bash
-cd backend
-cp .env.example .env
-npm install
-npm start
+npm --workspace @platform/api run typecheck
+npm --workspace @platform/api run build
+npm --workspace @platform/web run typecheck
+npm run lint
+npm run format:check
 ```
 
-Frontend:
+Nota nota di ambiente:
 
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev -- --port 5173
-```
+- `npm --workspace @platform/web run build` puo fallire senza rete per il fetch dei font Google `Geist` e `Geist Mono` in `apps/web/src/app/layout.tsx`
 
-## Default Business
+### Routing V2
 
-The app ships with a default tenant:
+Superfici pubbliche:
 
-- Name: Mucho Gusto
-- Slug: `mucho-gusto`
-- Type: `pizzeria`
-- Enabled modules: ordering, custom pizza, coupons, analytics
+- `/`
+- `/:citySlug`
+- `/:citySlug/:businessSlug`
 
-Frontend requests send `X-Business-Slug`. If no slug is provided, the backend falls back to `DEFAULT_BUSINESS_SLUG`.
-When the route is city-based, frontend requests also send `X-City-Slug`, so the same business slug can exist in different cities over time.
+Superfici admin:
 
-## City Registry
+- `/admin/login`
+- `/admin`
+- `/select-access`
+- `/:citySlug/:businessSlug/admin`
 
-The app now separates:
+API principali:
 
-- `CityRegistry`: verified Italian municipalities imported from ISTAT/SITUAS or another trusted provider.
-- `City`: active platform markets visible in the public app.
+- `/health`
+- `/api/v2`
+- `/api/v2/auth/*`
+- `/api/v2/platform-core/*`
+- `/api/v2/public/*`
 
-The public home `/` searches only active platform cities. The global admin can search the registry and activate a municipality before assigning businesses to it.
+### Deploy
 
-Useful commands:
+Percorso corrente:
 
-```bash
-cd backend
-npm run cities:import
-npm run cities:import -- path/to/istat-comuni.csv
-```
+- web: progetto Vercel dedicato con root `apps/web`
+- api: servizio dedicato per `apps/api`
+- worker: worker dedicato per `apps/worker`
 
-`npm run cities:import` without a file verifies the bootstrap registry seed. With a CSV/JSON file it upserts municipalities into MongoDB.
+Il repo non usa piu il vecchio `vercel.json` root della V1. Il deploy web V2 va configurato come progetto separato puntato a `apps/web`.
 
-## SaaS Direction
+### Stato Legacy
 
-The platform is designed around:
+La V1 e considerata chiusa nel tree corrente:
 
-- a shared `Business` core
-- tenant-scoped products, orders, customers, settings and coupons
-- feature flags for ordering, booking and rental modules
-- a migration path from single pizzeria app to multi-business SaaS
-- one backend/database with multiple businesses
-- one frontend codebase deployed primarily as one central Vercel app, with optional dedicated projects only for clients that need separate domains or deploys
+- il runtime attivo e solo V2
+- la parity residua va letta tramite audit, tooling ETL e history Git
+- i tenant ordering legacy noti erano fixture/demo, non candidati a un import automatico
 
-The global admin is available from `/admin`. It is a dedicated platform console, not the local counter UI. The console has explicit sections for dashboard, cities, businesses, users and settings.
+### Documenti Guida
 
-Admin menus are intentionally split:
-
-- `/admin`, `/admin/cities`, `/admin/businesses`, `/admin/users` and `/admin/settings` use the platform console menu.
-- `/:citySlug/:businessSlug/admin` uses the local business operations menu.
-
-The business owner should never see platform-only items such as city activation or tenant creation inside the local counter UI.
-
-## Admin Roles
-
-The platform now supports Mongo-backed business users:
-
-- `global_admin`: platform owner, can see and manage all businesses.
-- `owner`: business owner, can see only their own business.
-- `admin`: business operator, can manage the assigned business.
-- `staff`: limited operator, focused on orders and availability.
-
-The legacy `.env` admin login still works as `global_admin`. Business owners are created from the `Business` section by adding owner name, email, and a temporary password.
-
-Tenant isolation rule: for `owner`, `admin`, and `staff`, the backend uses `businessId` from the JWT and ignores conflicting frontend slugs.
-
-Current public routing:
-
-```txt
-/                         city search
-/admin                    platform dashboard
-/admin/cities             city registry and active markets
-/admin/businesses         tenant, owner and asset management
-/admin/users              owner/admin/staff management
-/admin/settings           platform settings and routing notes
-/:citySlug                city home/directory
-/:citySlug/:businessSlug  business public app
-/:citySlug/:businessSlug/admin
-/:citySlug/:businessSlug/ordine/:id
-```
-
-Legacy direct business URLs remain compatible during migration:
-
-```txt
-/:businessSlug
-/:businessSlug/admin
-```
-
-Owner example:
-
-1. Create business `Mucho Gusto`.
-2. Add owner `mario@muchogusto.it` with a temporary password.
-3. Mario logs in from the public manager entry or directly at `/:citySlug/:businessSlug/admin`.
-4. Mario sees only Mucho Gusto data.
-
-See:
-
-- `docs/ARCHITECTURE.md`
-- `docs/CITY_REGISTRY.md`
-- `docs/TROUBLESHOOTING.md`
-- `docs/AUTH_ROADMAP.md`
-- `docs/V2_FOUNDATION_TASKS.md`
-- `docs/V2_PLATFORM_BLUEPRINT.md`
-- `docs/V2_DATA_MODEL.md`
 - `docs/V2_MIGRATION_PLAN.md`
 - `docs/V2_EXECUTION_ROADMAP.md`
-
-## Verification
-
-Run these checks before deploy:
-
-```bash
-cd frontend
-npm run build
-```
-
-```bash
-node --check backend/db/index.js
-node --check backend/middleware/business.js
-node --check backend/routes/platform.js
-node --check backend/routes/businesses.js
-node --check backend/routes/orders.js
-node --check backend/routes/menu.js
-```
-
-Backend diagnostics:
-
-```bash
-cd backend
-npm run check:db
-npm run check:indexes
-```
-
-With the backend already running, smoke test the key API routes:
-
-```bash
-cd backend
-npm run smoke
-```
-
-## Migration Note
-
-Existing MongoDB collections may still contain legacy global unique indexes such as `name`, `phone` or `code`. Before onboarding multiple real businesses, review and replace them with compound indexes scoped by `businessId`.
-
-## Troubleshooting
-
-See `docs/TROUBLESHOOTING.md` for common issues such as old backend processes, wrong MongoDB database names, and missing platform tokens.
+- `docs/V2_PLATFORM_BLUEPRINT.md`
+- `docs/V2_DATA_MODEL.md`
+- `docs/V2_FOUNDATION_TASKS.md`
+- `docs/V2_STAGING_RUNBOOK.md`
+- `docs/ARCHITECTURE.md`
+- `docs/AUTH_ROADMAP.md`
+- `docs/CITY_REGISTRY.md`
+- `docs/TROUBLESHOOTING.md`

@@ -1,0 +1,392 @@
+{
+  "exportedAt": "2026-05-12T08:37:11.010Z",
+  "legacy": {
+    "businessId": "69e3bb62ea2051d805bb3fb2",
+    "businessSlug": "mucho-gusto",
+    "businessName": "Mucho Gusto",
+    "citySlug": "cagli",
+    "cityName": "Cagli",
+    "province": "PU",
+    "region": "Marche",
+    "defaultTenantIncludesMissingBusinessId": true,
+    "features": {
+      "ordering": true,
+      "booking": false,
+      "rental": false,
+      "customPizza": true,
+      "coupons": true,
+      "customerAccounts": true,
+      "analytics": true
+    },
+    "settings": {
+      "openingHours": "Mar-Dom 18:00-22:30",
+      "openingDays": [
+        "mar",
+        "mer",
+        "gio",
+        "ven",
+        "sab",
+        "dom"
+      ],
+      "openingTimeStart": "18:00",
+      "openingTimeEnd": "22:30",
+      "deliveryCost": 0,
+      "minimumOrder": 0,
+      "serviceZones": [],
+      "customerMessage": ""
+    },
+    "branding": {
+      "primaryColor": "#2C5F2E",
+      "accentColor": "#C0392B",
+      "logoUrl": null,
+      "coverImageUrl": null,
+      "publicName": "Mucho Gusto"
+    },
+    "counts": {
+      "categories": 5,
+      "menuItems": 10,
+      "customers": 1,
+      "customersWithPhone": 0,
+      "customersWithoutPhone": 1,
+      "coupons": 0,
+      "orders": 1,
+      "ordersWithoutPhone": 1,
+      "ordersByStatus": {
+        "preparing": 1
+      }
+    }
+  },
+  "normalized": {
+    "city": {
+      "slug": "cagli",
+      "name": "Cagli",
+      "province": "PU",
+      "region": "Marche",
+      "country": "IT"
+    },
+    "business": {
+      "slug": "mucho-gusto",
+      "name": "Mucho Gusto",
+      "templateCode": "pizzeria",
+      "category": "food",
+      "plan": "free",
+      "subscriptionStatus": "trialing",
+      "publicPhone": "",
+      "publicEmail": "",
+      "addressLine1": "",
+      "primaryColor": "#2C5F2E",
+      "accentColor": "#C0392B",
+      "publicTitle": "Mucho Gusto",
+      "publicDescription": ""
+    },
+    "settings": {
+      "openingHours": "Mar-Dom 18:00-22:30",
+      "openingDays": [
+        "mar",
+        "mer",
+        "gio",
+        "ven",
+        "sab",
+        "dom"
+      ],
+      "openingTimeStart": "18:00",
+      "openingTimeEnd": "22:30",
+      "deliveryCost": 0,
+      "minimumOrder": 0,
+      "serviceZones": [],
+      "customerMessage": ""
+    },
+    "categories": [
+      {
+        "legacyCategory": "bevande",
+        "slug": "bevande",
+        "name": "Bevande",
+        "sortOrder": 10
+      },
+      {
+        "legacyCategory": "dolci",
+        "slug": "dolci",
+        "name": "Dolci",
+        "sortOrder": 10
+      },
+      {
+        "legacyCategory": "fritti",
+        "slug": "fritti",
+        "name": "Fritti",
+        "sortOrder": 10
+      },
+      {
+        "legacyCategory": "pizza-teglia",
+        "slug": "pizza-teglia",
+        "name": "Pizza Teglia",
+        "sortOrder": 10
+      },
+      {
+        "legacyCategory": "pizze-tonde",
+        "slug": "pizze-tonde",
+        "name": "Pizze Tonde",
+        "sortOrder": 10
+      }
+    ],
+    "menuItems": [
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d40",
+        "categoryLegacy": "bevande",
+        "categorySlug": "bevande",
+        "name": "Coca Cola",
+        "slug": "coca-cola-cd1d40",
+        "description": "33cl",
+        "price": 2.5,
+        "available": true,
+        "featured": false,
+        "emoji": "🥤",
+        "imageUrl": null,
+        "unit": "lattina",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 10,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d41",
+        "categoryLegacy": "bevande",
+        "categorySlug": "bevande",
+        "name": "Acqua",
+        "slug": "acqua-cd1d41",
+        "description": "50cl naturale o frizzante",
+        "price": 1.5,
+        "available": true,
+        "featured": false,
+        "emoji": "💧",
+        "imageUrl": null,
+        "unit": "bottiglia",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 20,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d42",
+        "categoryLegacy": "dolci",
+        "categorySlug": "dolci",
+        "name": "Tiramisu",
+        "slug": "tiramisu-cd1d42",
+        "description": "Fatto in casa",
+        "price": 4.5,
+        "available": true,
+        "featured": false,
+        "emoji": "☕",
+        "imageUrl": null,
+        "unit": "pezzo",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 10,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d3e",
+        "categoryLegacy": "fritti",
+        "categorySlug": "fritti",
+        "name": "Suppli al telefono",
+        "slug": "suppli-al-telefono-cd1d3e",
+        "description": "Riso, pomodoro e cuore filante",
+        "price": 2.5,
+        "available": true,
+        "featured": false,
+        "emoji": "🧆",
+        "imageUrl": null,
+        "unit": "pezzo",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 10,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d3f",
+        "categoryLegacy": "fritti",
+        "categorySlug": "fritti",
+        "name": "Patatine fritte",
+        "slug": "patatine-fritte-cd1d3f",
+        "description": "Porzione croccante",
+        "price": 3.5,
+        "available": true,
+        "featured": false,
+        "emoji": "🍟",
+        "imageUrl": null,
+        "unit": "porzione",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 20,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d3d",
+        "categoryLegacy": "pizza-teglia",
+        "categorySlug": "pizza-teglia",
+        "name": "Margherita in teglia",
+        "slug": "margherita-in-teglia-cd1d3d",
+        "description": "Trancio alto e soffice con pomodoro e mozzarella",
+        "price": 4,
+        "available": true,
+        "featured": false,
+        "emoji": "🍕",
+        "imageUrl": null,
+        "unit": "trancio",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 10,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d39",
+        "categoryLegacy": "pizze-tonde",
+        "categorySlug": "pizze-tonde",
+        "name": "Margherita",
+        "slug": "margherita-cd1d39",
+        "description": "Pomodoro, fior di latte, basilico",
+        "price": 8.5,
+        "available": true,
+        "featured": false,
+        "emoji": "🍕",
+        "imageUrl": null,
+        "unit": "pezzo",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 10,
+        "createdAt": "2026-04-18T17:12:03.707Z",
+        "updatedAt": "2026-04-18T17:12:03.707Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d3a",
+        "categoryLegacy": "pizze-tonde",
+        "categorySlug": "pizze-tonde",
+        "name": "Diavola",
+        "slug": "diavola-cd1d3a",
+        "description": "Pomodoro, mozzarella, salame piccante",
+        "price": 10,
+        "available": true,
+        "featured": false,
+        "emoji": "🌶️",
+        "imageUrl": null,
+        "unit": "pezzo",
+        "tags": [
+          "piccante"
+        ],
+        "allergens": [],
+        "sortOrder": 20,
+        "createdAt": "2026-04-18T17:12:03.707Z",
+        "updatedAt": "2026-04-18T17:12:03.707Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d3b",
+        "categoryLegacy": "pizze-tonde",
+        "categorySlug": "pizze-tonde",
+        "name": "Quattro Formaggi",
+        "slug": "quattro-formaggi-cd1d3b",
+        "description": "Mozzarella, gorgonzola, brie, parmigiano",
+        "price": 11,
+        "available": true,
+        "featured": false,
+        "emoji": "🧀",
+        "imageUrl": null,
+        "unit": "pezzo",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 30,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d3c",
+        "categoryLegacy": "pizze-tonde",
+        "categorySlug": "pizze-tonde",
+        "name": "Prosciutto",
+        "slug": "prosciutto-cd1d3c",
+        "description": "Pomodoro, mozzarella, prosciutto cotto",
+        "price": 10,
+        "available": true,
+        "featured": false,
+        "emoji": "🥩",
+        "imageUrl": null,
+        "unit": "pezzo",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 40,
+        "createdAt": "2026-04-18T17:12:03.708Z",
+        "updatedAt": "2026-04-18T17:12:03.708Z"
+      }
+    ],
+    "customers": [
+      {
+        "legacyId": "69ea79e579415c0090d7b3c5",
+        "name": "34524",
+        "phone": "1234",
+        "points": 0,
+        "completedOrders": 0,
+        "totalOrders": 1,
+        "lastOrderLegacyId": "69ea79e5ce0772248c66738c",
+        "lastOrderAt": "2026-04-23T19:58:29.093Z",
+        "createdAt": "2026-04-23T19:58:29.159Z",
+        "updatedAt": "2026-04-23T19:58:29.159Z"
+      }
+    ],
+    "coupons": [],
+    "orders": [
+      {
+        "legacyId": "69ea79e5ce0772248c66738c",
+        "customerName": "34524",
+        "customerPhone": "1234",
+        "notes": "",
+        "status": "preparing",
+        "pickupDate": "2026-04-24",
+        "pickupTime": "19:00",
+        "pickupSlot": "2026-04-24T19:00",
+        "pickupAt": "2026-04-24T17:00:00.000Z",
+        "fulfillmentType": "pickup",
+        "grandTotal": 18.5,
+        "paymentStatus": "pending",
+        "source": "web",
+        "loyaltyAwarded": false,
+        "handledBy": null,
+        "items": [
+          {
+            "legacyMenuItemId": "69e3bb63b7f9373c2ccd1d39",
+            "name": "Margherita",
+            "price": 8.5,
+            "qty": 1,
+            "notes": "",
+            "lineTotal": 8.5
+          },
+          {
+            "legacyMenuItemId": "69e3bb63b7f9373c2ccd1d3a",
+            "name": "Diavola",
+            "price": 10,
+            "qty": 1,
+            "notes": "",
+            "lineTotal": 10
+          }
+        ],
+        "createdAt": "2026-04-23T19:58:29.093Z",
+        "updatedAt": "2026-04-23T19:58:29.093Z"
+      }
+    ]
+  },
+  "blockers": {
+    "customersWithoutPhone": 1,
+    "ordersWithoutPhone": 1,
+    "legacyStatusValues": [
+      "preparing"
+    ],
+    "notes": [
+      "Legacy orders do not carry coupon linkage in a way directly reusable in V2.",
+      "Users/access grants are not imported in this slice.",
+      "Orders are normalized for ETL/audit, but not yet written into Postgres by this script."
+    ]
+  }
+}

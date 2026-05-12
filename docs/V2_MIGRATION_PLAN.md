@@ -5,6 +5,13 @@
 Migrare dal repo attuale a una V2 professionale senza buttare via il valore gia
 costruito.
 
+Stato aggiornato:
+
+- la V1 non e piu nella root del repo
+- `frontend/` e `backend/` vengono rimossi dal tree corrente
+- i manifest deploy V1 non sono piu riferimenti attivi
+- la root del repo deve essere letta come V2-first
+
 La migrazione deve:
 
 - preservare il dominio gia validato
@@ -88,13 +95,10 @@ packages/
   ai/
   shared/
 
-legacy/
-  frontend/
-  backend/
 ```
 
-La cartella `legacy/` puo essere introdotta solo al momento in cui parte la V2,
-non e obbligatorio farlo subito.
+La V1 non e piu un percorso operativo del repo corrente. Eventuali riferimenti
+storici restano nella documentazione di migrazione o nella history Git.
 
 
 ## Fase 0 - Freeze Strategico

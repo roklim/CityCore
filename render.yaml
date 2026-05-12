@@ -1,41 +1,39 @@
 services:
   - type: web
-    name: muchogusto-api
+    name: platform-v2-api-staging
     env: node
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: npm start
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run build:api
+    startCommand: npm --workspace @platform/api run start
     healthCheckPath: /health
+    autoDeploy: false
     envVars:
       - key: NODE_ENV
         value: production
-      - key: MONGODB_URI
+      - key: DATABASE_URL
         sync: false
-      - key: JWT_SECRET
+      - key: REDIS_URL
         sync: false
-      - key: JWT_EXPIRES_IN
-        value: 8h
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
+      - key: AUTH_SECRET
         sync: false
-      - key: CORS_ORIGIN
+
+  - type: worker
+    name: platform-v2-worker-staging
+    env: node
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run build:worker
+    startCommand: npm --workspace @platform/worker run start
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
         sync: false
-      - key: RATE_LIMIT_WINDOW_MS
-        value: 900000
-      - key: RATE_LIMIT_MAX
-        value: 200
-      - key: PICKUP_SLOT_MINUTES
-        value: 15
-      - key: PICKUP_MAX_ORDERS_PER_SLOT
-        value: 4
-      - key: PICKUP_START_TIME
-        value: "18:00"
-      - key: PICKUP_END_TIME
-        value: "22:30"
-      - key: PICKUP_TIME_ZONE
-        value: Europe/Rome
-      - key: PICKUP_MIN_PREPARATION_MINUTES
-        value: 30
-      - key: PICKUP_CLOSED_WEEKDAYS
-        value: "1"
+      - key: REDIS_URL
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: WORKER_NAME
+        value: platform-v2-worker-staging

@@ -1,0 +1,234 @@
+{
+  "exportedAt": "2026-05-12T08:36:19.602Z",
+  "legacy": {
+    "businessId": "69e3bb62ea2051d805bb3fb3",
+    "businessSlug": "sushi",
+    "businessName": "Sushi",
+    "citySlug": "cagli",
+    "cityName": "Cagli",
+    "province": "PU",
+    "region": "Marche",
+    "defaultTenantIncludesMissingBusinessId": false,
+    "features": {
+      "ordering": true,
+      "booking": false,
+      "rental": false,
+      "customPizza": false,
+      "coupons": true,
+      "customerAccounts": true,
+      "analytics": true
+    },
+    "settings": {
+      "openingHours": "Mar-Dom 18:00-22:30",
+      "openingDays": [
+        "mar",
+        "mer",
+        "gio",
+        "ven",
+        "sab",
+        "dom"
+      ],
+      "openingTimeStart": "18:00",
+      "openingTimeEnd": "22:30",
+      "deliveryCost": 0,
+      "minimumOrder": 0,
+      "serviceZones": [],
+      "customerMessage": ""
+    },
+    "branding": {
+      "primaryColor": "#1f6f5b",
+      "accentColor": "#d84f3f",
+      "logoUrl": null,
+      "coverImageUrl": null,
+      "publicName": "Sushi"
+    },
+    "counts": {
+      "categories": 4,
+      "menuItems": 5,
+      "customers": 0,
+      "customersWithPhone": 0,
+      "customersWithoutPhone": 0,
+      "coupons": 0,
+      "orders": 0,
+      "ordersWithoutPhone": 0,
+      "ordersByStatus": {}
+    }
+  },
+  "normalized": {
+    "city": {
+      "slug": "cagli",
+      "name": "Cagli",
+      "province": "PU",
+      "region": "Marche",
+      "country": "IT"
+    },
+    "business": {
+      "slug": "sushi",
+      "name": "Sushi",
+      "templateCode": "pizzeria",
+      "category": "food",
+      "plan": "free",
+      "subscriptionStatus": "trialing",
+      "publicPhone": "",
+      "publicEmail": "",
+      "addressLine1": "",
+      "primaryColor": "#1f6f5b",
+      "accentColor": "#d84f3f",
+      "publicTitle": "Sushi",
+      "publicDescription": ""
+    },
+    "settings": {
+      "openingHours": "Mar-Dom 18:00-22:30",
+      "openingDays": [
+        "mar",
+        "mer",
+        "gio",
+        "ven",
+        "sab",
+        "dom"
+      ],
+      "openingTimeStart": "18:00",
+      "openingTimeEnd": "22:30",
+      "deliveryCost": 0,
+      "minimumOrder": 0,
+      "serviceZones": [],
+      "customerMessage": ""
+    },
+    "categories": [
+      {
+        "legacyCategory": "antipasti",
+        "slug": "antipasti",
+        "name": "Antipasti",
+        "sortOrder": 30
+      },
+      {
+        "legacyCategory": "bevande",
+        "slug": "bevande",
+        "name": "Bevande",
+        "sortOrder": 50
+      },
+      {
+        "legacyCategory": "nigiri",
+        "slug": "nigiri",
+        "name": "Nigiri",
+        "sortOrder": 20
+      },
+      {
+        "legacyCategory": "uramaki",
+        "slug": "uramaki",
+        "name": "Uramaki",
+        "sortOrder": 10
+      }
+    ],
+    "menuItems": [
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d45",
+        "categoryLegacy": "antipasti",
+        "categorySlug": "antipasti",
+        "name": "Gyoza",
+        "slug": "gyoza-cd1d45",
+        "description": "Ravioli alla piastra",
+        "price": 5,
+        "available": true,
+        "featured": false,
+        "emoji": "S",
+        "imageUrl": null,
+        "unit": "porzione",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 30,
+        "createdAt": "2026-04-18T17:12:03.884Z",
+        "updatedAt": "2026-04-18T17:12:03.884Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d46",
+        "categoryLegacy": "antipasti",
+        "categorySlug": "antipasti",
+        "name": "Edamame",
+        "slug": "edamame-cd1d46",
+        "description": "Baccelli di soia al sale",
+        "price": 4,
+        "available": true,
+        "featured": false,
+        "emoji": "S",
+        "imageUrl": null,
+        "unit": "porzione",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 40,
+        "createdAt": "2026-04-18T17:12:03.884Z",
+        "updatedAt": "2026-04-18T17:12:03.884Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d47",
+        "categoryLegacy": "bevande",
+        "categorySlug": "bevande",
+        "name": "Acqua",
+        "slug": "acqua-cd1d47",
+        "description": "Bottiglia 50cl",
+        "price": 1.5,
+        "available": true,
+        "featured": false,
+        "emoji": "S",
+        "imageUrl": null,
+        "unit": "bottiglia",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 50,
+        "createdAt": "2026-04-18T17:12:03.884Z",
+        "updatedAt": "2026-04-18T17:12:03.884Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d44",
+        "categoryLegacy": "nigiri",
+        "categorySlug": "nigiri",
+        "name": "Nigiri Mix",
+        "slug": "nigiri-mix-cd1d44",
+        "description": "6 pezzi assortiti",
+        "price": 8,
+        "available": true,
+        "featured": false,
+        "emoji": "S",
+        "imageUrl": null,
+        "unit": "porzione",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 20,
+        "createdAt": "2026-04-18T17:12:03.884Z",
+        "updatedAt": "2026-04-18T17:12:03.884Z"
+      },
+      {
+        "legacyId": "69e3bb63b7f9373c2ccd1d43",
+        "categoryLegacy": "uramaki",
+        "categorySlug": "uramaki",
+        "name": "Uramaki Salmone",
+        "slug": "uramaki-salmone-cd1d43",
+        "description": "8 pezzi con salmone e avocado",
+        "price": 9.5,
+        "available": true,
+        "featured": true,
+        "emoji": "S",
+        "imageUrl": null,
+        "unit": "porzione",
+        "tags": [],
+        "allergens": [],
+        "sortOrder": 10,
+        "createdAt": "2026-04-18T17:12:03.884Z",
+        "updatedAt": "2026-04-18T17:12:03.884Z"
+      }
+    ],
+    "customers": [],
+    "coupons": [],
+    "orders": []
+  },
+  "blockers": {
+    "customersWithoutPhone": 0,
+    "ordersWithoutPhone": 0,
+    "legacyStatusValues": [],
+    "notes": [
+      "Legacy orders do not carry coupon linkage in a way directly reusable in V2.",
+      "Users/access grants are not imported in this slice.",
+      "Orders are normalized for ETL/audit, but not yet written into Postgres by this script."
+    ]
+  }
+}

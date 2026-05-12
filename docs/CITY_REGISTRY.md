@@ -1,5 +1,8 @@
 # City Registry
 
+> Historical note: i path `backend/...` sono riferimenti V1 ormai rimossi dal
+> tree corrente del repo. Servono solo come contesto storico.
+
 ## Decision
 
 City search is not powered by a live third-party autocomplete.
