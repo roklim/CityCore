@@ -85,15 +85,13 @@ The recommended production model is:
 - one frontend codebase
 - one central Vercel project, currently `https://cagli.vercel.app`
 
-The central Vercel project uses:
+The active web environment uses:
 
 ```env
-VITE_API_BASE_URL=https://mucho-gusto-mg5y.onrender.com/api
-VITE_BUSINESS_SLUG=mucho-gusto
+NEXT_PUBLIC_API_BASE_URL=https://api.example.com
 ```
 
-`VITE_BUSINESS_SLUG` is only the legacy fallback. Normal customer/admin traffic
-uses path-based routing:
+Normal customer/admin traffic uses path-based routing:
 
 ```txt
 /                         city search

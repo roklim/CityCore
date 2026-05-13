@@ -1,5 +1,10 @@
 :root {
   color-scheme: dark;
+  --font-geist-sans:
+    "Segoe UI", "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    sans-serif;
+  --font-geist-mono:
+    "SFMono-Regular", "Cascadia Code", "Consolas", ui-monospace, "Liberation Mono", monospace;
 }
 
 * {

@@ -102,29 +102,27 @@ Current routing model:
 If `/admin` shows a public directory or an old single-business operational view, the frontend deployment is old.
 Redeploy Vercel after pushing the route refactor.
 
-## Vercel Business App Shows Wrong Menu
+## Wrong Business Surface Or Old Deploy
 
-Check the central Vercel project env:
+Check the active web env:
 
 ```env
-VITE_API_BASE_URL=https://mucho-gusto-mg5y.onrender.com/api
-VITE_BUSINESS_SLUG=mucho-gusto
+NEXT_PUBLIC_API_BASE_URL=https://api.example.com
 ```
 
-`VITE_BUSINESS_SLUG` is only a fallback. The normal business is read from the
-path, for example `/cagli/sushi` or `/cagli/mucho-gusto/admin`.
+The business is read from the path. Use URLs like:
+
+```txt
+/cagli/forno-locale-demo
+/cagli/forno-locale-demo/admin
+```
 
 For local testing, use:
 
 ```txt
 /<citySlug>/<slug>
 /<citySlug>/<slug>/admin
-?business=<slug>
 ```
 
-Legacy URLs still work:
-
-```txt
-/<slug>
-/<slug>/admin
-```
+If the wrong content appears, the most likely cause is an old web deployment or
+an API base URL that still points to a stale service.
