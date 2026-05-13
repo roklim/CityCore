@@ -140,6 +140,32 @@ Expected result:
 - API health returns `status: ok`
 - API reports database, Redis and auth as configured
 
+## Admin Seed
+
+If staging is empty and you need a real V2 platform login without using the
+bootstrap flow manually, create a global admin directly against the target
+database:
+
+```bash
+DATABASE_URL="<staging-postgres-url>" npm run seed:global-admin
+```
+
+Default credentials:
+
+```txt
+email: global-admin@citycore.local
+password: CityCoreAdmin123!
+```
+
+Override them with:
+
+```txt
+GLOBAL_ADMIN_EMAIL
+GLOBAL_ADMIN_PASSWORD
+GLOBAL_ADMIN_NAME
+GLOBAL_ADMIN_PHONE
+```
+
 ## Rollback
 
 - Vercel: promote the previous good deployment in the staging project.
