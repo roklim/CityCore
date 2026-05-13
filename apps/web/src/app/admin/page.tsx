@@ -112,7 +112,7 @@ export default async function AdminPage() {
   return (
     <AdminShell
       activeSection="global_admin"
-      eyebrow="Platform surface"
+      eyebrow="CityCore surface"
       title="Global Admin console"
       description="Questa superficie usa sessione V2 reale e legge direttamente il Platform Core Fastify: city registry, cities, businesses e access grants non arrivano piu dal backend legacy."
       routePath="/admin"

@@ -15,7 +15,7 @@ Il prodotto va trattato come:
 - gestionale semplice per piccole imprese
 - esperienza mobile-first per utenti finali e operatori business
 
-Il prodotto non ha ancora naming definitivo e deve restare brand-neutral.
+Il prodotto usa ora il nome `CityCore`.
 
 ## Principio Guida
 

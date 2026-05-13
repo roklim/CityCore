@@ -1,4 +1,4 @@
-# Platform V2 - Staging Runbook
+# CityCore - Staging Runbook
 
 ## Objective
 

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: platform-v2-api-staging
+    name: citycore-api-staging
     env: node
     plan: starter
     rootDir: .
@@ -19,7 +19,7 @@ services:
         sync: false
 
   - type: worker
-    name: platform-v2-worker-staging
+    name: citycore-worker-staging
     env: node
     plan: starter
     rootDir: .
@@ -36,4 +36,4 @@ services:
       - key: AUTH_SECRET
         sync: false
       - key: WORKER_NAME
-        value: platform-v2-worker-staging
+        value: citycore-worker-staging

@@ -1,4 +1,4 @@
-# Platform V2 - Execution Roadmap
+# CityCore - Execution Roadmap
 
 ## Obiettivo
 

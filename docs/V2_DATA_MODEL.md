@@ -1,4 +1,4 @@
-# Platform V2 - Data Model
+# CityCore - Data Model
 
 ## Principi
 

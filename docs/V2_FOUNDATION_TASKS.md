@@ -1,4 +1,4 @@
-# Platform V2 - Foundation Tasks
+# CityCore - Foundation Tasks
 
 ## Obiettivo
 

@@ -1,4 +1,4 @@
-# Platform V2 - Migration Plan
+# CityCore - Migration Plan
 
 ## Obiettivo
 

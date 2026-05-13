@@ -1,4 +1,4 @@
-## Platform V2
+## CityCore
 
 Repository monorepo V2:
 
@@ -9,9 +9,9 @@ Repository monorepo V2:
 
 Nota di prodotto:
 
-- il naming definitivo dell'app non e ancora stato scelto
-- la V2 va mantenuta brand-neutral finche il nome non viene deciso
-- il prodotto target e una piattaforma cittadina per scoprire attivita locali e un gestionale semplice per piccole imprese
+- il nome del prodotto e ora `CityCore`
+- `CityCore` va trattato come piattaforma cittadina per scoprire attivita locali e come gestionale semplice per piccole imprese
+- il naming tecnico deve convergere progressivamente su `citycore-*`
 
 La V1 non fa piu parte del tree corrente del repo.
 
@@ -98,9 +98,10 @@ npm run lint
 npm run format:check
 ```
 
-Nota nota di ambiente:
+Nota di ambiente:
 
-- `npm --workspace @platform/web run build` puo fallire senza rete per il fetch dei font Google `Geist` e `Geist Mono` in `apps/web/src/app/layout.tsx`
+- il build web V2 non dipende piu dal fetch dei font Google
+- eventuali errori residui di `build:web` o dei tool Prisma vanno letti come limiti di spawn/rete dell'ambiente, non come dipendenze attive dalla V1
 
 ### Routing V2
 
@@ -134,6 +135,18 @@ Percorso corrente:
 - worker: worker dedicato per `apps/worker`
 
 Il repo non usa piu il vecchio `vercel.json` root della V1. Il deploy web V2 va configurato come progetto separato puntato a `apps/web`.
+
+Convenzione consigliata:
+
+- brand prodotto: `CityCore`
+- repo/folder tecnico: `citycore`
+- progetto Vercel web: `citycore-web`
+- servizi Render: `citycore-api`, `citycore-worker`
+
+Nota di riallineamento:
+
+- il file locale `.vercel/project.json` puo ancora puntare a un progetto storico
+- il rename finale su Vercel va completato fuori dal repo rilinkando il workspace al progetto `CityCore` corretto
 
 ### Stato Legacy
 

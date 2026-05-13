@@ -34,11 +34,11 @@ export function AdminShell({
       <header className="app-topbar">
         <div className="topbar-brand">
           <div className="brand-mark" aria-hidden="true">
-            V2
+            CC
           </div>
           <div>
-            <p className="eyebrow">Platform V2</p>
-            <strong>City-first platform foundation</strong>
+            <p className="eyebrow">CityCore</p>
+            <strong>City-first operating platform</strong>
           </div>
         </div>
 
@@ -49,7 +49,7 @@ export function AdminShell({
       </header>
 
       <div className="shell-layout">
-        <aside className="shell-rail" aria-label="Platform surfaces">
+        <aside className="shell-rail" aria-label="CityCore surfaces">
           <section className="rail-block">
             <p className="rail-label">Surfaces</p>
             <nav className="shell-nav">

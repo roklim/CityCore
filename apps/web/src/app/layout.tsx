@@ -5,10 +5,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Platform V2",
-    template: "%s | Platform V2",
+    default: "CityCore",
+    template: "%s | CityCore",
   },
-  description: "Foundation professionale del nuovo marketplace multi-citta e multi-modulo.",
+  description:
+    "CityCore e la piattaforma cittadina che unisce attivita locali, utenti e operativita semplice da mobile.",
 };
 
 const rootVariables = createCssVariables() as CSSProperties;

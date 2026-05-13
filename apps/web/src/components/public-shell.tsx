@@ -33,11 +33,11 @@ export function PublicShell({
       <header className="public-header">
         <Link className="public-brand" href="/">
           <div className="public-brand-mark" aria-hidden="true">
-            LC
+            CC
           </div>
           <div className="public-brand-copy">
-            <span>Piattaforma locale beta</span>
-            <strong>Attivita di citta, strumenti semplici, percorsi chiari.</strong>
+            <span>CityCore beta</span>
+            <strong>La citta in un solo posto, con strumenti semplici per tutti.</strong>
           </div>
         </Link>
 

@@ -1,4 +1,4 @@
-# Platform V2 - Platform Blueprint
+# CityCore - Platform Blueprint
 
 ## Visione
 
