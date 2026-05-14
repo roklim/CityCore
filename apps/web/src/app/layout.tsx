@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | CityCore",
   },
   description:
-    "CityCore e la piattaforma cittadina che unisce attivita locali, utenti e operativita semplice da mobile.",
+    "CityCore e la piattaforma city-first che connette attivita locali, persone e operativita semplici da mobile.",
 };
 
 const rootVariables = createCssVariables() as CSSProperties;

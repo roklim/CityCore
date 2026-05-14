@@ -11,14 +11,6 @@ type PublicShellProps = {
   children: ReactNode;
 };
 
-const quickLinks = [
-  { href: "/", label: "Home" },
-  { href: "/cagli", label: "Cagli" },
-  { href: "/rimini", label: "Rimini" },
-  { href: "/bologna", label: "Bologna" },
-  { href: "/admin/login", label: "Area partner" },
-] as const;
-
 export function PublicShell({
   toneLabel,
   title,
@@ -36,17 +28,21 @@ export function PublicShell({
             CC
           </div>
           <div className="public-brand-copy">
-            <span>CityCore beta</span>
-            <strong>La citta in un solo posto, con strumenti semplici per tutti.</strong>
+            <span>CityCore</span>
+            <strong>La tua citta. Tutto connesso.</strong>
           </div>
         </Link>
 
         <nav className="public-nav" aria-label="Public routes">
-          {quickLinks.map((item) => (
-            <Link className="public-nav-link" href={item.href} key={item.href}>
-              {item.label}
-            </Link>
-          ))}
+          <Link className="public-nav-link" href="/#cities">
+            Esplora citta
+          </Link>
+          <Link className="public-nav-link" href="/#for-businesses">
+            Per le attivita
+          </Link>
+          <Link className="public-signin-link" href="/admin/login">
+            Accedi
+          </Link>
         </nav>
       </header>
 

@@ -250,7 +250,7 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <article className="metric-card">
               <span>Ordini aperti</span>
               <strong>{orderingStats.open}</strong>
-              <p>La coda operativa V2 e visibile senza passare dalle schermate legacy.</p>
+              <p>La coda operativa e gia visibile in modo diretto nel banco locale.</p>
             </article>
 
             <article className="metric-card">
@@ -367,7 +367,7 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <div className="card-heading">
               <div>
                 <p className="section-label">Clienti</p>
-                <h2>Lookup e storico base fuori dalla legacy</h2>
+                <h2>Lookup e storico base gia disponibili nel banco locale</h2>
               </div>
               <span className="meta-chip">{customers.length} profili</span>
             </div>
@@ -716,7 +716,7 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <div className="card-heading">
               <div>
                 <p className="section-label">Menu manager</p>
-                <h2>Categorie e voci senza passare dal frontend legacy</h2>
+                <h2>Categorie e voci gestite nello stesso spazio operativo</h2>
               </div>
               <span className="meta-chip">{flatMenuItems.length} voci</span>
             </div>
@@ -936,9 +936,9 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
       {usesOrdering ? (
         <section className="data-card">
           <div className="card-heading">
-            <div>
-              <p className="section-label">Catalogo operativo</p>
-              <h2>Voci menu gestibili senza tornare alla V1</h2>
+              <div>
+                <p className="section-label">Catalogo operativo</p>
+                <h2>Voci menu gestibili senza uscire dal flusso operativo</h2>
             </div>
             <span className="meta-chip">{menu.length} categorie</span>
           </div>
@@ -999,8 +999,8 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             </div>
           ) : (
             <p className="empty-copy">
-              Nessuna categoria o voce ancora creata in V2. La surface admin e pronta per sostituire
-              il menu manager legacy.
+              Nessuna categoria o voce ancora creata. La surface admin e pronta ad accogliere il
+              catalogo appena viene popolato.
             </p>
           )}
         </section>

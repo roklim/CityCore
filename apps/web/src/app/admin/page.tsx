@@ -114,11 +114,11 @@ export default async function AdminPage() {
       activeSection="global_admin"
       eyebrow="CityCore surface"
       title="Global Admin console"
-      description="Questa superficie usa sessione V2 reale e legge direttamente il Platform Core Fastify: city registry, cities, businesses e access grants non arrivano piu dal backend legacy."
+      description="Questa superficie usa sessione reale e legge direttamente il Platform Core Fastify: city registry, cities, businesses e access grants arrivano tutti dalla piattaforma attiva."
       routePath="/admin"
       statusLabel={session.auth.activeAccess.role.replaceAll("_", " ")}
       asideTitle="Sessione attiva"
-      asideText={`Utente: ${session.auth.user.email}. Scope: ${session.auth.activeAccess.scopeType}. Redirect backend: ${session.auth.redirectTo}.`}
+      asideText={`Utente: ${session.auth.user.email}. Scope: ${session.auth.activeAccess.scopeType}. Redirect piattaforma: ${session.auth.redirectTo}.`}
     >
       <section className="action-bar">
         <div className="inline-stack">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublicShell } from "../../../../../components/public-shell";
+import { buildTrackingPageContent } from "../../../../../lib/public-content";
 import {
   fetchV2Api,
   type PublicOrderingOrderResponse,
@@ -19,9 +20,9 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
-function formatPickup(value: string | null) {
+function formatPickup(value: string | null, emptyLabel: string) {
   if (!value) {
-    return "Da confermare";
+    return emptyLabel;
   }
 
   return new Intl.DateTimeFormat("it-IT", {
@@ -32,15 +33,6 @@ function formatPickup(value: string | null) {
     minute: "2-digit",
   }).format(new Date(value));
 }
-
-const statusLabels: Record<string, string> = {
-  pending: "In attesa",
-  confirmed: "Confermato",
-  preparing: "In preparazione",
-  ready: "Pronto",
-  completed: "Completato",
-  cancelled: "Annullato",
-};
 
 export default async function TrackingPage({ params }: TrackingPageProps) {
   const { citySlug, businessSlug, orderId } = await params;
@@ -66,29 +58,44 @@ export default async function TrackingPage({ params }: TrackingPageProps) {
 
   const { business, city } = businessSurface;
   const { order } = response;
+  const copy = buildTrackingPageContent(business.name);
+  const statusLabels: Record<string, string> = {
+    pending: copy.pending,
+    confirmed: copy.confirmed,
+    preparing: copy.preparing,
+    ready: copy.ready,
+    completed: copy.completed,
+    cancelled: copy.cancelled,
+  };
 
   return (
     <PublicShell
-      toneLabel="Tracking ordine"
-      title={`${business.name}: stato ordine sempre leggibile`}
-      description="Il tracking pubblico e gia agganciato alla nuova API ordering V2. Il cliente non ha piu bisogno del vecchio flusso legacy per seguire il proprio ordine."
+      toneLabel={copy.toneLabel}
+      title={copy.title}
+      description={copy.description}
       citySlug={city.slug}
       businessName={business.name}
       accentNote={`Ordine ${order.id.slice(-6).toUpperCase()}. Stato ${statusLabels[order.status] ?? order.status}.`}
     >
       <section className="public-stack">
         <section className="spotlight-card spotlight-primary">
-          <p className="section-label">Stato attuale</p>
+          <p className="section-label">{copy.statusNow}</p>
           <h2>{statusLabels[order.status] ?? order.status}</h2>
           <p>
-            Ritiro previsto: <strong>{formatPickup(order.pickupAt)}</strong>. Totale{" "}
-            <strong>{formatMoney(order.grandTotal)}</strong>.
+            {copy.pickupLabel}: <strong>{formatPickup(order.pickupAt, copy.unknownPickup)}</strong>.{" "}
+            {copy.totalLabel} <strong>{formatMoney(order.grandTotal)}</strong>.
           </p>
 
           <div className="pill-row">
-            <span className="pill">Fonte {order.source}</span>
-            <span className="pill">Pagamento {order.paymentStatus}</span>
-            <span className="pill">Cliente {order.customerName}</span>
+            <span className="pill">
+              {copy.source} {order.source}
+            </span>
+            <span className="pill">
+              {copy.payment} {order.paymentStatus}
+            </span>
+            <span className="pill">
+              {copy.customer} {order.customerName}
+            </span>
           </div>
         </section>
 
@@ -99,7 +106,7 @@ export default async function TrackingPage({ params }: TrackingPageProps) {
                 <h3>
                   {item.qty}x {item.name}
                 </h3>
-                <p>{item.notes ?? "Nessuna nota per questo articolo."}</p>
+                <p>{item.notes ?? copy.noNotes}</p>
               </div>
               <strong>{formatMoney(item.lineTotal)}</strong>
             </article>
@@ -108,20 +115,17 @@ export default async function TrackingPage({ params }: TrackingPageProps) {
 
         <section className="split-callout">
           <div className="split-callout-copy">
-            <p className="section-label">Azioni rapide</p>
-            <h2>Tracking V2, non piu route legacy</h2>
-            <p>
-              Puoi aggiornare la pagina per vedere eventuali cambi di stato o tornare al menu del
-              business.
-            </p>
+            <p className="section-label">{copy.quickActions}</p>
+            <h2>{copy.quickTitle}</h2>
+            <p>{copy.quickBody}</p>
           </div>
 
           <div className="split-callout-actions">
             <Link className="cta-button" href={`/${citySlug}/${businessSlug}`}>
-              Torna al menu
+              {copy.backToMenu}
             </Link>
             <Link className="text-link" href={`/${citySlug}/${businessSlug}/ordine/${orderId}`}>
-              Aggiorna stato
+              {copy.refreshStatus}
             </Link>
           </div>
         </section>

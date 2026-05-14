@@ -2,30 +2,29 @@
 
 ## Objective
 
-Define one concrete staging shape for the V2 platform without touching the
-legacy production deployment.
+Define one concrete staging shape for the current CityCore platform.
 
 ## Service Topology
 
 | Surface     | Provider                          | Service name                   | Source                    | Notes                                                           |
 | ----------- | --------------------------------- | ------------------------------ | ------------------------- | --------------------------------------------------------------- |
-| Web         | Vercel                            | `platform-v2-web-staging`      | `apps/web`                | Dedicated Vercel project; its production deployment is staging. |
-| API         | Render or equivalent backend host | `platform-v2-api-staging`      | `apps/api`                | HTTP service with `/health`.                                    |
-| Worker      | Render or equivalent backend host | `platform-v2-worker-staging`   | `apps/worker`             | Background worker, no public HTTP surface.                      |
-| Database    | Managed Postgres                  | `platform-v2-postgres-staging` | `packages/database`       | Runs Prisma migrations before deploy.                           |
-| Cache/Queue | Managed Redis                     | `platform-v2-redis-staging`    | `apps/api`, `apps/worker` | Shared by API and worker.                                       |
+| Web         | Vercel                            | `citycore-web-staging`         | `apps/web`                | Dedicated Vercel project; its production deployment is staging. |
+| API         | Render or equivalent app host     | `citycore-api-staging`         | `apps/api`                | HTTP service with `/health`.                                    |
+| Worker      | Render or equivalent app host     | `citycore-worker-staging`      | `apps/worker`             | Background worker, no public HTTP surface.                      |
+| Database    | Managed Postgres                  | `citycore-postgres-staging`    | `packages/database`       | Runs Prisma migrations before deploy.                           |
+| Cache/Queue | Managed Redis                     | `citycore-redis-staging`       | `apps/api`, `apps/worker` | Shared by API and worker.                                       |
 
 ## Branch And Environment Policy
 
 - Staging branch: `staging`
-- Web staging uses a separate Vercel project, not the legacy root Vercel project.
+- Web staging uses a dedicated Vercel project for `apps/web`.
 - The Vercel staging project's Production environment represents staging.
 - API and worker staging must never use production Postgres, Redis or auth secrets.
 - Migrations run before web/API/worker deploys.
 
 ## Vercel Web Project
 
-Create a new Vercel project named `platform-v2-web-staging`.
+Create a new Vercel project named `citycore-web-staging`.
 
 Project settings:
 
@@ -43,7 +42,7 @@ Tracked config:
 Required Vercel environment variable:
 
 ```txt
-NEXT_PUBLIC_API_BASE_URL=https://platform-v2-api-staging.onrender.com
+NEXT_PUBLIC_API_BASE_URL=https://citycore-api-staging.onrender.com
 ```
 
 ## API And Worker Services
@@ -53,14 +52,14 @@ another backend host.
 
 API service:
 
-- Name: `platform-v2-api-staging`
+- Name: `citycore-api-staging`
 - Build: `npm ci && npm run build:api`
 - Start: `npm --workspace @platform/api run start`
 - Health: `/health`
 
 Worker service:
 
-- Name: `platform-v2-worker-staging`
+- Name: `citycore-worker-staging`
 - Build: `npm ci && npm run build:worker`
 - Start: `npm --workspace @platform/worker run start`
 
@@ -80,7 +79,7 @@ NODE_ENV=production
 DATABASE_URL=<staging-postgres-url>
 REDIS_URL=<staging-redis-url>
 AUTH_SECRET=<staging-auth-secret>
-WORKER_NAME=platform-v2-worker-staging
+WORKER_NAME=citycore-worker-staging
 ```
 
 ## GitHub Secrets
@@ -123,15 +122,15 @@ Do not run destructive reset commands against staging.
 Web:
 
 ```txt
-https://platform-v2-web-staging.vercel.app
-https://platform-v2-web-staging.vercel.app/api/health
+https://citycore-web-staging.vercel.app
+https://citycore-web-staging.vercel.app/api/health
 ```
 
 API:
 
 ```txt
-https://platform-v2-api-staging.onrender.com/health
-https://platform-v2-api-staging.onrender.com/api/v2
+https://citycore-api-staging.onrender.com/health
+https://citycore-api-staging.onrender.com/api/v2
 ```
 
 Expected result:

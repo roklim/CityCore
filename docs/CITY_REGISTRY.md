@@ -1,35 +1,34 @@
 # City Registry
 
-> Historical note: i path `backend/...` sono riferimenti V1 ormai rimossi dal
-> tree corrente del repo. Servono solo come contesto storico.
-
 ## Decision
 
-City search is not powered by a live third-party autocomplete.
-
-The platform keeps a local registry of verified Italian municipalities and then activates only the markets that should appear publicly.
+City search is powered by a local registry of verified Italian municipalities,
+not by a live third-party autocomplete.
 
 ```txt
-ISTAT/SITUAS or trusted provider
-        -> CityRegistry
-        -> global admin activation
-        -> City
-        -> public /:citySlug directory
+trusted source
+    -> CityRegistry
+    -> global admin activation
+    -> City
+    -> public /:citySlug directory
 ```
+
+This keeps the public product independent from provider uptime, API quotas and
+autocomplete limits.
 
 ## Models
 
-`CityRegistry` stores the national source of truth:
+`CityRegistry` is the national source of truth:
 
 - municipality name and slug
 - ISTAT code
 - cadastral code when available
-- province code/name
-- region code/name
+- province code and name
+- region code and name
 - source and source version
-- active/suppressed municipality flag
+- active or suppressed municipality flag
 
-`City` stores an enabled platform market:
+`City` is the enabled market shown in CityCore:
 
 - `registryId`
 - public slug
@@ -38,28 +37,27 @@ ISTAT/SITUAS or trusted provider
 - active modules
 - sort order
 
-This keeps the public product independent from provider uptime, API quotas, and autocomplete limits.
-
 ## Admin Flow
 
-1. Open `/admin/cities`.
-2. Search the municipality in the "Registro nazionale" panel.
-3. Click `Attiva` or set it as `coming_soon`.
-4. The city appears in the business city selector.
-5. Open `/admin/businesses` to create or move businesses into that city.
+1. Open `/admin`.
+2. Search the municipality in the registry surface.
+3. Activate it as `active` or `coming_soon`.
+4. The city appears in business creation and public discovery.
+5. Assign businesses to the city and publish them.
 
-The root page `/` searches only public `City` records with `status: active`. The platform console can still list and re-enable `coming_soon` or `disabled` cities.
+The root page `/` reads only public `City` records with `status: active`.
 
 ## Import Flow
 
-The bootstrap seed contains a small set of cities for development. Import the full dataset before real rollout.
+The seed contains only a small development slice. Before a real rollout, import
+the full dataset into `CityRegistry`.
 
-```bash
-cd backend
-npm run cities:import -- path/to/istat-comuni.csv
-```
+Accepted source shapes:
 
-The importer accepts CSV or JSON and tries common ISTAT/OpenAPI-style column names:
+- CSV
+- JSON exported from a trusted registry source
+
+Typical columns:
 
 - `denominazione_in_italiano`
 - `denominazione_comune`
@@ -69,21 +67,27 @@ The importer accepts CSV or JSON and tries common ISTAT/OpenAPI-style column nam
 - `denominazione_regione`
 - `codice_catastale`
 
-For XLSX files, export the worksheet as CSV first.
+For XLSX, export the worksheet as CSV first.
+
+## Public Routing
+
+The registry supports city-first routes such as:
+
+```txt
+/cagli
+/rimini
+/roma
+```
+
+Businesses then live under the selected city:
+
+```txt
+/cagli/forno-locale-demo
+/roma/sushi-centrale
+```
 
 ## Sources
 
 - ISTAT classification page: https://www.istat.it/classificazione/codici-dei-comuni-delle-province-e-delle-regioni/
 - SITUAS portal referenced by ISTAT: https://situas.istat.it
 - OpenAPI comuni ISTAT product, useful as optional enrichment provider: https://openapi.it/prodotti/comuni-istat
-
-## Future Notes
-
-The backend now resolves tenant requests by both `X-City-Slug` and `X-Business-Slug` when available. That prepares the app for duplicate business slugs in different cities, such as:
-
-```txt
-/cagli/sushi
-/roma/sushi
-```
-
-Before relying on duplicate slugs in production, check MongoDB indexes and drop any old global unique index on `businesses.slug`.

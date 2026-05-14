@@ -338,10 +338,10 @@ export function OrderingOrderPanel({
     <section className="order-panel">
       <div className="section-header">
         <p className="section-label">Ordine V2</p>
-        <h2>Primo checkout ordering fuori dalla V1</h2>
+        <h2>Checkout ordering gia operativo in CityCore</h2>
         <p>
-          Catalogo, creazione ordine e tracking iniziano a vivere sulla nuova API. Il flusso e
-          ancora leggero, ma non dipende piu dal backend legacy.
+          Catalogo, creazione ordine e tracking passano gia dalla piattaforma attiva. Il flusso e
+          leggero, ma completo quanto basta per partire bene.
         </p>
       </div>
 
@@ -384,8 +384,8 @@ export function OrderingOrderPanel({
               <p className="section-label">Menu vuoto</p>
               <h3>Serve ancora popolare il catalogo ordering V2.</h3>
               <p>
-                La surface e pronta, ma senza piatti attivi non puo sostituire ancora il menu
-                legacy.
+                La surface e pronta, ma senza piatti attivi non puo ancora mostrare un catalogo
+                completo.
               </p>
             </article>
           )}

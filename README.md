@@ -13,11 +13,7 @@ Nota di prodotto:
 - `CityCore` va trattato come piattaforma cittadina per scoprire attivita locali e come gestionale semplice per piccole imprese
 - il naming tecnico deve convergere progressivamente su `citycore-*`
 
-La V1 non fa piu parte del tree corrente del repo.
-
-- `frontend/` e `backend/` sono stati rimossi dal percorso attivo
-- i manifest V1 (`vercel.json`, `render.v1.yaml`) non sono piu il riferimento di deploy
-- eventuali riferimenti storici restano solo nella documentazione di migrazione e nella history Git
+Il repo attivo contiene solo la piattaforma CityCore corrente.
 
 Il manifest Render primario del repo e ora [render.yaml](c:/Users/marco/Desktop/apppizzeria/render.yaml:1), allineato alla V2.
 
@@ -30,8 +26,6 @@ La V2 oggi copre:
 - platform core iniziale: `templates`, `cities`, `businesses`, `access-grants`
 - surface pubblica read-only V2 per `cities` e `businesses`
 - shell web V2 separate: pubblico e admin
-
-La V1 non deve piu essere usata come percorso normale di sviluppo o deploy.
 
 ### Bootstrap Locale
 
@@ -100,8 +94,8 @@ npm run format:check
 
 Nota di ambiente:
 
-- il build web V2 non dipende piu dal fetch dei font Google
-- eventuali errori residui di `build:web` o dei tool Prisma vanno letti come limiti di spawn/rete dell'ambiente, non come dipendenze attive dalla V1
+- il build web non dipende dal fetch dei font Google
+- eventuali errori residui di `build:web` o dei tool Prisma vanno letti come limiti di spawn/rete dell'ambiente locale
 
 ### Routing V2
 
@@ -134,7 +128,7 @@ Percorso corrente:
 - api: servizio dedicato per `apps/api`
 - worker: worker dedicato per `apps/worker`
 
-Il repo non usa piu il vecchio `vercel.json` root della V1. Il deploy web V2 va configurato come progetto separato puntato a `apps/web`.
+Il deploy web va configurato come progetto separato puntato a `apps/web`.
 
 Convenzione consigliata:
 
@@ -148,23 +142,13 @@ Nota di riallineamento:
 - il file locale `.vercel/project.json` puo ancora puntare a un progetto storico
 - il rename finale su Vercel va completato fuori dal repo rilinkando il workspace al progetto `CityCore` corretto
 
-### Stato Legacy
-
-La V1 e considerata chiusa nel tree corrente:
-
-- il runtime attivo e solo V2
-- la parity residua va letta tramite audit, tooling ETL e history Git
-- i tenant ordering legacy noti erano fixture/demo, non candidati a un import automatico
-
 ### Documenti Guida
 
-- `docs/V2_MIGRATION_PLAN.md`
 - `docs/V2_EXECUTION_ROADMAP.md`
 - `docs/V2_PLATFORM_BLUEPRINT.md`
 - `docs/V2_DATA_MODEL.md`
 - `docs/V2_FOUNDATION_TASKS.md`
 - `docs/V2_STAGING_RUNBOOK.md`
 - `docs/ARCHITECTURE.md`
-- `docs/AUTH_ROADMAP.md`
 - `docs/CITY_REGISTRY.md`
 - `docs/TROUBLESHOOTING.md`

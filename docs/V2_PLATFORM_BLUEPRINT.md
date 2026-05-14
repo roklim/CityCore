@@ -514,7 +514,7 @@ Da superare nella V2:
 - sessione centrata su `localStorage`
 - `backend/db/index.js` monolitico
 - `DEFAULT_BUSINESS_SLUG` come fallback strutturale
-- route legacy come base primaria
+- route business-first non piu allineate al modello city-first corrente
 - Mongo come cuore unico di tutti i domini
 
 

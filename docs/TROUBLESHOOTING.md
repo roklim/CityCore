@@ -1,128 +1,121 @@
 # Troubleshooting
 
-> Historical note: i path `frontend/...` e `backend/...` sono riferimenti V1
-> ormai rimossi dal tree corrente del repo. Servono solo come contesto storico.
-
-## 404 On New API Routes
+## Web Does Not Load Locally
 
 Symptom:
 
 ```txt
-GET /api/platform/businesses 404
-GET /api/business/current 404
+http://localhost:3000 does not respond
 ```
 
-Most likely cause: an old backend process is still running on port `3000`.
+Checks:
+
+```powershell
+docker compose ps
+npm run dev
+```
+
+Expected local services:
+
+- web: `http://localhost:3000`
+- api: `http://localhost:4000/health`
+- postgres: `localhost:5432`
+- redis: `localhost:6379`
+
+## API Health Fails
+
+Symptom:
+
+```txt
+GET /health returns 500 or does not respond
+```
+
+Checks:
+
+```powershell
+Invoke-RestMethod http://localhost:4000/health
+docker compose ps
+```
+
+If Postgres or Redis are missing:
+
+```powershell
+npm run infra:up
+```
+
+## Database Schema Is Missing
+
+Symptom:
+
+- API starts but public queries fail
+- Prisma reports missing tables
 
 Fix:
 
 ```powershell
-netstat -ano | Select-String ':3000'
-Stop-Process -Id <PID> -Force
-cd backend
-npm start
+npm run db:migrate:deploy
+npm run db:generate
 ```
 
-Then verify:
+If you need demo data:
 
 ```powershell
-Invoke-RestMethod http://localhost:3000/health
+npm run seed:ordering
+npm run seed:global-admin
 ```
 
-## Platform Endpoint Says Token Missing
+## Wrong API Base URL
 
-`/api/platform/*` requires a global admin token.
-
-Login first from `/admin`, or test with:
-
-```bash
-cd backend
-npm run smoke
-```
-
-## Wrong Database Is Used
-
-If MongoDB Atlas shows data in `test`, your URI likely does not include a database name.
-
-Correct shape:
+The web must point to the active API surface:
 
 ```env
-MONGODB_URI=mongodb+srv://USER:PASSWORD@HOST/localBusinessSaaS?retryWrites=true&w=majority&appName=localBusinessSaaS
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
 ```
 
-Important part:
+For staging or production, use the active Render URL of `apps/api`.
+
+## Admin Login Does Not Work
+
+Checks:
+
+1. Open `/admin/login`
+2. Verify the API health endpoint
+3. Verify the database contains the seeded admin
+
+Seed if needed:
+
+```powershell
+npm run seed:global-admin
+```
+
+## Ordering Surface Looks Empty
+
+If a business page loads but the ordering area is empty:
+
+1. verify the business uses the ordering module
+2. verify menu items exist in the active database
+3. verify the public API responds for that city and business
+
+If the environment is empty, reseed:
+
+```powershell
+npm run seed:ordering
+```
+
+## Staging Checks
+
+Minimum checks after a deploy:
 
 ```txt
-.mongodb.net/localBusinessSaaS?
+https://citycore-api-staging.onrender.com/health
+https://citycore-api-staging.onrender.com/api/v2/public/businesses?limit=6
+https://<web-domain>/
+https://<web-domain>/admin/login
 ```
 
-## Check Database State
+Expected result:
 
-```bash
-cd backend
-npm run check:db
-```
-
-This prints database name, collections, document counts, and documents missing `businessId`.
-
-## Check Indexes
-
-```bash
-cd backend
-npm run check:indexes
-```
-
-If it reports legacy global unique indexes, review them manually after backup.
-
-Common legacy indexes:
-
-```txt
-menuitems.name_1
-customers.phone_1
-coupons.code_1
-```
-
-These should eventually be replaced by tenant-scoped indexes.
-
-## Platform Shows Wrong Business Or Admin
-
-Current routing model:
-
-```txt
-/                  city search
-/admin             platform dashboard
-/admin/cities      platform city registry
-/admin/businesses  platform business management
-/admin/users       platform tenant users
-/<citySlug>        city directory
-/<citySlug>/<slug> public menu
-/<citySlug>/<slug>/admin business admin
-```
-
-If `/admin` shows a public directory or an old single-business operational view, the frontend deployment is old.
-Redeploy Vercel after pushing the route refactor.
-
-## Wrong Business Surface Or Old Deploy
-
-Check the active web env:
-
-```env
-NEXT_PUBLIC_API_BASE_URL=https://api.example.com
-```
-
-The business is read from the path. Use URLs like:
-
-```txt
-/cagli/forno-locale-demo
-/cagli/forno-locale-demo/admin
-```
-
-For local testing, use:
-
-```txt
-/<citySlug>/<slug>
-/<citySlug>/<slug>/admin
-```
-
-If the wrong content appears, the most likely cause is an old web deployment or
-an API base URL that still points to a stale service.
+- API health returns `status: ok`
+- public businesses endpoint responds
+- web root loads
+- admin login loads

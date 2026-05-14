@@ -68,8 +68,8 @@ export function AdminLoginForms() {
           <p className="section-label">Login</p>
           <h2>Accedi alla console V2</h2>
           <p>
-            La sessione web viene salvata in un cookie `httpOnly` gestito da Next. Il frontend
-            legacy non viene coinvolto.
+            La sessione web viene salvata in un cookie `httpOnly` gestito da Next. L'accesso resta
+            tutto dentro la piattaforma attiva.
           </p>
         </div>
 

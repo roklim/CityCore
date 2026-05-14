@@ -23,11 +23,11 @@ export default async function AdminLoginPage() {
       routePath="/admin/login"
       statusLabel="Auth"
       asideTitle="Slice attivo"
-      asideText="Il primo obiettivo non e costruire il banco definitivo, ma togliere la dipendenza strutturale dal login legacy e agganciare il web V2 a sessioni e permessi reali."
+      asideText="Il primo obiettivo e usare un accesso pulito e affidabile: sessioni web reali, permessi espliciti e redirect coerenti con ruolo e scope."
     >
       <section className="section-header">
         <p className="section-label">Admin Entry</p>
-        <h2>La V2 ora puo autenticarsi senza passare da Express o Mongo</h2>
+        <h2>La console puo autenticarsi direttamente sulla piattaforma attiva</h2>
         <p>
           Se non esiste ancora un `global_admin`, usa il bootstrap una sola volta. Altrimenti entra
           con le credenziali gia presenti nel data model V2.

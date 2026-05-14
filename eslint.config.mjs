@@ -9,8 +9,6 @@ export default tseslint.config(
       "**/.next/**",
       "**/node_modules/**",
       "**/*.tsbuildinfo",
-      "frontend/**",
-      "backend/**",
     ],
   },
   js.configs.recommended,

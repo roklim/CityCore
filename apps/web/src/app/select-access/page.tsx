@@ -23,11 +23,11 @@ export default async function SelectAccessPage() {
       activeSection="global_admin"
       eyebrow="Access selection"
       title="Scegli quale superficie aprire"
-      description="Un solo account puo avere piu scope. La decisione non viene piu hardcodata nel frontend: il token V2 attiva un access grant esplicito."
+      description="Un solo account puo avere piu scope. La scelta non e hardcoded nella UI: il token attiva un access grant esplicito e coerente con il ruolo."
       routePath="/select-access"
       statusLabel="Access"
       asideTitle="Sessione corrente"
-      asideText="Questa schermata evita scorciatoie implicite: l’utente sceglie un grant reale e il backend decide il redirect finale coerente con ruolo e scope."
+      asideText="Questa schermata evita scorciatoie implicite: l'utente sceglie un grant reale e la piattaforma decide il redirect finale coerente con ruolo e scope."
     >
       <section className="section-header">
         <p className="section-label">Multi-accesso</p>
