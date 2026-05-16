@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import styles from "./context-gateway.module.css";
 
 type CityOption = {
@@ -88,8 +88,7 @@ export function CityEntryForm({
   const [inputValue, setInputValue] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  const cityNames = useMemo(() => cities.map((city) => city.name), [cities]);
+  const cityNames = cities.map((city) => city.name);
 
   const goToCity = (slug: string) => {
     startTransition(() => {
@@ -103,7 +102,7 @@ export function CityEntryForm({
     const match = findCitySlug(inputValue, cities);
 
     if (!match) {
-      setStatusMessage("Scegli una città attiva per continuare.");
+      setStatusMessage("Scegli una citta attiva per continuare.");
       return;
     }
 
@@ -113,11 +112,11 @@ export function CityEntryForm({
 
   const handleLocation = () => {
     if (!("geolocation" in navigator)) {
-      setStatusMessage("La posizione non è disponibile su questo dispositivo.");
+      setStatusMessage("La posizione non e disponibile su questo dispositivo.");
       return;
     }
 
-    setStatusMessage("Sto cercando la città più vicina...");
+    setStatusMessage("Sto cercando la citta piu vicina...");
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -130,7 +129,7 @@ export function CityEntryForm({
         );
 
         if (!nearest) {
-          setStatusMessage("Non ho trovato una città attiva abbastanza vicina.");
+          setStatusMessage("Non ho trovato una citta attiva abbastanza vicina.");
           return;
         }
 
@@ -138,7 +137,7 @@ export function CityEntryForm({
         goToCity(nearest.slug);
       },
       () => {
-        setStatusMessage("Non riesco a leggere la tua posizione. Scegli una città attiva.");
+        setStatusMessage("Non riesco a leggere la tua posizione. Scegli una citta attiva.");
       },
       {
         enableHighAccuracy: true,
@@ -167,9 +166,9 @@ export function CityEntryForm({
 
         <button
           className={styles.locationButton}
+          disabled={isPending}
           onClick={handleLocation}
           type="button"
-          disabled={isPending}
         >
           <svg
             aria-hidden="true"

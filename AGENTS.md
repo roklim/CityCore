@@ -12,8 +12,10 @@ Ridurre il tempo di orientamento nel repo e rendere prevedibili i punti in cui l
   - `src/lib`: helper lato web
 - `apps/api`: Fastify + Prisma
   - `src/app.ts`: bootstrap server
-  - `src/platform-core.ts`: core di piattaforma
-  - `src/ordering.ts`: flussi ordering
+  - `src/platform-core.ts`: route layer del core di piattaforma
+  - `src/platform-core/*`: config statica e schemi del core
+  - `src/ordering.ts`: route layer ordering
+  - `src/ordering/*`: route modules, helper condivisi, business lookup, pickup availability e order service
 - `apps/worker`: worker asincrono
 - `packages/*`: moduli condivisi (`config`, `database`, `domain`, `permissions`, `shared`, `templates`, `ui`)
 - `docs`: documentazione durevole, blueprint, runbook, roadmap

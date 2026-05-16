@@ -52,7 +52,7 @@ function CitySearch() {
       <span className={styles.searchIcon} aria-hidden="true" />
       <input
         className={styles.searchInput}
-        placeholder="Cerca attività, servizi, luoghi..."
+        placeholder="Cerca attivita, servizi, luoghi..."
         readOnly
         type="search"
       />
@@ -92,7 +92,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData["c
 
             <h1 className={styles.cityTitle} id="city-home-title">
               <span>{surface.name}.</span>
-              <span>Tutto ciò</span>
+              <span>Tutto cio</span>
               <span>
                 che ti serve<span className={styles.accent}>.</span>
               </span>

@@ -24,19 +24,19 @@ export function GlobalEntryHome({ cities }: { cities: HomepageCityCard[] }) {
               <h1 className={styles.entryTitle} id="global-entry-title">
                 <span>Trova la</span>
                 <span>
-                  tua città<span className={styles.accent}>.</span>
+                  tua citta<span className={styles.accent}>.</span>
                 </span>
               </h1>
               <p className={styles.entryBody}>
-                <span>Esplora attività, servizi e luoghi</span>
-                <span>nella tua città.</span>
+                <span>Esplora attivita, servizi e luoghi</span>
+                <span>nella tua citta.</span>
               </p>
             </div>
 
             <CityEntryForm
               cities={cities.map((city) => ({ slug: city.slug, name: city.name }))}
               locationLabel="Usa la mia posizione"
-              searchPlaceholder="Cerca la tua città..."
+              searchPlaceholder="Cerca la tua citta..."
             />
 
             <ActiveCityPills cities={cities} />
@@ -52,7 +52,7 @@ export function GlobalEntryHome({ cities }: { cities: HomepageCityCard[] }) {
               </Link>
               <h2>Entra nel contesto giusto.</h2>
               <p>
-                Prima scegli la città. Poi CityCore diventa ricerca locale, categorie, attività
+                Prima scegli la citta. Poi CityCore diventa ricerca locale, categorie, attivita
                 vicine e azioni utili.
               </p>
             </div>
@@ -61,11 +61,11 @@ export function GlobalEntryHome({ cities }: { cities: HomepageCityCard[] }) {
               <div className={styles.visualStats}>
                 <div className={styles.visualStat}>
                   <strong>{cities.length.toString().padStart(2, "0")}</strong>
-                  <span>Città attive</span>
+                  <span>Citta attive</span>
                 </div>
                 <div className={styles.visualStat}>
                   <strong>{totalBusinesses.toString().padStart(2, "0")}</strong>
-                  <span>Attività pubbliche</span>
+                  <span>Attivita pubbliche</span>
                 </div>
                 <div className={styles.visualStat}>
                   <strong>01</strong>
