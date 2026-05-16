@@ -5,7 +5,7 @@ import {
   type TemplateCategory,
   type TemplateCode,
   createLookup,
-} from "@platform/shared";
+} from "@platform/domain";
 
 export type PublicSectionType =
   | "hero"

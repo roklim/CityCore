@@ -1,4 +1,4 @@
-import type { ScopeType, UserRole } from "@platform/shared";
+import type { ScopeType, UserRole } from "@platform/domain";
 
 export const PERMISSION_CODES = [
   "platform.read",
