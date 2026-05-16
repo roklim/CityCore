@@ -48,9 +48,11 @@ export function GatewayHero({
           </Link>
         </div>
 
-        <Link className={styles.secondaryButton} href="#for-businesses">
-          {copy.secondaryCta}
-        </Link>
+        <div className={styles.heroSecondaryRow}>
+          <Link className={styles.secondaryButton} href="#for-businesses">
+            {copy.secondaryCta}
+          </Link>
+        </div>
 
         <div className={styles.trustPanel}>
           <div className={styles.trustLead}>

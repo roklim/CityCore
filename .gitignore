@@ -17,5 +17,12 @@ apps/*/.env
 apps/*/.env.local
 .vercel/
 *.log
+*.dev.log
+.tmp/
+.tmp-chrome-headless/
+tmp-*.png
+tmp-*.jpg
+tmp-*.jpeg
+tmp-*.webp
 
 .vercel

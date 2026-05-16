@@ -144,6 +144,8 @@ Nota di riallineamento:
 
 ### Documenti Guida
 
+- `AGENTS.md`
+- `docs/REPO_WORKFLOW.md`
 - `docs/V2_EXECUTION_ROADMAP.md`
 - `docs/V2_PLATFORM_BLUEPRINT.md`
 - `docs/V2_DATA_MODEL.md`

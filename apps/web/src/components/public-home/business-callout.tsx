@@ -19,7 +19,7 @@ export function BusinessCallout({ copy }: { copy: HomepageViewModel["callout"] }
           <Link className={styles.primaryButton} href="/admin/login">
             {copy.primaryCta}
           </Link>
-          <Link className={styles.ghostButton} href="#cities">
+          <Link className={styles.calloutTextLink} href="#cities">
             {copy.secondaryCta}
           </Link>
         </div>

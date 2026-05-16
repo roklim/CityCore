@@ -22,10 +22,16 @@ export type CityPortal = {
   tone: "emerald" | "violet" | "amber" | "rose";
 };
 
-export type Capability = {
+export type CategoryShortcut = {
   title: string;
   description: string;
+  href: string;
   icon: "discover" | "book" | "order" | "contact" | "manage";
+};
+
+export type EntryCategoryPreview = {
+  title: string;
+  href: string;
 };
 
 export type FeaturedBusiness = {
@@ -65,23 +71,39 @@ export type HomepageViewModel = {
     trustTitle: string;
     trustDescription: string;
   };
+  entry: {
+    eyebrow: string;
+    cityTitle: string;
+    cityDescription: string;
+    cityCta: string;
+    cityControlLabel: string;
+    categoryTitle: string;
+    categoryDescription: string;
+    categoryCta: string;
+    categoryPreview: EntryCategoryPreview[];
+  };
   citySection: {
     eyebrow: string;
     title: string;
     description: string;
     viewAll: string;
+    viewAllHref: string;
   };
-  capabilitySection: {
+  categorySection: {
     eyebrow: string;
-    titleLine1: string;
-    titleLine2: string;
+    title: string;
+    description: string;
+  };
+  trustStrip: {
+    eyebrow: string;
+    title: string;
+    items: string[];
   };
   businessSection: {
     eyebrow: string;
     title: string;
-    viewAll: string;
+    description: string;
     openProfile: string;
-    exploreMore: string;
   };
   callout: {
     eyebrow: string;
@@ -93,15 +115,12 @@ export type HomepageViewModel = {
   };
   footerContent: {
     tagline: string;
-    newsletterTitle: string;
-    newsletterDescription: string;
-    newsletterPlaceholder: string;
-    newsletterAria: string;
   };
   heroInsights: HeroInsight[];
   heroTrustPoints: string[];
   cityPortals: CityPortal[];
-  capabilities: Capability[];
+  categoryShortcuts: CategoryShortcut[];
+  trustItems: string[];
   featuredBusinesses: FeaturedBusiness[];
   footerSections: FooterSection[];
   degraded: boolean;
@@ -122,17 +141,16 @@ const cityPortalOverrides: Record<
   "cagli-smoke": {
     name: "Cagli",
     region: "Marche",
-    summary: "Ordina, prenota e trova servizi utili attraverso un unico ingresso locale chiaro.",
+    summary: "Ordina, prenota e trova servizi locali in pochi tocchi.",
   },
   cagli: {
-    summary: "Ordina, prenota e trova servizi utili attraverso un unico ingresso locale chiaro.",
+    summary: "Ordina, prenota e trova servizi locali in pochi tocchi.",
   },
   rimini: {
-    summary:
-      "Esplora servizi, soggiorni e attivita locali con un percorso rapido pensato per mobile.",
+    summary: "Scegli attivita, soggiorni e servizi con un percorso rapido e pulito.",
   },
   bologna: {
-    summary: "Scegli tra piu opzioni senza rumore, con schede che restano facili da attivare.",
+    summary: "Entra in una citta ricca di opzioni senza rumore o pagine dispersive.",
   },
 };
 
@@ -156,7 +174,7 @@ const businessMetrics: Record<
   }
 > = {
   "forno-locale-demo": { rating: "4.9", reviews: "128", distance: "0.4 km", badge: "In evidenza" },
-  "bottega-del-corso": { rating: "4.8", reviews: "236", distance: "0.3 km", badge: "In evidenza" },
+  "bottega-del-corso": { rating: "4.8", reviews: "236", distance: "0.3 km", badge: "Live" },
   "studio-marea": { rating: "4.9", reviews: "126", distance: "0.6 km" },
   "locanda-del-corso": { rating: "4.7", reviews: "89", distance: "0.8 km" },
   "porto-pizza-club": { rating: "4.8", reviews: "312", distance: "1.2 km" },
@@ -164,69 +182,56 @@ const businessMetrics: Record<
   "linea-blu-ncc": { rating: "4.8", reviews: "174", distance: "1.1 km" },
 };
 
-const capabilities: Capability[] = [
+const categoryShortcuts: CategoryShortcut[] = [
   {
-    title: "Scopri",
-    description: "Trova attivita affidabili e servizi utili senza perderti in directory infinite.",
-    icon: "discover",
-  },
-  {
-    title: "Prenota",
-    description: "Prenota appuntamenti e disponibilita con percorsi brevi e leggibili.",
-    icon: "book",
-  },
-  {
-    title: "Ordina",
-    description: "Ordina da attivita locali con menu chiari, tempi visibili e CTA forti.",
+    title: "Food",
+    description: "Ordini, take-away e tavoli locali.",
+    href: "#showcase",
     icon: "order",
   },
   {
-    title: "Contatta",
-    description: "Chiama, scrivi o richiedi subito senza reimparare ogni singola pagina.",
-    icon: "contact",
+    title: "Stays",
+    description: "Soggiorni, camere e accoglienza.",
+    href: "#showcase",
+    icon: "book",
   },
   {
-    title: "Gestisci",
-    description: "Permetti agli operatori locali di lavorare bene da mobile o desktop.",
+    title: "Services",
+    description: "Richieste, contatti e supporto utile.",
+    href: "#showcase",
     icon: "manage",
   },
+  {
+    title: "Bookings",
+    description: "Prenotazioni rapide e conferme chiare.",
+    href: "#showcase",
+    icon: "book",
+  },
+  {
+    title: "Shops",
+    description: "Scopri attivita e schede da attivare subito.",
+    href: "#showcase",
+    icon: "discover",
+  },
 ];
+
+const trustItems = ["Scopri", "Prenota", "Ordina", "Contatta", "Gestisci"];
 
 const footerSections: FooterSection[] = [
   {
     title: "Esplora",
     links: [
-      { label: "Tutte le citta", href: "#cities" },
-      { label: "Citta in evidenza", href: "#cities" },
-      { label: "Vicino a me", href: "#cities" },
-      { label: "Categorie", href: "#capabilities" },
+      { label: "Citta attive", href: "#cities" },
+      { label: "Categorie", href: "#categories" },
+      { label: "Attivita live", href: "#showcase" },
     ],
   },
   {
-    title: "Per le attivita",
+    title: "CityCore",
     links: [
-      { label: "Entra in CityCore", href: "#for-businesses" },
-      { label: "Strumenti business", href: "/admin/login" },
-      { label: "Pacchetti", href: "#for-businesses" },
-      { label: "Risorse", href: "/admin/login" },
-    ],
-  },
-  {
-    title: "Azienda",
-    links: [
-      { label: "Chi siamo", href: "#showcase" },
-      { label: "Lavora con noi", href: "#for-businesses" },
-      { label: "Blog", href: "#showcase" },
-      { label: "Contattaci", href: "mailto:hello@citycore.local" },
-    ],
-  },
-  {
-    title: "Supporto",
-    links: [
-      { label: "Centro assistenza", href: "/admin/login" },
-      { label: "Sicurezza", href: "#showcase" },
-      { label: "Privacy", href: "#for-businesses" },
-      { label: "Termini di servizio", href: "#for-businesses" },
+      { label: "Per le attivita", href: "#for-businesses" },
+      { label: "Supporto", href: "mailto:hello@citycore.local" },
+      { label: "Accedi", href: "/admin/login" },
     ],
   },
 ];
@@ -259,17 +264,17 @@ function buildHeroInsights(data: HomepageSurfaceData): HeroInsight[] {
     {
       label: "Citta attive",
       value: String(data.featuredCities.length).padStart(2, "0"),
-      detail: "Punti di ingresso reali, pronti da esplorare.",
+      detail: "Ingressi locali pronti da esplorare.",
     },
     {
       label: "Attivita live",
       value: String(data.showcaseBusinesses.length).padStart(2, "0"),
-      detail: "Schede pubbliche con contesto, fiducia e azione.",
+      detail: "Schede reali con contesto e prossime azioni.",
     },
     {
-      label: "Azioni immediate",
-      value: "05",
-      detail: "Scopri, prenota, ordina, contatta e gestisci.",
+      label: "Accessi rapidi",
+      value: "02",
+      detail: "Per citta o per categoria, senza deviazioni inutili.",
     },
   ];
 }
@@ -319,7 +324,7 @@ export function buildHomepageViewModel(data: HomepageSurfaceData): HomepageViewM
   }));
 
   const homepageCities = supplementBySlug(data.featuredCities, fallbackCities, 4);
-  const homepageBusinesses = supplementBySlug(data.showcaseBusinesses, fallbackBusinesses, 5);
+  const homepageBusinesses = supplementBySlug(data.showcaseBusinesses, fallbackBusinesses, 2);
 
   const cityPortals = homepageCities.slice(0, 4).map((city, index) => {
     const profile = getCityProfile(city.slug);
@@ -337,7 +342,7 @@ export function buildHomepageViewModel(data: HomepageSurfaceData): HomepageViewM
     } satisfies CityPortal;
   });
 
-  const featuredBusinesses = homepageBusinesses.slice(0, 5).map((business, index) => {
+  const featuredBusinesses = homepageBusinesses.slice(0, 2).map((business, index) => {
     const editorialMetrics =
       businessMetrics[business.slug] ??
       ({
@@ -362,67 +367,80 @@ export function buildHomepageViewModel(data: HomepageSurfaceData): HomepageViewM
   });
 
   return {
-    chooserLabel: "Scegli la tua citta",
+    chooserLabel: "Scegli citta",
     degradedMessage:
-      "Parte del catalogo pubblico usa ancora fallback editoriali, ma l'esperienza resta coerente mentre i dati live si riallineano.",
+      "Parte del catalogo pubblico usa ancora fallback editoriali, ma l'ingresso resta stabile mentre i dati live si riallineano.",
     hero: {
-      eyebrow: "La tua citta. Tutto connesso.",
-      titleLine: "Trova cio che ti serve.",
-      accentLine: "Sostieni cio che ami.",
-      description:
-        "CityCore e la piattaforma city-first per scoprire attivita locali affidabili, servizi utili e azioni chiare senza pagine rumorose o percorsi confusi.",
-      searchAria: "Cerca una citta",
-      searchPlaceholder: "Inserisci la tua citta",
-      primaryCta: "Esplora la tua citta",
-      secondaryCta: "Hai un'attivita locale?",
-      trustTitle: "Pensato per le citta. Basato sulla fiducia.",
+      eyebrow: "CityCore",
+      titleLine: "Trova la tua citta.",
+      accentLine: "Entra subito.",
+      description: "Scegli una citta o parti da una categoria utile, senza passaggi inutili.",
+      searchAria: "Scegli una citta",
+      searchPlaceholder: "Scegli la tua citta",
+      primaryCta: "Scegli la tua citta",
+      secondaryCta: "Per le attivita",
+      trustTitle: "Accesso chiaro, contesto reale.",
       trustDescription:
-        "CityCore unisce attivita locali, segnali di fiducia e azioni utili in un ingresso ordinato e leggibile da mobile.",
+        "CityCore ordina citta, attivita e prossime azioni in un ingresso leggibile da mobile.",
+    },
+    entry: {
+      eyebrow: "Inizia da qui",
+      cityTitle: "Scegli la tua citta",
+      cityDescription: "Entra subito nel contesto locale giusto.",
+      cityCta: "Apri le citta attive",
+      cityControlLabel: "Citta attive",
+      categoryTitle: "Oppure esplora per categoria",
+      categoryDescription: "Parti dal bisogno, non dalla struttura.",
+      categoryCta: "Vai alle categorie",
+      categoryPreview: categoryShortcuts.slice(0, 4).map((shortcut) => ({
+        title: shortcut.title,
+        href: shortcut.href,
+      })),
     },
     citySection: {
-      eyebrow: "Esplora le citta",
-      title: "Scopri cosa succede davvero vicino a te.",
+      eyebrow: "Citta attive",
+      title: "Ingresso locale, senza rumore.",
       description:
-        "Ogni citta deve sembrare un vero portale locale: riconoscibile, leggibile e pronta a portarti dentro attivita e servizi reali.",
-      viewAll: "Vedi tutte le citta",
+        "Quattro portali uguali, rapidi da scorrere e pronti a portarti verso attivita reali.",
+      viewAll: "Vedi categorie",
+      viewAllHref: "#categories",
     },
-    capabilitySection: {
-      eyebrow: "Cosa puoi fare",
-      titleLine1: "Tutta la tua citta.",
-      titleLine2: "In un solo posto.",
+    categorySection: {
+      eyebrow: "Categorie rapide",
+      title: "Parti da quello che ti serve.",
+      description: "Shortcut chiari per entrare subito da un bisogno reale.",
+    },
+    trustStrip: {
+      eyebrow: "Azioni rapide",
+      title: "Cinque azioni, un ingresso chiaro.",
+      items: trustItems,
     },
     businessSection: {
-      eyebrow: "Attivita locali in evidenza",
-      title: "Scelte locali di cui fidarsi.",
-      viewAll: "Vedi tutte le attivita",
+      eyebrow: "Attivita live",
+      title: "Due prove reali dentro CityCore.",
+      description: "Basta poco per capire che l'ecosistema e gia vivo.",
       openProfile: "Apri scheda",
-      exploreMore: "Esplora altre attivita",
     },
     callout: {
       eyebrow: "Per le attivita locali",
-      titleLine1: "Entra in CityCore.",
-      titleLine2: "Cresci con la tua citta.",
-      description:
-        "Gestisci la tua presenza locale, collega domanda e azione e lavora con ordini, richieste e insight piu chiari da mobile o desktop.",
+      titleLine1: "Porta il tuo business",
+      titleLine2: "dentro la citta.",
+      description: "Visibilita locale e richieste piu chiare, senza strumenti pesanti da gestire.",
       primaryCta: "Inizia ora",
-      secondaryCta: "Guarda come funziona",
+      secondaryCta: "Esplora le citta",
     },
     footerContent: {
-      tagline: "La tua citta. Connessa. Piu forte insieme.",
-      newsletterTitle: "Resta nel giro",
-      newsletterDescription:
-        "Ricevi nuove citta, aggiornamenti prodotto e storie locali direttamente nella tua inbox.",
-      newsletterPlaceholder: "Inserisci la tua email",
-      newsletterAria: "La tua email",
+      tagline: "Scegli una citta o una categoria e trova subito il prossimo passo.",
     },
     heroInsights: buildHeroInsights(data),
     heroTrustPoints: [
-      "Costruito per citta e quartieri reali, non per directory generiche infinite.",
-      "Attivita locali presentate con contesto, segnali di fiducia e prossime azioni chiare.",
-      "Mobile-first per utenti finali e operatori business.",
+      "Citta e quartieri reali, non directory infinite.",
+      "Attivita con contesto, segnali di fiducia e prossime azioni.",
+      "Mobile-first per utenti e operatori locali.",
     ],
     cityPortals,
-    capabilities,
+    categoryShortcuts,
+    trustItems,
     featuredBusinesses,
     footerSections,
     degraded: data.degraded,

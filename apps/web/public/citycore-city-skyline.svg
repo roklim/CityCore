@@ -1,0 +1,28 @@
+<svg width="390" height="176" viewBox="0 0 390 176" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="rgba(255,255,255,0.18)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 171.5H390" stroke-width="1.2"/>
+    <path d="M25 90c4-6 13-6 17 0 6-2 14 2 15 9H12c1-6 7-10 13-9Z" stroke-width="1.25"/>
+    <path d="M151 92c3-5 10-5 13 0 5-2 11 1 12 7h-36c1-5 6-8 11-7Z" stroke-width="1.15"/>
+    <path d="M0 171v-36h18v36M18 171v-47h25v47M43 171v-33h17v33" stroke-width="1.1"/>
+    <path d="M5 136l9-8 9 8M23 124l8-7 9 7" stroke-width="1.1"/>
+    <path d="M9 151h5M9 160h5M28 140h5M28 151h5M48 149h5M48 160h5" stroke-width="0.9"/>
+    <path d="M72 171v-83h19v83" stroke-width="1.1"/>
+    <path d="M78 100h3M78 112h3M78 124h3M78 136h3M78 148h3" stroke-width="0.9"/>
+    <path d="M111 171V54h24v117M106 54h34M116 54v-9h14v9M123 45V35" stroke-width="1.15"/>
+    <path d="M117 78h5M126 78h4M117 94h5M126 94h4M117 110h5M126 110h4M117 126h5M126 126h4M117 142h5M126 142h4" stroke-width="0.9"/>
+    <path d="M111 68h24" stroke-width="0.9"/>
+    <path d="M142 171v-34h23v34M137 137h33M148 137v-10h11v10" stroke-width="1.05"/>
+    <path d="M148 150h5M158 150h5" stroke-width="0.85"/>
+    <path d="M169 171v-30h102v30M178 141l42-17 42 17M190 141v-12h60v12M202 129v-10h36v10" stroke-width="1.15"/>
+    <path d="M212 171v-21h19v21" stroke-width="0.95"/>
+    <path d="M184 153h10M246 153h10M184 162h10M246 162h10" stroke-width="0.85"/>
+    <path d="M266 171v-25h24v25M260 146h35" stroke-width="1.05"/>
+    <path d="M272 157h5M282 157h5" stroke-width="0.85"/>
+    <path d="M296 171c0-41 23-74 47-74s47 33 47 74" stroke-width="1.2"/>
+    <path d="M307 171c0-31 16-56 36-56s36 25 36 56" stroke-width="1.05"/>
+    <path d="M343 97V63M334 67h18M339 63c0-4 2-7 4-7s4 3 4 7M326 128h34" stroke-width="1.05"/>
+    <path d="M319 171v-18M343 171v-24M367 171v-18" stroke-width="0.9"/>
+    <path d="M370 171v-42h20v42M370 137h20" stroke-width="1.05"/>
+    <path d="M376 146h4M385 146h4M376 158h4M385 158h4" stroke-width="0.85"/>
+  </g>
+</svg>

@@ -16,10 +16,8 @@ export function FeaturedBusinessGrid({
         <div>
           <p className={styles.sectionEyebrow}>{copy.eyebrow}</p>
           <h2 className={styles.sectionTitle}>{copy.title}</h2>
+          <p className={styles.sectionDescription}>{copy.description}</p>
         </div>
-        <Link className={styles.sectionLink} href="#cities">
-          {copy.viewAll}
-        </Link>
       </div>
 
       <div className={styles.businessGrid}>
@@ -46,12 +44,6 @@ export function FeaturedBusinessGrid({
             </Link>
           </article>
         ))}
-      </div>
-
-      <div className={styles.centeredAction}>
-        <Link className={styles.secondaryButtonWide} href="#cities">
-          {copy.exploreMore}
-        </Link>
       </div>
     </section>
   );

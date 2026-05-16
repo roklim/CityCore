@@ -18,7 +18,7 @@ export function CityPortalGrid({
           <h2 className={styles.sectionTitle}>{copy.title}</h2>
           <p className={styles.sectionDescription}>{copy.description}</p>
         </div>
-        <Link className={styles.sectionLink} href="#for-businesses">
+        <Link className={styles.sectionLink} href={copy.viewAllHref}>
           {copy.viewAll}
         </Link>
       </div>

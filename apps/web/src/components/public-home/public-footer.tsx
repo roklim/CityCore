@@ -14,17 +14,13 @@ export function PublicFooter({
       <div className={styles.footerBrandColumn}>
         <div className={styles.footerBrand}>
           <span className={styles.brandMark} aria-hidden="true">
-            CC
+            <span className={styles.brandMarkOuter} />
+            <span className={styles.brandMarkInner} />
+            <span className={styles.brandMarkCore} />
           </span>
           <span className={styles.brandName}>CityCore</span>
         </div>
         <p>{copy.tagline}</p>
-        <div className={styles.footerSocials}>
-          <span>ig</span>
-          <span>fb</span>
-          <span>x</span>
-          <span>in</span>
-        </div>
       </div>
 
       <div className={styles.footerLinks}>
@@ -40,19 +36,6 @@ export function PublicFooter({
             </ul>
           </div>
         ))}
-      </div>
-
-      <div className={styles.footerNewsletter}>
-        <h3>{copy.newsletterTitle}</h3>
-        <p>{copy.newsletterDescription}</p>
-        <form action="#cities" className={styles.newsletterForm}>
-          <input
-            aria-label={copy.newsletterAria}
-            placeholder={copy.newsletterPlaceholder}
-            type="email"
-          />
-          <button type="submit">{"->"}</button>
-        </form>
       </div>
     </footer>
   );
