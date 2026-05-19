@@ -259,6 +259,17 @@ export const updateBusinessSchema = z.object({
   bookingPolicy: nullableTrimmedString(2_000),
   cancellationPolicy: nullableTrimmedString(2_000),
   notesInternal: nullableTrimmedString(2_000),
+  ownerEmail: z.union([z.string().trim().email(), z.null()]).optional(),
+  ownerName: nullableTrimmedString(120),
+  ownerPhone: nullableTrimmedString(60),
+}).superRefine((value, context) => {
+  if ((value.ownerName || value.ownerPhone) && !value.ownerEmail) {
+    context.addIssue({
+      code: "custom",
+      path: ["ownerEmail"],
+      message: "ownerEmail is required when owner details are provided.",
+    });
+  }
 });
 
 export const listAccessGrantsQuerySchema = z.object({

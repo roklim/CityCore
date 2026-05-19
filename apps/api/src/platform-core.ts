@@ -1897,12 +1897,113 @@ export function registerPlatformCoreRoutes(app: FastifyInstance) {
 
       try {
         const updatedBusiness = await prisma.$transaction(async (tx) => {
+          let ownerUserId: string | null | undefined;
+
+          if (hasOwn(parsed.data, "ownerEmail")) {
+            if (!parsed.data.ownerEmail) {
+              ownerUserId = null;
+            } else {
+              const existingOwner = await tx.user.findUnique({
+                where: {
+                  email: parsed.data.ownerEmail,
+                },
+                select: {
+                  id: true,
+                },
+              });
+
+              if (existingOwner) {
+                ownerUserId = existingOwner.id;
+
+                if (hasOwn(parsed.data, "ownerName") || hasOwn(parsed.data, "ownerPhone")) {
+                  await tx.user.update({
+                    where: {
+                      id: existingOwner.id,
+                    },
+                    data: {
+                      name: normalizeOptionalString(parsed.data.ownerName),
+                      phone: normalizeOptionalString(parsed.data.ownerPhone),
+                    },
+                  });
+                }
+              } else {
+                const createdOwner = await tx.user.create({
+                  data: {
+                    email: parsed.data.ownerEmail,
+                    name: normalizeOptionalString(parsed.data.ownerName),
+                    phone: normalizeOptionalString(parsed.data.ownerPhone),
+                    status: "active",
+                  },
+                  select: {
+                    id: true,
+                  },
+                });
+
+                ownerUserId = createdOwner.id;
+              }
+            }
+          }
+
           await tx.business.update({
             where: {
               id: business.id,
             },
-            data: buildBusinessUpdateData(parsed.data),
+            data: {
+              ...buildBusinessUpdateData(parsed.data),
+              ...(ownerUserId !== undefined
+                ? {
+                    ownerUser: ownerUserId
+                      ? {
+                          connect: {
+                            id: ownerUserId,
+                          },
+                        }
+                      : {
+                          disconnect: true,
+                        },
+                  }
+                : {}),
+            },
           });
+
+          if (ownerUserId) {
+            const ownerGrant = await tx.accessGrant.findFirst({
+              where: {
+                userId: ownerUserId,
+                role: "local_admin",
+                scopeType: "business",
+                cityId: business.city.id,
+                businessId: business.id,
+              },
+              select: {
+                id: true,
+                active: true,
+              },
+            });
+
+            if (!ownerGrant) {
+              await tx.accessGrant.create({
+                data: {
+                  userId: ownerUserId,
+                  role: "local_admin",
+                  scopeType: "business",
+                  cityId: business.city.id,
+                  businessId: business.id,
+                  active: true,
+                  createdByUserId: auth.user.id,
+                },
+              });
+            } else if (!ownerGrant.active) {
+              await tx.accessGrant.update({
+                where: {
+                  id: ownerGrant.id,
+                },
+                data: {
+                  active: true,
+                },
+              });
+            }
+          }
 
           await tx.auditLog.create({
             data: {
@@ -1919,6 +2020,7 @@ export function registerPlatformCoreRoutes(app: FastifyInstance) {
                 nextSlug: hasOwn(parsed.data, "slug")
                   ? slugify(parsed.data.slug ?? business.slug)
                   : business.slug,
+                ownerUserId: ownerUserId ?? undefined,
                 fields: Object.keys(parsed.data).sort(),
               },
             },
