@@ -111,6 +111,11 @@ export const templateCatalogMap = new Map(templateCatalog.map((entry) => [entry.
 
 const hexColorPattern = /^#?[0-9a-f]{6}$/i;
 const optionalTrimmedString = z.string().trim().min(1);
+const nullableTrimmedString = (max: number) =>
+  z.union([z.string().trim().min(1).max(max), z.null()]).optional();
+const nullableEmailString = z.union([z.string().trim().email(), z.null()]).optional();
+const nullableUrlString = z.union([z.string().trim().url().max(200), z.null()]).optional();
+const nullableHexColorString = z.union([z.string().trim().regex(hexColorPattern), z.null()]).optional();
 
 export const createCitySchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -126,6 +131,22 @@ export const createCitySchema = z.object({
   seoDescription: optionalTrimmedString.max(200).optional(),
   registryId: optionalTrimmedString.max(64).optional(),
   sortOrder: z.number().int().min(0).max(10_000).default(0),
+});
+
+export const updateCitySchema = z.object({
+  name: z.string().trim().min(2).max(120).optional(),
+  slug: optionalTrimmedString.max(120).optional(),
+  province: nullableTrimmedString(120),
+  region: nullableTrimmedString(120),
+  country: optionalTrimmedString.max(2).optional(),
+  status: z.enum(cityStatuses).optional(),
+  active: z.boolean().optional(),
+  heroTitle: nullableTrimmedString(160),
+  heroDescription: nullableTrimmedString(280),
+  seoTitle: nullableTrimmedString(160),
+  seoDescription: nullableTrimmedString(200),
+  registryId: nullableTrimmedString(64),
+  sortOrder: z.number().int().min(0).max(10_000).optional(),
 });
 
 export const listCitiesQuerySchema = z.object({
@@ -210,6 +231,35 @@ export const createBusinessSchema = z
       });
     }
   });
+
+export const updateBusinessSchema = z.object({
+  name: z.string().trim().min(2).max(160).optional(),
+  slug: optionalTrimmedString.max(160).optional(),
+  legalName: nullableTrimmedString(160),
+  category: z.union([z.enum(templateCategories), z.null()]).optional(),
+  status: z.enum(businessStatuses).optional(),
+  plan: z.enum(businessPlans).optional(),
+  subscriptionStatus: z.enum(subscriptionStatuses).optional(),
+  publicEmail: nullableEmailString,
+  publicPhone: nullableTrimmedString(60),
+  website: nullableUrlString,
+  addressLine1: nullableTrimmedString(160),
+  addressLine2: nullableTrimmedString(160),
+  postalCode: nullableTrimmedString(20),
+  timezone: optionalTrimmedString.max(80).optional(),
+  currency: optionalTrimmedString.max(8).optional(),
+  locale: optionalTrimmedString.max(12).optional(),
+  primaryColor: nullableHexColorString,
+  accentColor: nullableHexColorString,
+  publicTitle: nullableTrimmedString(160),
+  publicSubtitle: nullableTrimmedString(200),
+  publicDescription: nullableTrimmedString(2_000),
+  seoTitle: nullableTrimmedString(160),
+  seoDescription: nullableTrimmedString(200),
+  bookingPolicy: nullableTrimmedString(2_000),
+  cancellationPolicy: nullableTrimmedString(2_000),
+  notesInternal: nullableTrimmedString(2_000),
+});
 
 export const listAccessGrantsQuerySchema = z.object({
   role: z.enum(accessRoles).optional(),

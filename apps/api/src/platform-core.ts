@@ -28,6 +28,8 @@ import {
   publicListCitiesQuerySchema,
   templateCatalog,
   templateCatalogMap,
+  updateBusinessSchema,
+  updateCitySchema,
 } from "./platform-core/config.js";
 
 type StoredTemplateCategory = TemplateCategory | "food";
@@ -53,6 +55,186 @@ function normalizeColor(value?: string) {
   }
 
   return value.startsWith("#") ? value : `#${value}`;
+}
+
+function hasOwn<T extends object>(value: T, key: keyof T) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function buildCityUpdateData(input: z.infer<typeof updateCitySchema>) {
+  const data: Prisma.CityUpdateInput = {};
+
+  if (hasOwn(input, "name") && input.name) {
+    data.name = input.name;
+  }
+
+  if (hasOwn(input, "slug") && input.slug) {
+    data.slug = slugify(input.slug);
+  }
+
+  if (hasOwn(input, "province")) {
+    data.province = normalizeOptionalString(input.province);
+  }
+
+  if (hasOwn(input, "region")) {
+    data.region = normalizeOptionalString(input.region);
+  }
+
+  if (hasOwn(input, "country") && input.country) {
+    data.country = input.country;
+  }
+
+  if (hasOwn(input, "status") && input.status) {
+    data.status = input.status;
+  }
+
+  if (hasOwn(input, "active") && typeof input.active === "boolean") {
+    data.active = input.active;
+  }
+
+  if (hasOwn(input, "heroTitle")) {
+    data.heroTitle = normalizeOptionalString(input.heroTitle);
+  }
+
+  if (hasOwn(input, "heroDescription")) {
+    data.heroDescription = normalizeOptionalString(input.heroDescription);
+  }
+
+  if (hasOwn(input, "seoTitle")) {
+    data.seoTitle = normalizeOptionalString(input.seoTitle);
+  }
+
+  if (hasOwn(input, "seoDescription")) {
+    data.seoDescription = normalizeOptionalString(input.seoDescription);
+  }
+
+  if (hasOwn(input, "registryId")) {
+    data.registry = input.registryId
+      ? {
+          connect: {
+            id: input.registryId,
+          },
+        }
+      : {
+          disconnect: true,
+        };
+  }
+
+  if (hasOwn(input, "sortOrder") && typeof input.sortOrder === "number") {
+    data.sortOrder = input.sortOrder;
+  }
+
+  return data;
+}
+
+function buildBusinessUpdateData(input: z.infer<typeof updateBusinessSchema>) {
+  const data: Prisma.BusinessUpdateInput = {};
+
+  if (hasOwn(input, "name") && input.name) {
+    data.name = input.name;
+  }
+
+  if (hasOwn(input, "slug") && input.slug) {
+    data.slug = slugify(input.slug);
+  }
+
+  if (hasOwn(input, "legalName")) {
+    data.legalName = normalizeOptionalString(input.legalName);
+  }
+
+  if (hasOwn(input, "category")) {
+    data.category = input.category ?? null;
+  }
+
+  if (hasOwn(input, "status") && input.status) {
+    data.status = input.status;
+  }
+
+  if (hasOwn(input, "plan") && input.plan) {
+    data.plan = input.plan;
+  }
+
+  if (hasOwn(input, "subscriptionStatus") && input.subscriptionStatus) {
+    data.subscriptionStatus = input.subscriptionStatus;
+  }
+
+  if (hasOwn(input, "publicEmail")) {
+    data.publicEmail = input.publicEmail ?? null;
+  }
+
+  if (hasOwn(input, "publicPhone")) {
+    data.publicPhone = normalizeOptionalString(input.publicPhone);
+  }
+
+  if (hasOwn(input, "website")) {
+    data.website = input.website ?? null;
+  }
+
+  if (hasOwn(input, "addressLine1")) {
+    data.addressLine1 = normalizeOptionalString(input.addressLine1);
+  }
+
+  if (hasOwn(input, "addressLine2")) {
+    data.addressLine2 = normalizeOptionalString(input.addressLine2);
+  }
+
+  if (hasOwn(input, "postalCode")) {
+    data.postalCode = normalizeOptionalString(input.postalCode);
+  }
+
+  if (hasOwn(input, "timezone") && input.timezone) {
+    data.timezone = input.timezone;
+  }
+
+  if (hasOwn(input, "currency") && input.currency) {
+    data.currency = input.currency;
+  }
+
+  if (hasOwn(input, "locale") && input.locale) {
+    data.locale = input.locale;
+  }
+
+  if (hasOwn(input, "primaryColor")) {
+    data.primaryColor = normalizeColor(input.primaryColor ?? undefined);
+  }
+
+  if (hasOwn(input, "accentColor")) {
+    data.accentColor = normalizeColor(input.accentColor ?? undefined);
+  }
+
+  if (hasOwn(input, "publicTitle")) {
+    data.publicTitle = normalizeOptionalString(input.publicTitle);
+  }
+
+  if (hasOwn(input, "publicSubtitle")) {
+    data.publicSubtitle = normalizeOptionalString(input.publicSubtitle);
+  }
+
+  if (hasOwn(input, "publicDescription")) {
+    data.publicDescription = normalizeOptionalString(input.publicDescription);
+  }
+
+  if (hasOwn(input, "seoTitle")) {
+    data.seoTitle = normalizeOptionalString(input.seoTitle);
+  }
+
+  if (hasOwn(input, "seoDescription")) {
+    data.seoDescription = normalizeOptionalString(input.seoDescription);
+  }
+
+  if (hasOwn(input, "bookingPolicy")) {
+    data.bookingPolicy = normalizeOptionalString(input.bookingPolicy);
+  }
+
+  if (hasOwn(input, "cancellationPolicy")) {
+    data.cancellationPolicy = normalizeOptionalString(input.cancellationPolicy);
+  }
+
+  if (hasOwn(input, "notesInternal")) {
+    data.notesInternal = normalizeOptionalString(input.notesInternal);
+  }
+
+  return data;
 }
 
 function parsePayload<T>(schema: z.ZodSchema<T>, payload: unknown) {
@@ -1197,6 +1379,132 @@ export function registerPlatformCoreRoutes(app: FastifyInstance) {
     },
   );
 
+  app.patch(
+    "/api/v2/platform-core/cities/:citySlug",
+    { preHandler: requirePermission("cities.manage") },
+    async (request, reply) => {
+      const params = parsePayload(publicCityParamsSchema, request.params);
+      const parsed = parsePayload(updateCitySchema, request.body);
+
+      if (!params.success) {
+        return reply.code(params.response.statusCode).send(params.response.body);
+      }
+
+      if (!parsed.success) {
+        return reply.code(parsed.response.statusCode).send(parsed.response.body);
+      }
+
+      if (Object.keys(parsed.data).length === 0) {
+        return reply.code(400).send({
+          status: "error",
+          error: "No fields to update",
+        });
+      }
+
+      const auth = getRequestAuth(request);
+      const city = await prisma.city.findUnique({
+        where: {
+          slug: params.data.citySlug,
+        },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+
+      if (!city) {
+        return reply.code(404).send({
+          status: "error",
+          error: "City not found",
+        });
+      }
+
+      if (
+        !canAccess(auth.activeAccess, "cities.manage", {
+          scopeType: "city",
+          cityId: city.id,
+        })
+      ) {
+        return reply.code(403).send({
+          status: "error",
+          error: "Insufficient permissions",
+        });
+      }
+
+      if (hasOwn(parsed.data, "registryId") && parsed.data.registryId) {
+        const registry = await prisma.cityRegistry.findUnique({
+          where: {
+            id: parsed.data.registryId,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!registry) {
+          return reply.code(404).send({
+            status: "error",
+            error: "City registry entry not found",
+          });
+        }
+      }
+
+      try {
+        const updatedCity = await prisma.$transaction(async (tx) => {
+          await tx.city.update({
+            where: {
+              id: city.id,
+            },
+            data: buildCityUpdateData(parsed.data),
+          });
+
+          await tx.auditLog.create({
+            data: {
+              actorUserId: auth.user.id,
+              action: "platform.city.updated",
+              targetType: "city",
+              targetId: city.id,
+              scopeType: "city",
+              cityId: city.id,
+              metadataJson: {
+                previousSlug: city.slug,
+                nextSlug: hasOwn(parsed.data, "slug") ? slugify(parsed.data.slug ?? city.slug) : city.slug,
+                fields: Object.keys(parsed.data).sort(),
+              },
+            },
+          });
+
+          return tx.city.findUniqueOrThrow({
+            where: {
+              id: city.id,
+            },
+            include: {
+              _count: {
+                select: {
+                  businesses: true,
+                },
+              },
+            },
+          });
+        });
+
+        return reply.send({
+          status: "ok",
+          item: mapCity(updatedCity),
+        });
+      } catch (error) {
+        if (isPrismaError(error, "P2002")) {
+          return reply.code(409).send({
+            status: "error",
+            error: "A city with the same slug or registry reference already exists.",
+          });
+        }
+
+        throw error;
+      }
+    },
+  );
+
   app.get(
     "/api/v2/platform-core/businesses",
     { preHandler: requirePermission("businesses.read") },
@@ -1511,6 +1819,158 @@ export function registerPlatformCoreRoutes(app: FastifyInstance) {
         return reply.code(201).send({
           status: "ok",
           item: mapBusiness(business),
+        });
+      } catch (error) {
+        if (isPrismaError(error, "P2002")) {
+          return reply.code(409).send({
+            status: "error",
+            error: "A business with the same slug already exists in this city.",
+          });
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.patch(
+    "/api/v2/platform-core/cities/:citySlug/businesses/:businessSlug",
+    { preHandler: requirePermission("businesses.manage") },
+    async (request, reply) => {
+      const params = parsePayload(publicBusinessParamsSchema, request.params);
+      const parsed = parsePayload(updateBusinessSchema, request.body);
+
+      if (!params.success) {
+        return reply.code(params.response.statusCode).send(params.response.body);
+      }
+
+      if (!parsed.success) {
+        return reply.code(parsed.response.statusCode).send(parsed.response.body);
+      }
+
+      if (Object.keys(parsed.data).length === 0) {
+        return reply.code(400).send({
+          status: "error",
+          error: "No fields to update",
+        });
+      }
+
+      const auth = getRequestAuth(request);
+      const business = await prisma.business.findFirst({
+        where: {
+          slug: params.data.businessSlug,
+          city: {
+            slug: params.data.citySlug,
+          },
+        },
+        select: {
+          id: true,
+          slug: true,
+          city: {
+            select: {
+              id: true,
+              slug: true,
+            },
+          },
+        },
+      });
+
+      if (!business) {
+        return reply.code(404).send({
+          status: "error",
+          error: "Business not found",
+        });
+      }
+
+      if (
+        !canAccess(auth.activeAccess, "businesses.manage", {
+          scopeType: "business",
+          cityId: business.city.id,
+          businessId: business.id,
+        })
+      ) {
+        return reply.code(403).send({
+          status: "error",
+          error: "Insufficient permissions",
+        });
+      }
+
+      try {
+        const updatedBusiness = await prisma.$transaction(async (tx) => {
+          await tx.business.update({
+            where: {
+              id: business.id,
+            },
+            data: buildBusinessUpdateData(parsed.data),
+          });
+
+          await tx.auditLog.create({
+            data: {
+              actorUserId: auth.user.id,
+              action: "platform.business.updated",
+              targetType: "business",
+              targetId: business.id,
+              scopeType: "business",
+              cityId: business.city.id,
+              businessId: business.id,
+              metadataJson: {
+                citySlug: business.city.slug,
+                previousSlug: business.slug,
+                nextSlug: hasOwn(parsed.data, "slug")
+                  ? slugify(parsed.data.slug ?? business.slug)
+                  : business.slug,
+                fields: Object.keys(parsed.data).sort(),
+              },
+            },
+          });
+
+          return tx.business.findUniqueOrThrow({
+            where: {
+              id: business.id,
+            },
+            include: {
+              city: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  status: true,
+                },
+              },
+              template: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                  category: true,
+                  primaryModule: true,
+                  defaultCtaLabel: true,
+                },
+              },
+              modules: {
+                orderBy: {
+                  moduleCode: "asc",
+                },
+                select: {
+                  moduleCode: true,
+                  active: true,
+                },
+              },
+              ownerUser: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  status: true,
+                },
+              },
+            },
+          });
+        });
+
+        return reply.send({
+          status: "ok",
+          item: mapBusiness(updatedBusiness),
         });
       } catch (error) {
         if (isPrismaError(error, "P2002")) {
