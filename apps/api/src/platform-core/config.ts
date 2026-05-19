@@ -357,3 +357,11 @@ export const createAccessGrantSchema = z
       });
     }
   });
+
+export const accessGrantParamsSchema = z.object({
+  accessGrantId: optionalTrimmedString.max(64),
+});
+
+export const updateAccessGrantSchema = z.object({
+  active: z.boolean().optional(),
+});

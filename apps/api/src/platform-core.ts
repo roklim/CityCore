@@ -14,6 +14,7 @@ import {
   type TemplateCategory,
   type TemplateCode,
   type UserStatus,
+  accessGrantParamsSchema,
   createAccessGrantSchema,
   createBusinessSchema,
   createCitySchema,
@@ -28,6 +29,7 @@ import {
   publicListCitiesQuerySchema,
   templateCatalog,
   templateCatalogMap,
+  updateAccessGrantSchema,
   updateBusinessSchema,
   updateCitySchema,
 } from "./platform-core/config.js";
@@ -2529,6 +2531,140 @@ export function registerPlatformCoreRoutes(app: FastifyInstance) {
 
         throw error;
       }
+    },
+  );
+
+  app.patch(
+    "/api/v2/platform-core/access-grants/:accessGrantId",
+    { preHandler: requirePermission("business_users.manage") },
+    async (request, reply) => {
+      const params = parsePayload(accessGrantParamsSchema, request.params);
+      const parsed = parsePayload(updateAccessGrantSchema, request.body);
+
+      if (!params.success) {
+        return reply.code(params.response.statusCode).send(params.response.body);
+      }
+
+      if (!parsed.success) {
+        return reply.code(parsed.response.statusCode).send(parsed.response.body);
+      }
+
+      if (Object.keys(parsed.data).length === 0) {
+        return reply.code(400).send({
+          status: "error",
+          error: "No fields to update",
+        });
+      }
+
+      const auth = getRequestAuth(request);
+      const grant = await prisma.accessGrant.findUnique({
+        where: {
+          id: params.data.accessGrantId,
+        },
+        select: {
+          id: true,
+          active: true,
+          scopeType: true,
+          cityId: true,
+          businessId: true,
+        },
+      });
+
+      if (!grant) {
+        return reply.code(404).send({
+          status: "error",
+          error: "Access grant not found",
+        });
+      }
+
+      const permissionContext =
+        grant.scopeType === "platform"
+          ? { scopeType: "platform" as const }
+          : grant.scopeType === "city"
+            ? { scopeType: "city" as const, cityId: grant.cityId }
+            : {
+                scopeType: "business" as const,
+                cityId: grant.cityId,
+                businessId: grant.businessId,
+              };
+
+      if (!canAccess(auth.activeAccess, "business_users.manage", permissionContext)) {
+        return reply.code(403).send({
+          status: "error",
+          error: "Insufficient permissions",
+        });
+      }
+
+      const updatedGrant = await prisma.$transaction(async (tx) => {
+        const nextGrant = await tx.accessGrant.update({
+          where: {
+            id: grant.id,
+          },
+          data: {
+            ...(hasOwn(parsed.data, "active") ? { active: parsed.data.active } : {}),
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+                status: true,
+                lastLoginAt: true,
+              },
+            },
+            city: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+              },
+            },
+            business: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                city: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    status: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            actorUserId: auth.user.id,
+            action: "platform.access_grant.updated",
+            targetType: "access_grant",
+            targetId: grant.id,
+            scopeType: grant.scopeType,
+            cityId: grant.cityId,
+            businessId: grant.businessId,
+            metadataJson: {
+              previousActive: grant.active,
+              nextActive: parsed.data.active,
+              fields: Object.keys(parsed.data).sort(),
+            },
+          },
+        });
+
+        return nextGrant;
+      });
+
+      return reply.send({
+        status: "ok",
+        item: mapAccessGrant(updatedGrant),
+      });
     },
   );
 }
