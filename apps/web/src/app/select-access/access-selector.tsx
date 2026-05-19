@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import type { AuthAccess } from "../../lib/v2-api";
+import type { AuthAccess } from "../../lib/platform-api";
 import { selectAccessAction, type AdminAuthActionState } from "../admin/actions";
 
 const initialState: AdminAuthActionState = {
@@ -25,7 +25,7 @@ function describeAccess(access: AuthAccess) {
   }
 
   if (access.scopeType === "city") {
-    return `Scope città su ${access.city?.name ?? "città non disponibile"}.`;
+    return `Scope citta su ${access.city?.name ?? "citta non disponibile"}.`;
   }
 
   return `Scope business su ${access.business?.name ?? "business non disponibile"}.`;

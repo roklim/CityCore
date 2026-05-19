@@ -1,12 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import { AdminShell } from "../../../../components/admin-shell";
 import {
-  fetchV2Api,
+  fetchPlatformApi,
   type PlatformBusinessesResponse,
   type PlatformBusiness,
-  V2ApiError,
-} from "../../../../lib/v2-api";
-import { getWebSession } from "../../../../lib/v2-session";
+  PlatformApiError,
+} from "../../../../lib/platform-api";
+import { getWebSession } from "../../../../lib/web-session";
 
 export const metadata = {
   title: "Business Admin",
@@ -36,7 +36,7 @@ async function loadBusiness(
   token: string,
 ): Promise<PlatformBusiness | null> {
   try {
-    const response = await fetchV2Api<PlatformBusinessesResponse>(
+    const response = await fetchPlatformApi<PlatformBusinessesResponse>(
       `/api/v2/platform-core/businesses?citySlug=${encodeURIComponent(citySlug)}&limit=100`,
       {
         token,
@@ -46,7 +46,7 @@ async function loadBusiness(
 
     return response.items.find((item) => item.slug === businessSlug) ?? null;
   } catch (error) {
-    if (error instanceof V2ApiError && error.status === 404) {
+    if (error instanceof PlatformApiError && error.status === 404) {
       return null;
     }
 

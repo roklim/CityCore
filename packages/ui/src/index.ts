@@ -39,7 +39,7 @@ export const platformTheme = {
 } as const;
 
 export type ShellSectionId =
-  | "foundation"
+  | "platform_home"
   | "global_admin"
   | "city_marketplace"
   | "business_page"
@@ -48,7 +48,7 @@ export type ShellSectionId =
 
 export const platformShellNavigation = [
   {
-    id: "foundation",
+    id: "platform_home",
     href: "/",
     label: "Platform Home",
     meta: "Ingresso city-first",

@@ -11,7 +11,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(16),
-  WORKER_NAME: z.string().min(1).default("platform-v2-worker"),
+  WORKER_NAME: z.string().min(1).default("citycore-worker"),
 });
 
 export const env = envSchema.parse(process.env);

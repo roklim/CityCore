@@ -84,7 +84,7 @@ const cityProfiles: Record<string, Omit<PublicCityProfile, "slug">> = {
     region: "Sandbox",
     claim: "Ambiente demo, ma con struttura da prodotto vero.",
     shortPitch:
-      "Usa questa citta per verificare il linguaggio della V2 pubblica senza ricadere in verticali troppo stretti.",
+      "Usa questa citta per verificare il linguaggio pubblico della piattaforma senza ricadere in verticali troppo stretti.",
     neighborhoods: ["North Block", "Old Town", "Riverside", "Station Quarter"],
     quickFilters: ["directory", "catalog", "booking", "events"],
     featuredModules: ["directory", "catalog", "events"],
@@ -378,12 +378,12 @@ export function getCityProfile(citySlug: string): PublicCityProfile {
         openNowLabel: "Disponibile oggi",
         heroTitle: "Un business pubblico deve spiegarsi in pochi secondi.",
         heroDescription:
-          "Questa struttura mostra come la V2 puo presentare un'attivita in modo chiaro, ordinato e utile.",
+          "Questa struttura mostra come la piattaforma puo presentare un'attivita in modo chiaro, ordinato e utile.",
         highlights: ["CTA chiara", "Hero leggibile", "Blocchi mobile-first"],
         serviceMoments: ["Scelta rapida", "Telefono", "Percorso diretto"],
         faq: [
           {
-            question: "Perche questa pagina e diversa dal cantiere precedente?",
+            question: "Perche questa pagina e diversa dai vecchi prototipi?",
             answer: "Perche parla il linguaggio dell'utente, non quello della vecchia roadmap tecnica.",
           },
           {
@@ -432,7 +432,7 @@ export function getBusinessProfile(citySlug: string, businessSlug: string) {
       {
         question: "La pagina e pronta anche se i dati pubblici sono pochi?",
         answer:
-          "Si, la struttura e progettata per reggere anche prima del collegamento completo ai dati pubblici V2.",
+          "Si, la struttura e progettata per reggere anche prima del collegamento completo ai dati pubblici.",
       },
       {
         question: "Che tipo di modulo puo ospitare?",

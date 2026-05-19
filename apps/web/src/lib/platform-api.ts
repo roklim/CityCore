@@ -1,10 +1,10 @@
-export class V2ApiError extends Error {
+export class PlatformApiError extends Error {
   status: number;
   details?: unknown;
 
   constructor(message: string, status: number, details?: unknown) {
     super(message);
-    this.name = "V2ApiError";
+    this.name = "PlatformApiError";
     this.status = status;
     this.details = details;
   }
@@ -352,13 +352,13 @@ function getApiBaseUrl() {
   const value = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 
   if (!value) {
-    throw new Error("NEXT_PUBLIC_API_BASE_URL is required for the V2 web app.");
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is required for the CityCore web app.");
   }
 
   return value.replace(/\/+$/, "");
 }
 
-export async function fetchV2Api<TResponse>(
+export async function fetchPlatformApi<TResponse>(
   path: string,
   { method = "GET", token, body, cache = "no-store" }: FetchOptions = {},
 ) {
@@ -384,9 +384,9 @@ export async function fetchV2Api<TResponse>(
       "error" in responseBody &&
       typeof responseBody.error === "string"
         ? responseBody.error
-        : `V2 API request failed with status ${response.status}`;
+        : `Platform API request failed with status ${response.status}`;
 
-    throw new V2ApiError(message, response.status, responseBody);
+    throw new PlatformApiError(message, response.status, responseBody);
   }
 
   return responseBody as TResponse;

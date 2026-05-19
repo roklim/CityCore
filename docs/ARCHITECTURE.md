@@ -94,7 +94,7 @@ Admin:
 - `/select-access`
 - `/:citySlug/:businessSlug/admin`
 
-API:
+API, mantenute sotto un namespace HTTP versionato:
 
 - `/health`
 - `/api/v2`
@@ -153,4 +153,4 @@ Deve restare:
 - `city layer`
 - `business layer`
 - `module scaffold`
-- `guided builder foundation`
+- `guided builder scaffold`

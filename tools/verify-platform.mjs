@@ -5,7 +5,7 @@ const root = process.cwd();
 const prismaSchema = "packages/database/prisma/schema.prisma";
 const localDatabaseUrl =
   process.env.DATABASE_URL ??
-  "postgresql://postgres:postgres@localhost:5432/platform_v2?schema=public";
+  "postgresql://postgres:postgres@localhost:5432/citycore?schema=public";
 const runtimePorts = {
   api: 4100,
   web: 3102,
@@ -14,7 +14,7 @@ const runtimePorts = {
 const checks = [];
 
 function log(message) {
-  console.log(`[foundation] ${message}`);
+  console.log(`[verify-platform] ${message}`);
 }
 
 function record(name, ok, details = "") {
@@ -85,8 +85,8 @@ function assertFiles(paths) {
 
 function verifyDockerCompose() {
   const { stdout } = run("docker", ["compose", "ps"], { capture: true });
-  const hasPostgres = stdout.includes("platform-v2-postgres");
-  const hasRedis = stdout.includes("platform-v2-redis");
+  const hasPostgres = stdout.includes("citycore-postgres");
+  const hasRedis = stdout.includes("citycore-redis");
   const healthyServices = (stdout.match(/\(healthy\)/g) ?? []).length;
 
   if (!hasPostgres || !hasRedis) {
@@ -94,7 +94,7 @@ function verifyDockerCompose() {
   }
 
   if (healthyServices < 2) {
-    throw new Error("Postgres and Redis must both be healthy before Foundation verification.");
+    throw new Error("Postgres and Redis must both be healthy before platform verification.");
   }
 
   return "Postgres and Redis are running and healthy";
@@ -197,7 +197,7 @@ async function verifyWorkerRuntime() {
       DATABASE_URL: localDatabaseUrl,
       REDIS_URL: process.env.REDIS_URL ?? "redis://localhost:6379",
       AUTH_SECRET: process.env.AUTH_SECRET ?? "development-auth-secret-change-before-staging",
-      WORKER_NAME: "platform-v2-worker-foundation-verify",
+      WORKER_NAME: "citycore-worker-platform-verify",
     },
   });
 
@@ -273,7 +273,7 @@ await runCheck("F1-06 env templates", () =>
   assertFiles(["apps/web/.env.example", "apps/api/.env.example", "apps/worker/.env.example"]),
 );
 
-await runCheck("F1-08 UI foundation files", () =>
+await runCheck("UI shell files", () =>
   assertFiles([
     "apps/web/src/app/layout.tsx",
     "apps/web/src/app/globals.css",
@@ -325,17 +325,17 @@ await runCheck("F1-07 API runtime health", verifyApiRuntime);
 await runCheck("F1-07 web runtime health", verifyWebRuntime);
 await runCheck("F1-07 worker runtime boot", verifyWorkerRuntime);
 
-await runCheck("F1-11 CI workflow", () => assertFiles([".github/workflows/v2-foundation.yml"]));
-await runCheck("F1-12 README bootstrap", () => assertFiles(["README.md"]));
-await runCheck("F1-13 staging shape", () =>
-  assertFiles(["docs/V2_STAGING_RUNBOOK.md", "render.v2.yaml", ".github/workflows/v2-staging.yml"]),
+await runCheck("CI workflow", () => assertFiles([".github/workflows/platform-quality.yml"]));
+await runCheck("README bootstrap", () => assertFiles(["README.md"]));
+await runCheck("staging shape", () =>
+  assertFiles(["docs/STAGING_RUNBOOK.md", "render.staging.yaml", ".github/workflows/staging-deploy.yml"]),
 );
 
 const failed = checks.filter((check) => !check.ok);
 
 if (failed.length > 0) {
-  console.error(`\nFoundation verification failed: ${failed.length} check(s) failed.`);
+  console.error(`\nPlatform verification failed: ${failed.length} check(s) failed.`);
   process.exit(1);
 }
 
-console.log("\nFoundation verification passed.");
+console.log("\nPlatform verification passed.");

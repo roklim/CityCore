@@ -1,15 +1,15 @@
 import { buildBusinessPath, buildCityPath } from "@platform/shared";
 import { MODULE_DEFINITIONS } from "@platform/templates";
 import {
-  fetchV2Api,
+  fetchPlatformApi,
   type PublicBusinessResponse,
   type PublicBusinessesResponse,
   type PublicCityResponse,
   type PublicCitiesResponse,
   type PublicPlatformBusiness,
   type PublicPlatformCity,
-  V2ApiError,
-} from "./v2-api";
+  PlatformApiError,
+} from "./platform-api";
 import {
   getBusinessProfile,
   getCityProfile,
@@ -363,8 +363,8 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
 
   try {
     const [citiesResponse, businessesResponse] = await Promise.all([
-      fetchV2Api<PublicCitiesResponse>("/api/v2/public/cities?limit=6"),
-      fetchV2Api<PublicBusinessesResponse>("/api/v2/public/businesses?limit=6"),
+      fetchPlatformApi<PublicCitiesResponse>("/api/v2/public/cities?limit=6"),
+      fetchPlatformApi<PublicBusinessesResponse>("/api/v2/public/businesses?limit=6"),
     ]);
 
     const featuredCities =
@@ -399,8 +399,10 @@ export async function getPublicCitySurfaceData(
 
   try {
     const [cityResponse, businessesResponse] = await Promise.all([
-      fetchV2Api<PublicCityResponse>(`/api/v2/public/cities/${citySlug}`),
-      fetchV2Api<PublicBusinessesResponse>(`/api/v2/public/cities/${citySlug}/businesses?limit=12`),
+      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${citySlug}`),
+      fetchPlatformApi<PublicBusinessesResponse>(
+        `/api/v2/public/cities/${citySlug}/businesses?limit=12`,
+      ),
     ]);
 
     return {
@@ -413,7 +415,7 @@ export async function getPublicCitySurfaceData(
       live: true,
     };
   } catch (error) {
-    if (error instanceof V2ApiError && error.status === 404) {
+    if (error instanceof PlatformApiError && error.status === 404) {
       return null;
     }
 
@@ -446,8 +448,8 @@ export async function getPublicBusinessSurfaceData(
 
   try {
     const [cityResponse, businessResponse] = await Promise.all([
-      fetchV2Api<PublicCityResponse>(`/api/v2/public/cities/${citySlug}`),
-      fetchV2Api<PublicBusinessResponse>(
+      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${citySlug}`),
+      fetchPlatformApi<PublicBusinessResponse>(
         `/api/v2/public/cities/${citySlug}/businesses/${businessSlug}`,
       ),
     ]);
@@ -466,7 +468,7 @@ export async function getPublicBusinessSurfaceData(
       live: true,
     };
   } catch (error) {
-    if (error instanceof V2ApiError && error.status === 404) {
+    if (error instanceof PlatformApiError && error.status === 404) {
       return null;
     }
 

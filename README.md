@@ -51,7 +51,7 @@ Superfici admin:
 - `/select-access`
 - `/:citySlug/:businessSlug/admin`
 
-API principali:
+API principali, mantenute sotto un namespace HTTP versionato:
 
 - `/health`
 - `/api/v2`
@@ -110,7 +110,7 @@ npm run db:generate
 - `AGENTS.md`
 - `docs/MASTER_PRODUCT_MAP.md`
 - `docs/ARCHITECTURE.md`
-- `docs/V2_PLATFORM_BLUEPRINT.md`
+- `docs/PLATFORM_BLUEPRINT.md`
 - `docs/REPO_WORKFLOW.md`
 - `docs/CITY_REGISTRY.md`
-- `docs/V2_STAGING_RUNBOOK.md`
+- `docs/STAGING_RUNBOOK.md`

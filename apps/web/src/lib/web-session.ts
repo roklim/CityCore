@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
-import { fetchV2Api, type AuthSessionResponse, V2ApiError } from "./v2-api";
+import { fetchPlatformApi, type AuthSessionResponse, PlatformApiError } from "./platform-api";
 
-const sessionCookieName = "platform_v2_session";
+const sessionCookieName = "citycore_session";
 
 export type WebSession = {
   token: string;
@@ -34,7 +34,7 @@ export async function getWebSession(): Promise<WebSession | null> {
   }
 
   try {
-    const auth = await fetchV2Api<AuthSessionResponse>("/api/v2/auth/me", {
+    const auth = await fetchPlatformApi<AuthSessionResponse>("/api/v2/auth/me", {
       token,
       cache: "no-store",
     });
@@ -44,7 +44,7 @@ export async function getWebSession(): Promise<WebSession | null> {
       auth,
     };
   } catch (error) {
-    if (error instanceof V2ApiError && error.status === 401) {
+    if (error instanceof PlatformApiError && error.status === 401) {
       return null;
     }
 

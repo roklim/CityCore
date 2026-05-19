@@ -1,8 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { clearSessionToken, setSessionToken } from "../../lib/v2-session";
-import { fetchV2Api, type AuthSessionResponse, V2ApiError } from "../../lib/v2-api";
+import { clearSessionToken, setSessionToken } from "../../lib/web-session";
+import {
+  fetchPlatformApi,
+  type AuthSessionResponse,
+  PlatformApiError,
+} from "../../lib/platform-api";
 
 export type AdminAuthActionState = {
   error: string | null;
@@ -14,7 +18,7 @@ function readField(formData: FormData, key: string) {
 }
 
 function mapApiError(error: unknown, fallback: string) {
-  if (error instanceof V2ApiError) {
+  if (error instanceof PlatformApiError) {
     return error.message;
   }
 
@@ -40,7 +44,7 @@ export async function bootstrapAdminAction(
   }
 
   try {
-    const response = await fetchV2Api<AuthSessionResponse>("/api/v2/auth/bootstrap-admin", {
+    const response = await fetchPlatformApi<AuthSessionResponse>("/api/v2/auth/bootstrap-admin", {
       method: "POST",
       body: {
         email,
@@ -79,7 +83,7 @@ export async function loginAction(
   }
 
   try {
-    const response = await fetchV2Api<AuthSessionResponse>("/api/v2/auth/login", {
+    const response = await fetchPlatformApi<AuthSessionResponse>("/api/v2/auth/login", {
       method: "POST",
       body: {
         email,
@@ -123,7 +127,7 @@ export async function selectAccessAction(
       };
     }
 
-    const response = await fetchV2Api<AuthSessionResponse>("/api/v2/auth/select-access", {
+    const response = await fetchPlatformApi<AuthSessionResponse>("/api/v2/auth/select-access", {
       method: "POST",
       token,
       body: {

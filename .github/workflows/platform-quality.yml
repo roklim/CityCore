@@ -1,4 +1,4 @@
-name: V2 Foundation
+name: Platform Quality
 
 on:
   push:
@@ -16,13 +16,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: platform_v2
+          POSTGRES_DB: citycore
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d platform_v2"
+          --health-cmd "pg_isready -U postgres -d citycore"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -37,9 +37,9 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/platform_v2?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/citycore?schema=public
       REDIS_URL: redis://localhost:6379
-      AUTH_SECRET: ci-foundation-auth-secret-change-before-prod
+      AUTH_SECRET: ci-citycore-auth-secret-change-before-prod
       NEXT_PUBLIC_API_BASE_URL: http://localhost:4100
 
     steps:

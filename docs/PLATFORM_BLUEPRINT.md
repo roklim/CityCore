@@ -1,4 +1,4 @@
-# V2 Platform Blueprint
+# Platform Blueprint
 
 ## Obiettivo
 
@@ -10,9 +10,9 @@ Stabilizzare CityCore come base di piattaforma:
 - `module scaffold`
 - `guided builder`
 
-## V2 Reale Del Repo
+## Shape Reale Del Repo
 
-La V2 che questo repo deve rappresentare non e un verticale completo. E una
+Questo repo non rappresenta un verticale completo. E una
 base pronta ad accogliere verticali futuri senza piegare tutta l'architettura a
 uno solo.
 

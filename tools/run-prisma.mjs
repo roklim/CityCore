@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
 const prismaSchema = "packages/database/prisma/schema.prisma";
-const localDatabaseUrl = "postgresql://postgres:postgres@localhost:5432/platform_v2?schema=public";
+const localDatabaseUrl = "postgresql://postgres:postgres@localhost:5432/citycore?schema=public";
 const command = process.execPath;
 const prismaCliEntry = resolve(process.cwd(), "node_modules/prisma/build/index.js");
 const prismaArgs = [prismaCliEntry, ...process.argv.slice(2), "--schema", prismaSchema];
@@ -53,7 +53,7 @@ if (prismaBinaryFetchFailed) {
     [
       "",
       "[run-prisma] Prisma non riesce a scaricare i binary engine richiesti.",
-      "[run-prisma] In questo ambiente il problema e di rete, non dello schema V2.",
+      "[run-prisma] In questo ambiente il problema e di rete, non dello schema CityCore.",
       "[run-prisma] Riprova con rete disponibile oppure con i binary Prisma gia in cache locale.",
       "",
     ].join("\n"),

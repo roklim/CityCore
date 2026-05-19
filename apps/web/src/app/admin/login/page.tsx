@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "../../../components/admin-shell";
-import { getWebSession } from "../../../lib/v2-session";
+import { getWebSession } from "../../../lib/web-session";
 import { AdminLoginForms } from "./auth-forms";
 
 export const metadata = {
@@ -17,12 +17,12 @@ export default async function AdminLoginPage() {
   return (
     <AdminShell
       activeSection="global_admin"
-      eyebrow="V2 auth"
-      title="Autenticazione reale per la console V2"
+      eyebrow="Admin auth"
+      title="Autenticazione per la console CityCore"
       description="Questo ingresso parla solo con `apps/api`: bootstrap del primo global admin, login con AccessGrant e sessione web salvata via cookie `httpOnly`."
       routePath="/admin/login"
       statusLabel="Auth"
-      asideTitle="Slice attivo"
+      asideTitle="Scope attivo"
       asideText="Il primo obiettivo e usare un accesso pulito e affidabile: sessioni web reali, permessi espliciti e redirect coerenti con ruolo e scope."
     >
       <section className="section-header">
@@ -30,7 +30,7 @@ export default async function AdminLoginPage() {
         <h2>La console puo autenticarsi direttamente sulla piattaforma attiva</h2>
         <p>
           Se non esiste ancora un `global_admin`, usa il bootstrap una sola volta. Altrimenti entra
-          con le credenziali gia presenti nel data model V2.
+          con le credenziali gia presenti nel data model della piattaforma.
         </p>
       </section>
 

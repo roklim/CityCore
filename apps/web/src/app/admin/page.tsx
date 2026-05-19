@@ -3,14 +3,14 @@ import { AdminShell } from "../../components/admin-shell";
 import { logoutAction } from "./actions";
 import {
   type PlatformAuditLog,
-  fetchV2Api,
+  fetchPlatformApi,
   type PlatformAccessGrant,
   type PlatformBusiness,
   type PlatformCity,
   type PlatformCityRegistryEntry,
-  V2ApiError,
-} from "../../lib/v2-api";
-import { getWebSession } from "../../lib/v2-session";
+  PlatformApiError,
+} from "../../lib/platform-api";
+import { getWebSession } from "../../lib/web-session";
 
 export const metadata = {
   title: "Global Admin",
@@ -31,7 +31,7 @@ async function loadCollection<TItem>(request: Promise<{ status: string; items: T
     } satisfies CollectionState<TItem>;
   } catch (error) {
     const message =
-      error instanceof V2ApiError
+      error instanceof PlatformApiError
         ? error.message
         : error instanceof Error
           ? error.message
@@ -73,31 +73,31 @@ export default async function AdminPage() {
 
   const [registry, cities, businesses, accessGrants, auditLogs] = await Promise.all([
     loadCollection<PlatformCityRegistryEntry>(
-      fetchV2Api("/api/v2/platform-core/city-registry?limit=8", {
+      fetchPlatformApi("/api/v2/platform-core/city-registry?limit=8", {
         token: session.token,
         cache: "no-store",
       }),
     ),
     loadCollection<PlatformCity>(
-      fetchV2Api("/api/v2/platform-core/cities?limit=8", {
+      fetchPlatformApi("/api/v2/platform-core/cities?limit=8", {
         token: session.token,
         cache: "no-store",
       }),
     ),
     loadCollection<PlatformBusiness>(
-      fetchV2Api("/api/v2/platform-core/businesses?limit=8", {
+      fetchPlatformApi("/api/v2/platform-core/businesses?limit=8", {
         token: session.token,
         cache: "no-store",
       }),
     ),
     loadCollection<PlatformAccessGrant>(
-      fetchV2Api("/api/v2/platform-core/access-grants?limit=8", {
+      fetchPlatformApi("/api/v2/platform-core/access-grants?limit=8", {
         token: session.token,
         cache: "no-store",
       }),
     ),
     loadCollection<PlatformAuditLog>(
-      fetchV2Api("/api/v2/platform-core/audit-logs?limit=8", {
+      fetchPlatformApi("/api/v2/platform-core/audit-logs?limit=8", {
         token: session.token,
         cache: "no-store",
       }),
@@ -141,7 +141,7 @@ export default async function AdminPage() {
         <article className="metric-card">
           <span>Registry collegate</span>
           <strong>{totalRegistryLinked}</strong>
-          <p>{registry.error ? registry.error : "Comuni registry gia agganciati a una city V2."}</p>
+          <p>{registry.error ? registry.error : "Comuni registry gia agganciati a una city attiva."}</p>
         </article>
 
         <article className="metric-card">
@@ -153,7 +153,7 @@ export default async function AdminPage() {
         <article className="metric-card">
           <span>Business in bozza</span>
           <strong>{totalDraftBusinesses}</strong>
-          <p>{businesses.error ? businesses.error : "Tenant reali dal Platform Core V2."}</p>
+          <p>{businesses.error ? businesses.error : "Tenant reali letti dal core di piattaforma."}</p>
         </article>
 
         <article className="metric-card">
@@ -170,7 +170,7 @@ export default async function AdminPage() {
           <div className="card-heading">
             <div>
               <p className="section-label">City Registry</p>
-              <h2>Fonte municipale V2 per onboarding</h2>
+              <h2>Fonte municipale per onboarding</h2>
             </div>
             <code>/api/v2/platform-core/city-registry</code>
           </div>
@@ -188,7 +188,7 @@ export default async function AdminPage() {
                     <th>Comune</th>
                     <th>Provincia</th>
                     <th>Regione</th>
-                    <th>Link V2</th>
+                    <th>Link city</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -217,7 +217,7 @@ export default async function AdminPage() {
           <div className="card-heading">
             <div>
               <p className="section-label">Cities</p>
-              <h2>Mercati letti dalla V2 API</h2>
+              <h2>Citta lette dalla API di piattaforma</h2>
             </div>
             <code>/api/v2/platform-core/cities</code>
           </div>
@@ -353,7 +353,7 @@ export default async function AdminPage() {
         <div className="card-heading">
           <div>
             <p className="section-label">Audit Logs</p>
-            <h2>Tracciabilita V2 delle azioni sensibili</h2>
+            <h2>Tracciabilita delle azioni sensibili</h2>
           </div>
           <code>/api/v2/platform-core/audit-logs</code>
         </div>

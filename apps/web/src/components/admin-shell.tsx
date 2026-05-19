@@ -24,9 +24,9 @@ export function AdminShell({
   title,
   description,
   routePath,
-  statusLabel = "Foundation",
-  asideTitle = "Milestone corrente",
-  asideText = "Stiamo trasformando il cantiere V2 in una base operativa stabile, leggibile e pronta a crescere.",
+  statusLabel = "Platform",
+  asideTitle = "Context",
+  asideText = "Questa shell tiene allineati ruoli, superfici e moduli senza dipendere da un verticale specifico.",
   children,
 }: AdminShellProps) {
   return (

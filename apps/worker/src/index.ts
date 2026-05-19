@@ -1,7 +1,7 @@
 import { env } from "./config.js";
 
-const workerServiceName = "platform-v2-worker";
-const releaseLabel = "foundation";
+const workerServiceName = "citycore-worker";
+const releaseLabel = "core";
 
 const bootPayload = {
   event: "boot.ready",

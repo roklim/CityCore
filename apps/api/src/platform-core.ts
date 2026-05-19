@@ -863,7 +863,7 @@ export function registerPlatformCoreRoutes(app: FastifyInstance) {
     { preHandler: requirePermission("platform.read") },
     async () => ({
       status: "ok",
-      milestone: "platform-core",
+      surface: "platform-core",
       capabilities: {
         templates: ["/api/v2/platform-core/templates"],
         cityRegistry: ["/api/v2/platform-core/city-registry"],

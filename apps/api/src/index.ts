@@ -5,7 +5,7 @@ async function start() {
   const app = buildApp();
   const bootContext = {
     event: "boot.start",
-    service: "platform-api-v2",
+    service: "citycore-api",
     env: env.NODE_ENV,
     port: env.PORT,
     pid: process.pid,

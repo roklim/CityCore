@@ -8,8 +8,8 @@ import { prisma } from "./database.js";
 import { registerPlatformCoreRoutes } from "./platform-core.js";
 
 const bootedAt = new Date().toISOString();
-const apiServiceName = "platform-api-v2";
-const releaseLabel = "citycore-core";
+const apiServiceName = "citycore-api";
+const releaseLabel = "core";
 const dependencyTimeoutMs = 1_500;
 
 type DependencyCheck = {

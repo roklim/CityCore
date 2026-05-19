@@ -47,7 +47,7 @@ NEXT_PUBLIC_API_BASE_URL=https://citycore-api-staging.onrender.com
 
 ## API And Worker Services
 
-Use `render.v2.yaml` as the staging blueprint, or mirror the same settings in
+Use `render.staging.yaml` as the staging blueprint, or mirror the same settings in
 another backend host.
 
 API service:
@@ -84,24 +84,24 @@ WORKER_NAME=citycore-worker-staging
 
 ## GitHub Secrets
 
-The manual staging workflow `.github/workflows/v2-staging.yml` expects:
+The manual staging workflow `.github/workflows/staging-deploy.yml` expects:
 
 ```txt
-V2_STAGING_DATABASE_URL
+STAGING_DATABASE_URL
 VERCEL_TOKEN
 VERCEL_ORG_ID
-VERCEL_V2_WEB_STAGING_PROJECT_ID
-RENDER_V2_API_STAGING_DEPLOY_HOOK_URL
-RENDER_V2_WORKER_STAGING_DEPLOY_HOOK_URL
+VERCEL_WEB_STAGING_PROJECT_ID
+RENDER_API_STAGING_DEPLOY_HOOK_URL
+RENDER_WORKER_STAGING_DEPLOY_HOOK_URL
 ```
 
 The Render deploy hook secrets are optional when deploying API/worker manually.
 
 ## Deploy Flow
 
-1. Push the branch and wait for `V2 Foundation` CI to pass.
+1. Push the branch and wait for `Platform Quality` CI to pass.
 2. Confirm staging Postgres and Redis are available.
-3. Run `V2 Staging Deploy` from GitHub Actions.
+3. Run `Staging Deploy` from GitHub Actions.
 4. The workflow runs `npm run check`.
 5. The workflow applies Prisma migrations to staging.
 6. The workflow deploys the web project to Vercel.
@@ -141,7 +141,7 @@ Expected result:
 
 ## Admin Seed
 
-If staging is empty and you need a real V2 platform login without using the
+If staging is empty and you need a real platform login without using the
 bootstrap flow manually, create a global admin directly against the target
 database:
 

@@ -46,7 +46,7 @@ Documenti canonici:
 - `README.md`
 - `docs/MASTER_PRODUCT_MAP.md`
 - `docs/ARCHITECTURE.md`
-- `docs/V2_PLATFORM_BLUEPRINT.md`
+- `docs/PLATFORM_BLUEPRINT.md`
 - `docs/REPO_WORKFLOW.md`
 
 ## Comandi Canonici

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "../../components/admin-shell";
-import { getWebSession } from "../../lib/v2-session";
+import { getWebSession } from "../../lib/web-session";
 import { AccessSelector } from "./access-selector";
 
 export const metadata = {

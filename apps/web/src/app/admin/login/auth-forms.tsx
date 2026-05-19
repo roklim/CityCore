@@ -35,7 +35,7 @@ export function AdminLoginForms() {
       <section className="auth-card">
         <div className="auth-card-copy">
           <p className="section-label">Bootstrap</p>
-          <h2>Primo global admin V2</h2>
+          <h2>Primo global admin</h2>
           <p>
             Usa questa sezione solo al primo avvio della piattaforma, quando non esiste ancora
             nessun `global_admin` salvato in Postgres.
@@ -59,14 +59,14 @@ export function AdminLoginForms() {
           </label>
 
           <ErrorBanner state={bootstrapState} />
-          <SubmitButton label="Crea admin V2" pendingLabel="Creazione in corso..." />
+          <SubmitButton label="Crea admin" pendingLabel="Creazione in corso..." />
         </form>
       </section>
 
       <section className="auth-card">
         <div className="auth-card-copy">
           <p className="section-label">Login</p>
-          <h2>Accedi alla console V2</h2>
+          <h2>Accedi alla console</h2>
           <p>
             La sessione web viene salvata in un cookie `httpOnly` gestito da Next. L'accesso resta
             tutto dentro la piattaforma attiva.
@@ -81,7 +81,7 @@ export function AdminLoginForms() {
 
           <label className="field">
             <span>Password</span>
-            <input name="password" type="password" placeholder="La tua password V2" required />
+            <input name="password" type="password" placeholder="La tua password" required />
           </label>
 
           <ErrorBanner state={loginState} />

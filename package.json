@@ -29,9 +29,9 @@
     "build:worker": "npm --workspace @platform/worker run build",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"tools/**/*.mjs\" \"package.json\" \"tsconfig.base.json\" \"compose.yml\" \"render.yaml\" \"render.v2.yaml\" \".github/**/*.yml\" \"docs/**/*.md\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"tools/**/*.mjs\" \"package.json\" \"tsconfig.base.json\" \"compose.yml\" \"render.yaml\" \"render.staging.yaml\" \".github/**/*.yml\" \"docs/**/*.md\"",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run build",
-    "verify:foundation": "node tools/verify-foundation.mjs"
+    "verify:platform": "node tools/verify-platform.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

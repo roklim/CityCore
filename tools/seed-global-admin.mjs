@@ -17,7 +17,7 @@ Env opzionali:
   GLOBAL_ADMIN_PHONE=...
 
 Comportamento:
-  - crea o aggiorna un utente V2 attivo
+  - crea o aggiorna un utente attivo
   - garantisce un access grant \`global_admin\` su scope \`platform\`
   - lascia invariati eventuali scope city/business gia presenti
   - scrive un audit log tecnico di seed

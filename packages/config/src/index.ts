@@ -1,6 +1,6 @@
 export const platformConfig = {
   appName: "CityCore",
-  releaseLabel: "foundation",
+  releaseLabel: "core",
   defaultLocale: "it-IT",
   defaultTimeZone: "Europe/Rome",
   services: {
