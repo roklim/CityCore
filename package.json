@@ -21,9 +21,7 @@
     "db:migrate:status": "node tools/run-prisma.mjs migrate status",
     "db:migrate:deploy": "node tools/run-prisma.mjs migrate deploy",
     "db:generate": "node tools/run-prisma.mjs generate",
-    "seed:ordering": "node tools/seed-ordering-smoke.mjs",
     "seed:global-admin": "node tools/seed-global-admin.mjs",
-    "help:seed:ordering": "node tools/seed-ordering-smoke.mjs --help",
     "help:seed:global-admin": "node tools/seed-global-admin.mjs --help",
     "build": "npm run build:web && npm run build:api && npm run build:worker",
     "build:web": "npm --workspace @platform/web run build",
@@ -31,11 +29,9 @@
     "build:worker": "npm --workspace @platform/worker run build",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"tools/**/*.mjs\" \"package.json\" \"tsconfig.base.json\" \"compose.yml\" \"render.yaml\" \"render.v2.yaml\" \".github/**/*.yml\" \"docs/V2_FOUNDATION_TASKS.md\" \"docs/V2_STAGING_RUNBOOK.md\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"tools/**/*.mjs\" \"package.json\" \"tsconfig.base.json\" \"compose.yml\" \"render.yaml\" \"render.v2.yaml\" \".github/**/*.yml\" \"docs/**/*.md\"",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run build",
-    "verify:foundation": "node tools/verify-foundation.mjs",
-    "verify:ordering": "node tools/ordering-smoke.mjs",
-    "help:verify:ordering": "node tools/ordering-smoke.mjs --help"
+    "verify:foundation": "node tools/verify-foundation.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

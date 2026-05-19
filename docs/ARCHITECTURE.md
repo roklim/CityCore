@@ -1,108 +1,156 @@
-# Architecture Notes
+# Architecture
 
-## Current Shape
+## Direzione
 
-CityCore is a monorepo with three active applications:
+CityCore e una piattaforma `city-first` modulare. Il core del repo e costruito
+per gestire:
 
-- `apps/web`: Next.js App Router for public and admin surfaces
-- `apps/api`: Fastify + Prisma + Postgres
-- `apps/worker`: background jobs
+- piattaforma
+- citta
+- business
+- moduli attivabili
+- pagine pubbliche
+- shell admin
 
-Shared logic lives in `packages/*`.
+La gerarchia canonica e:
 
-## Core Platform Entities
+1. `Platform`
+2. `City`
+3. `Business`
+4. `Module`
+5. `Page`
+6. `Section`
 
-Primary platform entities:
+## Strati Del Sistema
 
-- `CityRegistry`
-- `City`
-- `Business`
-- `AccessGrant`
-- `User`
+### Platform Core
 
-Operational entities currently active:
+Responsabilita:
 
-- `MenuItem`
-- `Order`
-- `Customer`
-- `Coupon`
-- `StoreSettings`
+- autenticazione
+- ruoli e permessi
+- access grants
+- registry citta
+- gestione city e business
+- catalogo moduli
+- catalogo template
+- audit log
 
-The platform is city-first: a public city is the discovery layer, while a
-business is the operational tenant.
+Tecnologia:
 
-## Routing Model
+- `apps/api`
+- `packages/database`
+- `packages/domain`
+- `packages/permissions`
+- `packages/templates`
 
-Public routes:
+### Public Web
 
-```txt
-/                         global home
-/:citySlug                city surface
-/:citySlug/:businessSlug  business surface
-/:citySlug/:businessSlug/ordine/:id
-```
+Responsabilita:
 
-Admin routes:
+- home piattaforma
+- home citta
+- pagina business
+- fallback editoriali coerenti con il runtime
 
-```txt
-/admin/login
-/admin
-/select-access
-/:citySlug/:businessSlug/admin
-```
+Tecnologia:
 
-## Tenant Resolution
+- `apps/web`
+- `packages/ui`
+- `packages/shared`
 
-Requests are resolved through explicit platform context:
+### Admin Surfaces
 
-1. authenticated access grants
-2. `X-City-Slug` + `X-Business-Slug` headers when needed
-3. city-first route parameters
+Responsabilita:
 
-The active system does not rely on a single default business route.
+- global admin
+- scelta accesso
+- business admin generico
 
-## Deployment Model
+Le shell admin devono restare coerenti con scope e permessi, non con un singolo
+verticale operativo.
 
-Recommended deployment:
+### Worker
 
-- one Vercel project for `apps/web`
-- one app host service for `apps/api`
-- one worker service for `apps/worker`
-- one Postgres database
-- one Redis instance
+`apps/worker` resta uno scaffold per automazioni future di piattaforma:
 
-Minimum required public env:
+- sync
+- notifiche
+- cleanup
+- workflow asincroni
 
-```env
-NEXT_PUBLIC_API_BASE_URL=https://citycore-api-staging.onrender.com
-```
+## Routing Canonico
 
-## Surface Split
+Pubblico:
 
-Public and admin surfaces share a base system, but serve different jobs:
+- `/`
+- `/:citySlug`
+- `/:citySlug/:businessSlug`
 
-- public: discovery, trust, action
-- admin: operations, control, auditability
+Admin:
 
-They should look related, not identical.
+- `/admin/login`
+- `/admin`
+- `/select-access`
+- `/:citySlug/:businessSlug/admin`
 
-## Current Direction
+API:
 
-The active UI direction is:
+- `/health`
+- `/api/v2`
+- `/api/v2/auth/*`
+- `/api/v2/platform-core/*`
+- `/api/v2/public/*`
 
-- charcoal foundation
-- restrained yellow accent
-- mobile-first hierarchy
-- city-first public discovery
-- business pages that convert quickly
+## Moduli
 
-## Non-Goals
+Il repo conserva un catalogo moduli standardizzati.
 
-This repo does not currently model:
+Moduli core/scaffold:
 
-- billing as a finished product surface
-- advanced onboarding flows
-- fully internationalized public copy
-- a production-grade worker job catalogue
+- `content`
+- `catalog`
+- `forms_inbox`
+- `booking`
+- `hospitality`
+- `listings`
+- `directory`
+- `events`
 
-Those remain future slices on top of the current V2 platform.
+Questi moduli oggi vanno letti come struttura e lessico condiviso del sistema,
+non come verticali completi gia implementati.
+
+## Template
+
+I template restano un livello di orchestrazione sopra i moduli:
+
+- suggeriscono un modulo principale
+- definiscono campi di onboarding
+- definiscono i section type disponibili
+
+Il builder deve essere guidato. La liberta riguarda:
+
+- sequenza sezioni
+- contenuti
+- CTA
+- colori
+- media
+
+La logica dei moduli non deve essere riscritta da ogni tenant.
+
+## Confini
+
+CityCore non deve tornare a essere:
+
+- mono-verticale
+- cucito su un solo caso d'uso operativo
+- un marketplace specialistico travestito da piattaforma
+- un pannello locale modellato attorno a un unico flusso
+
+Deve restare:
+
+- `platform core`
+- `city layer`
+- `business layer`
+- `module scaffold`
+- `guided builder foundation`

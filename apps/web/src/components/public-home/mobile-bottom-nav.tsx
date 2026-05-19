@@ -1,7 +1,7 @@
 import Link from "next/link";
 import styles from "./context-gateway.module.css";
 
-function BottomIcon({ icon }: { icon: "home" | "search" | "orders" | "saved" | "profile" }) {
+function BottomIcon({ icon }: { icon: "home" | "search" | "places" | "saved" | "profile" }) {
   switch (icon) {
     case "home":
       return (
@@ -17,11 +17,11 @@ function BottomIcon({ icon }: { icon: "home" | "search" | "orders" | "saved" | "
           <path d="m16 16 5 5" />
         </svg>
       );
-    case "orders":
+    case "places":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 7h12l-1 14H7L6 7Z" />
-          <path d="M9 7a3 3 0 0 1 6 0" />
+          <path d="M5 20V8l4-3 4 3v12" />
+          <path d="M13 20V5l3-2 3 2v15" />
         </svg>
       );
     case "saved":
@@ -46,7 +46,7 @@ export function MobileBottomNav({ citySlug }: { citySlug: string }) {
   const items = [
     { label: "Home", href: `/${citySlug}`, icon: "home" as const, active: true },
     { label: "Cerca", href: `/${citySlug}`, icon: "search" as const, active: false },
-    { label: "Ordini", href: `/${citySlug}`, icon: "orders" as const, active: false },
+    { label: "Attivita", href: `/${citySlug}`, icon: "places" as const, active: false },
     { label: "Salvati", href: `/${citySlug}`, icon: "saved" as const, active: false },
     { label: "Profilo", href: "/admin/login", icon: "profile" as const, active: false },
   ];

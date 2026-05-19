@@ -11,16 +11,13 @@ const permissionCodes = [
   "businesses.read",
   "businesses.manage",
   "business_users.manage",
-  "orders.read",
-  "orders.manage",
-  "menu.manage",
-  "availability.manage",
-  "appointments.manage",
-  "stays.manage",
-  "mobility.manage",
-  "rentals.manage",
-  "customers.read",
+  "content.manage",
+  "catalog.manage",
+  "modules.manage",
+  "profile.manage",
   "settings.manage",
+  "events.manage",
+  "listings.manage",
 ] as const;
 
 export type AccessRole = "global_admin" | "city_admin" | "local_admin" | "staff";
@@ -142,29 +139,24 @@ const rolePermissions: Record<AccessRole, readonly PlatformPermission[]> = {
     "businesses.read",
     "businesses.manage",
     "business_users.manage",
+    "events.manage",
+    "listings.manage",
   ],
   local_admin: [
     "businesses.read",
-    "orders.read",
-    "orders.manage",
-    "menu.manage",
-    "availability.manage",
-    "appointments.manage",
-    "stays.manage",
-    "mobility.manage",
-    "rentals.manage",
-    "customers.read",
+    "content.manage",
+    "catalog.manage",
+    "modules.manage",
     "settings.manage",
+    "events.manage",
+    "listings.manage",
   ],
   staff: [
     "businesses.read",
-    "orders.read",
-    "orders.manage",
-    "availability.manage",
-    "appointments.manage",
-    "stays.manage",
-    "mobility.manage",
-    "rentals.manage",
+    "content.manage",
+    "catalog.manage",
+    "events.manage",
+    "listings.manage",
   ],
 };
 
@@ -240,13 +232,7 @@ function resolveRedirectForAccess(access: SessionAccess) {
     return "/admin";
   }
 
-  const basePath = `/${access.city.slug}/${access.business.slug}/admin`;
-
-  if (access.role === "staff") {
-    return `${basePath}?section=orders`;
-  }
-
-  return basePath;
+  return `/${access.city.slug}/${access.business.slug}/admin`;
 }
 
 function buildDefaultAccess(accesses: SessionAccess[], activeAccessId?: string) {

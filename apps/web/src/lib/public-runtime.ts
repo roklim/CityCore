@@ -6,7 +6,6 @@ import {
   type PublicBusinessesResponse,
   type PublicCityResponse,
   type PublicCitiesResponse,
-  type PublicOrderingMenuResponse,
   type PublicPlatformBusiness,
   type PublicPlatformCity,
   V2ApiError,
@@ -86,45 +85,6 @@ export type PublicBusinessSurfaceData = {
   live: boolean;
 };
 
-export type PublicOrderingMenuPreview = {
-  settings: {
-    openingHours: string | null;
-    openingDays: string[];
-    openingTimeStart: string | null;
-    openingTimeEnd: string | null;
-    deliveryCost: number;
-    minimumOrder: number;
-    slotMinutes: number;
-    maxOrdersPerSlot: number;
-    minPreparationMinutes: number;
-    closedDates: string[];
-    specialDates: Array<{
-      date: string;
-      closed: boolean;
-      openingTimeStart: string | null;
-      openingTimeEnd: string | null;
-      slotMinutes: number | null;
-      maxOrdersPerSlot: number | null;
-      minPreparationMinutes: number | null;
-    }>;
-    serviceZones: string[];
-    customerMessage: string | null;
-  };
-  categories: Array<{
-    id: string;
-    name: string;
-    slug: string;
-    items: Array<{
-      id: string;
-      name: string;
-      description: string | null;
-      price: number | null;
-      emoji: string | null;
-      featured: boolean;
-    }>;
-  }>;
-};
-
 function getModuleLabel(code: string) {
   return MODULE_DEFINITIONS.find((entry) => entry.code === code)?.label ?? code;
 }
@@ -145,16 +105,16 @@ function pickBusinessModuleCode(business: PublicPlatformBusiness) {
 
 function buildModuleEta(moduleCode: string) {
   switch (moduleCode) {
-    case "ordering":
-      return "Ordine rapido";
-    case "appointments":
-      return "Prenotazione in pochi tap";
-    case "stays":
-      return "Richiesta disponibilita";
-    case "mobility_request":
-      return "Risposta rapida";
-    case "rentals":
-      return "Noleggio guidato";
+    case "booking":
+      return "Disponibilita guidata";
+    case "hospitality":
+      return "Richiesta soggiorno";
+    case "listings":
+      return "Vetrina aggiornata";
+    case "events":
+      return "Agenda locale";
+    case "catalog":
+      return "Esplora il catalogo";
     default:
       return "Contatto diretto";
   }
@@ -209,17 +169,14 @@ function buildContactAction(business: PublicPlatformBusiness): ActionLink {
 
 function buildPrimaryAction(business: PublicPlatformBusiness): ActionLink {
   const contactAction = buildContactAction(business);
+  const businessHref = buildBusinessPath({
+    citySlug: business.city.slug,
+    businessSlug: business.slug,
+  });
 
   return {
     label: business.template.defaultCtaLabel ?? "Scopri di piu",
-    href:
-      contactAction.href ===
-      buildBusinessPath({
-        citySlug: business.city.slug,
-        businessSlug: business.slug,
-      })
-        ? "#primary-action"
-        : contactAction.href,
+    href: contactAction.href === businessHref ? "#primary-action" : contactAction.href,
   };
 }
 
@@ -272,7 +229,7 @@ function mergeRuntimeBusinessWithEditorial(
     moduleCode: moduleCode as PublicBusinessProfile["moduleCode"],
     categoryLabel: business.template.name,
     summary: truncateText(summary, 180),
-    area: business.addressLine1 ?? business.city.name,
+    area: business.addressLine1 ?? editorialBusiness.area,
     eta: buildModuleEta(moduleCode),
     vibe: business.publicTitle ?? editorialBusiness.vibe,
     trustLine: truncateText(trustLine, 180),
@@ -290,7 +247,7 @@ function mergeRuntimeBusinessWithEditorial(
     serviceMoments:
       editorialBusiness.serviceMoments.length > 0
         ? editorialBusiness.serviceMoments
-        : ["Scelta rapida", "Telefono", "Percorso diretto"],
+        : ["Scelta rapida", "Contatto", "Prossimo passo chiaro"],
     faq:
       editorialBusiness.faq.length > 0
         ? editorialBusiness.faq
@@ -534,78 +491,5 @@ export async function getPublicBusinessSurfaceData(
       degraded: true,
       live: false,
     };
-  }
-}
-
-export async function getPublicOrderingMenuPreview(citySlug: string, businessSlug: string) {
-  try {
-    const response = await fetchV2Api<PublicOrderingMenuResponse>(
-      `/api/v2/ordering/public/${citySlug}/${businessSlug}/menu`,
-    );
-
-    const categories = response.categories
-      .filter((category) => category.items.length > 0)
-      .slice(0, 3)
-      .map((category) => ({
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        items: category.items.slice(0, 4).map((item) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          price: item.price,
-          emoji: item.emoji,
-          featured: item.featured,
-        })),
-      }));
-
-    return {
-      settings: response.settings,
-      categories,
-      live: true,
-    } satisfies PublicOrderingMenuPreview & { live: boolean };
-  } catch (error) {
-    if (error instanceof V2ApiError && error.status === 404) {
-      return {
-        settings: {
-          openingHours: null,
-          openingDays: [],
-          openingTimeStart: null,
-          openingTimeEnd: null,
-          deliveryCost: 0,
-          minimumOrder: 0,
-          slotMinutes: 15,
-          maxOrdersPerSlot: 4,
-          minPreparationMinutes: 30,
-          closedDates: [],
-          specialDates: [],
-          serviceZones: [],
-          customerMessage: null,
-        },
-        categories: [],
-        live: false,
-      } satisfies PublicOrderingMenuPreview & { live: boolean };
-    }
-
-    return {
-      settings: {
-        openingHours: null,
-        openingDays: [],
-        openingTimeStart: null,
-        openingTimeEnd: null,
-        deliveryCost: 0,
-        minimumOrder: 0,
-        slotMinutes: 15,
-        maxOrdersPerSlot: 4,
-        minPreparationMinutes: 30,
-        closedDates: [],
-        specialDates: [],
-        serviceZones: [],
-        customerMessage: null,
-      },
-      categories: [],
-      live: false,
-    } satisfies PublicOrderingMenuPreview & { live: boolean };
   }
 }

@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('invited', 'active', 'disabled');
 
@@ -11,10 +14,10 @@ CREATE TYPE "ScopeType" AS ENUM ('platform', 'city', 'business');
 CREATE TYPE "CityStatus" AS ENUM ('active', 'coming_soon', 'disabled');
 
 -- CreateEnum
-CREATE TYPE "TemplateCategory" AS ENUM ('food', 'service', 'stays', 'mobility', 'rental', 'custom');
+CREATE TYPE "TemplateCategory" AS ENUM ('commerce', 'service', 'hospitality', 'editorial', 'custom');
 
 -- CreateEnum
-CREATE TYPE "ModuleCode" AS ENUM ('ordering', 'appointments', 'stays', 'mobility_request', 'rentals', 'directory', 'events');
+CREATE TYPE "ModuleCode" AS ENUM ('content', 'catalog', 'forms_inbox', 'booking', 'hospitality', 'listings', 'directory', 'events');
 
 -- CreateEnum
 CREATE TYPE "BusinessStatus" AS ENUM ('draft', 'active', 'paused', 'disabled');
@@ -180,6 +183,42 @@ CREATE TABLE "business_modules" (
 );
 
 -- CreateTable
+CREATE TABLE "business_pages" (
+    "id" TEXT NOT NULL,
+    "business_id" TEXT NOT NULL,
+    "slug" VARCHAR(160) NOT NULL,
+    "title" VARCHAR(160) NOT NULL,
+    "description" TEXT,
+    "page_type" VARCHAR(80) NOT NULL DEFAULT 'standard',
+    "is_homepage" BOOLEAN NOT NULL DEFAULT false,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "sort_order" INTEGER NOT NULL DEFAULT 0,
+    "seo_title" TEXT,
+    "seo_description" TEXT,
+    "settings_json" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "business_pages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "business_sections" (
+    "id" TEXT NOT NULL,
+    "page_id" TEXT NOT NULL,
+    "code" VARCHAR(120) NOT NULL,
+    "title" VARCHAR(160),
+    "body" TEXT,
+    "data_json" JSONB,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "sort_order" INTEGER NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "business_sections_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "audit_logs" (
     "id" TEXT NOT NULL,
     "actor_user_id" TEXT,
@@ -264,6 +303,15 @@ CREATE INDEX "business_modules_module_code_active_idx" ON "business_modules"("mo
 CREATE UNIQUE INDEX "business_modules_business_id_module_code_key" ON "business_modules"("business_id", "module_code");
 
 -- CreateIndex
+CREATE INDEX "business_pages_business_id_sort_order_idx" ON "business_pages"("business_id", "sort_order");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "business_pages_business_id_slug_key" ON "business_pages"("business_id", "slug");
+
+-- CreateIndex
+CREATE INDEX "business_sections_page_id_sort_order_idx" ON "business_sections"("page_id", "sort_order");
+
+-- CreateIndex
 CREATE INDEX "audit_logs_actor_user_id_idx" ON "audit_logs"("actor_user_id");
 
 -- CreateIndex
@@ -303,6 +351,12 @@ ALTER TABLE "businesses" ADD CONSTRAINT "businesses_owner_user_id_fkey" FOREIGN 
 ALTER TABLE "business_modules" ADD CONSTRAINT "business_modules_business_id_fkey" FOREIGN KEY ("business_id") REFERENCES "businesses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "business_pages" ADD CONSTRAINT "business_pages_business_id_fkey" FOREIGN KEY ("business_id") REFERENCES "businesses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "business_sections" ADD CONSTRAINT "business_sections_page_id_fkey" FOREIGN KEY ("page_id") REFERENCES "business_pages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_user_id_fkey" FOREIGN KEY ("actor_user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -310,3 +364,4 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_city_id_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_business_id_fkey" FOREIGN KEY ("business_id") REFERENCES "businesses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+

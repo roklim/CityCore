@@ -47,45 +47,15 @@ type BusinessPageContent = {
   activeModuleBody: string;
   chooseWhy: string;
   rightMoments: string;
-  menuPreview: string;
-  menuLive: string;
-  menuFallback: string;
-  menuBody: string;
-  propositionsSuffix: string;
-  catalogBuilding: string;
-  catalogBuildingTitle: string;
-  catalogBuildingBody: string;
+  publicShape: string;
+  publicShapeTitle: string;
+  publicShapeBody: string;
   practicalInfo: string;
   practicalTitle: string;
   practicalBody: string;
   backToCity: string;
   faq: string;
   faqTitle: string;
-};
-
-type TrackingPageContent = {
-  toneLabel: string;
-  title: string;
-  description: string;
-  statusNow: string;
-  pickupLabel: string;
-  totalLabel: string;
-  source: string;
-  payment: string;
-  customer: string;
-  quickActions: string;
-  quickTitle: string;
-  quickBody: string;
-  backToMenu: string;
-  refreshStatus: string;
-  noNotes: string;
-  pending: string;
-  confirmed: string;
-  preparing: string;
-  ready: string;
-  completed: string;
-  cancelled: string;
-  unknownPickup: string;
 };
 
 type AccountPageContent = {
@@ -98,10 +68,10 @@ type AccountPageContent = {
 
 export function buildAccountPageContent(): AccountPageContent {
   return {
-    toneLabel: "Area cliente",
-    title: "Uno spazio personale pulito, leggibile e separato dal banco operativo.",
+    toneLabel: "Area account",
+    title: "Uno spazio personale pulito, leggibile e separato dalla console operativa.",
     description:
-      "Richieste, ordini, preferiti e storico cliente devono restare semplici da capire anche da telefono, senza assorbire il tono della console admin.",
+      "Richieste, preferiti, recapiti e storico dei contatti devono restare semplici da capire anche da telefono.",
     accentNote:
       "L'utente finale non deve mai sentirsi dentro un pannello travestito: tutto deve sembrare utile, calmo e immediato.",
     cards: [
@@ -110,12 +80,12 @@ export function buildAccountPageContent(): AccountPageContent {
         body: "Dati account, preferenze, recapiti e consensi in un unico punto chiaro.",
       },
       {
-        title: "Storico",
-        body: "Ordini, richieste e prenotazioni organizzati per citta e attivita.",
+        title: "Attivita seguite",
+        body: "Business, richieste e pagine salvate organizzati per citta e contesto.",
       },
       {
         title: "Prossimi strumenti",
-        body: "Preferiti, wallet locale, promemoria e identita cross-city senza rumore.",
+        body: "Preferiti, notifiche locali e identita cross-city senza rumore.",
       },
     ],
   };
@@ -125,7 +95,7 @@ export function buildCityPageContent(city: PublicCitySurfaceData["city"]): CityP
   return {
     toneLabel: "Piazza locale",
     title: `${city.name}: attivita locali facili da capire e ancora piu facili da scegliere.`,
-    accentNote: `${city.claim} Il punto non e riempire la pagina di box, ma orientare l'utente verso l'attivita giusta con piu fiducia e meno attrito.`,
+    accentNote: `${city.claim} Il punto non e riempire la pagina di box, ma orientare l'utente verso il contesto giusto con piu fiducia e meno attrito.`,
     degradedLabel: "Catalogo in riallineamento",
     degradedTitle: "La pagina resta leggibile anche mentre i dati live si completano.",
     degradedBody:
@@ -133,7 +103,7 @@ export function buildCityPageContent(city: PublicCitySurfaceData["city"]): CityP
     quickView: "Vista rapida",
     quickTitle: "Le categorie che contano davvero in questa citta",
     quickBody:
-      "Da mobile devono essere immediate: attivita, richieste, prenotazioni, soggiorni o servizi locali, senza costringere l'utente a interpretare troppo.",
+      "Da mobile devono essere immediate: business, richieste, soggiorni, eventi e servizi locali, senza costringere l'utente a interpretare troppo.",
     neighborhoodsLabel: "Contesto",
     neighborhoodsTitle: "Orientamento locale, non catalogo astratto",
     neighborhoodsBody:
@@ -144,12 +114,12 @@ export function buildCityPageContent(city: PublicCitySurfaceData["city"]): CityP
         ? `${city.businessCount} attivita pubbliche gia leggibili in CityCore`
         : "Una pagina citta pronta ad accogliere le prime attivita attive",
     featuredBody:
-      "Ogni scheda deve comunicare identita, contesto e promessa operativa in pochi secondi, soprattutto da telefono.",
+      "Ogni scheda deve comunicare identita, contesto e prossimo passo in pochi secondi, soprattutto da telefono.",
     openBusiness: "Apri attivita",
     noBusinessesLabel: "Catalogo in partenza",
     noBusinessesTitle: "La citta e pronta, il catalogo pubblico si sta popolando.",
     noBusinessesBody:
-      "La surface CityCore regge bene anche la fase iniziale: contesto chiaro, tono credibile e spazio per accogliere nuovi business senza rumore o scorciatoie provvisorie.",
+      "La surface CityCore regge bene anche la fase iniziale: contesto chiaro, tono credibile e spazio per accogliere nuovi business senza scorciatoie provvisorie.",
     requestedLabel: "Azioni rapide",
     requestedTitle: "Le cose che devono restare immediate",
     openingLabel: "Crescita ordinata",
@@ -158,16 +128,16 @@ export function buildCityPageContent(city: PublicCitySurfaceData["city"]): CityP
       "La griglia puo ospitare nuovi business, ma la gerarchia resta semplice: card chiare, filtri utili e nessuna sidebar inutile.",
     actionRules: [
       {
-        title: "Ordina o prenota.",
-        body: "La CTA principale deve stare sopra la piega.",
+        title: "Capisci subito il contesto.",
+        body: "La citta deve dichiarare tono, categorie e perche vale la pena restare.",
       },
       {
-        title: "Capisci tempi e zona.",
-        body: "Prima dei dettagli lunghi e prima delle FAQ.",
+        title: "Apri poche opzioni chiare.",
+        body: "Meglio poche scelte leggibili che una directory infinita senza gerarchia.",
       },
       {
-        title: "Confronta poche opzioni.",
-        body: "Meglio tre scelte chiare che venti senza gerarchia.",
+        title: "Passa all'azione senza attrito.",
+        body: "Ogni card deve portare a un business o a un contenuto davvero utile.",
       },
     ],
     zone: "Zona",
@@ -199,50 +169,15 @@ export function buildBusinessPageContent(
       "La CTA primaria non vive in un box secondario: sta al centro del percorso e rende il passo successivo chiaro gia nei primi secondi.",
     chooseWhy: "Perche scegliere questa attivita",
     rightMoments: "Momenti giusti",
-    menuPreview: "Preview menu",
-    menuLive: "Il menu pubblico e gia collegato alla piattaforma attiva",
-    menuFallback: "La struttura menu e pronta ad agganciarsi ai dati live",
-    menuBody:
-      "Il catalogo ordering parte da categorie e proposte leggibili, pensate per vivere bene da mobile e convertire senza attrito.",
-    propositionsSuffix: "proposte gia esposte dalla nuova API ordering.",
-    catalogBuilding: "Catalogo in costruzione",
-    catalogBuildingTitle: "Il business usa ordering, ma il menu V2 non e ancora popolato.",
-    catalogBuildingBody:
-      "La surface pubblica e gia pronta: appena arrivano le prime voci, il menu entra in pagina senza cambiare esperienza o tono.",
+    publicShape: "Forma pubblica",
+    publicShapeTitle: "Un sito business leggibile, modulare e pronto a crescere",
+    publicShapeBody:
+      "Ogni business unisce identita, contenuti, contatti e modulo principale dentro una struttura coerente con la citta e con il core piattaforma.",
     practicalInfo: "Informazioni pratiche",
     practicalTitle: "Dove si trova, come contattarla e cosa aspettarti",
     practicalBody: `${business.addressLine}. Contatto principale ${business.secondaryAction.label}. La pagina mette questi dati prima del rumore e li rende leggibili in un solo scroll.`,
     backToCity: `Torna a ${cityName}`,
     faq: "FAQ",
     faqTitle: "Risposte veloci, senza costringere l'utente a cercare altrove",
-  };
-}
-
-export function buildTrackingPageContent(businessName: string): TrackingPageContent {
-  return {
-    toneLabel: "Tracking ordine",
-    title: `${businessName}: stato ordine sempre leggibile`,
-    description:
-      "Il tracking pubblico e gia collegato al flusso ordering attivo. Il cliente puo seguire il proprio ordine in modo chiaro, stabile e leggibile.",
-    statusNow: "Stato attuale",
-    pickupLabel: "Ritiro previsto",
-    totalLabel: "Totale",
-    source: "Fonte",
-    payment: "Pagamento",
-    customer: "Cliente",
-    quickActions: "Azioni rapide",
-    quickTitle: "Tracking chiaro, in un solo percorso",
-    quickBody:
-      "Puoi aggiornare la pagina per vedere eventuali cambi di stato o tornare al menu del business senza interrompere il flusso.",
-    backToMenu: "Torna al menu",
-    refreshStatus: "Aggiorna stato",
-    noNotes: "Nessuna nota per questo articolo.",
-    pending: "In attesa",
-    confirmed: "Confermato",
-    preparing: "In preparazione",
-    ready: "Pronto",
-    completed: "Completato",
-    cancelled: "Annullato",
-    unknownPickup: "Da confermare",
   };
 }

@@ -5,12 +5,11 @@ import Fastify from "fastify";
 import { registerAuthRoutes } from "./auth-routes.js";
 import { env } from "./config.js";
 import { prisma } from "./database.js";
-import { registerOrderingRoutes } from "./ordering.js";
 import { registerPlatformCoreRoutes } from "./platform-core.js";
 
 const bootedAt = new Date().toISOString();
 const apiServiceName = "platform-api-v2";
-const releaseLabel = "foundation";
+const releaseLabel = "citycore-core";
 const dependencyTimeoutMs = 1_500;
 
 type DependencyCheck = {
@@ -129,7 +128,6 @@ export function buildApp() {
   void app.register(helmet);
   registerAuthRoutes(app);
   registerPlatformCoreRoutes(app);
-  registerOrderingRoutes(app);
 
   app.get("/health", async (_request, reply) => {
     const [database, redis] = await Promise.all([checkDatabase(), checkRedis()]);
@@ -163,13 +161,12 @@ export function buildApp() {
     status: "ok",
     area: "platform-core",
     message:
-      "Foundation chiusa. Platform Core aperto con templates, cities, businesses e surface pubblica read-only.",
+      "CityCore core attivo. Platform, city, business, auth e surface pubbliche generiche sono servite dalla piattaforma.",
     routes: {
       health: "/health",
       publicCatalog: "/api/v2/public",
       publicCities: "/api/v2/public/cities",
       publicBusinesses: "/api/v2/public/businesses",
-      ordering: "/api/v2/ordering",
       authBootstrap: "/api/v2/auth/bootstrap-admin",
       authLogin: "/api/v2/auth/login",
       authMe: "/api/v2/auth/me",
@@ -178,6 +175,8 @@ export function buildApp() {
       templates: "/api/v2/platform-core/templates",
       cities: "/api/v2/platform-core/cities",
       businesses: "/api/v2/platform-core/businesses",
+      accessGrants: "/api/v2/platform-core/access-grants",
+      auditLogs: "/api/v2/platform-core/audit-logs",
     },
   }));
 

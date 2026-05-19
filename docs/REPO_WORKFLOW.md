@@ -1,39 +1,36 @@
-# Repository Workflow
+# Repo Workflow
 
 ## Scopo
 
-Tenere il monorepo leggibile per sviluppo umano e lavoro automatizzato, evitando file fuori posto e ambiguita sui punti di modifica.
+Mantenere il repo leggibile, buildabile e coerente con la direzione CityCore.
 
-## Dove Va Cosa
+## Ordine Di Lavoro
 
-- `apps/`: applicazioni deployabili
-- `packages/`: codice condiviso tra piu app
-- `docs/`: documentazione di prodotto, architettura, roadmap, runbook
-- `tools/`: script operativi, seed, migrazioni assistite, smoke test
-- `docs/assets/`: asset statici che devono restare versionati nella documentazione
+1. controlla `git status --short`
+2. identifica il workspace toccato
+3. leggi solo i file necessari
+4. aggiorna i documenti canonici se cambia il modello
+5. valida prima il workspace toccato, poi i check globali
 
-## Cosa Non Deve Restare Versionato
+## Regole Di Struttura
 
-- screenshot locali
-- log di sviluppo
-- output temporanei di browser automation
-- file di appoggio creati per debugging rapido
+- `apps/*` per applicazioni
+- `packages/*` per moduli condivisi
+- `docs/*` per documentazione durevole
+- `tools/*` per script operativi
 
-Convenzione pratica:
+## Regole Di Prodotto
 
-- usa `.tmp/` per esperimenti locali multi-file
-- usa `tmp-*` al root solo per output rapidi e usa e getta
+- il repo non deve tornare mono-verticale
+- il core deve restare city-first e modulare
+- i verticali futuri devono nascere come moduli ufficiali o scaffold separati
+- copy, script e superfici non devono raccontare il prodotto come software specialistico per un solo settore
 
-## Regole Operative
+## Checklist Prima Di Chiudere
 
-- evita nuovi file liberi al root: se non e un manifest o una configurazione condivisa, mettilo altrove
-- se aggiungi un nuovo package o una nuova app, aggiorna subito `README.md` e `AGENTS.md`
-- se un file supera chiaramente la dimensione gestibile, preferisci estrarre moduli per dominio invece di aggiungere altra logica inline
-- se un comando serve al team in modo ricorrente, esponilo in `package.json` invece di lasciarlo solo nella cronologia shell
-
-## Checklist Quando Si Aggiunge Qualcosa
-
-1. esiste gia una cartella coerente dove metterlo?
-2. serve davvero versionarlo?
-3. un altro sviluppatore capirebbe dove trovarlo senza spiegazioni extra?
-4. la nuova convenzione e documentata nei file guida del repo?
+- la narrativa docs e coerente
+- non esistono file morti o import pendenti
+- il workspace toccato compila
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`

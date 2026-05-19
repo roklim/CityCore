@@ -4,17 +4,16 @@ import styles from "./context-gateway.module.css";
 export type QuickCategory = {
   title: string;
   href: string;
-  icon: "restaurant" | "stay" | "services" | "booking" | "shop";
+  icon: "business" | "hospitality" | "services" | "events" | "directory";
 };
 
 function CategoryIcon({ icon }: { icon: QuickCategory["icon"] }) {
   switch (icon) {
-    case "restaurant":
+    case "business":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M7 3v8M11 3v8M7 7h4M9 11v10" />
-          <path d="M16 3v18" />
-          <path d="M19 4c1.2 2.4 1.2 5.4 0 7.8-.5 1-1.2 1.6-2 1.9" />
+          <path d="M4 20V8l4-3 4 3v12" />
+          <path d="M12 20V5l4-2 4 2v15" />
         </svg>
       );
     case "services":
@@ -24,21 +23,21 @@ function CategoryIcon({ icon }: { icon: QuickCategory["icon"] }) {
           <path d="M6 18l-2 2" />
         </svg>
       );
-    case "shop":
+    case "directory":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 10h14l-1 11H6L5 10Z" />
-          <path d="M8 10V8a4 4 0 0 1 8 0v2" />
+          <path d="M5 5h14v14H5z" />
+          <path d="M9 9h6M9 13h6M9 17h4" />
         </svg>
       );
-    case "booking":
+    case "events":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="4" y="5" width="16" height="15" rx="3" />
           <path d="M8 3v4M16 3v4M4 10h16" />
         </svg>
       );
-    case "stay":
+    case "hospitality":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 20V9" />

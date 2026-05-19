@@ -14,37 +14,31 @@ export const SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "cancell
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 export const TEMPLATE_CATEGORIES = [
-  "food",
+  "commerce",
   "service",
-  "stays",
-  "mobility",
-  "rental",
+  "hospitality",
+  "editorial",
   "custom",
 ] as const;
 export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 
 export const MODULE_CODES = [
-  "ordering",
-  "appointments",
-  "stays",
-  "mobility_request",
-  "rentals",
+  "content",
+  "catalog",
+  "forms_inbox",
+  "booking",
+  "hospitality",
+  "listings",
   "directory",
   "events",
 ] as const;
 export type ModuleCode = (typeof MODULE_CODES)[number];
 
 export const TEMPLATE_CODES = [
-  "pizzeria",
-  "restaurant",
-  "sushi",
-  "barber",
-  "beauty",
-  "bnb",
-  "hotel_light",
-  "taxi_ncc",
-  "rental",
-  "service",
+  "local_business",
+  "studio_service",
+  "hospitality",
+  "events_listings",
   "custom",
 ] as const;
 export type TemplateCode = (typeof TEMPLATE_CODES)[number];

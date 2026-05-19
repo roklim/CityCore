@@ -10,13 +10,13 @@ import {
 export type PublicSectionType =
   | "hero"
   | "highlights"
-  | "faq"
-  | "menu_preview"
+  | "story"
   | "services"
-  | "rooms"
-  | "transport"
   | "gallery"
-  | "contact";
+  | "faq"
+  | "contact"
+  | "featured"
+  | "form";
 
 export type ModuleDefinition = {
   code: ModuleCode;
@@ -27,46 +27,52 @@ export type ModuleDefinition = {
 
 export const MODULE_DEFINITIONS = [
   {
-    code: "ordering",
-    label: "Ordering",
-    summary: "Menu, carrello, ordini e disponibilita per food e retail leggero.",
-    operationalFocus: "Menu, ordini e operativita banco.",
+    code: "content",
+    label: "Content",
+    summary: "Pagine, blocchi editoriali e storytelling pubblico.",
+    operationalFocus: "Presentazione e contenuti.",
   },
   {
-    code: "appointments",
-    label: "Appointments",
-    summary: "Servizi, slot, disponibilita e prenotazioni per barber e beauty.",
-    operationalFocus: "Calendario, servizi e staff.",
+    code: "catalog",
+    label: "Catalog",
+    summary: "Schede, servizi, collezioni e offerte strutturate.",
+    operationalFocus: "Catalogo e informazioni consultabili.",
   },
   {
-    code: "stays",
-    label: "Stays",
-    summary: "Camere, disponibilita e richieste soggiorno per strutture light.",
-    operationalFocus: "Camere, richieste e calendario soggiorni.",
+    code: "forms_inbox",
+    label: "Forms Inbox",
+    summary: "Richieste, lead, preventivi e contatti in ingresso.",
+    operationalFocus: "Inbound e gestione richieste.",
   },
   {
-    code: "mobility_request",
-    label: "Mobility Request",
-    summary: "Richieste trasporto locali con gestione manuale o semi-manuale.",
-    operationalFocus: "Richieste corsa e area servita.",
+    code: "booking",
+    label: "Booking",
+    summary: "Prenotazioni e disponibilita come scaffold di modulo.",
+    operationalFocus: "Agenda, slot e conferme.",
   },
   {
-    code: "rentals",
-    label: "Rentals",
-    summary: "Noleggi locali per bici, attrezzatura e item prenotabili.",
-    operationalFocus: "Stock, durata e restituzioni.",
+    code: "hospitality",
+    label: "Hospitality",
+    summary: "Disponibilita soggiorni e richieste struttura come scaffold.",
+    operationalFocus: "Permanenze, camere e richieste.",
+  },
+  {
+    code: "listings",
+    label: "Listings",
+    summary: "Annunci, vetrine e pubblicazioni locali.",
+    operationalFocus: "Pubblicazione e stato listing.",
   },
   {
     code: "directory",
     label: "Directory",
-    summary: "Visibilita e discovery locale senza flusso transazionale pesante.",
-    operationalFocus: "Contenuti pubblici e ranking.",
+    summary: "Discovery locale e presenza pubblica non transazionale.",
+    operationalFocus: "Scheda pubblica e discovery.",
   },
   {
     code: "events",
     label: "Events",
-    summary: "Programmazione eventi e attivazioni territoriali future.",
-    operationalFocus: "Calendario e promozione eventi.",
+    summary: "Programmazione, promozione e agenda territoriale.",
+    operationalFocus: "Calendario e attivazioni.",
   },
 ] as const satisfies readonly ModuleDefinition[];
 
@@ -85,104 +91,44 @@ export type BusinessTemplateDefinition = {
 
 export const BUSINESS_TEMPLATE_DEFINITIONS = [
   {
-    code: "pizzeria",
-    label: "Pizzeria",
-    category: "food",
-    primaryModule: "ordering",
-    defaultCtaLabel: "Ordina ora",
-    summary: "Locale food con menu, disponibilita rapida e carrello.",
-    onboardingFields: ["name", "city", "hours", "menu", "contacts"],
-    sectionTypes: ["hero", "menu_preview", "faq", "gallery", "contact"],
-  },
-  {
-    code: "restaurant",
-    label: "Restaurant",
-    category: "food",
-    primaryModule: "ordering",
-    defaultCtaLabel: "Scopri il menu",
-    summary: "Ristorante con discovery menu, tavolozza visuale e ordering leggero.",
-    onboardingFields: ["name", "city", "hours", "menu", "story"],
-    sectionTypes: ["hero", "highlights", "menu_preview", "gallery", "contact"],
-  },
-  {
-    code: "sushi",
-    label: "Sushi",
-    category: "food",
-    primaryModule: "ordering",
-    defaultCtaLabel: "Ordina sushi",
-    summary: "Verticale food veloce con menu, combo e disponibilita in tempo reale.",
-    onboardingFields: ["name", "city", "hours", "menu", "deliveryArea"],
-    sectionTypes: ["hero", "menu_preview", "faq", "gallery", "contact"],
-  },
-  {
-    code: "barber",
-    label: "Barber",
-    category: "service",
-    primaryModule: "appointments",
-    defaultCtaLabel: "Prenota taglio",
-    summary: "Servizi prenotabili con slot, staff e disponibilita.",
-    onboardingFields: ["name", "city", "hours", "services", "staff"],
-    sectionTypes: ["hero", "services", "faq", "gallery", "contact"],
-  },
-  {
-    code: "beauty",
-    label: "Beauty",
-    category: "service",
-    primaryModule: "appointments",
-    defaultCtaLabel: "Prenota trattamento",
-    summary: "Centro estetico con servizi, durate e agenda appuntamenti.",
-    onboardingFields: ["name", "city", "hours", "services", "staff"],
-    sectionTypes: ["hero", "services", "gallery", "faq", "contact"],
-  },
-  {
-    code: "bnb",
-    label: "B&B",
-    category: "stays",
-    primaryModule: "stays",
-    defaultCtaLabel: "Verifica disponibilita",
-    summary: "Struttura light con camere, regole base e richiesta soggiorno.",
-    onboardingFields: ["name", "city", "rooms", "contacts", "policies"],
-    sectionTypes: ["hero", "rooms", "faq", "gallery", "contact"],
-  },
-  {
-    code: "hotel_light",
-    label: "Hotel Light",
-    category: "stays",
-    primaryModule: "stays",
-    defaultCtaLabel: "Prenota soggiorno",
-    summary: "Struttura ricettiva con camere, disponibilita e richiesta diretta.",
-    onboardingFields: ["name", "city", "rooms", "contacts", "policies"],
-    sectionTypes: ["hero", "highlights", "rooms", "gallery", "contact"],
-  },
-  {
-    code: "taxi_ncc",
-    label: "Taxi / NCC",
-    category: "mobility",
-    primaryModule: "mobility_request",
-    defaultCtaLabel: "Richiedi trasporto",
-    summary: "Modulo richiesta corsa per operatori locali senza dispatch hard realtime.",
-    onboardingFields: ["name", "city", "serviceArea", "hours", "contacts"],
-    sectionTypes: ["hero", "transport", "faq", "contact"],
-  },
-  {
-    code: "rental",
-    label: "Rental",
-    category: "rental",
-    primaryModule: "rentals",
-    defaultCtaLabel: "Prenota noleggio",
-    summary: "Noleggio con item, durata, disponibilita e riconsegna.",
-    onboardingFields: ["name", "city", "inventory", "hours", "contacts"],
+    code: "local_business",
+    label: "Local Business",
+    category: "commerce",
+    primaryModule: "catalog",
+    defaultCtaLabel: "Esplora il business",
+    summary: "Template base per attivita locali con catalogo, contenuti e contatti.",
+    onboardingFields: ["name", "city", "hours", "contacts", "catalog"],
     sectionTypes: ["hero", "highlights", "gallery", "faq", "contact"],
   },
   {
-    code: "service",
-    label: "Service",
+    code: "studio_service",
+    label: "Studio Service",
     category: "service",
-    primaryModule: "directory",
-    defaultCtaLabel: "Contatta attivita",
-    summary: "Template generalista per attivita locali non ancora verticalizzate.",
-    onboardingFields: ["name", "city", "hours", "contacts", "description"],
-    sectionTypes: ["hero", "highlights", "faq", "contact"],
+    primaryModule: "booking",
+    defaultCtaLabel: "Richiedi disponibilita",
+    summary: "Template per professionisti e studi con contenuti, servizi e richieste.",
+    onboardingFields: ["name", "city", "hours", "services", "contacts"],
+    sectionTypes: ["hero", "services", "story", "faq", "contact"],
+  },
+  {
+    code: "hospitality",
+    label: "Hospitality",
+    category: "hospitality",
+    primaryModule: "hospitality",
+    defaultCtaLabel: "Scopri la struttura",
+    summary: "Template per strutture con galleria, informazioni pratiche e richieste.",
+    onboardingFields: ["name", "city", "rooms", "policies", "contacts"],
+    sectionTypes: ["hero", "highlights", "gallery", "faq", "contact"],
+  },
+  {
+    code: "events_listings",
+    label: "Events & Listings",
+    category: "editorial",
+    primaryModule: "listings",
+    defaultCtaLabel: "Apri la vetrina",
+    summary: "Template per annunci, eventi e raccolte locali.",
+    onboardingFields: ["name", "city", "categories", "contacts", "story"],
+    sectionTypes: ["hero", "featured", "highlights", "faq", "contact"],
   },
   {
     code: "custom",
@@ -190,7 +136,7 @@ export const BUSINESS_TEMPLATE_DEFINITIONS = [
     category: "custom",
     primaryModule: "directory",
     defaultCtaLabel: "Scopri di piu",
-    summary: "Base flessibile per onboarding manuale o verticale futuro.",
+    summary: "Base flessibile per onboarding manuale e configurazioni future.",
     onboardingFields: ["name", "city", "contacts", "description"],
     sectionTypes: ["hero", "highlights", "contact"],
   },

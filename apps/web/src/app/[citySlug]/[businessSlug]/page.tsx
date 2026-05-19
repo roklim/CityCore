@@ -1,13 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MODULE_DEFINITIONS } from "@platform/templates";
 import { PublicShell } from "../../../components/public-shell";
 import { buildBusinessPageContent } from "../../../lib/public-content";
-import {
-  getPublicBusinessSurfaceData,
-  getPublicOrderingMenuPreview,
-} from "../../../lib/public-runtime";
-import { OrderingOrderPanel } from "./ordering-order-panel";
+import { getPublicBusinessSurfaceData } from "../../../lib/public-runtime";
 
 type BusinessPageProps = {
   params: Promise<{ citySlug: string; businessSlug: string }>;
@@ -22,16 +17,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
   }
 
   const { business, city, degraded } = surface;
-  const module = MODULE_DEFINITIONS.find((item) => item.code === business.moduleCode);
-  const orderingPreview =
-    business.moduleCode === "ordering"
-      ? await getPublicOrderingMenuPreview(citySlug, businessSlug)
-      : null;
-  const copy = buildBusinessPageContent(
-    business,
-    city.name,
-    business.moduleLabel ?? module?.label ?? business.moduleCode,
-  );
+  const copy = buildBusinessPageContent(business, city.name, business.moduleLabel);
 
   return (
     <PublicShell
@@ -121,67 +107,22 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
           </article>
         </section>
 
-        {business.moduleCode === "ordering" ? (
-          <>
-            <section className="section-header">
-              <p className="section-label">{copy.menuPreview}</p>
-              <h2>{orderingPreview?.live ? copy.menuLive : copy.menuFallback}</h2>
-              <p>{copy.menuBody}</p>
-            </section>
+        <section className="split-callout">
+          <div className="split-callout-copy">
+            <p className="section-label">{copy.publicShape}</p>
+            <h2>{copy.publicShapeTitle}</h2>
+            <p>{copy.publicShapeBody}</p>
+          </div>
 
-            <section className="public-list-grid">
-              {orderingPreview && orderingPreview.categories.length > 0 ? (
-                orderingPreview.categories.map((category) => (
-                  <article className="public-card" key={category.id}>
-                    <div className="card-copy">
-                      <h3>{category.name}</h3>
-                      <p>{`${category.items.length} ${copy.propositionsSuffix}`}</p>
-                    </div>
-
-                    <ul className="detail-list">
-                      {category.items.map((item) => (
-                        <li key={item.id}>
-                          <strong>{item.emoji ? `${item.emoji} ${item.name}` : item.name}</strong>
-                          {item.price != null ? ` - EUR ${item.price.toFixed(2)}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                ))
-              ) : (
-                <article className="spotlight-card">
-                  <p className="section-label">{copy.catalogBuilding}</p>
-                  <h3>{copy.catalogBuildingTitle}</h3>
-                  <p>{copy.catalogBuildingBody}</p>
-                </article>
-              )}
-            </section>
-
-            <OrderingOrderPanel
-              businessName={business.name}
-              businessSlug={businessSlug}
-              categories={orderingPreview?.categories ?? []}
-              citySlug={citySlug}
-              settings={
-                orderingPreview?.settings ?? {
-                  openingHours: null,
-                  openingDays: [],
-                  openingTimeStart: null,
-                  openingTimeEnd: null,
-                  deliveryCost: 0,
-                  minimumOrder: 0,
-                  slotMinutes: 15,
-                  maxOrdersPerSlot: 4,
-                  minPreparationMinutes: 30,
-                  closedDates: [],
-                  specialDates: [],
-                  serviceZones: [],
-                  customerMessage: null,
-                }
-              }
-            />
-          </>
-        ) : null}
+          <div className="split-callout-actions">
+            <a className="cta-button" href={business.primaryAction.href}>
+              {business.primaryAction.label}
+            </a>
+            <a className="text-link" href={business.secondaryAction.href}>
+              {business.secondaryAction.label}
+            </a>
+          </div>
+        </section>
 
         <section className="split-callout">
           <div className="split-callout-copy">

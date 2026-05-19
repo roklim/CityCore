@@ -235,6 +235,31 @@ export type PlatformAuditLog = {
   } | null;
 };
 
+export type PlatformCitiesResponse = {
+  status: "ok";
+  items: PlatformCity[];
+};
+
+export type PlatformCityRegistryResponse = {
+  status: "ok";
+  items: PlatformCityRegistryEntry[];
+};
+
+export type PlatformBusinessesResponse = {
+  status: "ok";
+  items: PlatformBusiness[];
+};
+
+export type PlatformAccessGrantsResponse = {
+  status: "ok";
+  items: PlatformAccessGrant[];
+};
+
+export type PlatformAuditLogsResponse = {
+  status: "ok";
+  items: PlatformAuditLog[];
+};
+
 export type PublicPlatformCity = {
   id: string;
   name: string;
@@ -314,272 +339,6 @@ export type PublicBusinessesResponse = {
 export type PublicBusinessResponse = {
   status: "ok";
   item: PublicPlatformBusiness;
-};
-
-export type PublicOrderingMenuItem = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  price: number | null;
-  compareAtPrice: number | null;
-  available: boolean;
-  featured: boolean;
-  emoji: string | null;
-  imageUrl: string | null;
-  unit: string | null;
-  tags: string[];
-  allergens: string[];
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type PublicOrderingMenuCategory = {
-  id: string;
-  name: string;
-  slug: string;
-  sortOrder: number;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-  items: PublicOrderingMenuItem[];
-};
-
-export type PublicOrderingMenuResponse = {
-  status: "ok";
-  business: {
-    id: string;
-    name: string;
-    slug: string;
-    publicTitle: string | null;
-    publicSubtitle: string | null;
-    publicDescription: string | null;
-    city: {
-      id: string;
-      name: string;
-      slug: string;
-      status: "active" | "coming_soon" | "disabled";
-      active: boolean;
-    };
-    template: {
-      id: string;
-      code: string;
-      name: string;
-      primaryModule: string;
-      defaultCtaLabel: string | null;
-    };
-  };
-  settings: {
-    openingHours: string | null;
-    openingDays: string[];
-    openingTimeStart: string | null;
-    openingTimeEnd: string | null;
-    deliveryCost: number;
-    minimumOrder: number;
-    slotMinutes: number;
-    maxOrdersPerSlot: number;
-    minPreparationMinutes: number;
-    closedDates: string[];
-    specialDates: OrderingSpecialDate[];
-    serviceZones: string[];
-    customerMessage: string | null;
-  };
-  categories: PublicOrderingMenuCategory[];
-};
-
-export type OrderingSpecialDate = {
-  date: string;
-  closed: boolean;
-  openingTimeStart: string | null;
-  openingTimeEnd: string | null;
-  slotMinutes: number | null;
-  maxOrdersPerSlot: number | null;
-  minPreparationMinutes: number | null;
-};
-
-export type PublicOrderingAvailabilitySlot = {
-  time: string;
-  pickupSlot: string;
-  pickupAt: string;
-  count: number;
-  remaining: number;
-  full: boolean;
-  almostFull: boolean;
-  past: boolean;
-  available: boolean;
-};
-
-export type PublicOrderingAvailabilityResponse = {
-  status: "ok";
-  date: string;
-  closed: boolean;
-  slotMinutes: number;
-  maxOrdersPerSlot: number;
-  minPreparationMinutes: number;
-  startTime: string;
-  endTime: string;
-  slots: PublicOrderingAvailabilitySlot[];
-};
-
-export type PublicOrderingOrderItem = {
-  id: string;
-  menuItemId: string | null;
-  name: string;
-  price: number;
-  qty: number;
-  notes: string | null;
-  lineTotal: number;
-};
-
-export type PublicOrderingOrder = {
-  id: string;
-  couponCode: string | null;
-  customerName: string;
-  customerPhone: string | null;
-  customerEmail: string | null;
-  status: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
-  fulfillmentType: "pickup" | "delivery";
-  pickupAt: string | null;
-  notes: string | null;
-  subtotal: number;
-  discountTotal: number;
-  serviceFee: number;
-  deliveryFee: number;
-  grandTotal: number;
-  paymentStatus: "pending" | "paid" | "failed" | "refunded";
-  source: "web" | "admin" | "phone";
-  createdAt: string;
-  updatedAt: string;
-  items: PublicOrderingOrderItem[];
-};
-
-export type PublicOrderingCreateOrderResponse = {
-  status: "ok";
-  order: PublicOrderingOrder;
-  trackingPath: string;
-};
-
-export type PublicOrderingOrderResponse = {
-  status: "ok";
-  order: PublicOrderingOrder;
-};
-
-export type OrderingCustomerProfile = {
-  id: string;
-  name: string | null;
-  phone: string | null;
-  email: string | null;
-  points: number;
-  totalOrders: number;
-  completedOrders: number;
-  lastOrderAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type PublicOrderingCustomerLookupResponse = {
-  status: "ok";
-  found: boolean;
-  customer?: OrderingCustomerProfile;
-  lastOrder?: PublicOrderingOrder | null;
-};
-
-export type AdminOrderingCustomer = OrderingCustomerProfile & {
-  totalSpent: number;
-};
-
-export type AdminOrderingCustomersResponse = {
-  status: "ok";
-  items: AdminOrderingCustomer[];
-};
-
-export type OrderingCoupon = {
-  id: string;
-  code: string;
-  type: "percent" | "fixed";
-  value: number | null;
-  expiresAt: string | null;
-  usageLimit: number;
-  usedCount: number;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AdminOrderingCouponsResponse = {
-  status: "ok";
-  items: OrderingCoupon[];
-};
-
-export type AdminOrderingCouponResponse = {
-  status: "ok";
-  item: OrderingCoupon;
-};
-
-export type OrderingSettings = {
-  openingHours: string | null;
-  openingDays: string[];
-  openingTimeStart: string | null;
-  openingTimeEnd: string | null;
-  deliveryCost: number;
-  minimumOrder: number;
-  slotMinutes: number;
-  maxOrdersPerSlot: number;
-  minPreparationMinutes: number;
-  closedDates: string[];
-  specialDates: OrderingSpecialDate[];
-  serviceZones: string[];
-  customerMessage: string | null;
-};
-
-export type AdminOrderingSettingsResponse = {
-  status: "ok";
-  settings: OrderingSettings;
-};
-
-export type AdminOrderingOrdersResponse = {
-  status: "ok";
-  items: PublicOrderingOrder[];
-};
-
-export type AdminOrderingMenuResponse = {
-  status: "ok";
-  business: {
-    id: string;
-    name: string;
-    slug: string;
-    status: "draft" | "active" | "paused" | "disabled";
-    city: {
-      id: string;
-      name: string;
-      slug: string;
-      status: "active" | "coming_soon" | "disabled";
-      active: boolean;
-    };
-    orderingEnabled: boolean;
-  };
-  categories: PublicOrderingMenuCategory[];
-};
-
-export type AdminOrderingMenuItemResponse = {
-  status: "ok";
-  item: PublicOrderingMenuItem;
-};
-
-export type AdminOrderingStatsResponse = {
-  status: "ok";
-  summary: {
-    total: number;
-    open: number;
-    pending: number;
-    confirmed: number;
-    preparing: number;
-    ready: number;
-    completed: number;
-    cancelled: number;
-    revenue: number;
-  };
 };
 
 type FetchOptions = {

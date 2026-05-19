@@ -7,11 +7,11 @@ import { QuickCategories, type QuickCategory } from "./quick-categories";
 
 function buildQuickCategories(surface: PublicCitySurfaceData["city"]) {
   return [
-    { title: "Ristoranti", icon: "restaurant", href: `/${surface.slug}#popular` },
-    { title: "Stay", icon: "stay", href: `/${surface.slug}#popular` },
+    { title: "Business", icon: "business", href: `/${surface.slug}#popular` },
     { title: "Servizi", icon: "services", href: `/${surface.slug}#popular` },
-    { title: "Prenota", icon: "booking", href: `/${surface.slug}#popular` },
-    { title: "Shop", icon: "shop", href: `/${surface.slug}#popular` },
+    { title: "Soggiorni", icon: "hospitality", href: `/${surface.slug}#popular` },
+    { title: "Eventi", icon: "events", href: `/${surface.slug}#popular` },
+    { title: "Directory", icon: "directory", href: `/${surface.slug}#popular` },
   ] satisfies QuickCategory[];
 }
 
@@ -52,7 +52,7 @@ function CitySearch() {
       <span className={styles.searchIcon} aria-hidden="true" />
       <input
         className={styles.searchInput}
-        placeholder="Cerca attivita, servizi, luoghi..."
+        placeholder="Cerca business, servizi, eventi..."
         readOnly
         type="search"
       />
@@ -92,9 +92,9 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData["c
 
             <h1 className={styles.cityTitle} id="city-home-title">
               <span>{surface.name}.</span>
-              <span>Tutto cio</span>
+              <span>Scopri il</span>
               <span>
-                che ti serve<span className={styles.accent}>.</span>
+                contesto giusto<span className={styles.accent}>.</span>
               </span>
             </h1>
 
