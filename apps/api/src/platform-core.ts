@@ -104,6 +104,43 @@ function normalizeModuleCode(code: StoredModuleCode): ModuleCode {
   return code === "ordering" ? "catalog" : code;
 }
 
+function normalizeTemplatePresentation(template: {
+  id: string;
+  code: string;
+  name: string;
+  category: StoredTemplateCategory;
+  primaryModule: StoredModuleCode;
+  defaultCtaLabel: string | null;
+}) {
+  const fallbackTemplate = templateCatalogMap.get("local_business");
+  const isLegacyFoodTemplate =
+    template.code === "pizzeria" ||
+    template.name.toLowerCase() === "pizzeria" ||
+    template.category === "food" ||
+    template.primaryModule === "ordering";
+
+  if (isLegacyFoodTemplate && fallbackTemplate) {
+    return {
+      ...template,
+      code: fallbackTemplate.code,
+      name: fallbackTemplate.name,
+      category: fallbackTemplate.category,
+      primaryModule: fallbackTemplate.primaryModule,
+      defaultCtaLabel: fallbackTemplate.defaultCtaLabel,
+    };
+  }
+
+  return {
+    ...template,
+    category: normalizeTemplateCategory(template.category) ?? "commerce",
+    primaryModule: normalizeModuleCode(template.primaryModule),
+    defaultCtaLabel:
+      template.defaultCtaLabel && /\bordina\b/i.test(template.defaultCtaLabel)
+        ? "Esplora il business"
+        : template.defaultCtaLabel,
+  };
+}
+
 function mapCity(city: {
   id: string;
   name: string;
@@ -287,11 +324,7 @@ function mapBusiness(business: {
     cancellationPolicy: business.cancellationPolicy,
     notesInternal: business.notesInternal,
     city: business.city,
-    template: {
-      ...business.template,
-      category: normalizeTemplateCategory(business.template.category) ?? "commerce",
-      primaryModule: normalizeModuleCode(business.template.primaryModule),
-    },
+    template: normalizeTemplatePresentation(business.template),
     modules: business.modules.map((entry) => ({
       ...entry,
       moduleCode: normalizeModuleCode(entry.moduleCode),
@@ -404,11 +437,7 @@ function mapPublicBusiness(business: {
     bookingPolicy: sanitizePublicCopy(business.bookingPolicy),
     cancellationPolicy: sanitizePublicCopy(business.cancellationPolicy),
     city: business.city,
-    template: {
-      ...business.template,
-      category: normalizeTemplateCategory(business.template.category) ?? "commerce",
-      primaryModule: normalizeModuleCode(business.template.primaryModule),
-    },
+    template: normalizeTemplatePresentation(business.template),
     modules: business.modules.map((entry) => ({
       ...entry,
       moduleCode: normalizeModuleCode(entry.moduleCode),
