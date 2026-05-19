@@ -30,6 +30,8 @@ import {
   templateCatalogMap,
 } from "./platform-core/config.js";
 
+type StoredTemplateCategory = TemplateCategory | "food";
+
 function slugify(value: string) {
   return value
     .trim()
@@ -77,6 +79,24 @@ function parsePayload<T>(schema: z.ZodSchema<T>, payload: unknown) {
 
 function isPrismaError(error: unknown, code: string) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;
+}
+
+function normalizeTemplateCategory(
+  category: StoredTemplateCategory | null,
+): TemplateCategory | null {
+  if (!category) {
+    return null;
+  }
+
+  return category === "food" ? "commerce" : category;
+}
+
+function sanitizePublicCopy(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return /\bv2\b|ordering/i.test(value) ? null : value;
 }
 
 function mapCity(city: {
@@ -183,7 +203,7 @@ function mapBusiness(business: {
   name: string;
   slug: string;
   legalName: string | null;
-  category: TemplateCategory | null;
+  category: StoredTemplateCategory | null;
   status: BusinessStatus;
   plan: BusinessPlan;
   subscriptionStatus: SubscriptionStatus;
@@ -218,7 +238,7 @@ function mapBusiness(business: {
     id: string;
     code: string;
     name: string;
-    category: TemplateCategory;
+    category: StoredTemplateCategory;
     primaryModule: ModuleCode;
     defaultCtaLabel: string | null;
   };
@@ -238,7 +258,7 @@ function mapBusiness(business: {
     name: business.name,
     slug: business.slug,
     legalName: business.legalName,
-    category: business.category,
+    category: normalizeTemplateCategory(business.category),
     status: business.status,
     plan: business.plan,
     subscriptionStatus: business.subscriptionStatus,
@@ -262,7 +282,10 @@ function mapBusiness(business: {
     cancellationPolicy: business.cancellationPolicy,
     notesInternal: business.notesInternal,
     city: business.city,
-    template: business.template,
+    template: {
+      ...business.template,
+      category: normalizeTemplateCategory(business.template.category) ?? "commerce",
+    },
     modules: business.modules,
     owner: business.ownerUser,
     createdAt: business.createdAt,
@@ -294,10 +317,10 @@ function mapPublicCity(city: {
     region: city.region,
     country: city.country,
     status: city.status,
-    heroTitle: city.heroTitle,
-    heroDescription: city.heroDescription,
-    seoTitle: city.seoTitle,
-    seoDescription: city.seoDescription,
+    heroTitle: sanitizePublicCopy(city.heroTitle),
+    heroDescription: sanitizePublicCopy(city.heroDescription),
+    seoTitle: sanitizePublicCopy(city.seoTitle),
+    seoDescription: sanitizePublicCopy(city.seoDescription),
     businessCount: city.businesses?.length ?? 0,
   };
 }
@@ -306,7 +329,7 @@ function mapPublicBusiness(business: {
   id: string;
   name: string;
   slug: string;
-  category: TemplateCategory | null;
+  category: StoredTemplateCategory | null;
   status: BusinessStatus;
   publicEmail: string | null;
   publicPhone: string | null;
@@ -338,7 +361,7 @@ function mapPublicBusiness(business: {
     id: string;
     code: string;
     name: string;
-    category: TemplateCategory;
+    category: StoredTemplateCategory;
     primaryModule: ModuleCode;
     defaultCtaLabel: string | null;
   };
@@ -351,7 +374,7 @@ function mapPublicBusiness(business: {
     id: business.id,
     name: business.name,
     slug: business.slug,
-    category: business.category,
+    category: normalizeTemplateCategory(business.category),
     status: business.status,
     publicEmail: business.publicEmail,
     publicPhone: business.publicPhone,
@@ -364,15 +387,18 @@ function mapPublicBusiness(business: {
     locale: business.locale,
     primaryColor: business.primaryColor,
     accentColor: business.accentColor,
-    publicTitle: business.publicTitle,
-    publicSubtitle: business.publicSubtitle,
-    publicDescription: business.publicDescription,
-    seoTitle: business.seoTitle,
-    seoDescription: business.seoDescription,
-    bookingPolicy: business.bookingPolicy,
-    cancellationPolicy: business.cancellationPolicy,
+    publicTitle: sanitizePublicCopy(business.publicTitle),
+    publicSubtitle: sanitizePublicCopy(business.publicSubtitle),
+    publicDescription: sanitizePublicCopy(business.publicDescription),
+    seoTitle: sanitizePublicCopy(business.seoTitle),
+    seoDescription: sanitizePublicCopy(business.seoDescription),
+    bookingPolicy: sanitizePublicCopy(business.bookingPolicy),
+    cancellationPolicy: sanitizePublicCopy(business.cancellationPolicy),
     city: business.city,
-    template: business.template,
+    template: {
+      ...business.template,
+      category: normalizeTemplateCategory(business.template.category) ?? "commerce",
+    },
     modules: business.modules,
     createdAt: business.createdAt,
     updatedAt: business.updatedAt,

@@ -34,6 +34,7 @@ enum CityStatus {
 
 enum TemplateCategory {
   commerce
+  food
   service
   hospitality
   editorial
