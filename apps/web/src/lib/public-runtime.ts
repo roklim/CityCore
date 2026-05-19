@@ -24,6 +24,46 @@ type ActionLink = {
   href: string;
 };
 
+type CityAlias = {
+  canonicalSlug: string;
+  liveSlug: string;
+  name: string;
+  region: string;
+  province?: string | null;
+};
+
+type BusinessAlias = {
+  canonicalCitySlug: string;
+  liveCitySlug: string;
+  canonicalBusinessSlug: string;
+  liveBusinessSlug: string;
+  name: string;
+  publicPhone: string;
+  addressLine1: string;
+};
+
+const cityAliases: CityAlias[] = [
+  {
+    canonicalSlug: "cagli",
+    liveSlug: "cagli-smoke",
+    name: "Cagli",
+    region: "Marche",
+    province: "PU",
+  },
+];
+
+const businessAliases: BusinessAlias[] = [
+  {
+    canonicalCitySlug: "cagli",
+    liveCitySlug: "cagli-smoke",
+    canonicalBusinessSlug: "bottega-civica",
+    liveBusinessSlug: "forno-locale-demo",
+    name: "Bottega Civica",
+    publicPhone: "+39 0721 900120",
+    addressLine1: "Via Flaminia 18, Cagli",
+  },
+];
+
 export type HomepageCityCard = {
   name: string;
   slug: string;
@@ -87,6 +127,126 @@ export type PublicBusinessSurfaceData = {
 
 function getModuleLabel(code: string) {
   return MODULE_DEFINITIONS.find((entry) => entry.code === code)?.label ?? code;
+}
+
+function getCityAlias(slug: string) {
+  return cityAliases.find(
+    (alias) => alias.canonicalSlug === slug || alias.liveSlug === slug,
+  );
+}
+
+function getBusinessAlias(citySlug: string, businessSlug: string) {
+  return businessAliases.find(
+    (alias) =>
+      (alias.canonicalCitySlug === citySlug && alias.canonicalBusinessSlug === businessSlug) ||
+      (alias.liveCitySlug === citySlug && alias.liveBusinessSlug === businessSlug),
+  );
+}
+
+function resolveCityRequestSlug(citySlug: string) {
+  return getCityAlias(citySlug)?.liveSlug ?? citySlug;
+}
+
+function resolveBusinessRequest(citySlug: string, businessSlug: string) {
+  const cityAlias = getCityAlias(citySlug);
+  const businessAlias = getBusinessAlias(citySlug, businessSlug);
+
+  return {
+    citySlug: businessAlias?.liveCitySlug ?? cityAlias?.liveSlug ?? citySlug,
+    businessSlug: businessAlias?.liveBusinessSlug ?? businessSlug,
+  };
+}
+
+function canonicalCitySlug(citySlug: string) {
+  return getCityAlias(citySlug)?.canonicalSlug ?? citySlug;
+}
+
+function canonicalBusinessSlug(citySlug: string, businessSlug: string) {
+  return getBusinessAlias(citySlug, businessSlug)?.canonicalBusinessSlug ?? businessSlug;
+}
+
+function sanitizeLegacyCopy(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return /demo|verifiche|end-to-end|ordering|ordini|ritiro|slot/i.test(value) ? null : value;
+}
+
+function sanitizeLegacyLink(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return /\.test(?:\/|$)/i.test(value) ? null : value;
+}
+
+function normalizeRuntimeCity(city: PublicPlatformCity): PublicPlatformCity {
+  const alias = getCityAlias(city.slug);
+
+  if (!alias) {
+    return city;
+  }
+
+  return {
+    ...city,
+    name: alias.name,
+    slug: alias.canonicalSlug,
+    province: alias.province ?? city.province,
+    region: alias.region,
+    heroTitle: sanitizeLegacyCopy(city.heroTitle),
+    heroDescription: sanitizeLegacyCopy(city.heroDescription),
+    seoTitle: sanitizeLegacyCopy(city.seoTitle),
+    seoDescription: sanitizeLegacyCopy(city.seoDescription),
+  };
+}
+
+function normalizeRuntimeBusiness(business: PublicPlatformBusiness): PublicPlatformBusiness {
+  const cityAlias = getCityAlias(business.city.slug);
+  const businessAlias = getBusinessAlias(business.city.slug, business.slug);
+
+  const normalized: PublicPlatformBusiness = {
+    ...business,
+    publicEmail: sanitizeLegacyLink(business.publicEmail),
+    website: sanitizeLegacyLink(business.website),
+    publicTitle: sanitizeLegacyCopy(business.publicTitle),
+    publicSubtitle: sanitizeLegacyCopy(business.publicSubtitle),
+    publicDescription: sanitizeLegacyCopy(business.publicDescription),
+    seoTitle: sanitizeLegacyCopy(business.seoTitle),
+    seoDescription: sanitizeLegacyCopy(business.seoDescription),
+    bookingPolicy: sanitizeLegacyCopy(business.bookingPolicy),
+    cancellationPolicy: sanitizeLegacyCopy(business.cancellationPolicy),
+    city: cityAlias
+      ? {
+          ...business.city,
+          name: cityAlias.name,
+          slug: cityAlias.canonicalSlug,
+        }
+      : business.city,
+  };
+
+  if (!businessAlias) {
+    return normalized;
+  }
+
+  return {
+    ...normalized,
+    name: businessAlias.name,
+    slug: businessAlias.canonicalBusinessSlug,
+    publicEmail: null,
+    website: null,
+    publicPhone: businessAlias.publicPhone,
+    addressLine1: businessAlias.addressLine1,
+    addressLine2: null,
+    postalCode: null,
+    publicTitle: null,
+    publicSubtitle: null,
+    publicDescription: null,
+    seoTitle: null,
+    seoDescription: null,
+    bookingPolicy: null,
+    cancellationPolicy: null,
+  };
 }
 
 function truncateText(value: string, maxLength: number) {
@@ -366,12 +526,14 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
       fetchPlatformApi<PublicCitiesResponse>("/api/v2/public/cities?limit=6"),
       fetchPlatformApi<PublicBusinessesResponse>("/api/v2/public/businesses?limit=6"),
     ]);
+    const runtimeCities = citiesResponse.items.map(normalizeRuntimeCity);
+    const runtimeBusinesses = businessesResponse.items.map(normalizeRuntimeBusiness);
 
     const featuredCities =
-      citiesResponse.items.length > 0 ? citiesResponse.items.map(mapHomeCity) : fallbackCities;
+      runtimeCities.length > 0 ? runtimeCities.map(mapHomeCity) : fallbackCities;
     const showcaseBusinesses =
-      businessesResponse.items.length > 0
-        ? businessesResponse.items.map(mapHomeBusiness)
+      runtimeBusinesses.length > 0
+        ? runtimeBusinesses.map(mapHomeBusiness)
         : fallbackBusinesses;
 
     return {
@@ -395,22 +557,22 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
 export async function getPublicCitySurfaceData(
   citySlug: string,
 ): Promise<PublicCitySurfaceData | null> {
-  const editorialCity = getCityProfile(citySlug);
+  const canonicalSlug = canonicalCitySlug(citySlug);
+  const editorialCity = getCityProfile(canonicalSlug);
+  const liveCitySlug = resolveCityRequestSlug(citySlug);
 
   try {
     const [cityResponse, businessesResponse] = await Promise.all([
-      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${citySlug}`),
+      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${liveCitySlug}`),
       fetchPlatformApi<PublicBusinessesResponse>(
-        `/api/v2/public/cities/${citySlug}/businesses?limit=12`,
+        `/api/v2/public/cities/${liveCitySlug}/businesses?limit=12`,
       ),
     ]);
+    const runtimeCity = normalizeRuntimeCity(cityResponse.item);
+    const runtimeBusinesses = businessesResponse.items.map(normalizeRuntimeBusiness);
 
     return {
-      city: mergeRuntimeCityWithEditorial(
-        cityResponse.item,
-        businessesResponse.items,
-        editorialCity,
-      ),
+      city: mergeRuntimeCityWithEditorial(runtimeCity, runtimeBusinesses, editorialCity),
       degraded: false,
       live: true,
     };
@@ -443,27 +605,32 @@ export async function getPublicBusinessSurfaceData(
   citySlug: string,
   businessSlug: string,
 ): Promise<PublicBusinessSurfaceData | null> {
-  const editorialCity = getCityProfile(citySlug);
-  const editorialBusiness = getBusinessProfile(citySlug, businessSlug);
+  const canonicalCity = canonicalCitySlug(citySlug);
+  const canonicalBusiness = canonicalBusinessSlug(citySlug, businessSlug);
+  const editorialCity = getCityProfile(canonicalCity);
+  const editorialBusiness = getBusinessProfile(canonicalCity, canonicalBusiness);
+  const liveRequest = resolveBusinessRequest(citySlug, businessSlug);
 
   try {
     const [cityResponse, businessResponse] = await Promise.all([
-      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${citySlug}`),
+      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${liveRequest.citySlug}`),
       fetchPlatformApi<PublicBusinessResponse>(
-        `/api/v2/public/cities/${citySlug}/businesses/${businessSlug}`,
+        `/api/v2/public/cities/${liveRequest.citySlug}/businesses/${liveRequest.businessSlug}`,
       ),
     ]);
+    const runtimeCity = normalizeRuntimeCity(cityResponse.item);
+    const runtimeBusiness = normalizeRuntimeBusiness(businessResponse.item);
 
     return {
       city: {
         ...editorialCity,
-        name: cityResponse.item.name,
-        slug: cityResponse.item.slug,
-        region: cityResponse.item.region ?? editorialCity.region,
-        claim: cityResponse.item.heroTitle ?? editorialCity.claim,
-        shortPitch: cityResponse.item.heroDescription ?? editorialCity.shortPitch,
+        name: runtimeCity.name,
+        slug: runtimeCity.slug,
+        region: runtimeCity.region ?? editorialCity.region,
+        claim: runtimeCity.heroTitle ?? editorialCity.claim,
+        shortPitch: runtimeCity.heroDescription ?? editorialCity.shortPitch,
       },
-      business: mergeRuntimeBusinessWithEditorial(businessResponse.item, editorialBusiness),
+      business: mergeRuntimeBusinessWithEditorial(runtimeBusiness, editorialBusiness),
       degraded: false,
       live: true,
     };
