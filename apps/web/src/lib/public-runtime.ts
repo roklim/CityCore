@@ -165,6 +165,29 @@ function canonicalBusinessSlug(citySlug: string, businessSlug: string) {
   return getBusinessAlias(citySlug, businessSlug)?.canonicalBusinessSlug ?? businessSlug;
 }
 
+function buildCityCandidates(citySlug: string) {
+  const canonical = canonicalCitySlug(citySlug);
+  const live = resolveCityRequestSlug(citySlug);
+
+  return [...new Set([canonical, live])];
+}
+
+function buildBusinessCandidates(citySlug: string, businessSlug: string) {
+  const canonical = {
+    citySlug: canonicalCitySlug(citySlug),
+    businessSlug: canonicalBusinessSlug(citySlug, businessSlug),
+  };
+  const live = resolveBusinessRequest(citySlug, businessSlug);
+
+  return [
+    canonical,
+    ...[live].filter(
+      (entry) =>
+        entry.citySlug !== canonical.citySlug || entry.businessSlug !== canonical.businessSlug,
+    ),
+  ];
+}
+
 function sanitizeLegacyCopy(value: string | null) {
   if (!value) {
     return null;
@@ -559,23 +582,40 @@ export async function getPublicCitySurfaceData(
 ): Promise<PublicCitySurfaceData | null> {
   const canonicalSlug = canonicalCitySlug(citySlug);
   const editorialCity = getCityProfile(canonicalSlug);
-  const liveCitySlug = resolveCityRequestSlug(citySlug);
 
   try {
-    const [cityResponse, businessesResponse] = await Promise.all([
-      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${liveCitySlug}`),
-      fetchPlatformApi<PublicBusinessesResponse>(
-        `/api/v2/public/cities/${liveCitySlug}/businesses?limit=12`,
-      ),
-    ]);
-    const runtimeCity = normalizeRuntimeCity(cityResponse.item);
-    const runtimeBusinesses = businessesResponse.items.map(normalizeRuntimeBusiness);
+    let lastError: unknown;
 
-    return {
-      city: mergeRuntimeCityWithEditorial(runtimeCity, runtimeBusinesses, editorialCity),
-      degraded: false,
-      live: true,
-    };
+    for (const candidateSlug of buildCityCandidates(citySlug)) {
+      try {
+        const [cityResponse, businessesResponse] = await Promise.all([
+          fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${candidateSlug}`),
+          fetchPlatformApi<PublicBusinessesResponse>(
+            `/api/v2/public/cities/${candidateSlug}/businesses?limit=12`,
+          ),
+        ]);
+        const runtimeCity = normalizeRuntimeCity(cityResponse.item);
+        const runtimeBusinesses = businessesResponse.items.map(normalizeRuntimeBusiness);
+
+        return {
+          city: mergeRuntimeCityWithEditorial(runtimeCity, runtimeBusinesses, editorialCity),
+          degraded: false,
+          live: true,
+        };
+      } catch (error) {
+        lastError = error;
+
+        if (!(error instanceof PlatformApiError) || error.status !== 404) {
+          throw error;
+        }
+      }
+    }
+
+    if (lastError instanceof PlatformApiError && lastError.status === 404) {
+      return null;
+    }
+
+    throw lastError;
   } catch (error) {
     if (error instanceof PlatformApiError && error.status === 404) {
       return null;
@@ -609,31 +649,48 @@ export async function getPublicBusinessSurfaceData(
   const canonicalBusiness = canonicalBusinessSlug(citySlug, businessSlug);
   const editorialCity = getCityProfile(canonicalCity);
   const editorialBusiness = getBusinessProfile(canonicalCity, canonicalBusiness);
-  const liveRequest = resolveBusinessRequest(citySlug, businessSlug);
 
   try {
-    const [cityResponse, businessResponse] = await Promise.all([
-      fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${liveRequest.citySlug}`),
-      fetchPlatformApi<PublicBusinessResponse>(
-        `/api/v2/public/cities/${liveRequest.citySlug}/businesses/${liveRequest.businessSlug}`,
-      ),
-    ]);
-    const runtimeCity = normalizeRuntimeCity(cityResponse.item);
-    const runtimeBusiness = normalizeRuntimeBusiness(businessResponse.item);
+    let lastError: unknown;
 
-    return {
-      city: {
-        ...editorialCity,
-        name: runtimeCity.name,
-        slug: runtimeCity.slug,
-        region: runtimeCity.region ?? editorialCity.region,
-        claim: runtimeCity.heroTitle ?? editorialCity.claim,
-        shortPitch: runtimeCity.heroDescription ?? editorialCity.shortPitch,
-      },
-      business: mergeRuntimeBusinessWithEditorial(runtimeBusiness, editorialBusiness),
-      degraded: false,
-      live: true,
-    };
+    for (const candidate of buildBusinessCandidates(citySlug, businessSlug)) {
+      try {
+        const [cityResponse, businessResponse] = await Promise.all([
+          fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${candidate.citySlug}`),
+          fetchPlatformApi<PublicBusinessResponse>(
+            `/api/v2/public/cities/${candidate.citySlug}/businesses/${candidate.businessSlug}`,
+          ),
+        ]);
+        const runtimeCity = normalizeRuntimeCity(cityResponse.item);
+        const runtimeBusiness = normalizeRuntimeBusiness(businessResponse.item);
+
+        return {
+          city: {
+            ...editorialCity,
+            name: runtimeCity.name,
+            slug: runtimeCity.slug,
+            region: runtimeCity.region ?? editorialCity.region,
+            claim: runtimeCity.heroTitle ?? editorialCity.claim,
+            shortPitch: runtimeCity.heroDescription ?? editorialCity.shortPitch,
+          },
+          business: mergeRuntimeBusinessWithEditorial(runtimeBusiness, editorialBusiness),
+          degraded: false,
+          live: true,
+        };
+      } catch (error) {
+        lastError = error;
+
+        if (!(error instanceof PlatformApiError) || error.status !== 404) {
+          throw error;
+        }
+      }
+    }
+
+    if (lastError instanceof PlatformApiError && lastError.status === 404) {
+      return null;
+    }
+
+    throw lastError;
   } catch (error) {
     if (error instanceof PlatformApiError && error.status === 404) {
       return null;
