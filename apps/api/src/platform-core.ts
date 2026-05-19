@@ -31,6 +31,7 @@ import {
 } from "./platform-core/config.js";
 
 type StoredTemplateCategory = TemplateCategory | "food";
+type StoredModuleCode = ModuleCode | "ordering";
 
 function slugify(value: string) {
   return value
@@ -97,6 +98,10 @@ function sanitizePublicCopy(value: string | null) {
   }
 
   return /\bv2\b|ordering/i.test(value) ? null : value;
+}
+
+function normalizeModuleCode(code: StoredModuleCode): ModuleCode {
+  return code === "ordering" ? "catalog" : code;
 }
 
 function mapCity(city: {
@@ -239,11 +244,11 @@ function mapBusiness(business: {
     code: string;
     name: string;
     category: StoredTemplateCategory;
-    primaryModule: ModuleCode;
+    primaryModule: StoredModuleCode;
     defaultCtaLabel: string | null;
   };
   modules: Array<{
-    moduleCode: ModuleCode;
+    moduleCode: StoredModuleCode;
     active: boolean;
   }>;
   ownerUser: {
@@ -285,8 +290,12 @@ function mapBusiness(business: {
     template: {
       ...business.template,
       category: normalizeTemplateCategory(business.template.category) ?? "commerce",
+      primaryModule: normalizeModuleCode(business.template.primaryModule),
     },
-    modules: business.modules,
+    modules: business.modules.map((entry) => ({
+      ...entry,
+      moduleCode: normalizeModuleCode(entry.moduleCode),
+    })),
     owner: business.ownerUser,
     createdAt: business.createdAt,
     updatedAt: business.updatedAt,
@@ -362,11 +371,11 @@ function mapPublicBusiness(business: {
     code: string;
     name: string;
     category: StoredTemplateCategory;
-    primaryModule: ModuleCode;
+    primaryModule: StoredModuleCode;
     defaultCtaLabel: string | null;
   };
   modules: Array<{
-    moduleCode: ModuleCode;
+    moduleCode: StoredModuleCode;
     active: boolean;
   }>;
 }) {
@@ -398,8 +407,12 @@ function mapPublicBusiness(business: {
     template: {
       ...business.template,
       category: normalizeTemplateCategory(business.template.category) ?? "commerce",
+      primaryModule: normalizeModuleCode(business.template.primaryModule),
     },
-    modules: business.modules,
+    modules: business.modules.map((entry) => ({
+      ...entry,
+      moduleCode: normalizeModuleCode(entry.moduleCode),
+    })),
     createdAt: business.createdAt,
     updatedAt: business.updatedAt,
   };
