@@ -16,6 +16,7 @@ backend/.env
 apps/*/.env
 apps/*/.env.local
 .vercel/
+apps/*/.vercel/
 *.log
 *.dev.log
 .tmp/
@@ -24,5 +25,3 @@ tmp-*.png
 tmp-*.jpg
 tmp-*.jpeg
 tmp-*.webp
-
-.vercel
