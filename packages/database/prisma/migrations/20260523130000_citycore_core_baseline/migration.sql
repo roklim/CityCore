@@ -364,4 +364,3 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_city_id_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_business_id_fkey" FOREIGN KEY ("business_id") REFERENCES "businesses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
