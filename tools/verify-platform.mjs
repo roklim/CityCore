@@ -328,7 +328,11 @@ await runCheck("F1-07 worker runtime boot", verifyWorkerRuntime);
 await runCheck("CI workflow", () => assertFiles([".github/workflows/platform-quality.yml"]));
 await runCheck("README bootstrap", () => assertFiles(["README.md"]));
 await runCheck("staging shape", () =>
-  assertFiles(["docs/STAGING_RUNBOOK.md", "render.staging.yaml", ".github/workflows/staging-deploy.yml"]),
+  assertFiles([
+    "docs/STAGING_RUNBOOK.md",
+    "render.staging.yaml",
+    ".github/workflows/staging-deploy.yml",
+  ]),
 );
 
 const failed = checks.filter((check) => !check.ok);

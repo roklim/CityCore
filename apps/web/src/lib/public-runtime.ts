@@ -24,46 +24,6 @@ type ActionLink = {
   href: string;
 };
 
-type CityAlias = {
-  canonicalSlug: string;
-  liveSlug: string;
-  name: string;
-  region: string;
-  province?: string | null;
-};
-
-type BusinessAlias = {
-  canonicalCitySlug: string;
-  liveCitySlug: string;
-  canonicalBusinessSlug: string;
-  liveBusinessSlug: string;
-  name: string;
-  publicPhone: string;
-  addressLine1: string;
-};
-
-const cityAliases: CityAlias[] = [
-  {
-    canonicalSlug: "cagli",
-    liveSlug: "cagli-smoke",
-    name: "Cagli",
-    region: "Marche",
-    province: "PU",
-  },
-];
-
-const businessAliases: BusinessAlias[] = [
-  {
-    canonicalCitySlug: "cagli",
-    liveCitySlug: "cagli-smoke",
-    canonicalBusinessSlug: "bottega-civica",
-    liveBusinessSlug: "forno-locale-demo",
-    name: "Bottega Civica",
-    publicPhone: "+39 0721 900120",
-    addressLine1: "Via Flaminia 18, Cagli",
-  },
-];
-
 export type HomepageCityCard = {
   name: string;
   slug: string;
@@ -129,71 +89,25 @@ function getModuleLabel(code: string) {
   return MODULE_DEFINITIONS.find((entry) => entry.code === code)?.label ?? code;
 }
 
-function getCityAlias(slug: string) {
-  return cityAliases.find(
-    (alias) => alias.canonicalSlug === slug || alias.liveSlug === slug,
-  );
-}
-
-function getBusinessAlias(citySlug: string, businessSlug: string) {
-  return businessAliases.find(
-    (alias) =>
-      (alias.canonicalCitySlug === citySlug && alias.canonicalBusinessSlug === businessSlug) ||
-      (alias.liveCitySlug === citySlug && alias.liveBusinessSlug === businessSlug),
-  );
-}
-
-function resolveCityRequestSlug(citySlug: string) {
-  return getCityAlias(citySlug)?.liveSlug ?? citySlug;
-}
-
-function resolveBusinessRequest(citySlug: string, businessSlug: string) {
-  const cityAlias = getCityAlias(citySlug);
-  const businessAlias = getBusinessAlias(citySlug, businessSlug);
-
-  return {
-    citySlug: businessAlias?.liveCitySlug ?? cityAlias?.liveSlug ?? citySlug,
-    businessSlug: businessAlias?.liveBusinessSlug ?? businessSlug,
-  };
-}
-
 function canonicalCitySlug(citySlug: string) {
-  return getCityAlias(citySlug)?.canonicalSlug ?? citySlug;
+  return citySlug;
 }
 
-function canonicalBusinessSlug(citySlug: string, businessSlug: string) {
-  return getBusinessAlias(citySlug, businessSlug)?.canonicalBusinessSlug ?? businessSlug;
+function canonicalBusinessSlug(_citySlug: string, businessSlug: string) {
+  return businessSlug;
 }
 
 function buildCityCandidates(citySlug: string) {
-  const canonical = canonicalCitySlug(citySlug);
-  const live = resolveCityRequestSlug(citySlug);
-
-  return [...new Set([canonical, live])];
+  return [canonicalCitySlug(citySlug)];
 }
 
 function buildBusinessCandidates(citySlug: string, businessSlug: string) {
-  const canonical = {
-    citySlug: canonicalCitySlug(citySlug),
-    businessSlug: canonicalBusinessSlug(citySlug, businessSlug),
-  };
-  const live = resolveBusinessRequest(citySlug, businessSlug);
-
   return [
-    canonical,
-    ...[live].filter(
-      (entry) =>
-        entry.citySlug !== canonical.citySlug || entry.businessSlug !== canonical.businessSlug,
-    ),
+    {
+      citySlug: canonicalCitySlug(citySlug),
+      businessSlug: canonicalBusinessSlug(citySlug, businessSlug),
+    },
   ];
-}
-
-function sanitizeLegacyCopy(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  return /demo|verifiche|end-to-end|ordering|ordini|ritiro|slot/i.test(value) ? null : value;
 }
 
 function sanitizeLegacyLink(value: string | null) {
@@ -205,70 +119,14 @@ function sanitizeLegacyLink(value: string | null) {
 }
 
 function normalizeRuntimeCity(city: PublicPlatformCity): PublicPlatformCity {
-  const alias = getCityAlias(city.slug);
-
-  if (!alias) {
-    return city;
-  }
-
-  return {
-    ...city,
-    name: alias.name,
-    slug: alias.canonicalSlug,
-    province: alias.province ?? city.province,
-    region: alias.region,
-    heroTitle: sanitizeLegacyCopy(city.heroTitle),
-    heroDescription: sanitizeLegacyCopy(city.heroDescription),
-    seoTitle: sanitizeLegacyCopy(city.seoTitle),
-    seoDescription: sanitizeLegacyCopy(city.seoDescription),
-  };
+  return city;
 }
 
 function normalizeRuntimeBusiness(business: PublicPlatformBusiness): PublicPlatformBusiness {
-  const cityAlias = getCityAlias(business.city.slug);
-  const businessAlias = getBusinessAlias(business.city.slug, business.slug);
-
-  const normalized: PublicPlatformBusiness = {
+  return {
     ...business,
     publicEmail: sanitizeLegacyLink(business.publicEmail),
     website: sanitizeLegacyLink(business.website),
-    publicTitle: sanitizeLegacyCopy(business.publicTitle),
-    publicSubtitle: sanitizeLegacyCopy(business.publicSubtitle),
-    publicDescription: sanitizeLegacyCopy(business.publicDescription),
-    seoTitle: sanitizeLegacyCopy(business.seoTitle),
-    seoDescription: sanitizeLegacyCopy(business.seoDescription),
-    bookingPolicy: sanitizeLegacyCopy(business.bookingPolicy),
-    cancellationPolicy: sanitizeLegacyCopy(business.cancellationPolicy),
-    city: cityAlias
-      ? {
-          ...business.city,
-          name: cityAlias.name,
-          slug: cityAlias.canonicalSlug,
-        }
-      : business.city,
-  };
-
-  if (!businessAlias) {
-    return normalized;
-  }
-
-  return {
-    ...normalized,
-    name: businessAlias.name,
-    slug: businessAlias.canonicalBusinessSlug,
-    publicEmail: null,
-    website: null,
-    publicPhone: businessAlias.publicPhone,
-    addressLine1: businessAlias.addressLine1,
-    addressLine2: null,
-    postalCode: null,
-    publicTitle: null,
-    publicSubtitle: null,
-    publicDescription: null,
-    seoTitle: null,
-    seoDescription: null,
-    bookingPolicy: null,
-    cancellationPolicy: null,
   };
 }
 
@@ -555,9 +413,7 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
     const featuredCities =
       runtimeCities.length > 0 ? runtimeCities.map(mapHomeCity) : fallbackCities;
     const showcaseBusinesses =
-      runtimeBusinesses.length > 0
-        ? runtimeBusinesses.map(mapHomeBusiness)
-        : fallbackBusinesses;
+      runtimeBusinesses.length > 0 ? runtimeBusinesses.map(mapHomeBusiness) : fallbackBusinesses;
 
     return {
       featuredCities,

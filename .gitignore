@@ -21,6 +21,7 @@ apps/*/.vercel/
 *.dev.log
 .tmp/
 .tmp-chrome-headless/
+tools/.generated/
 tmp-*.png
 tmp-*.jpg
 tmp-*.jpeg

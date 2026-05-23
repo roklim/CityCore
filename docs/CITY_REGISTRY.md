@@ -82,8 +82,8 @@ The registry supports city-first routes such as:
 Businesses then live under the selected city:
 
 ```txt
-/cagli/forno-locale-demo
-/roma/sushi-centrale
+/cagli/bottega-civica
+/roma/studio-centrale
 ```
 
 ## Sources

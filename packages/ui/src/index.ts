@@ -61,13 +61,13 @@ export const platformShellNavigation = [
   },
   {
     id: "city_marketplace",
-    href: "/demo-city",
+    href: "/cagli",
     label: "City Surface",
     meta: "Discovery locale",
   },
   {
     id: "business_page",
-    href: "/demo-city/demo-business",
+    href: "/cagli/bottega-civica",
     label: "Business Page",
     meta: "Sito pubblico modulare",
   },
@@ -79,7 +79,7 @@ export const platformShellNavigation = [
   },
   {
     id: "local_admin",
-    href: "/demo-city/demo-business/admin",
+    href: "/cagli/bottega-civica/admin",
     label: "Business Admin",
     meta: "Console business",
   },

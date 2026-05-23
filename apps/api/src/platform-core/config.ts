@@ -115,7 +115,9 @@ const nullableTrimmedString = (max: number) =>
   z.union([z.string().trim().min(1).max(max), z.null()]).optional();
 const nullableEmailString = z.union([z.string().trim().email(), z.null()]).optional();
 const nullableUrlString = z.union([z.string().trim().url().max(200), z.null()]).optional();
-const nullableHexColorString = z.union([z.string().trim().regex(hexColorPattern), z.null()]).optional();
+const nullableHexColorString = z
+  .union([z.string().trim().regex(hexColorPattern), z.null()])
+  .optional();
 
 export const createCitySchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -232,45 +234,47 @@ export const createBusinessSchema = z
     }
   });
 
-export const updateBusinessSchema = z.object({
-  name: z.string().trim().min(2).max(160).optional(),
-  slug: optionalTrimmedString.max(160).optional(),
-  legalName: nullableTrimmedString(160),
-  category: z.union([z.enum(templateCategories), z.null()]).optional(),
-  status: z.enum(businessStatuses).optional(),
-  plan: z.enum(businessPlans).optional(),
-  subscriptionStatus: z.enum(subscriptionStatuses).optional(),
-  publicEmail: nullableEmailString,
-  publicPhone: nullableTrimmedString(60),
-  website: nullableUrlString,
-  addressLine1: nullableTrimmedString(160),
-  addressLine2: nullableTrimmedString(160),
-  postalCode: nullableTrimmedString(20),
-  timezone: optionalTrimmedString.max(80).optional(),
-  currency: optionalTrimmedString.max(8).optional(),
-  locale: optionalTrimmedString.max(12).optional(),
-  primaryColor: nullableHexColorString,
-  accentColor: nullableHexColorString,
-  publicTitle: nullableTrimmedString(160),
-  publicSubtitle: nullableTrimmedString(200),
-  publicDescription: nullableTrimmedString(2_000),
-  seoTitle: nullableTrimmedString(160),
-  seoDescription: nullableTrimmedString(200),
-  bookingPolicy: nullableTrimmedString(2_000),
-  cancellationPolicy: nullableTrimmedString(2_000),
-  notesInternal: nullableTrimmedString(2_000),
-  ownerEmail: z.union([z.string().trim().email(), z.null()]).optional(),
-  ownerName: nullableTrimmedString(120),
-  ownerPhone: nullableTrimmedString(60),
-}).superRefine((value, context) => {
-  if ((value.ownerName || value.ownerPhone) && !value.ownerEmail) {
-    context.addIssue({
-      code: "custom",
-      path: ["ownerEmail"],
-      message: "ownerEmail is required when owner details are provided.",
-    });
-  }
-});
+export const updateBusinessSchema = z
+  .object({
+    name: z.string().trim().min(2).max(160).optional(),
+    slug: optionalTrimmedString.max(160).optional(),
+    legalName: nullableTrimmedString(160),
+    category: z.union([z.enum(templateCategories), z.null()]).optional(),
+    status: z.enum(businessStatuses).optional(),
+    plan: z.enum(businessPlans).optional(),
+    subscriptionStatus: z.enum(subscriptionStatuses).optional(),
+    publicEmail: nullableEmailString,
+    publicPhone: nullableTrimmedString(60),
+    website: nullableUrlString,
+    addressLine1: nullableTrimmedString(160),
+    addressLine2: nullableTrimmedString(160),
+    postalCode: nullableTrimmedString(20),
+    timezone: optionalTrimmedString.max(80).optional(),
+    currency: optionalTrimmedString.max(8).optional(),
+    locale: optionalTrimmedString.max(12).optional(),
+    primaryColor: nullableHexColorString,
+    accentColor: nullableHexColorString,
+    publicTitle: nullableTrimmedString(160),
+    publicSubtitle: nullableTrimmedString(200),
+    publicDescription: nullableTrimmedString(2_000),
+    seoTitle: nullableTrimmedString(160),
+    seoDescription: nullableTrimmedString(200),
+    bookingPolicy: nullableTrimmedString(2_000),
+    cancellationPolicy: nullableTrimmedString(2_000),
+    notesInternal: nullableTrimmedString(2_000),
+    ownerEmail: z.union([z.string().trim().email(), z.null()]).optional(),
+    ownerName: nullableTrimmedString(120),
+    ownerPhone: nullableTrimmedString(60),
+  })
+  .superRefine((value, context) => {
+    if ((value.ownerName || value.ownerPhone) && !value.ownerEmail) {
+      context.addIssue({
+        code: "custom",
+        path: ["ownerEmail"],
+        message: "ownerEmail is required when owner details are provided.",
+      });
+    }
+  });
 
 export const listAccessGrantsQuerySchema = z.object({
   role: z.enum(accessRoles).optional(),

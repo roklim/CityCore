@@ -34,7 +34,6 @@ enum CityStatus {
 
 enum TemplateCategory {
   commerce
-  food
   service
   hospitality
   editorial
@@ -44,7 +43,6 @@ enum TemplateCategory {
 enum ModuleCode {
   content
   catalog
-  ordering
   forms_inbox
   booking
   hospitality

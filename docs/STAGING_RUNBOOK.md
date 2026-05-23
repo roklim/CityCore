@@ -6,13 +6,13 @@ Define one concrete staging shape for the current CityCore platform.
 
 ## Service Topology
 
-| Surface     | Provider                          | Service name                   | Source                    | Notes                                                           |
-| ----------- | --------------------------------- | ------------------------------ | ------------------------- | --------------------------------------------------------------- |
-| Web         | Vercel                            | `citycore-web-staging`         | `apps/web`                | Dedicated Vercel project; its production deployment is staging. |
-| API         | Render or equivalent app host     | `citycore-api-staging`         | `apps/api`                | HTTP service with `/health`.                                    |
-| Worker      | Render or equivalent app host     | `citycore-worker-staging`      | `apps/worker`             | Background worker, no public HTTP surface.                      |
-| Database    | Managed Postgres                  | `citycore-postgres-staging`    | `packages/database`       | Runs Prisma migrations before deploy.                           |
-| Cache/Queue | Managed Redis                     | `citycore-redis-staging`       | `apps/api`, `apps/worker` | Shared by API and worker.                                       |
+| Surface     | Provider                      | Service name                | Source                    | Notes                                                           |
+| ----------- | ----------------------------- | --------------------------- | ------------------------- | --------------------------------------------------------------- |
+| Web         | Vercel                        | `citycore-web-staging`      | `apps/web`                | Dedicated Vercel project; its production deployment is staging. |
+| API         | Render or equivalent app host | `citycore-api-staging`      | `apps/api`                | HTTP service with `/health`.                                    |
+| Worker      | Render or equivalent app host | `citycore-worker-staging`   | `apps/worker`             | Background worker, no public HTTP surface.                      |
+| Database    | Managed Postgres              | `citycore-postgres-staging` | `packages/database`       | Runs Prisma migrations before deploy.                           |
+| Cache/Queue | Managed Redis                 | `citycore-redis-staging`    | `apps/api`, `apps/worker` | Shared by API and worker.                                       |
 
 ## Branch And Environment Policy
 

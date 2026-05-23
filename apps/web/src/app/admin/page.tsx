@@ -141,7 +141,9 @@ export default async function AdminPage() {
         <article className="metric-card">
           <span>Registry collegate</span>
           <strong>{totalRegistryLinked}</strong>
-          <p>{registry.error ? registry.error : "Comuni registry gia agganciati a una city attiva."}</p>
+          <p>
+            {registry.error ? registry.error : "Comuni registry gia agganciati a una city attiva."}
+          </p>
         </article>
 
         <article className="metric-card">
@@ -153,7 +155,9 @@ export default async function AdminPage() {
         <article className="metric-card">
           <span>Business in bozza</span>
           <strong>{totalDraftBusinesses}</strong>
-          <p>{businesses.error ? businesses.error : "Tenant reali letti dal core di piattaforma."}</p>
+          <p>
+            {businesses.error ? businesses.error : "Tenant reali letti dal core di piattaforma."}
+          </p>
         </article>
 
         <article className="metric-card">

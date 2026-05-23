@@ -34,9 +34,6 @@ import {
   updateCitySchema,
 } from "./platform-core/config.js";
 
-type StoredTemplateCategory = TemplateCategory | "food";
-type StoredModuleCode = ModuleCode | "ordering";
-
 function slugify(value: string) {
   return value
     .trim()
@@ -266,65 +263,6 @@ function isPrismaError(error: unknown, code: string) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;
 }
 
-function normalizeTemplateCategory(
-  category: StoredTemplateCategory | null,
-): TemplateCategory | null {
-  if (!category) {
-    return null;
-  }
-
-  return category === "food" ? "commerce" : category;
-}
-
-function sanitizePublicCopy(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  return /\bv2\b|ordering/i.test(value) ? null : value;
-}
-
-function normalizeModuleCode(code: StoredModuleCode): ModuleCode {
-  return code === "ordering" ? "catalog" : code;
-}
-
-function normalizeTemplatePresentation(template: {
-  id: string;
-  code: string;
-  name: string;
-  category: StoredTemplateCategory;
-  primaryModule: StoredModuleCode;
-  defaultCtaLabel: string | null;
-}) {
-  const fallbackTemplate = templateCatalogMap.get("local_business");
-  const isLegacyFoodTemplate =
-    template.code === "pizzeria" ||
-    template.name.toLowerCase() === "pizzeria" ||
-    template.category === "food" ||
-    template.primaryModule === "ordering";
-
-  if (isLegacyFoodTemplate && fallbackTemplate) {
-    return {
-      ...template,
-      code: fallbackTemplate.code,
-      name: fallbackTemplate.name,
-      category: fallbackTemplate.category,
-      primaryModule: fallbackTemplate.primaryModule,
-      defaultCtaLabel: fallbackTemplate.defaultCtaLabel,
-    };
-  }
-
-  return {
-    ...template,
-    category: normalizeTemplateCategory(template.category) ?? "commerce",
-    primaryModule: normalizeModuleCode(template.primaryModule),
-    defaultCtaLabel:
-      template.defaultCtaLabel && /\bordina\b/i.test(template.defaultCtaLabel)
-        ? "Esplora il business"
-        : template.defaultCtaLabel,
-  };
-}
-
 function mapCity(city: {
   id: string;
   name: string;
@@ -429,7 +367,7 @@ function mapBusiness(business: {
   name: string;
   slug: string;
   legalName: string | null;
-  category: StoredTemplateCategory | null;
+  category: TemplateCategory | null;
   status: BusinessStatus;
   plan: BusinessPlan;
   subscriptionStatus: SubscriptionStatus;
@@ -464,12 +402,12 @@ function mapBusiness(business: {
     id: string;
     code: string;
     name: string;
-    category: StoredTemplateCategory;
-    primaryModule: StoredModuleCode;
+    category: TemplateCategory;
+    primaryModule: ModuleCode;
     defaultCtaLabel: string | null;
   };
   modules: Array<{
-    moduleCode: StoredModuleCode;
+    moduleCode: ModuleCode;
     active: boolean;
   }>;
   ownerUser: {
@@ -484,7 +422,7 @@ function mapBusiness(business: {
     name: business.name,
     slug: business.slug,
     legalName: business.legalName,
-    category: normalizeTemplateCategory(business.category),
+    category: business.category,
     status: business.status,
     plan: business.plan,
     subscriptionStatus: business.subscriptionStatus,
@@ -508,11 +446,8 @@ function mapBusiness(business: {
     cancellationPolicy: business.cancellationPolicy,
     notesInternal: business.notesInternal,
     city: business.city,
-    template: normalizeTemplatePresentation(business.template),
-    modules: business.modules.map((entry) => ({
-      ...entry,
-      moduleCode: normalizeModuleCode(entry.moduleCode),
-    })),
+    template: business.template,
+    modules: business.modules,
     owner: business.ownerUser,
     createdAt: business.createdAt,
     updatedAt: business.updatedAt,
@@ -543,10 +478,10 @@ function mapPublicCity(city: {
     region: city.region,
     country: city.country,
     status: city.status,
-    heroTitle: sanitizePublicCopy(city.heroTitle),
-    heroDescription: sanitizePublicCopy(city.heroDescription),
-    seoTitle: sanitizePublicCopy(city.seoTitle),
-    seoDescription: sanitizePublicCopy(city.seoDescription),
+    heroTitle: city.heroTitle,
+    heroDescription: city.heroDescription,
+    seoTitle: city.seoTitle,
+    seoDescription: city.seoDescription,
     businessCount: city.businesses?.length ?? 0,
   };
 }
@@ -555,7 +490,7 @@ function mapPublicBusiness(business: {
   id: string;
   name: string;
   slug: string;
-  category: StoredTemplateCategory | null;
+  category: TemplateCategory | null;
   status: BusinessStatus;
   publicEmail: string | null;
   publicPhone: string | null;
@@ -587,12 +522,12 @@ function mapPublicBusiness(business: {
     id: string;
     code: string;
     name: string;
-    category: StoredTemplateCategory;
-    primaryModule: StoredModuleCode;
+    category: TemplateCategory;
+    primaryModule: ModuleCode;
     defaultCtaLabel: string | null;
   };
   modules: Array<{
-    moduleCode: StoredModuleCode;
+    moduleCode: ModuleCode;
     active: boolean;
   }>;
 }) {
@@ -600,7 +535,7 @@ function mapPublicBusiness(business: {
     id: business.id,
     name: business.name,
     slug: business.slug,
-    category: normalizeTemplateCategory(business.category),
+    category: business.category,
     status: business.status,
     publicEmail: business.publicEmail,
     publicPhone: business.publicPhone,
@@ -613,19 +548,16 @@ function mapPublicBusiness(business: {
     locale: business.locale,
     primaryColor: business.primaryColor,
     accentColor: business.accentColor,
-    publicTitle: sanitizePublicCopy(business.publicTitle),
-    publicSubtitle: sanitizePublicCopy(business.publicSubtitle),
-    publicDescription: sanitizePublicCopy(business.publicDescription),
-    seoTitle: sanitizePublicCopy(business.seoTitle),
-    seoDescription: sanitizePublicCopy(business.seoDescription),
-    bookingPolicy: sanitizePublicCopy(business.bookingPolicy),
-    cancellationPolicy: sanitizePublicCopy(business.cancellationPolicy),
+    publicTitle: business.publicTitle,
+    publicSubtitle: business.publicSubtitle,
+    publicDescription: business.publicDescription,
+    seoTitle: business.seoTitle,
+    seoDescription: business.seoDescription,
+    bookingPolicy: business.bookingPolicy,
+    cancellationPolicy: business.cancellationPolicy,
     city: business.city,
-    template: normalizeTemplatePresentation(business.template),
-    modules: business.modules.map((entry) => ({
-      ...entry,
-      moduleCode: normalizeModuleCode(entry.moduleCode),
-    })),
+    template: business.template,
+    modules: business.modules,
     createdAt: business.createdAt,
     updatedAt: business.updatedAt,
   };
@@ -1470,7 +1402,9 @@ export function registerPlatformCoreRoutes(app: FastifyInstance) {
               cityId: city.id,
               metadataJson: {
                 previousSlug: city.slug,
-                nextSlug: hasOwn(parsed.data, "slug") ? slugify(parsed.data.slug ?? city.slug) : city.slug,
+                nextSlug: hasOwn(parsed.data, "slug")
+                  ? slugify(parsed.data.slug ?? city.slug)
+                  : city.slug,
                 fields: Object.keys(parsed.data).sort(),
               },
             },

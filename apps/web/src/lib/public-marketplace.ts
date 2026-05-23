@@ -79,17 +79,6 @@ const cityProfiles: Record<string, Omit<PublicCityProfile, "slug">> = {
     featuredModules: ["catalog", "booking", "listings"],
     businesses: [],
   },
-  "demo-city": {
-    name: "Demo City",
-    region: "Sandbox",
-    claim: "Ambiente demo, ma con struttura da prodotto vero.",
-    shortPitch:
-      "Usa questa citta per verificare il linguaggio pubblico della piattaforma senza ricadere in verticali troppo stretti.",
-    neighborhoods: ["North Block", "Old Town", "Riverside", "Station Quarter"],
-    quickFilters: ["directory", "catalog", "booking", "events"],
-    featuredModules: ["directory", "catalog", "events"],
-    businesses: [],
-  },
 };
 
 function titleFromSlug(value: string) {
@@ -182,7 +171,8 @@ const seededBusinesses = {
         },
         {
           question: "Il catalogo e solo visivo?",
-          answer: "Per ora e uno scaffold coerente con il core piattaforma e con la pagina pubblica.",
+          answer:
+            "Per ora e uno scaffold coerente con il core piattaforma e con la pagina pubblica.",
         },
       ],
     }),
@@ -199,7 +189,8 @@ const seededBusinesses = {
       contactPhone: "+39 0721 900121",
       addressLine: "Via del Teatro 7, Cagli",
       openNowLabel: "Richieste aperte",
-      heroTitle: "Prenotare o chiedere informazioni deve essere semplice come scegliere il servizio.",
+      heroTitle:
+        "Prenotare o chiedere informazioni deve essere semplice come scegliere il servizio.",
       heroDescription:
         "Servizi chiari, prossimi passi leggibili e una CTA che porta subito alla disponibilita.",
       highlights: ["Servizi chiari", "Agenda futura", "Contatto diretto"],
@@ -384,7 +375,8 @@ export function getCityProfile(citySlug: string): PublicCityProfile {
         faq: [
           {
             question: "Perche questa pagina e diversa dai vecchi prototipi?",
-            answer: "Perche parla il linguaggio dell'utente, non quello della vecchia roadmap tecnica.",
+            answer:
+              "Perche parla il linguaggio dell'utente, non quello della vecchia roadmap tecnica.",
           },
           {
             question: "E gia collegata a un modulo specialistico completo?",

@@ -101,7 +101,9 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
         <article className="metric-card">
           <span>Stato tenant</span>
           <strong>{business.status}</strong>
-          <p>Piano {business.plan}, subscription {business.subscriptionStatus}.</p>
+          <p>
+            Piano {business.plan}, subscription {business.subscriptionStatus}.
+          </p>
         </article>
       </section>
 
@@ -149,15 +151,13 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
               <p className="section-label">Public surface</p>
               <h2>Cosa vede l'utente finale</h2>
             </div>
-            <code>/{citySlug}/{businessSlug}</code>
+            <code>
+              /{citySlug}/{businessSlug}
+            </code>
           </div>
 
-          <p className="muted-copy">
-            Titolo pubblico: {business.publicTitle ?? "non impostato"}.
-          </p>
-          <p className="muted-copy">
-            Sottotitolo: {business.publicSubtitle ?? "non impostato"}.
-          </p>
+          <p className="muted-copy">Titolo pubblico: {business.publicTitle ?? "non impostato"}.</p>
+          <p className="muted-copy">Sottotitolo: {business.publicSubtitle ?? "non impostato"}.</p>
           <p className="muted-copy">
             Descrizione: {business.publicDescription ?? "non impostata"}.
           </p>
@@ -179,7 +179,10 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
         <ul className="detail-list">
           <li>Il business eredita un template ufficiale del catalogo piattaforma.</li>
           <li>I moduli attivi restano standardizzati e non sono logiche custom per tenant.</li>
-          <li>Contenuti, contatti, CTA e identita pubblica vivono dentro una shell coerente con la citta.</li>
+          <li>
+            Contenuti, contatti, CTA e identita pubblica vivono dentro una shell coerente con la
+            citta.
+          </li>
           <li>Questa console e lo scaffold da cui far crescere contenuti, moduli e permessi.</li>
         </ul>
       </section>
