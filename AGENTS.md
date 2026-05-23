@@ -16,8 +16,10 @@ transazionale specializzato.
   - `src/lib`: helper lato web
 - `apps/api`: Fastify + Prisma
   - `src/app.ts`: bootstrap server
-  - `src/platform-core.ts`: route layer del core di piattaforma
-  - `src/platform-core/*`: citta, business, access grants, registri e schemi comuni
+  - `src/platform-core.ts`: entrypoint del core di piattaforma
+  - `src/platform-core/routes.ts`: route group admin del core
+  - `src/platform-core/routes-public.ts`: route pubbliche city-first
+  - `src/platform-core/*`: config, helper, mapper, access filters, citta, business, access grants e registri
 - `packages/*`: moduli condivisi (`config`, `database`, `domain`, `permissions`, `shared`, `templates`, `ui`)
 - `docs`: documentazione durevole, blueprint e workflow
 - `tools`: script operativi coerenti con il core
@@ -113,6 +115,6 @@ npm run db:generate
 ## Note Pratiche
 
 - `apps/web` puo contenere WIP di UI: evitare refactor laterali non richiesti.
-- `apps/api/src/platform-core.ts` e un file grande: per nuove feature conviene estrarre moduli invece di allargarlo ancora.
+- `apps/api/src/platform-core.ts` deve restare solo un entrypoint: per nuove feature aggiungere o estendere moduli in `apps/api/src/platform-core/*`.
 - Se introduci nuove superfici pubbliche, mantieni il routing city-first.
 - I manifest di deploy attivi sono `render.yaml` per API e il progetto Vercel con root `apps/web`.

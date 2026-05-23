@@ -97,6 +97,20 @@ API, mantenute sotto un namespace HTTP versionato:
 - `/api/v2/platform-core/*`
 - `/api/v2/public/*`
 
+## Layout API Core
+
+Il core API e diviso per responsabilita per evitare un router monolitico:
+
+- `apps/api/src/platform-core.ts`: entrypoint che registra il core.
+- `apps/api/src/platform-core/routes.ts`: route group admin del platform core.
+- `apps/api/src/platform-core/routes-public.ts`: route pubbliche city-first.
+- `apps/api/src/platform-core/config.ts`: schemi, enum applicativi e catalogo template.
+- `apps/api/src/platform-core/mappers.ts`: mappatura degli oggetti Prisma verso risposte API.
+- `apps/api/src/platform-core/access.ts`: filtri di accesso scoped per city/business/platform.
+- `apps/api/src/platform-core/update-data.ts`: normalizzazione update input verso Prisma.
+- `apps/api/src/platform-core/template-service.ts`: sincronizzazione template core.
+- `apps/api/src/platform-core/utils.ts`: helper condivisi del platform core.
+
 ## Moduli
 
 Il repo conserva un catalogo moduli standardizzati.
