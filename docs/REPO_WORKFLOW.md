@@ -18,6 +18,8 @@ Mantenere il repo leggibile, buildabile e coerente con la direzione CityCore.
 - `packages/*` per moduli condivisi
 - `docs/*` per documentazione durevole
 - `tools/*` per script operativi
+- `tsconfig.json` al root come progetto vuoto per editor/tooling
+- `tsconfig.base.json` come base comune estesa dai workspace
 
 ## Regole Di Prodotto
 

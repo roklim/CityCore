@@ -22,7 +22,8 @@ transazionale specializzato.
 - `packages/*`: moduli condivisi (`config`, `database`, `domain`, `permissions`, `shared`, `templates`, `ui`)
 - `docs`: documentazione durevole, blueprint e workflow
 - `tools`: script operativi coerenti con il core
-- root: manifest e orchestrazione (`package.json`, `compose.yml`, `render.yaml`, `tsconfig.base.json`)
+- `.vscode`: impostazioni minime per usare TypeScript locale e tooling coerente
+- root: manifest e orchestrazione (`package.json`, `compose.yml`, `render.yaml`, `tsconfig.json`, `tsconfig.base.json`)
 
 ## Modello Prodotto
 
@@ -108,6 +109,8 @@ npm run db:generate
 - Gli script operativi e i seed vanno in `tools/`.
 - Gli artefatti temporanei vanno in `.tmp/` oppure come `tmp-*` al root e devono restare ignorati da Git.
 - I file al root devono essere pochi e infrastrutturali.
+- `tsconfig.json` al root e intenzionalmente vuoto: serve come entrypoint stabile per editor e tooling.
+- `tsconfig.base.json` contiene le opzioni condivise dai workspace.
 
 ## Flusso Di Lavoro Consigliato
 
