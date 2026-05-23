@@ -18,7 +18,6 @@ transazionale specializzato.
   - `src/app.ts`: bootstrap server
   - `src/platform-core.ts`: route layer del core di piattaforma
   - `src/platform-core/*`: citta, business, access grants, registri e schemi comuni
-- `apps/worker`: worker asincrono come scaffold di piattaforma
 - `packages/*`: moduli condivisi (`config`, `database`, `domain`, `permissions`, `shared`, `templates`, `ui`)
 - `docs`: documentazione durevole, blueprint e workflow
 - `tools`: script operativi coerenti con il core
@@ -64,7 +63,6 @@ Avvio:
 npm run dev
 npm run dev:web
 npm run dev:api
-npm run dev:worker
 ```
 
 Controlli:
@@ -95,13 +93,6 @@ npm run db:generate
   - `DATABASE_URL`
   - `REDIS_URL`
   - `AUTH_SECRET`
-- `apps/worker/.env`
-  - `NODE_ENV`
-  - `DATABASE_URL`
-  - `REDIS_URL`
-  - `AUTH_SECRET`
-  - `WORKER_NAME`
-
 ## Convenzioni Di Repo
 
 - Il codice sorgente va solo in `apps/*` e `packages/*`.
@@ -124,4 +115,4 @@ npm run db:generate
 - `apps/web` puo contenere WIP di UI: evitare refactor laterali non richiesti.
 - `apps/api/src/platform-core.ts` e un file grande: per nuove feature conviene estrarre moduli invece di allargarlo ancora.
 - Se introduci nuove superfici pubbliche, mantieni il routing city-first.
-- I manifest di deploy attivi sono `render.yaml` per API/worker e il progetto Vercel con root `apps/web`.
+- I manifest di deploy attivi sono `render.yaml` per API e il progetto Vercel con root `apps/web`.

@@ -190,53 +190,13 @@ async function verifyWebRuntime() {
   }
 }
 
-async function verifyWorkerRuntime() {
-  const child = startProcess("npm", ["--workspace", "@platform/worker", "run", "start"], {
-    env: {
-      NODE_ENV: "development",
-      DATABASE_URL: localDatabaseUrl,
-      REDIS_URL: process.env.REDIS_URL ?? "redis://localhost:6379",
-      AUTH_SECRET: process.env.AUTH_SECRET ?? "development-auth-secret-change-before-staging",
-      WORKER_NAME: "citycore-worker-platform-verify",
-    },
-  });
-
-  let output = "";
-
-  child.stdout.on("data", (chunk) => {
-    output += chunk.toString();
-  });
-  child.stderr.on("data", (chunk) => {
-    output += chunk.toString();
-  });
-
-  const exitCode = await new Promise((resolve) => {
-    child.once("exit", resolve);
-  });
-
-  if (exitCode !== 0) {
-    throw new Error(output.trim() || `worker exited with ${exitCode}`);
-  }
-
-  if (!output.includes("boot.ready")) {
-    throw new Error("worker did not emit boot.ready");
-  }
-
-  return "worker boot.ready emitted";
-}
-
 await runCheck("F1-01 workspace install", () => {
   run("npm", ["ls", "--workspaces", "--depth=0"], { capture: true });
   return "npm workspaces resolved";
 });
 
 await runCheck("F1-02 root scripts", () =>
-  assertFiles([
-    "package.json",
-    "apps/web/package.json",
-    "apps/api/package.json",
-    "apps/worker/package.json",
-  ]),
+  assertFiles(["package.json", "apps/web/package.json", "apps/api/package.json"]),
 );
 
 await runCheck("F1-03 database package", () =>
@@ -270,7 +230,7 @@ await runCheck("F1-04 Prisma schema", () => {
 await runCheck("F1-05 Docker Compose", verifyDockerCompose);
 
 await runCheck("F1-06 env templates", () =>
-  assertFiles(["apps/web/.env.example", "apps/api/.env.example", "apps/worker/.env.example"]),
+  assertFiles(["apps/web/.env.example", "apps/api/.env.example"]),
 );
 
 await runCheck("UI shell files", () =>
@@ -316,14 +276,8 @@ await runCheck("build api", () => {
   return "api build passed";
 });
 
-await runCheck("build worker", () => {
-  run("npm", ["run", "build:worker"]);
-  return "worker build passed";
-});
-
 await runCheck("F1-07 API runtime health", verifyApiRuntime);
 await runCheck("F1-07 web runtime health", verifyWebRuntime);
-await runCheck("F1-07 worker runtime boot", verifyWorkerRuntime);
 
 await runCheck("CI workflow", () => assertFiles([".github/workflows/platform-quality.yml"]));
 await runCheck("README bootstrap", () => assertFiles(["README.md"]));

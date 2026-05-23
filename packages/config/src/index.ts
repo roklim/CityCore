@@ -6,6 +6,5 @@ export const platformConfig = {
   services: {
     web: "citycore-web",
     api: "citycore-api",
-    worker: "citycore-worker",
   },
 };

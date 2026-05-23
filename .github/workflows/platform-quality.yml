@@ -81,6 +81,3 @@ jobs:
 
       - name: Build api
         run: npm run build:api
-
-      - name: Build worker
-        run: npm run build:worker

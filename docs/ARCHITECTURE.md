@@ -70,15 +70,6 @@ Responsabilita:
 Le shell admin devono restare coerenti con scope e permessi, non con un singolo
 verticale operativo.
 
-### Worker
-
-`apps/worker` resta uno scaffold per automazioni future di piattaforma:
-
-- sync
-- notifiche
-- cleanup
-- workflow asincroni
-
 ## Routing Canonico
 
 Pubblico:

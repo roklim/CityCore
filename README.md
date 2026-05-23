@@ -31,7 +31,6 @@ Il repo rappresenta solo il core city-first della piattaforma.
 
 - `apps/web`: Next.js App Router per home piattaforma, pagine citta, pagine business e shell admin
 - `apps/api`: Fastify + Prisma per auth, registry citta, businesses, templates, access grants e surface pubblica
-- `apps/worker`: scaffold per job asincroni futuri di piattaforma
 - `packages/*`: moduli condivisi (`config`, `database`, `domain`, `permissions`, `shared`, `templates`, `ui`)
 - `docs/*`: documentazione canonica di prodotto, architettura e workflow
 - `tools/*`: script operativi coerenti con il core piattaforma
@@ -71,7 +70,6 @@ Copia gli env:
 
 ```bash
 cp apps/api/.env.example apps/api/.env
-cp apps/worker/.env.example apps/worker/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
@@ -85,13 +83,6 @@ Variabili minime:
   - `DATABASE_URL`
   - `REDIS_URL`
   - `AUTH_SECRET`
-- `apps/worker`
-  - `NODE_ENV`
-  - `DATABASE_URL`
-  - `REDIS_URL`
-  - `AUTH_SECRET`
-  - `WORKER_NAME`
-
 Comandi utili:
 
 ```bash

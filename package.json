@@ -10,10 +10,9 @@
     "npm": ">=10"
   },
   "scripts": {
-    "dev": "concurrently -k -n web,api,worker \"npm:dev:web\" \"npm:dev:api\" \"npm:dev:worker\"",
+    "dev": "concurrently -k -n web,api \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "npm --workspace @platform/web run dev",
     "dev:api": "npm --workspace @platform/api run dev",
-    "dev:worker": "npm --workspace @platform/worker run dev",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
@@ -24,10 +23,9 @@
     "seed:global-admin": "node tools/seed-global-admin.mjs",
     "help:seed:global-admin": "node tools/seed-global-admin.mjs --help",
     "clean:build": "node tools/clean-build.mjs",
-    "build": "npm run clean:build && npm run build:web && npm run build:api && npm run build:worker",
+    "build": "npm run clean:build && npm run build:web && npm run build:api",
     "build:web": "npm --workspace @platform/web run build",
     "build:api": "npm --workspace @platform/api run build",
-    "build:worker": "npm --workspace @platform/worker run build",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"tools/**/*.mjs\" \"package.json\" \"tsconfig.json\" \"tsconfig.base.json\" \"compose.yml\" \"render.yaml\" \"render.staging.yaml\" \".github/**/*.yml\" \".vscode/*.json\" \"docs/**/*.md\"",

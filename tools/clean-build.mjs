@@ -1,11 +1,6 @@
 import { rmSync } from "node:fs";
 
-const generatedBuildPaths = [
-  "apps/api/dist",
-  "apps/worker/dist",
-  "apps/web/.next",
-  "apps/web/tsconfig.tsbuildinfo",
-];
+const generatedBuildPaths = ["apps/api/dist", "apps/web/.next", "apps/web/tsconfig.tsbuildinfo"];
 
 for (const path of generatedBuildPaths) {
   rmSync(path, {

@@ -17,23 +17,3 @@ services:
         sync: false
       - key: AUTH_SECRET
         sync: false
-
-  - type: worker
-    name: citycore-worker-staging
-    env: node
-    plan: starter
-    rootDir: .
-    buildCommand: npm ci && npm run build:worker
-    startCommand: npm --workspace @platform/worker run start
-    autoDeploy: false
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: AUTH_SECRET
-        sync: false
-      - key: WORKER_NAME
-        value: citycore-worker-staging

@@ -6,21 +6,20 @@ Define one concrete staging shape for the current CityCore platform.
 
 ## Service Topology
 
-| Surface     | Provider                      | Service name                | Source                    | Notes                                                           |
-| ----------- | ----------------------------- | --------------------------- | ------------------------- | --------------------------------------------------------------- |
-| Web         | Vercel                        | `citycore-web-staging`      | `apps/web`                | Dedicated Vercel project; its production deployment is staging. |
-| API         | Render or equivalent app host | `citycore-api-staging`      | `apps/api`                | HTTP service with `/health`.                                    |
-| Worker      | Render or equivalent app host | `citycore-worker-staging`   | `apps/worker`             | Background worker, no public HTTP surface.                      |
-| Database    | Managed Postgres              | `citycore-postgres-staging` | `packages/database`       | Runs Prisma migrations before deploy.                           |
-| Cache/Queue | Managed Redis                 | `citycore-redis-staging`    | `apps/api`, `apps/worker` | Shared by API and worker.                                       |
+| Surface  | Provider                      | Service name                | Source              | Notes                                                           |
+| -------- | ----------------------------- | --------------------------- | ------------------- | --------------------------------------------------------------- |
+| Web      | Vercel                        | `citycore-web-staging`      | `apps/web`          | Dedicated Vercel project; its production deployment is staging. |
+| API      | Render or equivalent app host | `citycore-api-staging`      | `apps/api`          | HTTP service with `/health`.                                    |
+| Database | Managed Postgres              | `citycore-postgres-staging` | `packages/database` | Runs Prisma migrations before deploy.                           |
+| Cache    | Managed Redis                 | `citycore-redis-staging`    | `apps/api`          | Shared cache/session dependency for API.                        |
 
 ## Branch And Environment Policy
 
 - Staging branch: `staging`
 - Web staging uses a dedicated Vercel project for `apps/web`.
 - The Vercel staging project's Production environment represents staging.
-- API and worker staging must never use production Postgres, Redis or auth secrets.
-- Migrations run before web/API/worker deploys.
+- API staging must never use production Postgres, Redis or auth secrets.
+- Migrations run before web/API deploys.
 
 ## Vercel Web Project
 
@@ -45,7 +44,7 @@ Required Vercel environment variable:
 NEXT_PUBLIC_API_BASE_URL=https://citycore-api-staging.onrender.com
 ```
 
-## API And Worker Services
+## API Service
 
 Use `render.staging.yaml` as the staging blueprint, or mirror the same settings in
 another backend host.
@@ -57,12 +56,6 @@ API service:
 - Start: `npm --workspace @platform/api run start`
 - Health: `/health`
 
-Worker service:
-
-- Name: `citycore-worker-staging`
-- Build: `npm ci && npm run build:worker`
-- Start: `npm --workspace @platform/worker run start`
-
 Required API env:
 
 ```txt
@@ -70,16 +63,6 @@ NODE_ENV=production
 DATABASE_URL=<staging-postgres-url>
 REDIS_URL=<staging-redis-url>
 AUTH_SECRET=<staging-auth-secret>
-```
-
-Required worker env:
-
-```txt
-NODE_ENV=production
-DATABASE_URL=<staging-postgres-url>
-REDIS_URL=<staging-redis-url>
-AUTH_SECRET=<staging-auth-secret>
-WORKER_NAME=citycore-worker-staging
 ```
 
 ## GitHub Secrets
@@ -92,10 +75,9 @@ VERCEL_TOKEN
 VERCEL_ORG_ID
 VERCEL_WEB_STAGING_PROJECT_ID
 RENDER_API_STAGING_DEPLOY_HOOK_URL
-RENDER_WORKER_STAGING_DEPLOY_HOOK_URL
 ```
 
-The Render deploy hook secrets are optional when deploying API/worker manually.
+The Render deploy hook secret is optional when deploying API manually.
 
 ## Deploy Flow
 
@@ -168,5 +150,5 @@ GLOBAL_ADMIN_PHONE
 ## Rollback
 
 - Vercel: promote the previous good deployment in the staging project.
-- API/worker: rollback to the previous backend host deployment.
+- API: rollback to the previous backend host deployment.
 - Database: do not rollback destructively; add a forward migration.
