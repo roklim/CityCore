@@ -11,15 +11,14 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
     "paths": {
-      "@platform/config": ["packages/config/src/index.ts"],
-      "@platform/database": ["packages/database/src/index.ts"],
-      "@platform/shared": ["packages/shared/src/index.ts"],
-      "@platform/domain": ["packages/domain/src/index.ts"],
-      "@platform/permissions": ["packages/permissions/src/index.ts"],
-      "@platform/templates": ["packages/templates/src/index.ts"],
-      "@platform/ui": ["packages/ui/src/index.ts"]
+      "@platform/config": ["./packages/config/src/index.ts"],
+      "@platform/database": ["./packages/database/src/index.ts"],
+      "@platform/shared": ["./packages/shared/src/index.ts"],
+      "@platform/domain": ["./packages/domain/src/index.ts"],
+      "@platform/permissions": ["./packages/permissions/src/index.ts"],
+      "@platform/templates": ["./packages/templates/src/index.ts"],
+      "@platform/ui": ["./packages/ui/src/index.ts"]
     }
   }
 }

@@ -1,3 +1,6 @@
+// @ts-check
+/// <reference types="node" />
+
 import { existsSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 

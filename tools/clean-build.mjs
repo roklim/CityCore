@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { rmSync } from "node:fs";
 
 const generatedBuildPaths = ["apps/api/dist", "apps/web/.next", "apps/web/tsconfig.tsbuildinfo"];
