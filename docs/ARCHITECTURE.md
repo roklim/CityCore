@@ -32,8 +32,12 @@ Responsabilita:
 - access grants
 - registry citta
 - gestione city e business
+- categorie cittadine
+- collezioni e featured locali
+- media asset scoped per citta e business
 - catalogo moduli
 - catalogo template
+- stati di pubblicazione per pagine e sezioni
 - audit log
 
 Tecnologia:
@@ -110,6 +114,29 @@ Moduli core/scaffold:
 
 Questi moduli oggi vanno letti come struttura e lessico condiviso del sistema,
 non come verticali completi gia implementati.
+
+## Data Model Core
+
+Il modello dati core e centrato sulla gerarchia:
+
+- `City`
+- `Business`
+- `Module`
+- `BusinessPage`
+- `BusinessSection`
+
+Il consolidamento aggiunge gli elementi necessari per costruire superfici
+pubbliche e admin reali senza introdurre verticali:
+
+- `MediaAsset` per immagini, documenti e asset collegati a platform/city/business
+- `PlatformModule` come registry persistente dei moduli ufficiali
+- `CityCategory` per directory, filtri e navigazione cittadina
+- `BusinessCategoryAssignment` per associare business a categorie locali
+- `CityCollection` e `CityCollectionItem` per featured, quartieri, stagionalita e contenuti editoriali
+- `PublicationStatus`, `publishedAt`, `publishedByUserId` e `version` per pagine e sezioni
+
+Le colonne asset legacy su city/business ora diventano foreign key verso
+`MediaAsset`, evitando riferimenti liberi non verificabili.
 
 ## Template
 

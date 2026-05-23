@@ -44,6 +44,7 @@ Ogni citta:
 - ha homepage, contenuti editoriali e SEO
 - puo avere featured business, categorie, collezioni ed eventi
 - governa la discovery locale senza cambiare la logica dei moduli
+- usa categorie e collezioni come strumenti editoriali, non come logica custom
 
 ## Business
 
@@ -54,6 +55,7 @@ Ogni business:
 - attiva uno o piu moduli compatibili
 - ha owner e staff con permessi scoped
 - puo vivere sotto percorso piattaforma o dominio proprio
+- puo essere collegato a categorie cittadine e collezioni featured
 
 ## Module
 
@@ -69,6 +71,9 @@ Moduli core/scaffold:
 - `listings`
 - `directory`
 - `events`
+
+Il catalogo moduli e persistente nel core tramite `PlatformModule`, cosi il
+prodotto puo distinguere moduli attivi, pubblici e amministrabili.
 
 ## Template
 
@@ -136,6 +141,24 @@ Il builder deve essere guidato:
 - CTA e media personalizzabili
 
 Non deve diventare un page builder illimitato in V1.
+
+## Pubblicazione E Media
+
+Le pagine e le sezioni hanno uno stato di pubblicazione:
+
+- `draft`
+- `in_review`
+- `published`
+- `archived`
+
+Gli asset media sono entita tracciate e scoped:
+
+- platform
+- city
+- business
+
+Questo permette preview, publish review, libreria media e rollback futuro senza
+mescolare contenuti pubblici con configurazioni operative.
 
 ## Principi Non Negoziabili
 
