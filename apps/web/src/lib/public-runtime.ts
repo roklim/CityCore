@@ -4,6 +4,7 @@ import {
   fetchPlatformApi,
   type PublicBusinessResponse,
   type PublicBusinessServicesResponse,
+  type PublicOpeningHoursResponse,
   type PublicBusinessesResponse,
   type PublicCityResponse,
   type PublicCitiesResponse,
@@ -89,6 +90,12 @@ export type PublicBusinessSurfaceData = {
 export async function getPublicBusinessServices(citySlug: string, businessSlug: string) {
   return fetchPlatformApi<PublicBusinessServicesResponse>(
     `/api/v2/public/cities/${citySlug}/businesses/${businessSlug}/services`,
+  );
+}
+
+export async function getPublicBusinessOpeningHours(citySlug: string, businessSlug: string) {
+  return fetchPlatformApi<PublicOpeningHoursResponse>(
+    `/api/v2/public/cities/${citySlug}/businesses/${businessSlug}/opening-hours`,
   );
 }
 

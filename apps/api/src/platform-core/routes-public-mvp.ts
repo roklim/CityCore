@@ -40,6 +40,29 @@ export function registerPublicBusinessMvpRoutes(app: FastifyInstance) {
     },
   );
 
+  app.get(
+    "/api/v2/public/cities/:citySlug/businesses/:businessSlug/opening-hours",
+    async (request, reply) => {
+      const params = parsePayload(publicBusinessParamsSchema, request.params);
+      if (!params.success) return reply.code(params.response.statusCode).send(params.response.body);
+      const business = await prisma.business.findFirst({
+        where: {
+          slug: params.data.businessSlug,
+          status: "active",
+          city: { slug: params.data.citySlug, active: true, status: "active" },
+        },
+        select: { id: true, timezone: true },
+      });
+      if (!business) return reply.code(404).send({ status: "error", error: "Business not found" });
+      const items = await prisma.businessOpeningDay.findMany({
+        where: { businessId: business.id },
+        orderBy: { weekday: "asc" },
+        include: { intervals: { orderBy: { sortOrder: "asc" } } },
+      });
+      return { status: "ok", timezone: business.timezone, items };
+    },
+  );
+
   app.post(
     "/api/v2/public/cities/:citySlug/businesses/:businessSlug/inquiries",
     async (request, reply) => {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublicShell } from "../../../components/public-shell";
+import { PublicInquiryForm } from "../../../components/public-business/public-inquiry-form";
 import { buildBusinessPageContent } from "../../../lib/public-content";
 import { getPublicBusinessSurfaceData } from "../../../lib/public-runtime";
 
@@ -140,6 +141,16 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
             </Link>
           </div>
         </section>
+
+        {degraded ? (
+          <section className="spotlight-card" aria-live="polite">
+            <p>
+              Le richieste non sono disponibili mentre vengono visualizzati contenuti dimostrativi.
+            </p>
+          </section>
+        ) : (
+          <PublicInquiryForm citySlug={city.slug} businessSlug={business.slug} />
+        )}
 
         <section className="section-header">
           <p className="section-label">{copy.faq}</p>

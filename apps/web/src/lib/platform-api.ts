@@ -357,6 +357,19 @@ export type PublicBusinessServicesResponse = {
   items: PublicBusinessService[];
 };
 
+export type PublicOpeningInterval = { opensAt: string; closesAt: string; sortOrder: number };
+export type PublicOpeningDay = {
+  weekday: number;
+  isClosed: boolean;
+  note: string | null;
+  intervals: PublicOpeningInterval[];
+};
+export type PublicOpeningHoursResponse = {
+  status: "ok";
+  timezone: string;
+  items: PublicOpeningDay[];
+};
+
 export type PublicInquiryPayload = {
   name: string;
   email: string;
@@ -367,6 +380,17 @@ export type PublicInquiryPayload = {
 };
 
 export type PublicInquiryResponse = { status: "ok" };
+
+export function createPublicBusinessInquiry(
+  citySlug: string,
+  businessSlug: string,
+  payload: PublicInquiryPayload,
+) {
+  return fetchPlatformApi<PublicInquiryResponse>(
+    `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/inquiries`,
+    { method: "POST", body: payload },
+  );
+}
 
 type FetchOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
