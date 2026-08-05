@@ -33,6 +33,7 @@ export const ROLE_PERMISSIONS = {
   ],
   local_admin: [
     "businesses.read",
+    "businesses.manage",
     "content.manage",
     "catalog.manage",
     "modules.manage",

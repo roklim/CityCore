@@ -2,7 +2,11 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 
 import { canAccess, getRequestAuth, requirePermission } from "../auth.js";
 import { prisma } from "../database.js";
-import { getBusinessPublishReadiness, validateOpeningWeek } from "./mvp-domain.js";
+import {
+  canTransitionInquiryStatus,
+  getBusinessPublishReadiness,
+  validateOpeningWeek,
+} from "./mvp-domain.js";
 import {
   businessParamsSchema,
   inquiryListQuerySchema,
@@ -506,9 +510,17 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
       if (!business) return reply.code(404).send({ status: "error", error: "Business not found" });
       const existing = await prisma.businessInquiry.findFirst({
         where: { id: params.data.inquiryId, businessId: business.id },
-        select: { id: true, readAt: true },
+        select: { id: true, readAt: true, status: true },
       });
       if (!existing) return reply.code(404).send({ status: "error", error: "Inquiry not found" });
+      if (
+        hasOwn(body.data, "status") &&
+        body.data.status &&
+        !canTransitionInquiryStatus(existing.status, body.data.status)
+      )
+        return reply
+          .code(409)
+          .send({ status: "error", error: "Invalid inquiry status transition" });
       const item = await prisma.businessInquiry.update({
         where: { id: existing.id },
         data: {

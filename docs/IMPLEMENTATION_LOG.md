@@ -1,5 +1,17 @@
 # Implementation log — Fase 1
 
+## Fase 3B — 2026-08-05
+
+- Aggiunto `compose.test.yml` con PostgreSQL isolato `citycore_test` su porta
+  dedicata e runner protetti per migrate/reset/test.
+- Le guardie richiedono `NODE_ENV=test`, `DATABASE_URL_TEST`, URL contenente
+  `test` e diverso da sviluppo.
+- Aggiunti tre test d'integrazione Fastify inject: categorie/albero, categorie
+  atomiche e orari, publish/servizi/inquiry con isolamento grant.
+- Corretto `local_admin`: ora possiede `businesses.manage`, necessario per
+  modificare e pubblicare il proprio business nel flusso MVP.
+- Coverage unit: statement 82.69%, branch 76.74%, function 86.66%, line 83.5%.
+
 ## Fase 3 — 2026-08-05
 
 - Aggiunti `tools/seed-demo.mjs` e `npm run db:seed`: dataset idempotente con

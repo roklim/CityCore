@@ -9,6 +9,7 @@ packages/*/dist/
 frontend/dist/
 .next/
 apps/*/.next/
+apps/*/coverage/
 *.tsbuildinfo
 .env
 .env.local

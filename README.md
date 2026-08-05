@@ -121,6 +121,18 @@ I test d'integrazione richiedono esplicitamente un database il cui URL contiene
 `test` e rifiutano l'URL locale standard. Non usare mai il database di sviluppo
 per test distruttivi.
 
+Per predisporre il database test locale con Docker:
+
+```bash
+npm run db:test:up
+DATABASE_URL_TEST="postgresql://.../citycore_test" npm run db:test:migrate
+DATABASE_URL_TEST="postgresql://.../citycore_test" npm run test:integration
+npm run db:test:down
+```
+
+I runner rifiutano URL senza `test`, uguali a `DATABASE_URL` o privi della
+variabile esplicita. Il database di sviluppo non viene mai resettato dai test.
+
 6. Avvia API e frontend:
 
 ```bash

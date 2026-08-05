@@ -26,3 +26,13 @@ un lavoro futuro.
 `GET /health` restituisce lo stato del servizio e delle dipendenze senza
 segreti. Il dataset `npm run db:seed` include city attive/non attive, business
 pubblicati/in bozza e inquiry nei tre stati; è adatto a smoke test locali.
+
+### Integrazione locale
+
+Il database di integrazione usa il solo container `citycore-postgres-test`, con
+database e credenziali demo `citycore_test` sulla porta locale `5433`. I comandi
+sono `npm run db:test:up`, `db:test:migrate`, `test:integration` e
+`db:test:down`. I runner richiedono `NODE_ENV=test`, un `DATABASE_URL_TEST`
+esplicito contenente `test` e diverso da `DATABASE_URL`.
+
+Le inquiry rifiutano anche le transizioni di stato non consentite.

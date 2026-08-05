@@ -144,6 +144,7 @@ const rolePermissions: Record<AccessRole, readonly PlatformPermission[]> = {
   ],
   local_admin: [
     "businesses.read",
+    "businesses.manage",
     "content.manage",
     "catalog.manage",
     "modules.manage",
