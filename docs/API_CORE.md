@@ -36,3 +36,8 @@ sono `npm run db:test:up`, `db:test:migrate`, `test:integration` e
 esplicito contenente `test` e diverso da `DATABASE_URL`.
 
 Le inquiry rifiutano anche le transizioni di stato non consentite.
+
+Per la verifica pulita Windows, una copia temporanea senza dipendenze e
+artefatti viene installata con `npm ci`: Prisma generate e le build operano
+quindi senza il lock del runtime locale. Il file `next-env.d.ts` eventualmente
+rigenerato in quella copia non deve essere propagato automaticamente.

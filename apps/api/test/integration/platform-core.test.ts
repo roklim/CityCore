@@ -29,12 +29,14 @@ async function request(
   url: string,
   body?: unknown,
   auth = token,
+  remoteAddress?: string,
 ) {
   return app.inject({
     method,
     url,
     payload: body,
     headers: auth ? { authorization: `Bearer ${auth}` } : {},
+    remoteAddress,
   });
 }
 
@@ -265,6 +267,13 @@ describe("platform core integration", () => {
     );
     expect(overlap.statusCode).toBe(400);
     expect(await prisma.businessOpeningDay.count({ where: { businessId } })).toBe(7);
+    const assignedDelete = await request(
+      "DELETE",
+      `/api/v2/platform-core/cities/test-city/categories/${category.id}`,
+      undefined,
+      await createCityAdmin(),
+    );
+    expect(assignedDelete.statusCode).toBe(409);
   });
 
   it("publishes a ready business, exposes services, and isolates inquiries", async () => {
@@ -387,5 +396,121 @@ describe("platform core integration", () => {
         )
       ).statusCode,
     ).toBe(409);
+  });
+
+  it("rejects invalid public inquiries and applies the per-IP rate limit", async () => {
+    const invalidPrivacy = await request(
+      "POST",
+      "/api/v2/public/cities/test-city/businesses/test-business/inquiries",
+      {
+        name: "Visitor",
+        email: "visitor@example.test",
+        message: "A valid looking inquiry body.",
+        privacyAccepted: false,
+      },
+      "",
+    );
+    expect(invalidPrivacy.statusCode).toBe(400);
+    const invalidHtml = await request(
+      "POST",
+      "/api/v2/public/cities/test-city/businesses/test-business/inquiries",
+      {
+        name: "<b>Visitor</b>",
+        email: "visitor@example.test",
+        message: "A valid looking inquiry body.",
+        privacyAccepted: true,
+      },
+      "",
+    );
+    expect(invalidHtml.statusCode).toBe(400);
+    const category = await prisma.cityCategory.create({
+      data: { cityId, name: "Published", slug: "published" },
+    });
+    await prisma.businessCategoryAssignment.create({
+      data: { businessId, categoryId: category.id },
+    });
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business/publish",
+        )
+      ).statusCode,
+    ).toBe(200);
+    const body = {
+      name: "Rate visitor",
+      email: "rate@example.test",
+      message: "A sufficiently detailed public inquiry for the rate limit.",
+      privacyAccepted: true,
+    };
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      expect(
+        (
+          await request(
+            "POST",
+            "/api/v2/public/cities/test-city/businesses/test-business/inquiries",
+            body,
+            "",
+            "203.0.113.8",
+          )
+        ).statusCode,
+      ).toBe(201);
+    }
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/public/cities/test-city/businesses/test-business/inquiries",
+          body,
+          "",
+          "203.0.113.8",
+        )
+      ).statusCode,
+    ).toBe(429);
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/public/cities/test-city/businesses/test-business/inquiries",
+          body,
+          "",
+          "203.0.113.9",
+        )
+      ).statusCode,
+    ).toBe(201);
+  });
+
+  it("removes public visibility when a published city becomes inactive", async () => {
+    const category = await prisma.cityCategory.create({
+      data: { cityId, name: "Visibility", slug: "visibility" },
+    });
+    await prisma.businessCategoryAssignment.create({
+      data: { businessId, categoryId: category.id },
+    });
+    await request(
+      "POST",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/publish",
+    );
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/public/cities/test-city/businesses/test-business",
+          undefined,
+          "",
+        )
+      ).statusCode,
+    ).toBe(200);
+    await prisma.city.update({ where: { id: cityId }, data: { active: false } });
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/public/cities/test-city/businesses/test-business",
+          undefined,
+          "",
+        )
+      ).statusCode,
+    ).toBe(404);
   });
 });

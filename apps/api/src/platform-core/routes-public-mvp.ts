@@ -6,9 +6,8 @@ import { publicBusinessParamsSchema } from "./config.js";
 import { createInquiryRateLimiter } from "./inquiry-guard.js";
 import { parsePayload } from "./utils.js";
 
-const inquiryRateLimiter = createInquiryRateLimiter();
-
 export function registerPublicBusinessMvpRoutes(app: FastifyInstance) {
+  const inquiryRateLimiter = createInquiryRateLimiter();
   app.get(
     "/api/v2/public/cities/:citySlug/businesses/:businessSlug/services",
     async (request, reply) => {

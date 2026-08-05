@@ -1,5 +1,15 @@
 # Implementation log — Fase 1
 
+## Fase 3C — 2026-08-05
+
+- Verificata installazione e generazione Prisma in una copia temporanea pulita:
+  il lock `EPERM` della working tree dipende esclusivamente dal runtime locale.
+- Estesi unit test per tree, orari, rate limiter e validazione anti-HTML.
+- Estesi integration test per rate limit per-IP, input inquiry, visibilita
+  pubblica e blocchi sulle categorie assegnate.
+- Il rate limiter inquiry e ora istanziato per app, evitando dipendenza
+  dall'ordine tra suite Fastify isolate.
+
 ## Fase 3B — 2026-08-05
 
 - Aggiunto `compose.test.yml` con PostgreSQL isolato `citycore_test` su porta

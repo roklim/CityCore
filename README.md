@@ -133,6 +133,14 @@ npm run db:test:down
 I runner rifiutano URL senza `test`, uguali a `DATABASE_URL` o privi della
 variabile esplicita. Il database di sviluppo non viene mai resettato dai test.
 
+### Verifica pulita su Windows
+
+Se il runtime locale mantiene occupato `query_engine-windows.dll.node`, esegui
+le build in una copia temporanea del repository, senza `.git`, `node_modules`
+o artefatti. Dopo `npm ci`, la copia consente `npm run db:generate`, le build e
+i test senza interferire con il server locale. La copia usa una directory
+temporanea del sistema e non deve essere riutilizzata come working tree.
+
 6. Avvia API e frontend:
 
 ```bash

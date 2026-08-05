@@ -54,6 +54,13 @@ editoriali o chiamate dirette all'API non rappresentate nella UI.
   pubblicazione e inquiry, senza test skipped.
 - Nessuna UI amministrativa, ricerca, ranking o funzionalità IA introdotta.
 
+## Aggiornamento Fase 3C
+
+- Verifica isolata in copia temporanea per installazione pulita, Prisma generate
+  e build, senza interrompere il runtime locale.
+- Copertura test estesa per sicurezza inquiry, rate limiting e visibilita
+  pubblica condizionata da city/business.
+
 Booking avanzato, pagamenti, e-commerce, recensioni, hospitality, eventi
 avanzati, app mobile, mappe avanzate, raccomandazioni personalizzate,
 chatbot pubblico e builder completo. L'assistente IA resta un'idea controllata

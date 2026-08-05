@@ -3,6 +3,13 @@ import { z } from "zod";
 const optionalText = (max: number) =>
   z.union([z.string().trim().min(1).max(max), z.null()]).optional();
 const timeValue = z.string().regex(/^\d{2}:\d{2}$/, "Expected HH:MM.");
+const noHtmlText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(max)
+    .refine((value) => !/<[^>]*>/u.test(value), "HTML is not accepted.");
 
 export const categoryParamsSchema = z.object({
   citySlug: z.string().trim().min(2).max(120),
@@ -81,17 +88,12 @@ export const replaceOpeningWeekSchema = z.object({
 
 export const inquiryStatusSchema = z.enum(["new", "read", "closed"]);
 export const publicInquirySchema = z.object({
-  name: z.string().trim().min(2).max(120),
+  name: noHtmlText(120).min(2),
   email: z.string().trim().email().max(200),
-  phone: optionalText(60),
-  message: z
-    .string()
-    .trim()
-    .min(10)
-    .max(4_000)
-    .refine((value) => !/<[^>]*>/u.test(value), "HTML is not accepted."),
+  phone: z.union([noHtmlText(60), z.null()]).optional(),
+  message: noHtmlText(4_000).min(10),
   privacyAccepted: z.literal(true),
-  company: z.string().trim().max(120).optional(),
+  company: z.union([noHtmlText(120), z.literal("")]).optional(),
 });
 export const inquiryListQuerySchema = z.object({
   status: inquiryStatusSchema.optional(),
