@@ -115,6 +115,29 @@ export function canSetCategoryParent(
   return true;
 }
 
+export function buildCategoryTree<T extends { id: string; parentId: string | null }>(items: T[]) {
+  const byId = new Map(items.map((item) => [item.id, { ...item, children: [] as T[] }]));
+  const roots: Array<T & { children: T[] }> = [];
+
+  for (const item of byId.values()) {
+    if (item.parentId && byId.has(item.parentId)) byId.get(item.parentId)?.children.push(item);
+    else roots.push(item);
+  }
+
+  return roots;
+}
+
+export function canTransitionInquiryStatus(
+  from: "new" | "read" | "closed",
+  to: "new" | "read" | "closed",
+) {
+  return (
+    from === to ||
+    (from === "new" && (to === "read" || to === "closed")) ||
+    (from === "read" && to === "closed")
+  );
+}
+
 export function getBusinessPublishReadiness(business: PublishableBusiness) {
   const missingRequirements: string[] = [];
   const warnings: string[] = [];

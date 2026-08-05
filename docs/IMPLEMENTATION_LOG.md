@@ -1,5 +1,17 @@
 # Implementation log — Fase 1
 
+## Fase 3 — 2026-08-05
+
+- Aggiunti `tools/seed-demo.mjs` e `npm run db:seed`: dataset idempotente con
+  tre city, cinque business, categorie, servizi, orari e inquiry demo.
+- Aggiunti Vitest e coverage V8 al workspace API; cinque test unitari passano.
+- Estratti `createInquiryRateLimiter`, albero categorie e transizioni inquiry
+  in funzioni pure testabili.
+- `DATABASE_URL_TEST` è obbligatoria per i test d'integrazione e deve indicare
+  esplicitamente un database di test; il database locale standard è escluso.
+- Residuo: la suite di integrazione completa richiede il provisioning del DB
+  PostgreSQL test isolato; non è stato usato il DB di sviluppo per tale scopo.
+
 ## Fase 2 — 2026-08-05
 
 - Ambiente: `npm ci`, `npm ls`, Prisma validate/generate e migrate status

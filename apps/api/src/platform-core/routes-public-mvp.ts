@@ -3,24 +3,10 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../database.js";
 import { publicInquirySchema } from "./mvp-schemas.js";
 import { publicBusinessParamsSchema } from "./config.js";
+import { createInquiryRateLimiter } from "./inquiry-guard.js";
 import { parsePayload } from "./utils.js";
 
-type RateLimitEntry = { count: number; resetAt: number };
-const inquiryLimits = new Map<string, RateLimitEntry>();
-const inquiryWindowMs = 10 * 60 * 1_000;
-const inquiryLimit = 5;
-
-function canSubmitInquiry(address: string) {
-  const now = Date.now();
-  const previous = inquiryLimits.get(address);
-  if (!previous || previous.resetAt <= now) {
-    inquiryLimits.set(address, { count: 1, resetAt: now + inquiryWindowMs });
-    return true;
-  }
-  if (previous.count >= inquiryLimit) return false;
-  previous.count += 1;
-  return true;
-}
+const inquiryRateLimiter = createInquiryRateLimiter();
 
 export function registerPublicBusinessMvpRoutes(app: FastifyInstance) {
   app.get(
@@ -63,7 +49,7 @@ export function registerPublicBusinessMvpRoutes(app: FastifyInstance) {
       if (!params.success) return reply.code(params.response.statusCode).send(params.response.body);
       if (!body.success) return reply.code(body.response.statusCode).send(body.response.body);
       if (body.data.company) return reply.code(202).send({ status: "ok" });
-      if (!canSubmitInquiry(request.ip))
+      if (!inquiryRateLimiter.allows(request.ip))
         return reply
           .code(429)
           .send({ status: "error", error: "Too many inquiry requests. Try again later." });

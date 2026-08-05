@@ -20,3 +20,9 @@ risorsa non accessibile, `409` slug/operazione in conflitto e `429` limite
 locale inquiry. L'invio pubblico richiede privacy consent e usa honeypot più
 limite in-memory (5 richieste/IP/10 minuti); la sostituzione con Redis resta
 un lavoro futuro.
+
+## Health e test
+
+`GET /health` restituisce lo stato del servizio e delle dipendenze senza
+segreti. Il dataset `npm run db:seed` include city attive/non attive, business
+pubblicati/in bozza e inquiry nei tre stati; è adatto a smoke test locali.

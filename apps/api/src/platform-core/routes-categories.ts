@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 
 import { canAccess, getRequestAuth, requirePermission } from "../auth.js";
 import { prisma } from "../database.js";
-import { canSetCategoryParent } from "./mvp-domain.js";
+import { buildCategoryTree, canSetCategoryParent } from "./mvp-domain.js";
 import {
   businessParamsSchema,
   businessCategoryParamsSchema,
@@ -27,21 +27,6 @@ function mapCategory(category: {
   updatedAt: Date;
 }) {
   return category;
-}
-
-function buildCategoryTree<T extends { id: string; parentId: string | null }>(items: T[]) {
-  const byId = new Map(items.map((item) => [item.id, { ...item, children: [] as T[] }]));
-  const roots: Array<T & { children: T[] }> = [];
-
-  for (const item of byId.values()) {
-    if (item.parentId && byId.has(item.parentId)) {
-      byId.get(item.parentId)?.children.push(item);
-    } else {
-      roots.push(item);
-    }
-  }
-
-  return roots;
 }
 
 export function registerCategoryRoutes(app: FastifyInstance) {

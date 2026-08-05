@@ -91,7 +91,7 @@ export const publicInquirySchema = z.object({
     .max(4_000)
     .refine((value) => !/<[^>]*>/u.test(value), "HTML is not accepted."),
   privacyAccepted: z.literal(true),
-  company: z.string().max(0).optional(),
+  company: z.string().trim().max(120).optional(),
 });
 export const inquiryListQuerySchema = z.object({
   status: inquiryStatusSchema.optional(),

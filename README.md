@@ -96,11 +96,30 @@ npm run db:generate
 ```
 
 5. Facoltativamente, crea il global admin di sviluppo. La password non ha un
-default e deve essere fornita dall'ambiente:
+   default e deve essere fornita dall'ambiente:
 
 ```bash
 GLOBAL_ADMIN_PASSWORD="scegli-una-password-locale" npm run seed:global-admin
 ```
+
+Per caricare il dataset dimostrativo idempotente della Fase 3 usa una password
+solo locale (non viene stampata):
+
+```bash
+DEMO_SEED_PASSWORD="scegli-una-password-demo" npm run db:seed
+```
+
+Test API:
+
+```bash
+npm --workspace @platform/api run test
+npm --workspace @platform/api run test:coverage
+DATABASE_URL_TEST="postgresql://.../citycore_test" npm --workspace @platform/api run test:integration
+```
+
+I test d'integrazione richiedono esplicitamente un database il cui URL contiene
+`test` e rifiutano l'URL locale standard. Non usare mai il database di sviluppo
+per test distruttivi.
 
 6. Avvia API e frontend:
 
@@ -119,6 +138,7 @@ prima dei comandi Prisma che richiedono il database. I controlli disponibili
 sono elencati sotto e la procedura di staging e in `docs/STAGING_RUNBOOK.md`.
 
 ## Comandi Utili
+
 Comandi utili:
 
 ```bash

@@ -20,6 +20,7 @@
     "db:migrate:status": "node tools/run-prisma.mjs migrate status",
     "db:migrate:deploy": "node tools/run-prisma.mjs migrate deploy",
     "db:generate": "node tools/run-prisma.mjs generate",
+    "db:seed": "node tools/seed-demo.mjs",
     "seed:global-admin": "node tools/seed-global-admin.mjs",
     "help:seed:global-admin": "node tools/seed-global-admin.mjs --help",
     "clean:build": "node tools/clean-build.mjs",

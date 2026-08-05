@@ -37,6 +37,14 @@ editoriali o chiamate dirette all'API non rappresentate nella UI.
 - In corso: seed dimostrativo e test automatizzati del nuovo backend.
 - Non iniziato: ricerca/filtri, UI amministrativa, benchmark e assistente IA.
 
+## Stato al termine della Fase 3
+
+- Completato: seed demo ripetibile, test unitari backend e guardia per il DB
+  di test.
+- In corso: test d'integrazione completi, da eseguire solo con PostgreSQL test
+  dedicato.
+- Non iniziato: UI amministrativa MVP, ricerca/filtri, ranking e IA.
+
 ## Esclusioni
 
 Booking avanzato, pagamenti, e-commerce, recensioni, hospitality, eventi
