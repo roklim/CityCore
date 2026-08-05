@@ -3,6 +3,7 @@ import { MODULE_DEFINITIONS } from "@platform/templates";
 import {
   fetchPlatformApi,
   type PublicBusinessResponse,
+  type PublicBusinessServicesResponse,
   type PublicBusinessesResponse,
   type PublicCityResponse,
   type PublicCitiesResponse,
@@ -84,6 +85,12 @@ export type PublicBusinessSurfaceData = {
   degraded: boolean;
   live: boolean;
 };
+
+export async function getPublicBusinessServices(citySlug: string, businessSlug: string) {
+  return fetchPlatformApi<PublicBusinessServicesResponse>(
+    `/api/v2/public/cities/${citySlug}/businesses/${businessSlug}/services`,
+  );
+}
 
 function getModuleLabel(code: string) {
   return MODULE_DEFINITIONS.find((entry) => entry.code === code)?.label ?? code;

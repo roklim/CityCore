@@ -513,4 +513,108 @@ describe("platform core integration", () => {
       ).statusCode,
     ).toBe(404);
   });
+
+  it("updates a city category independently", async () => {
+    const adminToken = await createCityAdmin();
+    const created = await request(
+      "POST",
+      "/api/v2/platform-core/cities/test-city/categories",
+      { name: "Original", sortOrder: 3 },
+      adminToken,
+    );
+    const updated = await request(
+      "PATCH",
+      `/api/v2/platform-core/cities/test-city/categories/${created.json().item.id}`,
+      { name: "Updated", sortOrder: 1 },
+      adminToken,
+    );
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().item.name).toBe("Updated");
+    expect(
+      (await prisma.cityCategory.findUniqueOrThrow({ where: { id: created.json().item.id } }))
+        .sortOrder,
+    ).toBe(1);
+  });
+
+  it("keeps category order deterministic in the city tree", async () => {
+    const adminToken = await createCityAdmin();
+    await prisma.cityCategory.createMany({
+      data: [
+        { cityId, name: "Later", slug: "later", sortOrder: 2 },
+        { cityId, name: "First", slug: "first", sortOrder: 1 },
+      ],
+    });
+    const response = await request(
+      "GET",
+      "/api/v2/platform-core/cities/test-city/categories",
+      undefined,
+      adminToken,
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.json().tree.map((item: { name: string }) => item.name)).toEqual([
+      "First",
+      "Later",
+    ]);
+  });
+
+  it("keeps business category assignments when a foreign city category is supplied", async () => {
+    const assigned = await prisma.cityCategory.create({
+      data: { cityId, name: "Assigned", slug: "assigned" },
+    });
+    await prisma.businessCategoryAssignment.create({
+      data: { businessId, categoryId: assigned.id },
+    });
+    const otherCity = await prisma.city.create({
+      data: { name: "Foreign City", slug: "foreign-city", status: "active" },
+    });
+    const foreign = await prisma.cityCategory.create({
+      data: { cityId: otherCity.id, name: "Foreign", slug: "foreign" },
+    });
+    const response = await request(
+      "PUT",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/categories",
+      { categoryIds: [foreign.id] },
+    );
+    expect(response.statusCode).toBe(400);
+    expect(
+      await prisma.businessCategoryAssignment.findMany({ where: { businessId } }),
+    ).toHaveLength(1);
+  });
+
+  it("returns 404 when deleting an unknown service", async () => {
+    const response = await request(
+      "DELETE",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/services/missing-service",
+    );
+    expect(response.statusCode).toBe(404);
+    expect(response.json().error).toBe("Service not found");
+  });
+
+  it("does not expose services for a draft business", async () => {
+    await prisma.businessService.create({
+      data: { businessId, name: "Hidden", slug: "hidden", status: "published" },
+    });
+    const response = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/businesses/test-business/services",
+      undefined,
+      "",
+    );
+    expect(response.statusCode).toBe(404);
+  });
+
+  it("rejects a duplicate business slug in the same city", async () => {
+    const response = await request(
+      "PATCH",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business",
+      { slug: "other-business" },
+    );
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error).toBe(
+      "A business with the same slug already exists in this city.",
+    );
+    expect((await prisma.business.findUniqueOrThrow({ where: { id: businessId } })).slug).toBe(
+      "test-business",
+    );
+  });
 });

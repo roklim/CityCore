@@ -1,5 +1,12 @@
 # Implementation log — Fase 1
 
+## Fase 3D — 2026-08-05
+
+- Suite di integrazione portata a 12 casi Fastify/Prisma indipendenti.
+- Separati i casi per update e ordinamento categorie, rollback con categoria di
+  altra city, servizio inesistente e servizi non pubblici per business draft.
+- Verificati database test isolato, test unitari e `git diff --check`.
+
 ## Fase 3C — 2026-08-05
 
 - Verificata installazione e generazione Prisma in una copia temporanea pulita:

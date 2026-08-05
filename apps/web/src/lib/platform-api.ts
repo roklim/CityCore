@@ -341,6 +341,33 @@ export type PublicBusinessResponse = {
   item: PublicPlatformBusiness;
 };
 
+export type PublicBusinessService = {
+  id: string;
+  name: string;
+  slug: string;
+  shortDescription: string | null;
+  description: string | null;
+  priceLabel: string | null;
+  durationMinutes: number | null;
+  sortOrder: number;
+};
+
+export type PublicBusinessServicesResponse = {
+  status: "ok";
+  items: PublicBusinessService[];
+};
+
+export type PublicInquiryPayload = {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+  privacyAccepted: true;
+  company?: string;
+};
+
+export type PublicInquiryResponse = { status: "ok" };
+
 type FetchOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   token?: string;

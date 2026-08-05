@@ -61,6 +61,13 @@ editoriali o chiamate dirette all'API non rappresentate nella UI.
 - Copertura test estesa per sicurezza inquiry, rate limiting e visibilita
   pubblica condizionata da city/business.
 
+## Aggiornamento Fase 3D
+
+- Suite d'integrazione resa piu granulare per categorie, assegnazioni e
+  visibilita dei servizi, con PostgreSQL test reale.
+- Fase 3 chiusa sul perimetro backend verificato; la fase successiva resta la
+  UI amministrativa, non implementata qui.
+
 Booking avanzato, pagamenti, e-commerce, recensioni, hospitality, eventi
 avanzati, app mobile, mappe avanzate, raccomandazioni personalizzate,
 chatbot pubblico e builder completo. L'assistente IA resta un'idea controllata

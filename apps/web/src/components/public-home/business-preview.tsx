@@ -26,13 +26,11 @@ function getCategoryLabel(categoryLabel: string) {
 }
 
 export function NearbyBusinessList({ businesses }: { businesses: PublicCityBusinessCard[] }) {
-  const nearbyDistances = ["0,3 km", "0,5 km", "0,8 km"];
-
   return (
     <section className={styles.utilitySection}>
       <div className={styles.sectionHeader}>
-        <h2>Vicino a te</h2>
-        <Link href="#popular">Vedi tutto</Link>
+        <h2>Attività disponibili</h2>
+        <Link href="#directory">Vedi tutto</Link>
       </div>
 
       {businesses.length > 0 ? (
@@ -50,13 +48,7 @@ export function NearbyBusinessList({ businesses }: { businesses: PublicCityBusin
                 <span className={styles.metaLine}>
                   {getCategoryLabel(business.categoryLabel)}
                   <span className={styles.metaDot} aria-hidden="true" />
-                  {nearbyDistances[index] ?? business.area}
-                </span>
-                <span className={styles.ratingLine}>
-                  <span className={styles.star} aria-hidden="true">
-                    *
-                  </span>
-                  4,8
+                  {business.area}
                 </span>
               </span>
 
@@ -77,10 +69,10 @@ export function NearbyBusinessList({ businesses }: { businesses: PublicCityBusin
 
 export function PopularBusinessStrip({ businesses }: { businesses: PublicCityBusinessCard[] }) {
   return (
-    <section className={styles.utilitySection} id="popular">
+    <section className={styles.utilitySection} id="directory">
       <div className={styles.sectionHeader}>
-        <h2>Popolari oggi</h2>
-        <Link href="#popular">Vedi tutto</Link>
+        <h2>Esplora le attività</h2>
+        <Link href="#directory">Vedi tutto</Link>
       </div>
 
       {businesses.length > 0 ? (
@@ -91,15 +83,13 @@ export function PopularBusinessStrip({ businesses }: { businesses: PublicCityBus
                 className={`${styles.businessThumb} ${styles.popularThumb} ${getBusinessToneClass(
                   index + 1,
                 )}`}
-              >
-                <span className={styles.popularBadge}>Top</span>
-              </span>
+              />
               <span className={styles.popularLabel}>{business.name}</span>
             </Link>
           ))}
         </div>
       ) : (
-        <p className={styles.emptyState}>Nessuna attivita popolare disponibile per ora.</p>
+        <p className={styles.emptyState}>Nessuna attività pubblica disponibile per ora.</p>
       )}
     </section>
   );
