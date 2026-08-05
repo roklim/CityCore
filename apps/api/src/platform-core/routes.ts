@@ -41,6 +41,9 @@ import {
   mapCityRegistryEntry,
 } from "./mappers.js";
 import { registerPublicPlatformRoutes } from "./routes-public.js";
+import { registerCategoryRoutes } from "./routes-categories.js";
+import { registerBusinessMvpRoutes } from "./routes-business-mvp.js";
+import { registerPublicBusinessMvpRoutes } from "./routes-public-mvp.js";
 import { ensureTemplateRecord } from "./template-service.js";
 import { buildBusinessUpdateData, buildCityUpdateData } from "./update-data.js";
 import {
@@ -54,6 +57,9 @@ import {
 
 export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
   registerPublicPlatformRoutes(app);
+  registerPublicBusinessMvpRoutes(app);
+  registerCategoryRoutes(app);
+  registerBusinessMvpRoutes(app);
 
   app.get(
     "/api/v2/platform-core",
@@ -356,6 +362,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         select: {
           id: true,
           slug: true,
+          status: true,
         },
       });
 
@@ -531,6 +538,13 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
 
       if (!parsed.success) {
         return reply.code(parsed.response.statusCode).send(parsed.response.body);
+      }
+
+      if (parsed.data.status === "active") {
+        return reply.code(400).send({
+          status: "error",
+          error: "Create businesses as draft and use the publish endpoint after readiness checks.",
+        });
       }
 
       const auth = getRequestAuth(request);
@@ -815,6 +829,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         select: {
           id: true,
           slug: true,
+          status: true,
           city: {
             select: {
               id: true,
@@ -842,6 +857,33 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
           status: "error",
           error: "Insufficient permissions",
         });
+      }
+
+      if (hasOwn(parsed.data, "slug") && parsed.data.slug && business.status === "active") {
+        return reply.code(409).send({
+          status: "error",
+          error: "Published business slugs cannot be changed. Unpublish first.",
+        });
+      }
+
+      const assetIds = [parsed.data.logoAssetId, parsed.data.coverAssetId].filter(
+        (value): value is string => typeof value === "string",
+      );
+
+      if (assetIds.length > 0) {
+        const validAssets = await prisma.mediaAsset.count({
+          where: {
+            id: { in: assetIds },
+            OR: [{ businessId: business.id }, { cityId: business.city.id }],
+          },
+        });
+
+        if (validAssets !== new Set(assetIds).size) {
+          return reply.code(400).send({
+            status: "error",
+            error: "Logo and cover assets must belong to the current business or city.",
+          });
+        }
       }
 
       try {

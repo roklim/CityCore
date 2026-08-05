@@ -34,9 +34,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
     const cities = await prisma.city.findMany({
       where: {
         active: true,
-        status: {
-          not: "disabled",
-        },
+        status: "active",
       },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: parsed.data.limit,
@@ -69,9 +67,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
       where: {
         slug: parsed.data.citySlug,
         active: true,
-        status: {
-          not: "disabled",
-        },
+        status: "active",
       },
       include: {
         businesses: {
@@ -110,9 +106,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
         status: "active",
         city: {
           active: true,
-          status: {
-            not: "disabled",
-          },
+          status: "active",
         },
       },
       orderBy: [{ createdAt: "desc" }],
@@ -170,9 +164,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
       where: {
         slug: paramsParsed.data.citySlug,
         active: true,
-        status: {
-          not: "disabled",
-        },
+        status: "active",
       },
       select: {
         id: true,
@@ -244,9 +236,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
         city: {
           slug: parsed.data.citySlug,
           active: true,
-          status: {
-            not: "disabled",
-          },
+          status: "active",
         },
       },
       include: {

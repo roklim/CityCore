@@ -11,8 +11,8 @@ Uso:
   npm run seed:global-admin
 
 Env opzionali:
-  GLOBAL_ADMIN_EMAIL=...
-  GLOBAL_ADMIN_PASSWORD=...
+  GLOBAL_ADMIN_EMAIL=... (default: global-admin@citycore.local)
+  GLOBAL_ADMIN_PASSWORD=... (obbligatoria)
   GLOBAL_ADMIN_NAME=...
   GLOBAL_ADMIN_PHONE=...
 
@@ -21,7 +21,7 @@ Comportamento:
   - garantisce un access grant \`global_admin\` su scope \`platform\`
   - lascia invariati eventuali scope city/business gia presenti
   - scrive un audit log tecnico di seed
-  - stampa le credenziali e il redirect atteso
+  - stampa l'email e il redirect atteso, mai la password
 `;
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -31,7 +31,7 @@ const prisma = new PrismaClient();
 
 const defaults = {
   email: process.env.GLOBAL_ADMIN_EMAIL?.trim() || "global-admin@citycore.local",
-  password: process.env.GLOBAL_ADMIN_PASSWORD?.trim() || "CityCoreAdmin123!",
+  password: process.env.GLOBAL_ADMIN_PASSWORD?.trim(),
   name: process.env.GLOBAL_ADMIN_NAME?.trim() || "CityCore Global Admin",
   phone: process.env.GLOBAL_ADMIN_PHONE?.trim() || null,
 };
@@ -170,11 +170,7 @@ function printSummary(summary) {
   console.log(JSON.stringify(summary, null, 2));
   console.log("");
   console.log("[seed:global-admin] login guide");
-  console.log(
-    [`email: ${summary.email}`, `password: ${summary.password}`, "expectedRedirect: /admin"].join(
-      "\n",
-    ),
-  );
+  console.log([`email: ${summary.email}`, "expectedRedirect: /admin"].join("\n"));
 }
 
 async function main() {
@@ -183,12 +179,15 @@ async function main() {
     return;
   }
 
+  if (!defaults.password) {
+    throw new Error("GLOBAL_ADMIN_PASSWORD is required to seed a global admin.");
+  }
+
   const result = await ensureGlobalAdmin();
 
   printSummary({
     userId: result.user.id,
     email: result.user.email,
-    password: defaults.password,
     name: result.user.name,
     phone: result.user.phone,
     status: result.user.status,

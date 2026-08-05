@@ -38,7 +38,7 @@ export default async function SelectAccessPage() {
         </p>
       </section>
 
-      <AccessSelector accesses={session.auth.accesses} sessionToken={session.token} />
+      <AccessSelector accesses={session.auth.accesses} />
     </AdminShell>
   );
 }

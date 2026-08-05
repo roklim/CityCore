@@ -47,7 +47,6 @@ export const ROLE_PERMISSIONS = {
     "listings.manage",
     "events.manage",
   ],
-  customer: ["profile.manage"],
 } as const satisfies Record<UserRole, readonly PlatformPermission[]>;
 
 export type AccessGrantLike = {

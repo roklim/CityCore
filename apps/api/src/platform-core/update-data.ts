@@ -125,6 +125,22 @@ export function buildBusinessUpdateData(input: z.infer<typeof updateBusinessSche
     data.postalCode = normalizeOptionalString(input.postalCode);
   }
 
+  if (hasOwn(input, "locality")) {
+    data.locality = normalizeOptionalString(input.locality);
+  }
+
+  if (hasOwn(input, "province")) {
+    data.province = normalizeOptionalString(input.province);
+  }
+
+  if (hasOwn(input, "lat")) {
+    data.lat = input.lat ?? null;
+  }
+
+  if (hasOwn(input, "lng")) {
+    data.lng = input.lng ?? null;
+  }
+
   if (hasOwn(input, "timezone") && input.timezone) {
     data.timezone = input.timezone;
   }
@@ -175,6 +191,26 @@ export function buildBusinessUpdateData(input: z.infer<typeof updateBusinessSche
 
   if (hasOwn(input, "notesInternal")) {
     data.notesInternal = normalizeOptionalString(input.notesInternal);
+  }
+
+  if (hasOwn(input, "privacyContactEmail")) {
+    data.privacyContactEmail = input.privacyContactEmail ?? null;
+  }
+
+  if (hasOwn(input, "socialLinks")) {
+    data.socialLinksJson = input.socialLinks ?? Prisma.JsonNull;
+  }
+
+  if (hasOwn(input, "logoAssetId")) {
+    data.logoAsset = input.logoAssetId
+      ? { connect: { id: input.logoAssetId } }
+      : { disconnect: true };
+  }
+
+  if (hasOwn(input, "coverAssetId")) {
+    data.coverAsset = input.coverAssetId
+      ? { connect: { id: input.coverAssetId } }
+      : { disconnect: true };
   }
 
   return data;

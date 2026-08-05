@@ -126,6 +126,10 @@ export function mapBusiness(business: {
   addressLine1: string | null;
   addressLine2: string | null;
   postalCode: string | null;
+  locality: string | null;
+  province: string | null;
+  lat: number | null;
+  lng: number | null;
   timezone: string;
   currency: string;
   locale: string;
@@ -139,6 +143,8 @@ export function mapBusiness(business: {
   bookingPolicy: string | null;
   cancellationPolicy: string | null;
   notesInternal: string | null;
+  socialLinksJson: Prisma.JsonValue | null;
+  privacyContactEmail: string | null;
   createdAt: Date;
   updatedAt: Date;
   city: {
@@ -181,6 +187,10 @@ export function mapBusiness(business: {
     addressLine1: business.addressLine1,
     addressLine2: business.addressLine2,
     postalCode: business.postalCode,
+    locality: business.locality,
+    province: business.province,
+    lat: business.lat,
+    lng: business.lng,
     timezone: business.timezone,
     currency: business.currency,
     locale: business.locale,
@@ -194,6 +204,8 @@ export function mapBusiness(business: {
     bookingPolicy: business.bookingPolicy,
     cancellationPolicy: business.cancellationPolicy,
     notesInternal: business.notesInternal,
+    socialLinks: business.socialLinksJson,
+    privacyContactEmail: business.privacyContactEmail,
     city: business.city,
     template: business.template,
     modules: business.modules,

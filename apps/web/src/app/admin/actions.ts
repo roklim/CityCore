@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { clearSessionToken, setSessionToken } from "../../lib/web-session";
+import { clearSessionToken, getSessionToken, setSessionToken } from "../../lib/web-session";
 import {
   fetchPlatformApi,
   type AuthSessionResponse,
@@ -119,7 +119,7 @@ export async function selectAccessAction(
   }
 
   try {
-    const token = readField(formData, "token");
+    const token = await getSessionToken();
 
     if (!token) {
       return {

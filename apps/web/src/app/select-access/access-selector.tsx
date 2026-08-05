@@ -39,19 +39,11 @@ function ErrorBanner({ state }: { state: AdminAuthActionState }) {
   return <p className="form-error">{state.error}</p>;
 }
 
-export function AccessSelector({
-  accesses,
-  sessionToken,
-}: {
-  accesses: AuthAccess[];
-  sessionToken: string;
-}) {
+export function AccessSelector({ accesses }: { accesses: AuthAccess[] }) {
   const [state, formAction] = useActionState(selectAccessAction, initialState);
 
   return (
     <form action={formAction} className="selector-card">
-      <input type="hidden" name="token" value={sessionToken} />
-
       <div className="selector-list">
         {accesses.map((access) => (
           <label className="selector-item" key={access.id}>

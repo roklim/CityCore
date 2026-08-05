@@ -58,15 +58,19 @@ API principali, mantenute sotto un namespace HTTP versionato:
 - `/api/v2/platform-core/*`
 - `/api/v2/public/*`
 
-## Bootstrap Locale
+## Local Development
 
-Avvia l'infrastruttura:
+Requisiti: Node.js `>=20.9`, npm `>=10`, Docker Desktop avviato (PostgreSQL e
+Redis). Non sono necessari segreti nel repository: partire sempre dai file
+`.env.example` e usare valori locali solo sul proprio computer.
+
+1. Installa le dipendenze da una working tree pulita:
 
 ```bash
-npm run infra:up
+npm ci
 ```
 
-Copia gli env:
+2. Copia e configura gli environment template:
 
 ```bash
 cp apps/api/.env.example apps/api/.env
@@ -75,14 +79,46 @@ cp apps/web/.env.example apps/web/.env.local
 
 Variabili minime:
 
-- `apps/web`
-  - `NEXT_PUBLIC_API_BASE_URL`
-- `apps/api`
-  - `NODE_ENV`
-  - `PORT`
-  - `DATABASE_URL`
-  - `REDIS_URL`
-  - `AUTH_SECRET`
+- `apps/web/.env.local`: `NEXT_PUBLIC_API_BASE_URL`
+- `apps/api/.env`: `NODE_ENV`, `PORT`, `DATABASE_URL`, `REDIS_URL`, `AUTH_SECRET`
+
+3. Avvia database e cache:
+
+```bash
+npm run infra:up
+```
+
+4. Applica le migrazioni e genera Prisma Client:
+
+```bash
+npm run db:migrate:deploy
+npm run db:generate
+```
+
+5. Facoltativamente, crea il global admin di sviluppo. La password non ha un
+default e deve essere fornita dall'ambiente:
+
+```bash
+GLOBAL_ADMIN_PASSWORD="scegli-una-password-locale" npm run seed:global-admin
+```
+
+6. Avvia API e frontend:
+
+```bash
+npm run dev
+```
+
+In alternativa usa `npm run dev:api` e `npm run dev:web` in terminali
+separati. La console e disponibile da `/admin`; il bootstrap del primo admin
+e disponibile da `/admin/login` quando il database non contiene grant
+`global_admin`.
+
+Problemi ambientali noti: `npm ci` e necessario quando `npm ls` segnala
+dipendenze estranee o workspace invalidi; Docker Desktop deve essere attivo
+prima dei comandi Prisma che richiedono il database. I controlli disponibili
+sono elencati sotto e la procedura di staging e in `docs/STAGING_RUNBOOK.md`.
+
+## Comandi Utili
 Comandi utili:
 
 ```bash

@@ -101,6 +101,12 @@ enum CollectionItemType {
   external
 }
 
+enum InquiryStatus {
+  new
+  read
+  closed
+}
+
 model User {
   id                String            @id @default(cuid())
   email             String            @unique
@@ -333,6 +339,8 @@ model Business {
   addressLine1        String?                      @map("address_line_1")
   addressLine2        String?                      @map("address_line_2")
   postalCode          String?                      @map("postal_code")
+  locality            String?                      @map("locality")
+  province            String?                      @map("province")
   lat                 Float?
   lng                 Float?
   timezone            String                       @default("Europe/Rome")
@@ -355,6 +363,8 @@ model Business {
   bookingPolicy       String?                      @map("booking_policy")
   cancellationPolicy  String?                      @map("cancellation_policy")
   notesInternal       String?                      @map("notes_internal")
+  socialLinksJson     Json?                        @map("social_links_json")
+  privacyContactEmail String?                      @map("privacy_contact_email")
   city                City                         @relation(fields: [cityId], references: [id], onDelete: Restrict)
   template            BusinessTemplate             @relation(fields: [templateId], references: [id], onDelete: Restrict)
   ownerUser           User?                        @relation("BusinessOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
@@ -364,6 +374,9 @@ model Business {
   modules             BusinessModule[]
   pages               BusinessPage[]
   categoryAssignments BusinessCategoryAssignment[]
+  services            BusinessService[]
+  openingDays         BusinessOpeningDay[]
+  inquiries           BusinessInquiry[]
   collectionItems     CityCollectionItem[]
   accessGrants        AccessGrant[]
   auditLogs           AuditLog[]
@@ -376,6 +389,75 @@ model Business {
   @@index([ownerUserId], map: "businesses_owner_user_id_idx")
   @@index([publishedAt], map: "businesses_published_at_idx")
   @@map("businesses")
+}
+
+model BusinessService {
+  id                String            @id @default(cuid())
+  businessId        String            @map("business_id")
+  name              String            @db.VarChar(160)
+  slug              String            @db.VarChar(160)
+  shortDescription  String?           @map("short_description") @db.VarChar(280)
+  description       String?
+  priceLabel        String?           @map("price_label") @db.VarChar(80)
+  durationMinutes   Int?              @map("duration_minutes")
+  status            PublicationStatus @default(draft)
+  sortOrder         Int               @default(0) @map("sort_order")
+  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  @@unique([businessId, slug], map: "business_services_business_id_slug_key")
+  @@index([businessId, status, sortOrder], map: "business_services_business_status_sort_order_idx")
+  @@map("business_services")
+}
+
+model BusinessOpeningDay {
+  id         String                    @id @default(cuid())
+  businessId String                    @map("business_id")
+  weekday    Int
+  isClosed   Boolean                   @default(false) @map("is_closed")
+  note       String?                   @db.VarChar(280)
+  business   Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  intervals  BusinessOpeningInterval[]
+  createdAt  DateTime                  @default(now()) @map("created_at")
+  updatedAt  DateTime                  @updatedAt @map("updated_at")
+
+  @@unique([businessId, weekday], map: "business_opening_days_business_id_weekday_key")
+  @@index([businessId, weekday], map: "business_opening_days_business_weekday_idx")
+  @@map("business_opening_days")
+}
+
+model BusinessOpeningInterval {
+  id           String              @id @default(cuid())
+  openingDayId String              @map("opening_day_id")
+  opensAt      String              @map("opens_at") @db.VarChar(5)
+  closesAt     String              @map("closes_at") @db.VarChar(5)
+  sortOrder    Int                 @default(0) @map("sort_order")
+  openingDay   BusinessOpeningDay  @relation(fields: [openingDayId], references: [id], onDelete: Cascade)
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  @@index([openingDayId, sortOrder], map: "business_opening_intervals_day_sort_order_idx")
+  @@map("business_opening_intervals")
+}
+
+model BusinessInquiry {
+  id              String        @id @default(cuid())
+  businessId      String        @map("business_id")
+  name            String        @db.VarChar(120)
+  email           String        @db.VarChar(200)
+  phone           String?       @db.VarChar(60)
+  message         String
+  privacyAccepted Boolean       @map("privacy_accepted")
+  status          InquiryStatus @default(new)
+  readAt          DateTime?     @map("read_at")
+  internalNote    String?       @map("internal_note")
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([businessId, status, createdAt], map: "business_inquiries_business_status_created_at_idx")
+  @@map("business_inquiries")
 }
 
 model BusinessCategoryAssignment {

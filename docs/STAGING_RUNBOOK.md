@@ -131,14 +131,7 @@ database:
 DATABASE_URL="<staging-postgres-url>" npm run seed:global-admin
 ```
 
-Default credentials:
-
-```txt
-email: global-admin@citycore.local
-password: CityCoreAdmin123!
-```
-
-Override them with:
+Provide the required seed password explicitly and optionally override the default email:
 
 ```txt
 GLOBAL_ADMIN_EMAIL
