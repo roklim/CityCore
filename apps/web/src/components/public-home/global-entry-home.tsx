@@ -5,7 +5,13 @@ import { CityEntryForm } from "./city-entry-form";
 import { CityLineArt } from "./city-line-art";
 import styles from "./context-gateway.module.css";
 
-export function GlobalEntryHome({ cities }: { cities: HomepageCityCard[] }) {
+export function GlobalEntryHome({
+  cities,
+  degraded,
+}: {
+  cities: HomepageCityCard[];
+  degraded: boolean;
+}) {
   const totalBusinesses = cities.reduce((total, city) => total + city.businessCount, 0);
 
   return (
@@ -39,6 +45,12 @@ export function GlobalEntryHome({ cities }: { cities: HomepageCityCard[] }) {
               searchPlaceholder="Cerca la tua citta..."
             />
 
+            {degraded ? (
+              <p className={styles.entryStatus} role="status">
+                I dati live non sono disponibili: stai visualizzando contenuti dimostrativi.
+              </p>
+            ) : null}
+
             <ActiveCityPills cities={cities} />
 
             <CityLineArt />
@@ -68,8 +80,8 @@ export function GlobalEntryHome({ cities }: { cities: HomepageCityCard[] }) {
                   <span>Attivita pubbliche</span>
                 </div>
                 <div className={styles.visualStat}>
-                  <strong>01</strong>
-                  <span>Ingresso chiaro</span>
+                  <strong aria-hidden="true">↗</strong>
+                  <span>Scegli e continua</span>
                 </div>
               </div>
               <CityLineArt />

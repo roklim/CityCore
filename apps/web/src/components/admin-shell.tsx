@@ -24,7 +24,7 @@ export function AdminShell({
   title,
   description,
   routePath,
-  statusLabel = "Platform",
+  statusLabel = "Area operatori",
   asideTitle = "Context",
   asideText = "Questa shell tiene allineati ruoli, superfici e moduli senza dipendere da un verticale specifico.",
   children,
@@ -38,7 +38,7 @@ export function AdminShell({
           </div>
           <div>
             <p className="eyebrow">CityCore</p>
-            <strong>City-first operating platform</strong>
+            <strong>Area operatori</strong>
           </div>
         </div>
 
@@ -49,7 +49,7 @@ export function AdminShell({
       </header>
 
       <div className="shell-layout">
-        <aside className="shell-rail" aria-label="CityCore surfaces">
+        <aside className="shell-rail" aria-label="Navigazione area operatori">
           <section className="rail-block">
             <p className="rail-label">Surfaces</p>
             <nav className="shell-nav">

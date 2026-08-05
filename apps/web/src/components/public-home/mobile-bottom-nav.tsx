@@ -1,7 +1,7 @@
 import Link from "next/link";
 import styles from "./context-gateway.module.css";
 
-function BottomIcon({ icon }: { icon: "home" | "search" | "places" | "saved" | "profile" }) {
+function BottomIcon({ icon }: { icon: "home" | "search" | "places" | "profile" }) {
   switch (icon) {
     case "home":
       return (
@@ -24,12 +24,6 @@ function BottomIcon({ icon }: { icon: "home" | "search" | "places" | "saved" | "
           <path d="M13 20V5l3-2 3 2v15" />
         </svg>
       );
-    case "saved":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 20s-7-4.3-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.7-7 10-7 10Z" />
-        </svg>
-      );
     case "profile":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -45,10 +39,9 @@ function BottomIcon({ icon }: { icon: "home" | "search" | "places" | "saved" | "
 export function MobileBottomNav({ citySlug }: { citySlug: string }) {
   const items = [
     { label: "Home", href: `/${citySlug}`, icon: "home" as const, active: true },
-    { label: "Cerca", href: `/${citySlug}`, icon: "search" as const, active: false },
-    { label: "Attivita", href: `/${citySlug}`, icon: "places" as const, active: false },
-    { label: "Salvati", href: `/${citySlug}`, icon: "saved" as const, active: false },
-    { label: "Profilo", href: "/admin/login", icon: "profile" as const, active: false },
+    { label: "Cerca", href: `/${citySlug}#directory`, icon: "search" as const, active: false },
+    { label: "Attività", href: `/${citySlug}#directory`, icon: "places" as const, active: false },
+    { label: "Operatori", href: "/admin/login", icon: "profile" as const, active: false },
   ];
 
   return (
@@ -58,6 +51,7 @@ export function MobileBottomNav({ citySlug }: { citySlug: string }) {
           className={`${styles.bottomItem} ${item.active ? styles.bottomItemActive : ""}`}
           href={item.href}
           key={item.label}
+          aria-current={item.active ? "page" : undefined}
         >
           <span className={styles.bottomIcon}>
             <BottomIcon icon={item.icon} />

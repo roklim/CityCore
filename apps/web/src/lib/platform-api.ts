@@ -123,6 +123,9 @@ export type PlatformBusiness = {
   addressLine1: string | null;
   addressLine2: string | null;
   postalCode: string | null;
+  locality: string | null;
+  province: string | null;
+  socialLinks: Record<string, string> | null;
   timezone: string;
   currency: string;
   locale: string;
@@ -287,6 +290,9 @@ export type PublicPlatformBusiness = {
   addressLine1: string | null;
   addressLine2: string | null;
   postalCode: string | null;
+  locality: string | null;
+  province: string | null;
+  socialLinks: Record<string, string> | null;
   timezone: string;
   currency: string;
   locale: string;
@@ -348,6 +354,7 @@ export type PublicBusinessService = {
   shortDescription: string | null;
   description: string | null;
   priceLabel: string | null;
+  priceCents: number | null;
   durationMinutes: number | null;
   sortOrder: number;
 };
@@ -381,6 +388,75 @@ export type PublicInquiryPayload = {
 
 export type PublicInquiryResponse = { status: "ok" };
 
+export type PublicPickupMenuItem = {
+  id: string;
+  name: string;
+  shortDescription: string | null;
+  description: string | null;
+  priceCents: number;
+};
+
+export type PublicPickupOrderMenuResponse = {
+  status: "ok";
+  currency: string;
+  timezone: string;
+  minimumOrderCents: number;
+  items: PublicPickupMenuItem[];
+};
+
+export type PublicPickupAvailabilityResponse = {
+  status: "ok";
+  date: string;
+  timezone: string;
+  items: Array<{ id: string; time: string; available: boolean }>;
+};
+
+export type PublicPickupOrderPayload = {
+  name: string;
+  email: string;
+  phone?: string;
+  notes?: string;
+  pickupDate: string;
+  pickupTime: string;
+  privacyAccepted: true;
+  company?: string;
+  items: Array<{ serviceId: string; quantity: number }>;
+};
+
+export type PublicPickupOrderResponse = {
+  status: "ok";
+  item: { reference: string; pickupAt: string; totalCents: number; currency: string };
+};
+
+export type PlatformPickupOrder = {
+  id: string;
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  notes: string | null;
+  pickupAt: string;
+  status: "new" | "accepted" | "preparing" | "ready" | "completed" | "cancelled";
+  totalCents: number;
+  createdAt: string;
+  updatedAt: string;
+  items: Array<{
+    id: string;
+    nameSnapshot: string;
+    unitPriceCents: number;
+    quantity: number;
+    lineTotalCents: number;
+  }>;
+};
+
+export type PlatformPickupOrdersResponse = {
+  status: "ok";
+  items: PlatformPickupOrder[];
+  page: number;
+  limit: number;
+  total: number;
+};
+
 export function createPublicBusinessInquiry(
   citySlug: string,
   businessSlug: string,
@@ -388,6 +464,29 @@ export function createPublicBusinessInquiry(
 ) {
   return fetchPlatformApi<PublicInquiryResponse>(
     `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/inquiries`,
+    { method: "POST", body: payload },
+  );
+}
+
+export function getPublicPickupOrderMenu(citySlug: string, businessSlug: string) {
+  return fetchPlatformApi<PublicPickupOrderMenuResponse>(
+    `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/orders/menu`,
+  );
+}
+
+export function getPublicPickupAvailability(citySlug: string, businessSlug: string, date: string) {
+  return fetchPlatformApi<PublicPickupAvailabilityResponse>(
+    `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/orders/availability?date=${encodeURIComponent(date)}`,
+  );
+}
+
+export function createPublicPickupOrder(
+  citySlug: string,
+  businessSlug: string,
+  payload: PublicPickupOrderPayload,
+) {
+  return fetchPlatformApi<PublicPickupOrderResponse>(
+    `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/orders`,
     { method: "POST", body: payload },
   );
 }

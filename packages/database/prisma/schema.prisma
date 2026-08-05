@@ -107,6 +107,15 @@ enum InquiryStatus {
   closed
 }
 
+enum PickupOrderStatus {
+  new
+  accepted
+  preparing
+  ready
+  completed
+  cancelled
+}
+
 model User {
   id                String            @id @default(cuid())
   email             String            @unique
@@ -377,6 +386,8 @@ model Business {
   services            BusinessService[]
   openingDays         BusinessOpeningDay[]
   inquiries           BusinessInquiry[]
+  orderingSettings    BusinessOrderingSettings?
+  pickupOrders        PickupOrder[]
   collectionItems     CityCollectionItem[]
   accessGrants        AccessGrant[]
   auditLogs           AuditLog[]
@@ -399,10 +410,12 @@ model BusinessService {
   shortDescription  String?           @map("short_description") @db.VarChar(280)
   description       String?
   priceLabel        String?           @map("price_label") @db.VarChar(80)
+  priceCents        Int?              @map("price_cents")
   durationMinutes   Int?              @map("duration_minutes")
   status            PublicationStatus @default(draft)
   sortOrder         Int               @default(0) @map("sort_order")
   business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  pickupOrderItems  PickupOrderItem[]
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")
 
@@ -458,6 +471,62 @@ model BusinessInquiry {
 
   @@index([businessId, status, createdAt], map: "business_inquiries_business_status_created_at_idx")
   @@map("business_inquiries")
+}
+
+model BusinessOrderingSettings {
+  id                  String   @id @default(cuid())
+  businessId          String   @unique @map("business_id")
+  enabled             Boolean  @default(false)
+  pickupLeadMinutes   Int      @default(30) @map("pickup_lead_minutes")
+  slotMinutes         Int      @default(15) @map("slot_minutes")
+  slotCapacity        Int      @default(4) @map("slot_capacity")
+  minimumOrderCents   Int      @default(0) @map("minimum_order_cents")
+  business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("business_ordering_settings")
+}
+
+model PickupOrder {
+  id              String            @id @default(cuid())
+  businessId      String            @map("business_id")
+  reference       String            @unique @db.VarChar(32)
+  customerName    String            @map("customer_name") @db.VarChar(120)
+  customerEmail   String            @map("customer_email") @db.VarChar(200)
+  customerPhone   String?           @map("customer_phone") @db.VarChar(60)
+  notes           String?
+  pickupAt        DateTime          @map("pickup_at")
+  status          PickupOrderStatus @default(new)
+  totalCents      Int               @map("total_cents")
+  privacyAccepted Boolean           @map("privacy_accepted")
+  business        Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items           PickupOrderItem[]
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  @@index([businessId, pickupAt, status], map: "pickup_orders_business_pickup_status_idx")
+  @@index([businessId, createdAt], map: "pickup_orders_business_created_at_idx")
+  @@map("pickup_orders")
+}
+
+model PickupOrderItem {
+  id             String          @id @default(cuid())
+  orderId        String          @map("order_id")
+  serviceId      String?         @map("service_id")
+  nameSnapshot   String          @map("name_snapshot") @db.VarChar(160)
+  unitPriceCents Int             @map("unit_price_cents")
+  quantity       Int
+  lineTotalCents Int             @map("line_total_cents")
+  notes          String?
+  order          PickupOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service        BusinessService? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@index([orderId], map: "pickup_order_items_order_id_idx")
+  @@index([serviceId], map: "pickup_order_items_service_id_idx")
+  @@map("pickup_order_items")
 }
 
 model BusinessCategoryAssignment {

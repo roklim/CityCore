@@ -23,25 +23,19 @@ export function PublicShell({
   return (
     <div className="public-shell">
       <header className="public-header">
-        <Link className="public-brand" href="/">
-          <div className="public-brand-mark" aria-hidden="true">
-            CC
-          </div>
-          <div className="public-brand-copy">
-            <span>CityCore</span>
-            <strong>La tua citta. Tutto connesso.</strong>
-          </div>
+        <Link className="public-brand" href="/" aria-label="CityCore, torna alla home">
+          <span className="public-brand-wordmark">
+            CityCore<span aria-hidden="true">.</span>
+          </span>
+          <span className="public-brand-tagline">La tua citta. Tutto connesso.</span>
         </Link>
 
-        <nav className="public-nav" aria-label="Public routes">
-          <Link className="public-nav-link" href="/#cities">
-            Esplora citta
-          </Link>
-          <Link className="public-nav-link" href="/#for-businesses">
-            Per le attivita
+        <nav className="public-nav" aria-label="Navigazione pubblica">
+          <Link className="public-nav-link" href="/">
+            Scegli una città
           </Link>
           <Link className="public-signin-link" href="/admin/login">
-            Accedi
+            Area operatori
           </Link>
         </nav>
       </header>

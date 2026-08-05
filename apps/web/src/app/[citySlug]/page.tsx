@@ -14,5 +14,5 @@ export default async function CityPage({ params }: CityPageProps) {
     notFound();
   }
 
-  return <CityUtilityHome surface={surface.city} />;
+  return <CityUtilityHome surface={surface} />;
 }

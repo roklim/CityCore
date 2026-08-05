@@ -32,6 +32,7 @@ export function registerPublicBusinessMvpRoutes(app: FastifyInstance) {
           shortDescription: true,
           description: true,
           priceLabel: true,
+          priceCents: true,
           durationMinutes: true,
           sortOrder: true,
         },

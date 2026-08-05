@@ -51,6 +51,7 @@ function mapService(service: {
   shortDescription: string | null;
   description: string | null;
   priceLabel: string | null;
+  priceCents: number | null;
   durationMinutes: number | null;
   status: "draft" | "in_review" | "published" | "archived";
   sortOrder: number;
@@ -122,6 +123,7 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
             shortDescription: body.data.shortDescription ?? null,
             description: body.data.description ?? null,
             priceLabel: body.data.priceLabel ?? null,
+            priceCents: body.data.priceCents ?? null,
             durationMinutes: body.data.durationMinutes ?? null,
             status: body.data.status,
             sortOrder: body.data.sortOrder,
@@ -197,6 +199,9 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
               : {}),
             ...(hasOwn(body.data, "priceLabel")
               ? { priceLabel: body.data.priceLabel ?? null }
+              : {}),
+            ...(hasOwn(body.data, "priceCents")
+              ? { priceCents: body.data.priceCents ?? null }
               : {}),
             ...(hasOwn(body.data, "durationMinutes")
               ? { durationMinutes: body.data.durationMinutes ?? null }

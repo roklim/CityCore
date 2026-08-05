@@ -2,78 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { findMatchingCitySlug, getGeolocationFallbackMessage } from "../../lib/public-search";
 import styles from "./context-gateway.module.css";
 
 type CityOption = {
   slug: string;
   name: string;
 };
-
-const cityCoordinates: Record<string, { lat: number; lng: number }> = {
-  bologna: { lat: 44.4949, lng: 11.3426 },
-  rimini: { lat: 44.0678, lng: 12.5695 },
-  firenze: { lat: 43.7696, lng: 11.2558 },
-  cagli: { lat: 43.5479, lng: 12.6489 },
-};
-
-function normalizeText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .trim()
-    .toLowerCase();
-}
-
-function findCitySlug(query: string, cities: CityOption[]) {
-  const normalizedQuery = normalizeText(query);
-
-  if (!normalizedQuery) {
-    return null;
-  }
-
-  const exact = cities.find(
-    (city) =>
-      normalizeText(city.name) === normalizedQuery || normalizeText(city.slug) === normalizedQuery,
-  );
-
-  if (exact) {
-    return exact.slug;
-  }
-
-  const partial = cities.find(
-    (city) =>
-      normalizeText(city.name).includes(normalizedQuery) ||
-      normalizeText(city.slug).includes(normalizedQuery),
-  );
-
-  return partial?.slug ?? null;
-}
-
-function getNearestCity(
-  current: { lat: number; lng: number },
-  cities: CityOption[],
-): CityOption | null {
-  let bestMatch: CityOption | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (const city of cities) {
-    const coordinates = cityCoordinates[city.slug];
-
-    if (!coordinates) {
-      continue;
-    }
-
-    const distance =
-      Math.abs(current.lat - coordinates.lat) + Math.abs(current.lng - coordinates.lng);
-
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestMatch = city;
-    }
-  }
-
-  return bestMatch;
-}
 
 export function CityEntryForm({
   cities,
@@ -99,7 +34,7 @@ export function CityEntryForm({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const match = findCitySlug(inputValue, cities);
+    const match = findMatchingCitySlug(inputValue, cities);
 
     if (!match) {
       setStatusMessage("Scegli una citta attiva per continuare.");
@@ -112,32 +47,20 @@ export function CityEntryForm({
 
   const handleLocation = () => {
     if (!("geolocation" in navigator)) {
-      setStatusMessage("La posizione non e disponibile su questo dispositivo.");
+      setStatusMessage(getGeolocationFallbackMessage("unsupported"));
       return;
     }
 
-    setStatusMessage("Sto cercando la citta piu vicina...");
+    setStatusMessage("Verifico la disponibilità della posizione...");
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const nearest = getNearestCity(
-          {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          },
-          cities,
-        );
-
-        if (!nearest) {
-          setStatusMessage("Non ho trovato una citta attiva abbastanza vicina.");
-          return;
-        }
-
-        setStatusMessage(null);
-        goToCity(nearest.slug);
+      () => {
+        // The public city contract intentionally does not expose geographic coordinates.
+        // Do not infer a city from a local hardcoded map or transmit the user's position.
+        setStatusMessage(getGeolocationFallbackMessage("unmapped"));
       },
       () => {
-        setStatusMessage("Non riesco a leggere la tua posizione. Scegli una citta attiva.");
+        setStatusMessage(getGeolocationFallbackMessage("denied"));
       },
       {
         enableHighAccuracy: true,
@@ -153,6 +76,7 @@ export function CityEntryForm({
         <label className={styles.searchShell}>
           <span className={styles.searchIcon} aria-hidden="true" />
           <input
+            aria-label="Cerca una città attiva"
             autoComplete="off"
             className={styles.searchInput}
             disabled={isPending}

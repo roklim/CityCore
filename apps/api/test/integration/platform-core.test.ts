@@ -44,7 +44,7 @@ beforeAll(async () => app.ready());
 afterAll(async () => app.close());
 beforeEach(async () => {
   await prisma.$executeRawUnsafe(
-    "TRUNCATE TABLE business_inquiries, business_opening_intervals, business_opening_days, business_services, business_category_assignments, city_categories, access_grants, businesses, business_templates, cities, users CASCADE",
+    "TRUNCATE TABLE pickup_order_items, pickup_orders, business_ordering_settings, business_inquiries, business_opening_intervals, business_opening_days, business_services, business_category_assignments, city_categories, access_grants, businesses, business_templates, cities, users CASCADE",
   );
   const template = await prisma.businessTemplate.create({
     data: { code: "test-local", name: "Test", category: "service", primaryModule: "catalog" },
@@ -478,6 +478,142 @@ describe("platform core integration", () => {
         )
       ).statusCode,
     ).toBe(201);
+  });
+
+  it("accepts a priced pickup order only in an available slot and exposes it to the operator", async () => {
+    const category = await prisma.cityCategory.create({
+      data: { cityId, name: "Food", slug: "food" },
+    });
+    await prisma.businessCategoryAssignment.create({
+      data: { businessId, categoryId: category.id, primary: true },
+    });
+    const service = await request(
+      "POST",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/services",
+      { name: "Pizza test", priceCents: 750, status: "published" },
+    );
+    const days = Array.from({ length: 7 }, (_, weekday) => ({
+      weekday,
+      isClosed: false,
+      intervals: [{ opensAt: "08:00", closesAt: "23:00" }],
+    }));
+    expect(
+      (
+        await request(
+          "PUT",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business/opening-hours",
+          { days },
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await request(
+          "PUT",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business/pickup-ordering",
+          { enabled: true, pickupLeadMinutes: 0, slotMinutes: 15, slotCapacity: 2 },
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business/publish",
+        )
+      ).statusCode,
+    ).toBe(200);
+
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const pickupDate = tomorrow.toISOString().slice(0, 10);
+    const menu = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/businesses/test-business/orders/menu",
+      undefined,
+      "",
+    );
+    expect(menu.statusCode).toBe(200);
+    expect(menu.json().items[0].priceCents).toBe(750);
+    const availability = await request(
+      "GET",
+      `/api/v2/public/cities/test-city/businesses/test-business/orders/availability?date=${pickupDate}`,
+      undefined,
+      "",
+    );
+    expect(availability.statusCode).toBe(200);
+    const slot = availability.json().items.find((item: { available: boolean }) => item.available);
+    expect(slot).toBeDefined();
+    const order = await request(
+      "POST",
+      "/api/v2/public/cities/test-city/businesses/test-business/orders",
+      {
+        name: "Pickup visitor",
+        email: "pickup@example.test",
+        pickupDate,
+        pickupTime: slot.time,
+        privacyAccepted: true,
+        items: [{ serviceId: service.json().item.id, quantity: 2 }],
+      },
+      "",
+      "203.0.113.42",
+    );
+    expect(order.statusCode).toBe(201);
+    expect(order.json().item.totalCents).toBe(1500);
+    expect(order.json().item.reference).toMatch(/^CC-/);
+
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/public/cities/test-city/businesses/test-business/orders",
+          {
+            name: "Second pickup visitor",
+            email: "pickup-second@example.test",
+            pickupDate,
+            pickupTime: slot.time,
+            privacyAccepted: true,
+            items: [{ serviceId: service.json().item.id, quantity: 1 }],
+          },
+          "",
+          "203.0.113.42",
+        )
+      ).statusCode,
+    ).toBe(201);
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/public/cities/test-city/businesses/test-business/orders",
+          {
+            name: "Third pickup visitor",
+            email: "pickup-third@example.test",
+            pickupDate,
+            pickupTime: slot.time,
+            privacyAccepted: true,
+            items: [{ serviceId: service.json().item.id, quantity: 1 }],
+          },
+          "",
+          "203.0.113.42",
+        )
+      ).statusCode,
+    ).toBe(409);
+
+    const inbox = await request(
+      "GET",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/pickup-orders",
+    );
+    expect(inbox.statusCode).toBe(200);
+    expect(inbox.json().total).toBe(2);
+    expect(
+      (
+        await request(
+          "PATCH",
+          `/api/v2/platform-core/cities/test-city/businesses/test-business/pickup-orders/${inbox.json().items[0].id}`,
+          { status: "accepted" },
+        )
+      ).statusCode,
+    ).toBe(200);
   });
 
   it("removes public visibility when a published city becomes inactive", async () => {

@@ -66,6 +66,7 @@ export const serviceSchema = z.object({
   shortDescription: optionalText(280),
   description: optionalText(5_000),
   priceLabel: optionalText(80),
+  priceCents: z.union([z.number().int().positive().max(1_000_000), z.null()]).optional(),
   durationMinutes: z.union([z.number().int().positive().max(1_440), z.null()]).optional(),
   status: z.enum(["draft", "in_review", "published", "archived"]).default("draft"),
   sortOrder: z.number().int().min(0).max(10_000).default(0),

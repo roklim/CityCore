@@ -4,12 +4,14 @@ import {
   fetchPlatformApi,
   type PlatformBusinessesResponse,
   type PlatformBusiness,
+  type PlatformPickupOrdersResponse,
   PlatformApiError,
 } from "../../../../lib/platform-api";
 import { getWebSession } from "../../../../lib/web-session";
+import { updatePickupOrderStatusAction } from "./actions";
 
 export const metadata = {
-  title: "Business Admin",
+  title: "Area operatori business",
 };
 
 type BusinessAdminPageProps = {
@@ -54,6 +56,52 @@ async function loadBusiness(
   }
 }
 
+async function loadPickupOrders(citySlug: string, businessSlug: string, token: string) {
+  try {
+    return await fetchPlatformApi<PlatformPickupOrdersResponse>(
+      `/api/v2/platform-core/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/pickup-orders?limit=20`,
+      { token, cache: "no-store" },
+    );
+  } catch (error) {
+    if (error instanceof PlatformApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+const statusLabels = {
+  new: "Nuovo",
+  accepted: "Accettato",
+  preparing: "In preparazione",
+  ready: "Pronto",
+  completed: "Completato",
+  cancelled: "Annullato",
+} as const;
+
+const nextStatuses = {
+  new: ["accepted", "cancelled"],
+  accepted: ["preparing", "cancelled"],
+  preparing: ["ready", "cancelled"],
+  ready: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+} as const;
+
+function formatOrderTotal(cents: number) {
+  return new Intl.NumberFormat("it-IT", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+function formatPickupAt(value: string) {
+  return new Intl.DateTimeFormat("it-IT", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Rome",
+  }).format(new Date(value));
+}
+
 export default async function BusinessAdminPage({ params }: BusinessAdminPageProps) {
   const { citySlug, businessSlug } = await params;
   const session = await getWebSession();
@@ -62,7 +110,10 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
     redirect("/admin/login");
   }
 
-  const business = await loadBusiness(citySlug, businessSlug, session.token);
+  const [business, pickupOrders] = await Promise.all([
+    loadBusiness(citySlug, businessSlug, session.token),
+    loadPickupOrders(citySlug, businessSlug, session.token),
+  ]);
 
   if (!business) {
     notFound();
@@ -71,11 +122,11 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
   return (
     <AdminShell
       activeSection="local_admin"
-      eyebrow="Business console"
-      title={`${business.name} admin`}
-      description="Questa superficie resta volutamente generica: profilo business, moduli attivi, contenuti pubblici e stato del tenant vivono qui senza dipendere da un verticale specifico."
+      eyebrow="Area operatori"
+      title={`${business.name} · area operatori`}
+      description="Questa area è riservata agli operatori autorizzati del business: profilo, moduli attivi, contenuti pubblici e stato del tenant."
       routePath={`/${citySlug}/${businessSlug}/admin`}
-      statusLabel={session.auth.activeAccess.role.replaceAll("_", " ")}
+      statusLabel={`Area operatori · ${session.auth.activeAccess.role.replaceAll("_", " ")}`}
       asideTitle="Scope attivo"
       asideText={`Utente: ${session.auth.user.email}. Scope: ${session.auth.activeAccess.scopeType}. Business: ${business.city.slug}/${business.slug}.`}
     >
@@ -105,13 +156,19 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
             Piano {business.plan}, subscription {business.subscriptionStatus}.
           </p>
         </article>
+
+        <article className="metric-card">
+          <span>Ordini ritiro</span>
+          <strong>{pickupOrders?.total ?? 0}</strong>
+          <p>Gestiti senza tracking pubblico.</p>
+        </article>
       </section>
 
       <section className="data-grid">
         <article className="data-card">
           <div className="card-heading">
             <div>
-              <p className="section-label">Identity</p>
+              <p className="section-label">Profilo</p>
               <h2>Profilo pubblico del business</h2>
             </div>
             <code>/api/v2/platform-core/businesses</code>
@@ -148,7 +205,7 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
         <article className="data-card">
           <div className="card-heading">
             <div>
-              <p className="section-label">Public surface</p>
+              <p className="section-label">Superficie pubblica</p>
               <h2>Cosa vede l'utente finale</h2>
             </div>
             <code>
@@ -170,7 +227,7 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
       <section className="data-card">
         <div className="card-heading">
           <div>
-            <p className="section-label">Builder scaffold</p>
+            <p className="section-label">Configurazione</p>
             <h2>Stato del business dentro il core city-first</h2>
           </div>
           <code>{business.template.code}</code>
@@ -185,6 +242,59 @@ export default async function BusinessAdminPage({ params }: BusinessAdminPagePro
           </li>
           <li>Questa console e lo scaffold da cui far crescere contenuti, moduli e permessi.</li>
         </ul>
+      </section>
+
+      <section className="data-card">
+        <div className="card-heading">
+          <div>
+            <p className="section-label">Ordini ritiro</p>
+            <h2>Ordini ricevuti</h2>
+          </div>
+          <code>pickup-ordering</code>
+        </div>
+        {pickupOrders?.items.length ? (
+          <div className="admin-order-list">
+            {pickupOrders.items.map((order) => {
+              const availableStatuses = [order.status, ...nextStatuses[order.status]];
+              return (
+                <article className="admin-order-row" key={order.id}>
+                  <div>
+                    <strong>{order.reference}</strong>
+                    <p>
+                      {order.customerName} · ritiro {formatPickupAt(order.pickupAt)}
+                    </p>
+                    <p>
+                      {order.items
+                        .map((item) => `${item.quantity}× ${item.nameSnapshot}`)
+                        .join(", ")}
+                    </p>
+                    <p>{formatOrderTotal(order.totalCents)}</p>
+                  </div>
+                  <form action={updatePickupOrderStatusAction} className="admin-order-status-form">
+                    <input type="hidden" name="citySlug" value={citySlug} />
+                    <input type="hidden" name="businessSlug" value={businessSlug} />
+                    <input type="hidden" name="orderId" value={order.id} />
+                    <label>
+                      Stato
+                      <select name="status" defaultValue={order.status}>
+                        {availableStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {statusLabels[status]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button className="ghost-button" type="submit">
+                      Aggiorna
+                    </button>
+                  </form>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="muted-copy">Nessun ordine di ritiro ricevuto al momento.</p>
+        )}
       </section>
     </AdminShell>
   );

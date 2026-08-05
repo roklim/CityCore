@@ -259,6 +259,9 @@ export function mapPublicBusiness(business: {
   addressLine1: string | null;
   addressLine2: string | null;
   postalCode: string | null;
+  locality: string | null;
+  province: string | null;
+  socialLinksJson: Prisma.JsonValue | null;
   timezone: string;
   currency: string;
   locale: string;
@@ -304,6 +307,9 @@ export function mapPublicBusiness(business: {
     addressLine1: business.addressLine1,
     addressLine2: business.addressLine2,
     postalCode: business.postalCode,
+    locality: business.locality,
+    province: business.province,
+    socialLinks: business.socialLinksJson,
     timezone: business.timezone,
     currency: business.currency,
     locale: business.locale,

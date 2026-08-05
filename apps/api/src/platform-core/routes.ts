@@ -44,6 +44,7 @@ import { registerPublicPlatformRoutes } from "./routes-public.js";
 import { registerCategoryRoutes } from "./routes-categories.js";
 import { registerBusinessMvpRoutes } from "./routes-business-mvp.js";
 import { registerPublicBusinessMvpRoutes } from "./routes-public-mvp.js";
+import { registerPickupOrderingRoutes } from "./routes-pickup-ordering.js";
 import { ensureTemplateRecord } from "./template-service.js";
 import { buildBusinessUpdateData, buildCityUpdateData } from "./update-data.js";
 import {
@@ -58,6 +59,7 @@ import {
 export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
   registerPublicPlatformRoutes(app);
   registerPublicBusinessMvpRoutes(app);
+  registerPickupOrderingRoutes(app);
   registerCategoryRoutes(app);
   registerBusinessMvpRoutes(app);
 

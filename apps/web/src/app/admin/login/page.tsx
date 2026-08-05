@@ -4,7 +4,7 @@ import { getWebSession } from "../../../lib/web-session";
 import { AdminLoginForms } from "./auth-forms";
 
 export const metadata = {
-  title: "Admin Login",
+  title: "Accesso area operatori",
 };
 
 export default async function AdminLoginPage() {
@@ -17,11 +17,11 @@ export default async function AdminLoginPage() {
   return (
     <AdminShell
       activeSection="global_admin"
-      eyebrow="Admin auth"
-      title="Autenticazione per la console CityCore"
-      description="Questo ingresso parla solo con `apps/api`: bootstrap del primo global admin, login con AccessGrant e sessione web salvata via cookie `httpOnly`."
+      eyebrow="Area operatori"
+      title="Accedi all'area operatori"
+      description="Questa superficie è riservata agli operatori autorizzati della piattaforma CityCore."
       routePath="/admin/login"
-      statusLabel="Auth"
+      statusLabel="Area operatori"
       asideTitle="Scope attivo"
       asideText="Il primo obiettivo e usare un accesso pulito e affidabile: sessioni web reali, permessi espliciti e redirect coerenti con ruolo e scope."
     >

@@ -4,7 +4,7 @@ import { getWebSession } from "../../lib/web-session";
 import { AccessSelector } from "./access-selector";
 
 export const metadata = {
-  title: "Select Access",
+  title: "Scelta accesso operatori",
 };
 
 export default async function SelectAccessPage() {
@@ -21,11 +21,11 @@ export default async function SelectAccessPage() {
   return (
     <AdminShell
       activeSection="global_admin"
-      eyebrow="Access selection"
-      title="Scegli quale superficie aprire"
-      description="Un solo account puo avere piu scope. La scelta non e hardcoded nella UI: il token attiva un access grant esplicito e coerente con il ruolo."
+      eyebrow="Area operatori"
+      title="Scegli la superficie da aprire"
+      description="Il tuo account dispone di più scope operativi. Seleziona il permesso con cui proseguire."
       routePath="/select-access"
-      statusLabel="Access"
+      statusLabel="Area operatori"
       asideTitle="Sessione corrente"
       asideText="Questa schermata evita scorciatoie implicite: l'utente sceglie un grant reale e la piattaforma decide il redirect finale coerente con ruolo e scope."
     >

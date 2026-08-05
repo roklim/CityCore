@@ -1,9 +1,10 @@
 import { buildBusinessPath, buildCityPath } from "@platform/shared";
-import { MODULE_DEFINITIONS } from "@platform/templates";
+import { getTemplateDefinition, MODULE_DEFINITIONS } from "@platform/templates";
 import {
   fetchPlatformApi,
   type PublicBusinessResponse,
   type PublicBusinessServicesResponse,
+  type PublicPickupOrderMenuResponse,
   type PublicOpeningHoursResponse,
   type PublicBusinessesResponse,
   type PublicCityResponse,
@@ -12,6 +13,7 @@ import {
   type PublicPlatformCity,
   PlatformApiError,
 } from "./platform-api";
+import { normalizeExternalUrl } from "./public-links";
 import {
   getBusinessProfile,
   getCityProfile,
@@ -54,6 +56,9 @@ export type PublicCityBusinessCard = PublicBusinessProfile & {
   href: string;
   contactLabel: string;
   contactHref: string;
+  category: string | null;
+  searchTerms: string[];
+  services: string[];
 };
 
 export type PublicBusinessDetail = PublicBusinessProfile & {
@@ -61,7 +66,37 @@ export type PublicBusinessDetail = PublicBusinessProfile & {
   moduleLabel: string;
   primaryAction: ActionLink;
   secondaryAction: ActionLink;
+  socialLinks: Array<{ label: string; url: string }>;
+  locality: string | null;
+  province: string | null;
+  publicEmail: string | null;
+  website: string | null;
+  currency: string;
 };
+
+const socialLabels = [
+  ["instagram", "Instagram"],
+  ["facebook", "Facebook"],
+  ["linkedin", "LinkedIn"],
+  ["tiktok", "TikTok"],
+  ["youtube", "YouTube"],
+] as const;
+
+function mapSocialLinks(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return [];
+  }
+
+  const socialLinks = value as Record<string, unknown>;
+  const seen = new Set<string>();
+  return socialLabels.flatMap(([key, label]) => {
+    const candidate = socialLinks[key];
+    const url = normalizeExternalUrl(typeof candidate === "string" ? candidate : null);
+    if (!url || seen.has(url)) return [];
+    seen.add(url);
+    return [{ label, url }];
+  });
+}
 
 export type HomepageSurfaceData = {
   featuredCities: HomepageCityCard[];
@@ -75,6 +110,8 @@ export type PublicCitySurfaceData = {
   city: Omit<PublicCityProfile, "businesses"> & {
     businessCount: number;
     businesses: PublicCityBusinessCard[];
+    publicHeroTitle: string | null;
+    publicHeroDescription: string | null;
   };
   degraded: boolean;
   live: boolean;
@@ -96,6 +133,12 @@ export async function getPublicBusinessServices(citySlug: string, businessSlug: 
 export async function getPublicBusinessOpeningHours(citySlug: string, businessSlug: string) {
   return fetchPlatformApi<PublicOpeningHoursResponse>(
     `/api/v2/public/cities/${citySlug}/businesses/${businessSlug}/opening-hours`,
+  );
+}
+
+export async function getPublicPickupOrderMenu(citySlug: string, businessSlug: string) {
+  return fetchPlatformApi<PublicPickupOrderMenuResponse>(
+    `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/orders/menu`,
   );
 }
 
@@ -154,7 +197,11 @@ function truncateText(value: string, maxLength: number) {
 
 function pickBusinessModuleCode(business: PublicPlatformBusiness) {
   return (
-    business.modules.find((entry) => entry.active)?.moduleCode ?? business.template.primaryModule
+    business.modules.find(
+      (entry) => entry.active && entry.moduleCode === business.template.primaryModule,
+    )?.moduleCode ??
+    business.modules.find((entry) => entry.active)?.moduleCode ??
+    business.template.primaryModule
   );
 }
 
@@ -330,6 +377,12 @@ function mergeRuntimeBusinessWithEditorial(
     moduleLabel: getModuleLabel(moduleCode),
     primaryAction,
     secondaryAction,
+    socialLinks: mapSocialLinks(business.socialLinks),
+    locality: business.locality,
+    province: business.province,
+    publicEmail: business.publicEmail,
+    website: business.website,
+    currency: business.currency,
   };
 }
 
@@ -337,6 +390,8 @@ function mergeRuntimeCityWithEditorial(
   city: PublicPlatformCity,
   businesses: PublicPlatformBusiness[],
   editorialCity: PublicCityProfile,
+  searchTermsByBusiness = new Map<string, string[]>(),
+  serviceNamesByBusiness = new Map<string, string[]>(),
 ): PublicCitySurfaceData["city"] {
   return {
     ...editorialCity,
@@ -346,6 +401,8 @@ function mergeRuntimeCityWithEditorial(
     claim: city.heroTitle ?? editorialCity.claim,
     shortPitch: city.heroDescription ?? editorialCity.shortPitch,
     businessCount: city.businessCount,
+    publicHeroTitle: city.heroTitle,
+    publicHeroDescription: city.heroDescription,
     businesses: businesses.map((business) => {
       const editorialBusiness = getBusinessProfile(city.slug, business.slug);
       const merged = mergeRuntimeBusinessWithEditorial(business, editorialBusiness);
@@ -354,6 +411,9 @@ function mergeRuntimeCityWithEditorial(
         ...merged,
         contactLabel: buildContactAction(business).label,
         contactHref: buildContactAction(business).href,
+        category: business.template.category,
+        searchTerms: searchTermsByBusiness.get(business.id) ?? [],
+        services: serviceNamesByBusiness.get(business.id) ?? [],
       };
     }),
   };
@@ -418,8 +478,8 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
 
   try {
     const [citiesResponse, businessesResponse] = await Promise.all([
-      fetchPlatformApi<PublicCitiesResponse>("/api/v2/public/cities?limit=6"),
-      fetchPlatformApi<PublicBusinessesResponse>("/api/v2/public/businesses?limit=6"),
+      fetchPlatformApi<PublicCitiesResponse>("/api/v2/public/cities?limit=24"),
+      fetchPlatformApi<PublicBusinessesResponse>("/api/v2/public/businesses?limit=24"),
     ]);
     const runtimeCities = citiesResponse.items.map(normalizeRuntimeCity);
     const runtimeBusinesses = businessesResponse.items.map(normalizeRuntimeBusiness);
@@ -461,14 +521,47 @@ export async function getPublicCitySurfaceData(
         const [cityResponse, businessesResponse] = await Promise.all([
           fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${candidateSlug}`),
           fetchPlatformApi<PublicBusinessesResponse>(
-            `/api/v2/public/cities/${candidateSlug}/businesses?limit=12`,
+            `/api/v2/public/cities/${candidateSlug}/businesses?limit=24`,
           ),
         ]);
         const runtimeCity = normalizeRuntimeCity(cityResponse.item);
         const runtimeBusinesses = businessesResponse.items.map(normalizeRuntimeBusiness);
+        const serviceResults = await Promise.allSettled(
+          runtimeBusinesses.map((business) =>
+            getPublicBusinessServices(runtimeCity.slug, business.slug),
+          ),
+        );
+        const searchTermsByBusiness = new Map<string, string[]>();
+        const serviceNamesByBusiness = new Map<string, string[]>();
+
+        for (const [index, result] of serviceResults.entries()) {
+          if (result.status !== "fulfilled") continue;
+
+          const business = runtimeBusinesses[index];
+          if (!business) continue;
+
+          searchTermsByBusiness.set(
+            business.id,
+            result.value.items.flatMap((service) =>
+              [service.name, service.shortDescription, service.description].filter(
+                (term): term is string => Boolean(term),
+              ),
+            ),
+          );
+          serviceNamesByBusiness.set(
+            business.id,
+            result.value.items.map((service) => service.name),
+          );
+        }
 
         return {
-          city: mergeRuntimeCityWithEditorial(runtimeCity, runtimeBusinesses, editorialCity),
+          city: mergeRuntimeCityWithEditorial(
+            runtimeCity,
+            runtimeBusinesses,
+            editorialCity,
+            searchTermsByBusiness,
+            serviceNamesByBusiness,
+          ),
           degraded: false,
           live: true,
         };
@@ -495,6 +588,8 @@ export async function getPublicCitySurfaceData(
       city: {
         ...editorialCity,
         businessCount: editorialCity.businesses.length,
+        publicHeroTitle: null,
+        publicHeroDescription: null,
         businesses: editorialCity.businesses.map((business) => ({
           ...business,
           href: buildBusinessPath({
@@ -503,6 +598,9 @@ export async function getPublicCitySurfaceData(
           }),
           contactLabel: business.contactPhone,
           contactHref: `tel:${business.contactPhone.replace(/[^\d+]/g, "")}`,
+          category: getTemplateDefinition(business.templateCode)?.category ?? null,
+          searchTerms: [],
+          services: [],
         })),
       },
       degraded: true,
@@ -583,6 +681,12 @@ export async function getPublicBusinessSurfaceData(
           label: editorialBusiness.ctaSecondary,
           href: `tel:${editorialBusiness.contactPhone.replace(/[^\d+]/g, "")}`,
         },
+        socialLinks: [],
+        locality: null,
+        province: null,
+        publicEmail: null,
+        website: null,
+        currency: "EUR",
       },
       degraded: true,
       live: false,
