@@ -173,6 +173,7 @@ export const listBusinessesQuerySchema = z.object({
 });
 
 export const publicListCitiesQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(24).default(6),
 });
 
@@ -181,6 +182,7 @@ export const publicCityParamsSchema = z.object({
 });
 
 export const publicListBusinessesQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(24).default(12),
 });
 

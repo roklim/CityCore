@@ -3,7 +3,7 @@ import {
   MODULE_DEFINITIONS,
   getTemplateDefinition,
 } from "@platform/templates";
-import { buildBusinessPath, buildCityPath, slugify } from "@platform/shared";
+import { slugify } from "@platform/shared";
 
 type ModuleCode = (typeof MODULE_DEFINITIONS)[number]["code"];
 type TemplateCode = (typeof BUSINESS_TEMPLATE_DEFINITIONS)[number]["code"];
@@ -51,7 +51,7 @@ const cityProfiles: Record<string, Omit<PublicCityProfile, "slug">> = {
     region: "Marche",
     claim: "Citta compatta, identita chiara, business leggibili.",
     shortPitch:
-      "Scopri attivita, strutture, servizi e pagine locali senza passare da directory fredde o percorsi confusi.",
+      "Scopri attività, strutture, servizi e pagine locali senza passare da directory fredde o percorsi confusi.",
     neighborhoods: ["Centro storico", "Porta Massara", "San Geronzio", "Ponte Murato"],
     quickFilters: ["catalog", "booking", "directory", "events"],
     featuredModules: ["catalog", "booking", "directory"],
@@ -358,7 +358,7 @@ export function getCityProfile(citySlug: string): PublicCityProfile {
         name: `${titleFromSlug(citySlug)} Hub`,
         templateCode: "local_business",
         summary:
-          "Un esempio di attivita locale con pagina leggibile, CTA forte e struttura pronta per contenuti, catalogo e contatti.",
+          "Un esempio di attività locale con pagina leggibile, CTA forte e struttura pronta per contenuti, catalogo e contatti.",
         area: "Centro",
         eta: "Risposta rapida",
         vibe: "Attivita locale",
@@ -369,7 +369,7 @@ export function getCityProfile(citySlug: string): PublicCityProfile {
         openNowLabel: "Disponibile oggi",
         heroTitle: "Un business pubblico deve spiegarsi in pochi secondi.",
         heroDescription:
-          "Questa struttura mostra come la piattaforma puo presentare un'attivita in modo chiaro, ordinato e utile.",
+          "Questa struttura mostra come la piattaforma può presentare un'attività in modo chiaro, ordinato e utile.",
         highlights: ["CTA chiara", "Hero leggibile", "Blocchi mobile-first"],
         serviceMoments: ["Scelta rapida", "Telefono", "Percorso diretto"],
         faq: [
@@ -436,21 +436,15 @@ export function getBusinessProfile(citySlug: string, businessSlug: string) {
   });
 }
 
-export function getFeaturedCities() {
-  return ["cagli", "rimini", "bologna"].map((slug) => getCityProfile(slug));
+export function getFallbackCityProfile(citySlug: string) {
+  return cityProfiles[citySlug] ? getCityProfile(citySlug) : null;
 }
 
-export function getHomepageShowcase() {
-  return getFeaturedCities().flatMap((city) =>
-    city.businesses.slice(0, 2).map((business) => ({
-      ...business,
-      cityName: city.name,
-      cityClaim: city.claim,
-      href: buildBusinessPath({
-        citySlug: city.slug,
-        businessSlug: business.slug,
-      }),
-      cityHref: buildCityPath(city.slug),
-    })),
-  );
+export function getFallbackBusinessProfile(citySlug: string, businessSlug: string) {
+  const city = getFallbackCityProfile(citySlug);
+  return city?.businesses.find((business) => business.slug === businessSlug) ?? null;
+}
+
+export function getFeaturedCities() {
+  return ["cagli", "rimini", "bologna"].map((slug) => getCityProfile(slug));
 }

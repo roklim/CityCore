@@ -5,8 +5,8 @@ type PublicShellProps = {
   toneLabel: string;
   title: string;
   description: string;
-  citySlug?: string;
-  businessName?: string;
+  contextLabel?: string;
+  contextHref?: string;
   accentNote?: string;
   children: ReactNode;
 };
@@ -15,9 +15,9 @@ export function PublicShell({
   toneLabel,
   title,
   description,
-  citySlug,
-  businessName,
-  accentNote = "Scopri attivita locali, confronta opzioni e passa all'azione senza perdere tempo in percorsi generici.",
+  contextLabel,
+  contextHref,
+  accentNote = "Scopri attività locali, confronta opzioni e passa all'azione senza perdere tempo in percorsi generici.",
   children,
 }: PublicShellProps) {
   return (
@@ -27,7 +27,7 @@ export function PublicShell({
           <span className="public-brand-wordmark">
             CityCore<span aria-hidden="true">.</span>
           </span>
-          <span className="public-brand-tagline">La tua citta. Tutto connesso.</span>
+          <span className="public-brand-tagline">La tua città. Tutto connesso.</span>
         </Link>
 
         <nav className="public-nav" aria-label="Navigazione pubblica">
@@ -40,13 +40,20 @@ export function PublicShell({
         </nav>
       </header>
 
-      <main className="public-main">
+      <main className="public-main" id="main-content">
         <section className="public-hero">
           <div className="public-hero-copy">
             <div className="public-hero-meta">
               <span className="public-kicker">{toneLabel}</span>
-              {citySlug ? <span className="public-meta-chip">{citySlug}</span> : null}
-              {businessName ? <span className="public-meta-chip">{businessName}</span> : null}
+              {contextLabel ? (
+                contextHref ? (
+                  <Link className="public-meta-chip public-meta-link" href={contextHref}>
+                    {contextLabel}
+                  </Link>
+                ) : (
+                  <span className="public-meta-chip">{contextLabel}</span>
+                )
+              ) : null}
             </div>
 
             <h1>{title}</h1>
@@ -54,7 +61,7 @@ export function PublicShell({
           </div>
 
           <aside className="public-hero-aside">
-            <p className="public-aside-label">Perche qui</p>
+            <p className="public-aside-label">Perché qui</p>
             <p>{accentNote}</p>
           </aside>
         </section>

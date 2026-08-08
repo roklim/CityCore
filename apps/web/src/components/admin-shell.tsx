@@ -1,63 +1,66 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { platformShellNavigation, type ShellSectionId } from "@platform/ui";
+
+export type OperatorNavigationItem = {
+  href: string;
+  label: string;
+  meta: string;
+  current?: boolean;
+};
 
 type AdminShellProps = {
-  activeSection: ShellSectionId;
   eyebrow: string;
   title: string;
   description: string;
   routePath: string;
+  navigationItems: readonly OperatorNavigationItem[];
   statusLabel?: string;
   asideTitle?: string;
   asideText?: string;
+  headerActions?: ReactNode;
   children: ReactNode;
 };
 
-function getNavClassName(sectionId: ShellSectionId, activeSection: ShellSectionId) {
-  return sectionId === activeSection ? "shell-nav-link active" : "shell-nav-link";
-}
-
 export function AdminShell({
-  activeSection,
   eyebrow,
   title,
   description,
   routePath,
+  navigationItems,
   statusLabel = "Area operatori",
-  asideTitle = "Context",
-  asideText = "Questa shell tiene allineati ruoli, superfici e moduli senza dipendere da un verticale specifico.",
+  asideTitle = "Contesto",
+  asideText = "Questa area mantiene allineati ruoli, superfici e moduli della piattaforma.",
+  headerActions,
   children,
 }: AdminShellProps) {
   return (
     <div className="app-shell">
       <header className="app-topbar">
-        <div className="topbar-brand">
-          <div className="brand-mark" aria-hidden="true">
-            CC
-          </div>
-          <div>
-            <p className="eyebrow">CityCore</p>
-            <strong>Area operatori</strong>
-          </div>
-        </div>
+        <Link className="operator-brand" href="/" aria-label="CityCore, torna alla home">
+          <span className="operator-brand-wordmark">
+            CityCore<span aria-hidden="true">.</span>
+          </span>
+          <span className="operator-brand-context">Area operatori</span>
+        </Link>
 
         <div className="topbar-meta">
           <span className="meta-chip">{statusLabel}</span>
           <code className="route-pill">{routePath}</code>
+          {headerActions ? <div className="operator-header-actions">{headerActions}</div> : null}
         </div>
       </header>
 
       <div className="shell-layout">
         <aside className="shell-rail" aria-label="Navigazione area operatori">
           <section className="rail-block">
-            <p className="rail-label">Surfaces</p>
+            <p className="rail-label">Navigazione</p>
             <nav className="shell-nav">
-              {platformShellNavigation.map((item) => (
+              {navigationItems.map((item) => (
                 <Link
-                  className={getNavClassName(item.id, activeSection)}
+                  aria-current={item.current ? "page" : undefined}
+                  className={item.current ? "shell-nav-link active" : "shell-nav-link"}
                   href={item.href}
-                  key={item.id}
+                  key={`${item.href}-${item.label}`}
                 >
                   <strong>{item.label}</strong>
                   <span>{item.meta}</span>
@@ -72,7 +75,7 @@ export function AdminShell({
           </section>
         </aside>
 
-        <main className="shell-main">
+        <main className="shell-main" id="main-content">
           <section className="hero-panel">
             <div className="hero-copy">
               <p className="eyebrow">{eyebrow}</p>

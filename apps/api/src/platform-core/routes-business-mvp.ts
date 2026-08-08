@@ -12,6 +12,7 @@ import {
   inquiryListQuerySchema,
   inquiryParamsSchema,
   replaceOpeningWeekSchema,
+  replaceBusinessModulesSchema,
   serviceParamsSchema,
   serviceSchema,
   updateInquirySchema,
@@ -30,7 +31,12 @@ async function requireBusinessAccess(
   citySlug: string,
   businessSlug: string,
   request: FastifyRequest,
-  permission: "businesses.read" | "businesses.manage" | "catalog.manage" | "settings.manage",
+  permission:
+    | "businesses.read"
+    | "businesses.manage"
+    | "catalog.manage"
+    | "modules.manage"
+    | "settings.manage",
 ) {
   const business = await findBusiness(citySlug, businessSlug);
   const auth = getRequestAuth(request);
@@ -240,6 +246,71 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
       if (!deleted.count)
         return reply.code(404).send({ status: "error", error: "Service not found" });
       return reply.code(204).send();
+    },
+  );
+
+  app.put(
+    "/api/v2/platform-core/cities/:citySlug/businesses/:businessSlug/modules",
+    { preHandler: requirePermission("modules.manage") },
+    async (request, reply) => {
+      const params = parsePayload(businessParamsSchema, request.params);
+      const body = parsePayload(replaceBusinessModulesSchema, request.body);
+      if (!params.success) return reply.code(params.response.statusCode).send(params.response.body);
+      if (!body.success) return reply.code(body.response.statusCode).send(body.response.body);
+      const business = await requireBusinessAccess(
+        params.data.citySlug,
+        params.data.businessSlug,
+        request,
+        "modules.manage",
+      );
+      if (!business) return reply.code(404).send({ status: "error", error: "Business not found" });
+
+      const definition = await prisma.business.findUnique({
+        where: { id: business.id },
+        select: { template: { select: { primaryModule: true } } },
+      });
+      if (!definition)
+        return reply.code(404).send({ status: "error", error: "Business not found" });
+
+      const moduleCodes = [
+        ...new Set([definition.template.primaryModule, ...body.data.moduleCodes]),
+      ];
+      const auth = getRequestAuth(request);
+      const items = await prisma.$transaction(async (tx) => {
+        await tx.businessModule.updateMany({
+          where: { businessId: business.id },
+          data: { active: false },
+        });
+
+        for (const [sortOrder, moduleCode] of moduleCodes.entries()) {
+          await tx.businessModule.upsert({
+            where: { businessId_moduleCode: { businessId: business.id, moduleCode } },
+            create: { businessId: business.id, moduleCode, active: true, sortOrder },
+            update: { active: true, sortOrder },
+          });
+        }
+
+        await tx.auditLog.create({
+          data: {
+            actorUserId: auth.user.id,
+            action: "business.modules.updated",
+            targetType: "business",
+            targetId: business.id,
+            scopeType: "business",
+            cityId: business.cityId,
+            businessId: business.id,
+            metadataJson: { moduleCodes, primaryModule: definition.template.primaryModule },
+          },
+        });
+
+        return tx.businessModule.findMany({
+          where: { businessId: business.id },
+          orderBy: [{ active: "desc" }, { sortOrder: "asc" }, { moduleCode: "asc" }],
+          select: { moduleCode: true, active: true },
+        });
+      });
+
+      return { status: "ok", items };
     },
   );
 

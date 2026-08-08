@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import type { AuthAccess } from "../../lib/platform-api";
 import { selectAccessAction, type AdminAuthActionState } from "../admin/actions";
@@ -25,18 +25,28 @@ function describeAccess(access: AuthAccess) {
   }
 
   if (access.scopeType === "city") {
-    return `Scope citta su ${access.city?.name ?? "citta non disponibile"}.`;
+    return `Ambito città: ${access.city?.name ?? "città non disponibile"}.`;
   }
 
-  return `Scope business su ${access.business?.name ?? "business non disponibile"}.`;
+  return `Ambito attività: ${access.business?.name ?? "attività non disponibile"}.`;
 }
 
 function ErrorBanner({ state }: { state: AdminAuthActionState }) {
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (state.error) errorRef.current?.focus();
+  }, [state.error]);
+
   if (!state.error) {
     return null;
   }
 
-  return <p className="form-error">{state.error}</p>;
+  return (
+    <p aria-live="polite" className="form-error" ref={errorRef} role="alert" tabIndex={-1}>
+      {state.error}
+    </p>
+  );
 }
 
 export function AccessSelector({ accesses }: { accesses: AuthAccess[] }) {

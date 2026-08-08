@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { PublicCityBusinessCard } from "../../lib/public-runtime";
 import {
   filterPublicBusinessesBySection,
@@ -38,6 +38,7 @@ export function CityBusinessDirectory({
 }) {
   const [query, setQuery] = useState("");
   const [activeSection, setActiveSection] = useState("all");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const sections = useMemo(() => groupPublicBusinessesByCategory(businesses), [businesses]);
   const visibleBusinesses = useMemo(
     () => filterPublicBusinessesBySection(businesses, query, activeSection),
@@ -78,26 +79,36 @@ export function CityBusinessDirectory({
         </p>
       ) : null}
 
-      <label className={`${styles.searchShell} ${styles.directorySearch}`}>
-        <span className={styles.srOnly}>Cerca nella directory della città</span>
+      <div className={`${styles.searchShell} ${styles.directorySearch}`}>
+        <label className={styles.srOnly} htmlFor="city-business-search">
+          Cerca nella directory della città
+        </label>
         <span className={styles.searchIcon} aria-hidden="true" />
         <input
-          aria-label="Cerca nella directory della città"
           className={styles.searchInput}
+          id="city-business-search"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Cerca nome, servizio, descrizione o località"
+          ref={searchInputRef}
           type="search"
           value={query}
         />
         {hasQuery ? (
-          <button className={styles.clearSearchButton} onClick={() => setQuery("")} type="button">
+          <button
+            className={styles.clearSearchButton}
+            onClick={() => {
+              setQuery("");
+              searchInputRef.current?.focus();
+            }}
+            type="button"
+          >
             Cancella
           </button>
         ) : null}
-      </label>
+      </div>
 
       {hasCategorySections ? (
-        <div className={styles.directoryFilters} aria-label="Sezioni attività">
+        <div className={styles.directoryFilters} aria-label="Sezioni attività" role="group">
           <button
             aria-pressed={activeSection === "all"}
             className={
@@ -165,6 +176,7 @@ export function CityBusinessDirectory({
             onClick={() => {
               setQuery("");
               setActiveSection("all");
+              searchInputRef.current?.focus();
             }}
             type="button"
           >

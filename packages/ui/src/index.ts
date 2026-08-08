@@ -16,8 +16,8 @@ export const platformTheme = {
     danger: "#ff7c7c",
   },
   radius: {
-    sm: "6px",
-    md: "8px",
+    sm: "12px",
+    md: "20px",
   },
   spacing: {
     xs: "8px",
@@ -37,58 +37,6 @@ export const platformTheme = {
     panel: "0 18px 60px rgba(3, 8, 14, 0.32)",
   },
 } as const;
-
-export type ShellSectionId =
-  | "platform_home"
-  | "global_admin"
-  | "city_marketplace"
-  | "business_page"
-  | "customer_area"
-  | "local_admin";
-
-export const platformShellNavigation = [
-  {
-    id: "platform_home",
-    href: "/",
-    label: "Platform Home",
-    meta: "Ingresso city-first",
-  },
-  {
-    id: "global_admin",
-    href: "/admin",
-    label: "Platform Admin",
-    meta: "Governance e accessi",
-  },
-  {
-    id: "city_marketplace",
-    href: "/cagli",
-    label: "City Surface",
-    meta: "Discovery locale",
-  },
-  {
-    id: "business_page",
-    href: "/cagli/bottega-civica",
-    label: "Business Page",
-    meta: "Sito pubblico modulare",
-  },
-  {
-    id: "customer_area",
-    href: "/account",
-    label: "Account Area",
-    meta: "Profilo e preferenze",
-  },
-  {
-    id: "local_admin",
-    href: "/cagli/bottega-civica/admin",
-    label: "Business Admin",
-    meta: "Console business",
-  },
-] as const satisfies ReadonlyArray<{
-  id: ShellSectionId;
-  href: string;
-  label: string;
-  meta: string;
-}>;
 
 export function createCssVariables() {
   return {

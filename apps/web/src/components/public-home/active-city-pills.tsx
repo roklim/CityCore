@@ -4,8 +4,8 @@ import styles from "./context-gateway.module.css";
 
 export function ActiveCityPills({ cities }: { cities: HomepageCityCard[] }) {
   return (
-    <section className={styles.activeCities} id="active-cities">
-      <p className={styles.sectionKicker}>Citta attive</p>
+    <nav className={styles.activeCities} id="active-cities" aria-label="Città attive">
+      <p className={styles.sectionKicker}>Città attive</p>
       <div className={styles.cityPills}>
         {cities.map((city) => (
           <Link className={styles.cityPill} href={city.href} key={city.slug}>
@@ -13,6 +13,6 @@ export function ActiveCityPills({ cities }: { cities: HomepageCityCard[] }) {
           </Link>
         ))}
       </div>
-    </section>
+    </nav>
   );
 }

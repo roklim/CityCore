@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { findMatchingCitySlug, getGeolocationFallbackMessage } from "../../lib/public-search";
 import styles from "./context-gateway.module.css";
 
@@ -22,7 +22,9 @@ export function CityEntryForm({
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const cityNames = cities.map((city) => city.name);
 
   const goToCity = (slug: string) => {
@@ -33,11 +35,13 @@ export function CityEntryForm({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isPending) return;
 
     const match = findMatchingCitySlug(inputValue, cities);
 
     if (!match) {
-      setStatusMessage("Scegli una citta attiva per continuare.");
+      setStatusMessage("Scegli una città attiva per continuare.");
+      searchInputRef.current?.focus();
       return;
     }
 
@@ -46,11 +50,14 @@ export function CityEntryForm({
   };
 
   const handleLocation = () => {
+    if (isPending || isLocating) return;
+
     if (!("geolocation" in navigator)) {
       setStatusMessage(getGeolocationFallbackMessage("unsupported"));
       return;
     }
 
+    setIsLocating(true);
     setStatusMessage("Verifico la disponibilità della posizione...");
 
     navigator.geolocation.getCurrentPosition(
@@ -58,9 +65,13 @@ export function CityEntryForm({
         // The public city contract intentionally does not expose geographic coordinates.
         // Do not infer a city from a local hardcoded map or transmit the user's position.
         setStatusMessage(getGeolocationFallbackMessage("unmapped"));
+        setIsLocating(false);
+        searchInputRef.current?.focus();
       },
       () => {
         setStatusMessage(getGeolocationFallbackMessage("denied"));
+        setIsLocating(false);
+        searchInputRef.current?.focus();
       },
       {
         enableHighAccuracy: true,
@@ -73,24 +84,34 @@ export function CityEntryForm({
   return (
     <div className={styles.entryFormWrap}>
       <form className={styles.entryForm} onSubmit={handleSubmit}>
-        <label className={styles.searchShell}>
+        <div className={styles.searchShell}>
+          <label className={styles.srOnly} htmlFor="citycore-city-search">
+            Cerca una città attiva
+          </label>
           <span className={styles.searchIcon} aria-hidden="true" />
           <input
-            aria-label="Cerca una città attiva"
             autoComplete="off"
             className={styles.searchInput}
             disabled={isPending}
+            id="citycore-city-search"
             list="citycore-city-options"
-            onChange={(event) => setInputValue(event.target.value)}
+            onChange={(event) => {
+              setInputValue(event.target.value);
+              setStatusMessage(null);
+            }}
             placeholder={searchPlaceholder}
+            ref={searchInputRef}
             type="search"
             value={inputValue}
           />
-        </label>
+          <button className={styles.searchSubmitButton} disabled={isPending} type="submit">
+            {isPending ? "Apro…" : "Cerca"}
+          </button>
+        </div>
 
         <button
           className={styles.locationButton}
-          disabled={isPending}
+          disabled={isPending || isLocating}
           onClick={handleLocation}
           type="button"
         >
@@ -109,7 +130,7 @@ export function CityEntryForm({
               strokeWidth="1.8"
             />
           </svg>
-          <span>{locationLabel}</span>
+          <span>{isLocating ? "Ricerca posizione…" : locationLabel}</span>
         </button>
       </form>
 

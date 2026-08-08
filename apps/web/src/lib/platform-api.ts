@@ -253,6 +253,48 @@ export type PlatformBusinessesResponse = {
   items: PlatformBusiness[];
 };
 
+export type PlatformBusinessService = {
+  id: string;
+  name: string;
+  slug: string;
+  shortDescription: string | null;
+  description: string | null;
+  priceLabel: string | null;
+  priceCents: number | null;
+  durationMinutes: number | null;
+  status: "draft" | "in_review" | "published" | "archived";
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PlatformBusinessServicesResponse = {
+  status: "ok";
+  items: PlatformBusinessService[];
+};
+
+export type PlatformBusinessInquiry = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string;
+  privacyAccepted: boolean;
+  status: "new" | "read" | "closed";
+  readAt: string | null;
+  internalNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PlatformBusinessInquiriesResponse = {
+  status: "ok";
+  items: PlatformBusinessInquiry[];
+  page: number;
+  limit: number;
+  total: number;
+};
+
 export type PlatformAccessGrantsResponse = {
   status: "ok";
   items: PlatformAccessGrant[];
@@ -330,6 +372,9 @@ export type PublicPlatformBusiness = {
 export type PublicCitiesResponse = {
   status: "ok";
   items: PublicPlatformCity[];
+  page: number;
+  limit: number;
+  total: number;
 };
 
 export type PublicCityResponse = {
@@ -340,6 +385,9 @@ export type PublicCityResponse = {
 export type PublicBusinessesResponse = {
   status: "ok";
   items: PublicPlatformBusiness[];
+  page: number;
+  limit: number;
+  total: number;
 };
 
 export type PublicBusinessResponse = {

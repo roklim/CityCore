@@ -1,20 +1,14 @@
 import Link from "next/link";
+import { getCityMobileNavigation } from "../../lib/public-actions";
 import styles from "./context-gateway.module.css";
 
-function BottomIcon({ icon }: { icon: "home" | "search" | "places" | "profile" }) {
+function BottomIcon({ icon }: { icon: "home" | "places" | "profile" }) {
   switch (icon) {
     case "home":
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m4 11 8-7 8 7" />
           <path d="M6 10v10h12V10" />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="6" />
-          <path d="m16 16 5 5" />
         </svg>
       );
     case "places":
@@ -37,21 +31,16 @@ function BottomIcon({ icon }: { icon: "home" | "search" | "places" | "profile" }
 }
 
 export function MobileBottomNav({ citySlug }: { citySlug: string }) {
-  const items = [
-    { label: "Home", href: `/${citySlug}`, icon: "home" as const, active: true },
-    { label: "Cerca", href: `/${citySlug}#directory`, icon: "search" as const, active: false },
-    { label: "Attività", href: `/${citySlug}#directory`, icon: "places" as const, active: false },
-    { label: "Operatori", href: "/admin/login", icon: "profile" as const, active: false },
-  ];
+  const items = getCityMobileNavigation(citySlug);
 
   return (
     <nav className={styles.bottomNav} aria-label="Navigazione mobile">
       {items.map((item) => (
         <Link
-          className={`${styles.bottomItem} ${item.active ? styles.bottomItemActive : ""}`}
+          className={`${styles.bottomItem} ${item.current ? styles.bottomItemActive : ""}`}
           href={item.href}
           key={item.label}
-          aria-current={item.active ? "page" : undefined}
+          aria-current={item.current}
         >
           <span className={styles.bottomIcon}>
             <BottomIcon icon={item.icon} />

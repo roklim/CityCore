@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { moduleCodes } from "./config.js";
 
 const optionalText = (max: number) =>
   z.union([z.string().trim().min(1).max(max), z.null()]).optional();
@@ -72,6 +73,18 @@ export const serviceSchema = z.object({
   sortOrder: z.number().int().min(0).max(10_000).default(0),
 });
 export const updateServiceSchema = serviceSchema.partial();
+
+export const replaceBusinessModulesSchema = z
+  .object({ moduleCodes: z.array(z.enum(moduleCodes)).max(moduleCodes.length) })
+  .superRefine((value, context) => {
+    if (new Set(value.moduleCodes).size !== value.moduleCodes.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["moduleCodes"],
+        message: "Modules must be unique.",
+      });
+    }
+  });
 
 const openingIntervalSchema = z.object({ opensAt: timeValue, closesAt: timeValue });
 export const replaceOpeningWeekSchema = z.object({

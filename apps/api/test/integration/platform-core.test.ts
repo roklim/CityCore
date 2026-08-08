@@ -276,6 +276,50 @@ describe("platform core integration", () => {
     expect(assignedDelete.statusCode).toBe(409);
   });
 
+  it("lets the scoped owner select business modules while keeping the template primary module", async () => {
+    const updated = await request(
+      "PUT",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/modules",
+      { moduleCodes: ["content", "forms_inbox"] },
+    );
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ moduleCode: "catalog", active: true }),
+        expect.objectContaining({ moduleCode: "content", active: true }),
+        expect.objectContaining({ moduleCode: "forms_inbox", active: true }),
+      ]),
+    );
+
+    const replaced = await request(
+      "PUT",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/modules",
+      { moduleCodes: ["events"] },
+    );
+    expect(replaced.statusCode).toBe(200);
+    expect(
+      await prisma.businessModule.findMany({
+        where: { businessId },
+        select: { moduleCode: true, active: true },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        { moduleCode: "catalog", active: true },
+        { moduleCode: "content", active: false },
+        { moduleCode: "events", active: true },
+        { moduleCode: "forms_inbox", active: false },
+      ]),
+    );
+
+    const denied = await request(
+      "PUT",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/modules",
+      { moduleCodes: ["booking"] },
+      otherToken,
+    );
+    expect(denied.statusCode).toBe(404);
+  });
+
   it("publishes a ready business, exposes services, and isolates inquiries", async () => {
     const category = await prisma.cityCategory.create({
       data: { cityId, name: "Services", slug: "services" },
@@ -294,6 +338,24 @@ describe("platform core integration", () => {
       "/api/v2/platform-core/cities/test-city/businesses/test-business/publish",
     );
     expect(publish.statusCode).toBe(200);
+    const publicCities = await request(
+      "GET",
+      "/api/v2/public/cities?page=1&limit=1",
+      undefined,
+      "",
+    );
+    expect(publicCities.statusCode).toBe(200);
+    expect(publicCities.json()).toEqual(expect.objectContaining({ page: 1, limit: 1, total: 1 }));
+    const publicBusinesses = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/businesses?page=1&limit=1",
+      undefined,
+      "",
+    );
+    expect(publicBusinesses.statusCode).toBe(200);
+    expect(publicBusinesses.json()).toEqual(
+      expect.objectContaining({ page: 1, limit: 1, total: 1 }),
+    );
     const publicServices = await request(
       "GET",
       "/api/v2/public/cities/test-city/businesses/test-business/services",
@@ -331,7 +393,7 @@ describe("platform core integration", () => {
     const service = await request(
       "POST",
       "/api/v2/platform-core/cities/test-city/businesses/test-business/services",
-      { name: "First service", sortOrder: 2 },
+      { name: "First service", priceCents: 850, sortOrder: 2 },
     );
     const serviceId = service.json().item.id;
     expect(service.statusCode).toBe(201);
@@ -340,10 +402,13 @@ describe("platform core integration", () => {
         await request(
           "PATCH",
           `/api/v2/platform-core/cities/test-city/businesses/test-business/services/${serviceId}`,
-          { name: "Updated service", sortOrder: 1 },
+          { name: "Updated service", priceCents: 900, sortOrder: 1 },
         )
       ).statusCode,
     ).toBe(200);
+    expect(
+      (await prisma.businessService.findUniqueOrThrow({ where: { id: serviceId } })).priceCents,
+    ).toBe(900);
     expect(
       (
         await request(

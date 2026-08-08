@@ -82,6 +82,8 @@ export async function loginAction(
     };
   }
 
+  let redirectTo: string;
+
   try {
     const response = await fetchPlatformApi<AuthSessionResponse>("/api/v2/auth/login", {
       method: "POST",
@@ -98,12 +100,14 @@ export async function loginAction(
     }
 
     await setSessionToken(response.token);
-    redirect(response.redirectTo || "/admin");
+    redirectTo = response.redirectTo || "/admin";
   } catch (error) {
     return {
       error: mapApiError(error, "Login non riuscito."),
     };
   }
+
+  redirect(redirectTo);
 }
 
 export async function selectAccessAction(
@@ -117,6 +121,8 @@ export async function selectAccessAction(
       error: "Seleziona un accesso valido.",
     };
   }
+
+  let redirectTo: string;
 
   try {
     const token = await getSessionToken();
@@ -142,12 +148,14 @@ export async function selectAccessAction(
     }
 
     await setSessionToken(response.token);
-    redirect(response.redirectTo || "/admin");
+    redirectTo = response.redirectTo || "/admin";
   } catch (error) {
     return {
       error: mapApiError(error, "Cambio accesso non riuscito."),
     };
   }
+
+  redirect(redirectTo);
 }
 
 export async function logoutAction() {

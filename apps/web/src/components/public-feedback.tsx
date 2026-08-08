@@ -5,9 +5,18 @@ type PublicFeedbackProps = {
   body: string;
   action?: { href: string; label: string };
   live?: boolean;
+  headingLevel?: 1 | 2;
 };
 
-export function PublicFeedback({ title, body, action, live = false }: PublicFeedbackProps) {
+export function PublicFeedback({
+  title,
+  body,
+  action,
+  live = false,
+  headingLevel = 1,
+}: PublicFeedbackProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h1";
+
   return (
     <section
       className="public-feedback"
@@ -15,7 +24,7 @@ export function PublicFeedback({ title, body, action, live = false }: PublicFeed
       role={live ? "status" : undefined}
     >
       <p className="section-label">CityCore</p>
-      <h1>{title}</h1>
+      <Heading>{title}</Heading>
       <p>{body}</p>
       {action ? (
         <Link className="cta-button" href={action.href}>

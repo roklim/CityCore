@@ -31,28 +31,33 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
       return reply.code(parsed.response.statusCode).send(parsed.response.body);
     }
 
-    const cities = await prisma.city.findMany({
-      where: {
-        active: true,
-        status: "active",
-      },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      take: parsed.data.limit,
-      include: {
-        businesses: {
-          where: {
-            status: "active",
-          },
-          select: {
-            id: true,
+    const where = { active: true, status: "active" as const };
+    const [cities, total] = await prisma.$transaction([
+      prisma.city.findMany({
+        where,
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        skip: (parsed.data.page - 1) * parsed.data.limit,
+        take: parsed.data.limit,
+        include: {
+          businesses: {
+            where: {
+              status: "active",
+            },
+            select: {
+              id: true,
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.city.count({ where }),
+    ]);
 
     return reply.send({
       status: "ok",
       items: cities.map(mapPublicCity),
+      page: parsed.data.page,
+      limit: parsed.data.limit,
+      total,
     });
   });
 
@@ -101,50 +106,55 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
       return reply.code(parsed.response.statusCode).send(parsed.response.body);
     }
 
-    const businesses = await prisma.business.findMany({
-      where: {
-        status: "active",
-        city: {
-          active: true,
-          status: "active",
-        },
-      },
-      orderBy: [{ createdAt: "desc" }],
-      take: parsed.data.limit,
-      include: {
-        city: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            status: true,
+    const where = {
+      status: "active" as const,
+      city: { active: true, status: "active" as const },
+    };
+    const [businesses, total] = await prisma.$transaction([
+      prisma.business.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }],
+        skip: (parsed.data.page - 1) * parsed.data.limit,
+        take: parsed.data.limit,
+        include: {
+          city: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+            },
+          },
+          template: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              category: true,
+              primaryModule: true,
+              defaultCtaLabel: true,
+            },
+          },
+          modules: {
+            orderBy: {
+              moduleCode: "asc",
+            },
+            select: {
+              moduleCode: true,
+              active: true,
+            },
           },
         },
-        template: {
-          select: {
-            id: true,
-            code: true,
-            name: true,
-            category: true,
-            primaryModule: true,
-            defaultCtaLabel: true,
-          },
-        },
-        modules: {
-          orderBy: {
-            moduleCode: "asc",
-          },
-          select: {
-            moduleCode: true,
-            active: true,
-          },
-        },
-      },
-    });
+      }),
+      prisma.business.count({ where }),
+    ]);
 
     return reply.send({
       status: "ok",
       items: businesses.map(mapPublicBusiness),
+      page: parsed.data.page,
+      limit: parsed.data.limit,
+      total,
     });
   });
 
@@ -178,47 +188,52 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
       });
     }
 
-    const businesses = await prisma.business.findMany({
-      where: {
-        cityId: city.id,
-        status: "active",
-      },
-      orderBy: [{ createdAt: "desc" }],
-      take: queryParsed.data.limit,
-      include: {
-        city: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            status: true,
+    const where = { cityId: city.id, status: "active" as const };
+    const [businesses, total] = await prisma.$transaction([
+      prisma.business.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }],
+        skip: (queryParsed.data.page - 1) * queryParsed.data.limit,
+        take: queryParsed.data.limit,
+        include: {
+          city: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+            },
+          },
+          template: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              category: true,
+              primaryModule: true,
+              defaultCtaLabel: true,
+            },
+          },
+          modules: {
+            orderBy: {
+              moduleCode: "asc",
+            },
+            select: {
+              moduleCode: true,
+              active: true,
+            },
           },
         },
-        template: {
-          select: {
-            id: true,
-            code: true,
-            name: true,
-            category: true,
-            primaryModule: true,
-            defaultCtaLabel: true,
-          },
-        },
-        modules: {
-          orderBy: {
-            moduleCode: "asc",
-          },
-          select: {
-            moduleCode: true,
-            active: true,
-          },
-        },
-      },
-    });
+      }),
+      prisma.business.count({ where }),
+    ]);
 
     return reply.send({
       status: "ok",
       items: businesses.map(mapPublicBusiness),
+      page: queryParsed.data.page,
+      limit: queryParsed.data.limit,
+      total,
     });
   });
 

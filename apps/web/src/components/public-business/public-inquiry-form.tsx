@@ -1,14 +1,17 @@
 "use client";
 
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
-import {
-  createPublicBusinessInquiry,
-  PlatformApiError,
-  type PublicInquiryPayload,
-} from "../../lib/platform-api";
+import { createPublicBusinessInquiry, PlatformApiError } from "../../lib/platform-api";
 
-type FormValues = Omit<PublicInquiryPayload, "privacyAccepted"> & { privacyAccepted: boolean };
+type FormValues = {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  privacyAccepted: boolean;
+  company: string;
+};
 type FieldErrors = Partial<Record<keyof FormValues, string>>;
 
 const initialValues: FormValues = {
@@ -56,27 +59,51 @@ export function PublicInquiryForm({
   const [state, setState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [feedback, setFeedback] = useState("");
   const firstError = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const submittingRef = useRef(false);
+  const shouldFocusErrorsRef = useRef(false);
+
+  useEffect(() => {
+    if (!shouldFocusErrorsRef.current) return;
+    shouldFocusErrorsRef.current = false;
+    firstError.current?.focus();
+  }, [errors]);
 
   function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    if (!submittingRef.current) {
+      setState("idle");
+      setFeedback("");
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) return;
     const nextErrors = validate(values);
     firstError.current = null;
+    shouldFocusErrorsRef.current = Object.keys(nextErrors).length > 0;
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setState("error");
       setFeedback("Controlla i campi evidenziati.");
-      requestAnimationFrame(() => firstError.current?.focus());
       return;
     }
+    submittingRef.current = true;
     setState("submitting");
     setFeedback("");
     try {
       await createPublicBusinessInquiry(citySlug, businessSlug, {
-        ...values,
+        name: values.name,
+        email: values.email,
+        phone: values.phone.trim() || undefined,
+        message: values.message,
+        company: values.company,
         privacyAccepted: true,
       });
       setValues(initialValues);
@@ -86,11 +113,19 @@ export function PublicInquiryForm({
     } catch (error) {
       setState("error");
       setFeedback(messageFor(error));
+    } finally {
+      submittingRef.current = false;
     }
   }
 
   return (
-    <form className="public-inquiry-form" id="contact" onSubmit={submit} noValidate>
+    <form
+      aria-busy={state === "submitting"}
+      className="public-inquiry-form"
+      id="contact"
+      onSubmit={submit}
+      noValidate
+    >
       <p className="section-label">Contatti</p>
       <h2>Invia una richiesta</h2>
       <p>Riceverai una risposta usando i dati che hai fornito.</p>
@@ -106,7 +141,10 @@ export function PublicInquiryForm({
                     }
                   : undefined
               }
-              type={field === "email" ? "email" : "text"}
+              type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+              autoComplete={field === "name" ? "name" : field === "email" ? "email" : "tel"}
+              maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
+              name={field}
               value={values[field]}
               onChange={(event) => update(field, event.target.value)}
               aria-invalid={Boolean(errors[field])}
@@ -131,6 +169,8 @@ export function PublicInquiryForm({
               : undefined
           }
           value={values.message}
+          maxLength={4000}
+          name="message"
           onChange={(event) => update("message", event.target.value)}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? "message-error" : undefined}
@@ -143,15 +183,27 @@ export function PublicInquiryForm({
       </label>
       <label className="public-privacy">
         <input
+          ref={
+            errors.privacyAccepted
+              ? (element) => {
+                  if (element && !firstError.current) firstError.current = element;
+                }
+              : undefined
+          }
           type="checkbox"
+          name="privacyAccepted"
           checked={values.privacyAccepted}
           onChange={(event) => update("privacyAccepted", event.target.checked)}
+          aria-invalid={Boolean(errors.privacyAccepted)}
+          aria-describedby={errors.privacyAccepted ? "inquiry-privacy-error" : undefined}
         />{" "}
         Acconsento al trattamento dei dati forniti esclusivamente per ricevere risposta a questa
         richiesta.
       </label>
       {errors.privacyAccepted ? (
-        <span className="public-form-error">{errors.privacyAccepted}</span>
+        <span className="public-form-error" id="inquiry-privacy-error">
+          {errors.privacyAccepted}
+        </span>
       ) : null}
       <input
         className="public-honeypot"
@@ -168,6 +220,7 @@ export function PublicInquiryForm({
       {feedback ? (
         <p
           aria-live="polite"
+          role={state === "success" ? "status" : "alert"}
           className={state === "success" ? "public-form-success" : "public-form-error"}
         >
           {feedback}

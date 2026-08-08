@@ -57,7 +57,7 @@ function formatPrice(cents: number, currency: string) {
 
 function validate(values: FormValues, itemCount: number, pickupTime: string): FieldErrors {
   const errors: FieldErrors = {};
-  if (itemCount < 1) errors.items = "Aggiungi almeno una pizza all'ordine.";
+  if (itemCount < 1) errors.items = "Aggiungi almeno una voce del menu all'ordine.";
   if (!pickupTime) errors.pickup = "Scegli un orario di ritiro disponibile.";
   if (values.name.trim().length < 2 || values.name.trim().length > 120)
     errors.name = "Inserisci un nome valido.";
@@ -106,12 +106,21 @@ export function PublicPickupOrderForm({
   const [availabilityState, setAvailabilityState] = useState<"loading" | "ready" | "error">(
     "loading",
   );
+  const [availabilityRetry, setAvailabilityRetry] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [state, setState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [feedback, setFeedback] = useState("");
   const firstError = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement | null>(
     null,
   );
+  const submittingRef = useRef(false);
+  const shouldFocusErrorsRef = useRef(false);
+
+  useEffect(() => {
+    if (!shouldFocusErrorsRef.current) return;
+    shouldFocusErrorsRef.current = false;
+    firstError.current?.focus();
+  }, [errors]);
 
   const selectedItems = items
     .map((item) => ({ ...item, quantity: cart[item.id] ?? 0 }))
@@ -140,10 +149,20 @@ export function PublicPickupOrderForm({
         }
       });
     return () => controller.abort();
-  }, [businessSlug, citySlug, pickupDate]);
+  }, [availabilityRetry, businessSlug, citySlug, pickupDate]);
 
   function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    if (!submittingRef.current) {
+      setState("idle");
+      setFeedback("");
+    }
   }
 
   function changeQuantity(item: PublicPickupMenuItem, amount: number) {
@@ -156,21 +175,29 @@ export function PublicPickupOrderForm({
     });
     setState("idle");
     setFeedback("");
+    setErrors((current) => {
+      if (!current.items) return current;
+      const next = { ...current };
+      delete next.items;
+      return next;
+    });
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) return;
     const nextErrors = validate(values, selectedItems.length, pickupTime);
     if (!minimumReached)
       nextErrors.items = `L'ordine minimo è ${formatPrice(minimumOrderCents, currency)}.`;
     firstError.current = null;
+    shouldFocusErrorsRef.current = Object.keys(nextErrors).length > 0;
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setState("error");
       setFeedback("Controlla i campi evidenziati.");
-      requestAnimationFrame(() => firstError.current?.focus());
       return;
     }
+    submittingRef.current = true;
     setState("submitting");
     setFeedback("");
     try {
@@ -197,6 +224,8 @@ export function PublicPickupOrderForm({
       setState("error");
       setFeedback(messageFor(error));
       if (error instanceof PlatformApiError && error.status === 409) setPickupTime("");
+    } finally {
+      submittingRef.current = false;
     }
   }
 
@@ -204,11 +233,16 @@ export function PublicPickupOrderForm({
     <section className="public-pickup-order" id="order" aria-labelledby="pickup-order-title">
       <div className="section-header">
         <p className="section-label">Ordina e ritira</p>
-        <h2 id="pickup-order-title">Scegli le pizze e l'orario di ritiro</h2>
+        <h2 id="pickup-order-title">Scegli cosa ordinare e l'orario di ritiro</h2>
         <p>Il menu e gli orari disponibili sono aggiornati dalla piattaforma.</p>
       </div>
 
-      <form className="public-pickup-order-form" onSubmit={submit} noValidate>
+      <form
+        aria-busy={state === "submitting"}
+        className="public-pickup-order-form"
+        onSubmit={submit}
+        noValidate
+      >
         <fieldset
           className="public-order-menu"
           aria-describedby={errors.items ? "order-items-error" : undefined}
@@ -223,7 +257,20 @@ export function PublicPickupOrderForm({
                   {item.shortDescription ? <p>{item.shortDescription}</p> : null}
                   <strong>{formatPrice(item.priceCents, currency)}</strong>
                 </div>
-                <div className="public-quantity-control" aria-label={`Quantità ${item.name}`}>
+                <div
+                  className="public-quantity-control"
+                  aria-label={`Quantità ${item.name}`}
+                  role="group"
+                >
+                  <button
+                    type="button"
+                    onClick={() => changeQuantity(item, -1)}
+                    disabled={quantity === 0 || state === "submitting"}
+                    aria-label={`Rimuovi una ${item.name}`}
+                  >
+                    −
+                  </button>
+                  <output aria-live="polite">{quantity}</output>
                   <button
                     ref={
                       errors.items && index === 0
@@ -233,17 +280,8 @@ export function PublicPickupOrderForm({
                         : undefined
                     }
                     type="button"
-                    onClick={() => changeQuantity(item, -1)}
-                    disabled={quantity === 0}
-                    aria-label={`Rimuovi una ${item.name}`}
-                  >
-                    −
-                  </button>
-                  <output aria-live="polite">{quantity}</output>
-                  <button
-                    type="button"
                     onClick={() => changeQuantity(item, 1)}
-                    disabled={quantity === 20}
+                    disabled={quantity === 20 || state === "submitting"}
                     aria-label={`Aggiungi una ${item.name}`}
                   >
                     +
@@ -279,18 +317,37 @@ export function PublicPickupOrderForm({
                   : undefined
               }
               type="date"
+              name="pickupDate"
               value={pickupDate}
               min={initialDate}
               max={maxPickupDate(initialDate)}
-              onChange={(event) => setPickupDate(event.target.value)}
+              onChange={(event) => {
+                setPickupDate(event.target.value);
+                setErrors((current) => {
+                  if (!current.pickup) return current;
+                  const next = { ...current };
+                  delete next.pickup;
+                  return next;
+                });
+                setState("idle");
+                setFeedback("");
+              }}
+              disabled={state === "submitting"}
             />
           </label>
           <div className="public-slot-list" aria-live="polite">
             {availabilityState === "loading" ? <p>Caricamento orari disponibili…</p> : null}
             {availabilityState === "error" ? (
-              <p className="public-form-error">
-                Non è stato possibile caricare gli orari. Riprova.
-              </p>
+              <div className="public-availability-error">
+                <p className="public-form-error">Non è stato possibile caricare gli orari.</p>
+                <button
+                  className="public-retry-button"
+                  onClick={() => setAvailabilityRetry((current) => current + 1)}
+                  type="button"
+                >
+                  Riprova a caricare
+                </button>
+              </div>
             ) : null}
             {availabilityState === "ready" && !slots.length ? (
               <p>Nessun orario di ritiro disponibile per questa data.</p>
@@ -300,9 +357,19 @@ export function PublicPickupOrderForm({
                 className={pickupTime === slot.time ? "is-active" : undefined}
                 key={slot.id}
                 type="button"
-                disabled={!slot.available}
+                disabled={!slot.available || state === "submitting"}
                 aria-pressed={pickupTime === slot.time}
-                onClick={() => setPickupTime(slot.time)}
+                onClick={() => {
+                  setPickupTime(slot.time);
+                  setErrors((current) => {
+                    if (!current.pickup) return current;
+                    const next = { ...current };
+                    delete next.pickup;
+                    return next;
+                  });
+                  setState("idle");
+                  setFeedback("");
+                }}
               >
                 {slot.time}
               </button>
@@ -327,7 +394,10 @@ export function PublicPickupOrderForm({
                       }
                     : undefined
                 }
-                type={field === "email" ? "email" : "text"}
+                type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                autoComplete={field === "name" ? "name" : field === "email" ? "email" : "tel"}
+                maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
+                name={field}
                 value={values[field]}
                 onChange={(event) => update(field, event.target.value)}
                 aria-invalid={Boolean(errors[field])}
@@ -345,6 +415,8 @@ export function PublicPickupOrderForm({
         <label>
           Note per l'ordine (facoltative)
           <textarea
+            maxLength={1000}
+            name="notes"
             value={values.notes}
             onChange={(event) => update("notes", event.target.value)}
             aria-invalid={Boolean(errors.notes)}
@@ -367,13 +439,18 @@ export function PublicPickupOrderForm({
                 : undefined
             }
             type="checkbox"
+            name="privacyAccepted"
             checked={values.privacyAccepted}
             onChange={(event) => update("privacyAccepted", event.target.checked)}
+            aria-invalid={Boolean(errors.privacyAccepted)}
+            aria-describedby={errors.privacyAccepted ? "order-privacy-error" : undefined}
           />{" "}
           Acconsento al trattamento dei dati per gestire questo ordine.
         </label>
         {errors.privacyAccepted ? (
-          <span className="public-form-error">{errors.privacyAccepted}</span>
+          <span className="public-form-error" id="order-privacy-error">
+            {errors.privacyAccepted}
+          </span>
         ) : null}
 
         <input
@@ -395,6 +472,7 @@ export function PublicPickupOrderForm({
         {feedback ? (
           <p
             aria-live="polite"
+            role={state === "success" ? "status" : "alert"}
             className={state === "success" ? "public-form-success" : "public-form-error"}
           >
             {feedback}

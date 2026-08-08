@@ -15,14 +15,17 @@ export function GlobalEntryHome({
   const totalBusinesses = cities.reduce((total, city) => total + city.businessCount, 0);
 
   return (
-    <main className={styles.contextStage}>
+    <main className={styles.contextStage} id="main-content">
       <div className={styles.globalEntry}>
         <div className={styles.entryShell}>
           <section className={styles.entryPanel} aria-labelledby="global-entry-title">
             <header className={styles.topbar}>
-              <Link className={styles.brand} href="/">
+              <Link className={styles.brand} href="/" aria-label="CityCore, home">
                 <span>CityCore</span>
                 <span className={styles.accent}>.</span>
+              </Link>
+              <Link className={styles.operatorLink} href="/admin/login">
+                Area operatori
               </Link>
             </header>
 
@@ -30,12 +33,12 @@ export function GlobalEntryHome({
               <h1 className={styles.entryTitle} id="global-entry-title">
                 <span>Trova la</span>
                 <span>
-                  tua citta<span className={styles.accent}>.</span>
+                  tua città<span className={styles.accent}>.</span>
                 </span>
               </h1>
               <p className={styles.entryBody}>
-                <span>Esplora attivita, servizi e luoghi</span>
-                <span>nella tua citta.</span>
+                <span>Esplora attività, servizi e luoghi</span>
+                <span>nella tua città.</span>
               </p>
             </div>
 
@@ -56,15 +59,15 @@ export function GlobalEntryHome({
             <CityLineArt />
           </section>
 
-          <aside className={styles.entryVisualPanel} aria-label="CityCore overview">
+          <aside className={styles.entryVisualPanel} aria-label="Panoramica CityCore">
             <div className={styles.visualCopy}>
-              <Link className={styles.brand} href="/">
+              <Link className={styles.brand} href="/" aria-label="CityCore, home">
                 <span>CityCore</span>
                 <span className={styles.accent}>.</span>
               </Link>
               <h2>Entra nel contesto giusto.</h2>
               <p>
-                Prima scegli la citta. Poi CityCore diventa ricerca locale, categorie, attivita
+                Prima scegli la città. Poi CityCore diventa ricerca locale, categorie, attività
                 vicine e azioni utili.
               </p>
             </div>
@@ -73,11 +76,11 @@ export function GlobalEntryHome({
               <div className={styles.visualStats}>
                 <div className={styles.visualStat}>
                   <strong>{cities.length.toString().padStart(2, "0")}</strong>
-                  <span>Citta attive</span>
+                  <span>Città attive</span>
                 </div>
                 <div className={styles.visualStat}>
                   <strong>{totalBusinesses.toString().padStart(2, "0")}</strong>
-                  <span>Attivita pubbliche</span>
+                  <span>Attività pubbliche</span>
                 </div>
                 <div className={styles.visualStat}>
                   <strong aria-hidden="true">↗</strong>

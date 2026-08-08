@@ -12,11 +12,11 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
     city.publicHeroDescription ?? "Consulta le attività pubblicate e scegli come contattarle.";
 
   return (
-    <main className={`${styles.contextStage} ${styles.cityHome}`}>
+    <main className={`${styles.contextStage} ${styles.cityHome}`} id="main-content">
       <div className={styles.cityShell}>
-        <aside className={styles.citySidebar}>
+        <section className={styles.citySidebar} aria-labelledby="city-home-title">
           <header className={styles.cityTopbar}>
-            <Link className={styles.brand} href="/">
+            <Link className={styles.brand} href="/" aria-label="CityCore, torna alla home">
               <span>CityCore</span>
               <span className={styles.accent}>.</span>
             </Link>
@@ -26,7 +26,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
             </Link>
           </header>
 
-          <section className={styles.cityHero} aria-labelledby="city-home-title">
+          <div className={styles.cityHero}>
             <p className={styles.currentCity}>
               <span className={styles.pinIcon} aria-hidden="true" />
               <span>{city.name}</span>
@@ -48,8 +48,8 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
             <a className={styles.cityHeroCta} href="#directory">
               Esplora le attività <span aria-hidden="true">→</span>
             </a>
-          </section>
-        </aside>
+          </div>
+        </section>
 
         <div className={styles.cityMain}>
           <CityBusinessDirectory businesses={city.businesses} degraded={degraded} />

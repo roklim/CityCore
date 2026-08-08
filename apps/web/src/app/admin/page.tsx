@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "../../components/admin-shell";
+import { AdminSubmitButton } from "../../components/admin-submit-button";
 import { logoutAction } from "./actions";
 import {
   type PlatformAuditLog,
@@ -111,43 +113,66 @@ export default async function AdminPage() {
 
   return (
     <AdminShell
-      activeSection="global_admin"
       eyebrow="Area operatori"
       title="Gestione della piattaforma"
       description="Questa area è riservata agli operatori autorizzati. I dati di città, attività e permessi arrivano dalla piattaforma attiva."
       routePath="/admin"
+      navigationItems={[
+        { href: "/", label: "Home pubblica", meta: "Scegli una città" },
+        {
+          href: "/admin",
+          label: "Console piattaforma",
+          meta: "Città, attività e accessi",
+          current: true,
+        },
+        ...(session.auth.accesses.length > 1
+          ? [
+              {
+                href: "/select-access",
+                label: "Cambia accesso",
+                meta: "Scegli ruolo e ambito",
+              },
+            ]
+          : []),
+      ]}
       statusLabel={`Area operatori · ${session.auth.activeAccess.role.replaceAll("_", " ")}`}
       asideTitle="Sessione attiva"
-      asideText={`Utente: ${session.auth.user.email}. Scope: ${session.auth.activeAccess.scopeType}. Redirect piattaforma: ${session.auth.redirectTo}.`}
+      asideText={`Utente: ${session.auth.user.email}. Ambito: ${session.auth.activeAccess.scopeType}.`}
+      headerActions={
+        <>
+          {session.auth.accesses.length > 1 ? (
+            <Link className="ghost-button" href="/select-access">
+              Cambia accesso
+            </Link>
+          ) : null}
+          <form action={logoutAction} className="operator-session-form">
+            <AdminSubmitButton className="ghost-button" pendingLabel="Uscita…">
+              Esci
+            </AdminSubmitButton>
+          </form>
+        </>
+      }
     >
       <section className="action-bar">
         <div className="inline-stack">
-          <p className="section-label">Session</p>
+          <p className="section-label">Sessione</p>
           <strong>{session.auth.user.name ?? session.auth.user.email}</strong>
           <p className="muted-copy">
             Accesso attivo: {session.auth.activeAccess.role.replaceAll("_", " ")} su{" "}
             {formatScopeLabel(session.auth.activeAccess)}
           </p>
         </div>
-
-        <form action={logoutAction}>
-          <button className="ghost-button" type="submit">
-            Logout
-          </button>
-        </form>
       </section>
 
       <section className="stats-grid">
         <article className="metric-card">
           <span>Registry collegate</span>
           <strong>{totalRegistryLinked}</strong>
-          <p>
-            {registry.error ? registry.error : "Comuni registry gia agganciati a una city attiva."}
-          </p>
+          <p>{registry.error ? registry.error : "Comuni già collegati a una città attiva."}</p>
         </article>
 
         <article className="metric-card">
-          <span>Citta attive</span>
+          <span>Città attive</span>
           <strong>{totalActiveCities}</strong>
           <p>{cities.error ? cities.error : "Conteggio reale letto da /cities."}</p>
         </article>
@@ -185,8 +210,9 @@ export default async function AdminPage() {
           ) : null}
 
           {registry.items.length > 0 ? (
-            <div className="table-wrap">
+            <div className="table-wrap" role="region" aria-label="Comuni del registro" tabIndex={0}>
               <table className="data-table">
+                <caption className="visually-hidden">Comuni disponibili nel registro</caption>
                 <thead>
                   <tr>
                     <th>Comune</th>
@@ -205,9 +231,13 @@ export default async function AdminPage() {
                       <td>{entry.provinceCode ?? "n/d"}</td>
                       <td>{entry.regionName ?? entry.regionCode ?? "n/d"}</td>
                       <td>
-                        {entry.linkedCity
-                          ? `${entry.linkedCity.slug} (${entry.linkedCity.status})`
-                          : "non collegata"}
+                        {entry.linkedCity ? (
+                          <Link className="table-link" href={`/${entry.linkedCity.slug}`}>
+                            {entry.linkedCity.slug} ({entry.linkedCity.status})
+                          </Link>
+                        ) : (
+                          "non collegata"
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -221,22 +251,23 @@ export default async function AdminPage() {
           <div className="card-heading">
             <div>
               <p className="section-label">Cities</p>
-              <h2>Citta lette dalla API di piattaforma</h2>
+              <h2>Città lette dalla API di piattaforma</h2>
             </div>
             <code>/api/v2/platform-core/cities</code>
           </div>
 
           {cities.error ? <p className="surface-error">{cities.error}</p> : null}
           {!cities.error && cities.items.length === 0 ? (
-            <p className="empty-copy">Nessuna citta disponibile nello scope attivo.</p>
+            <p className="empty-copy">Nessuna città disponibile nell'ambito attivo.</p>
           ) : null}
 
           {cities.items.length > 0 ? (
-            <div className="table-wrap">
+            <div className="table-wrap" role="region" aria-label="Città disponibili" tabIndex={0}>
               <table className="data-table">
+                <caption className="visually-hidden">Città disponibili nella piattaforma</caption>
                 <thead>
                   <tr>
-                    <th>Citta</th>
+                    <th>Città</th>
                     <th>Stato</th>
                     <th>Regione</th>
                     <th>Business</th>
@@ -246,7 +277,11 @@ export default async function AdminPage() {
                   {cities.items.map((city) => (
                     <tr key={city.id}>
                       <td>
-                        <strong>{city.name}</strong>
+                        <strong>
+                          <Link className="table-link" href={`/${city.slug}`}>
+                            {city.name}
+                          </Link>
+                        </strong>
                         <span>{city.slug}</span>
                       </td>
                       <td>{city.status}</td>
@@ -264,32 +299,48 @@ export default async function AdminPage() {
           <div className="card-heading">
             <div>
               <p className="section-label">Businesses</p>
-              <h2>Provisioning tenant gia leggibile</h2>
+              <h2>Attività disponibili nella piattaforma</h2>
             </div>
             <code>/api/v2/platform-core/businesses</code>
           </div>
 
           {businesses.error ? <p className="surface-error">{businesses.error}</p> : null}
           {!businesses.error && businesses.items.length === 0 ? (
-            <p className="empty-copy">Nessun business disponibile nello scope attivo.</p>
+            <p className="empty-copy">Nessuna attività disponibile nell'ambito attivo.</p>
           ) : null}
 
           {businesses.items.length > 0 ? (
-            <div className="table-wrap">
+            <div
+              className="table-wrap"
+              role="region"
+              aria-label="Attività disponibili"
+              tabIndex={0}
+            >
               <table className="data-table">
+                <caption className="visually-hidden">
+                  Attività disponibili nella piattaforma
+                </caption>
                 <thead>
                   <tr>
-                    <th>Business</th>
+                    <th>Attività</th>
                     <th>Template</th>
                     <th>Stato</th>
                     <th>Owner</th>
+                    <th>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
                   {businesses.items.map((business) => (
                     <tr key={business.id}>
                       <td>
-                        <strong>{business.name}</strong>
+                        <strong>
+                          <Link
+                            className="table-link"
+                            href={`/${business.city.slug}/${business.slug}`}
+                          >
+                            {business.name}
+                          </Link>
+                        </strong>
                         <span>
                           {business.city.slug}/{business.slug}
                         </span>
@@ -297,6 +348,22 @@ export default async function AdminPage() {
                       <td>{business.template.code}</td>
                       <td>{business.status}</td>
                       <td>{business.owner?.email ?? "owner non assegnato"}</td>
+                      <td>
+                        <div className="table-actions">
+                          <Link
+                            className="table-link"
+                            href={`/${business.city.slug}/${business.slug}`}
+                          >
+                            Scheda
+                          </Link>
+                          <Link
+                            className="table-link"
+                            href={`/${business.city.slug}/${business.slug}/admin`}
+                          >
+                            Gestisci
+                          </Link>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -309,25 +376,26 @@ export default async function AdminPage() {
       <section className="data-card">
         <div className="card-heading">
           <div>
-            <p className="section-label">Access Grants</p>
-            <h2>Ruoli scoped serviti dalla nuova auth</h2>
+            <p className="section-label">Accessi</p>
+            <h2>Ruoli e ambiti autorizzati</h2>
           </div>
           <code>/api/v2/platform-core/access-grants</code>
         </div>
 
         {accessGrants.error ? <p className="surface-error">{accessGrants.error}</p> : null}
         {!accessGrants.error && accessGrants.items.length === 0 ? (
-          <p className="empty-copy">Nessun access grant disponibile nello scope attivo.</p>
+          <p className="empty-copy">Nessun accesso disponibile nell'ambito attivo.</p>
         ) : null}
 
         {accessGrants.items.length > 0 ? (
-          <div className="table-wrap">
+          <div className="table-wrap" role="region" aria-label="Accessi autorizzati" tabIndex={0}>
             <table className="data-table">
+              <caption className="visually-hidden">Accessi autorizzati nella piattaforma</caption>
               <thead>
                 <tr>
                   <th>Utente</th>
                   <th>Ruolo</th>
-                  <th>Scope</th>
+                  <th>Ambito</th>
                   <th>Ultimo uso</th>
                 </tr>
               </thead>
@@ -356,25 +424,26 @@ export default async function AdminPage() {
       <section className="data-card">
         <div className="card-heading">
           <div>
-            <p className="section-label">Audit Logs</p>
-            <h2>Tracciabilita delle azioni sensibili</h2>
+            <p className="section-label">Registro attività</p>
+            <h2>Tracciabilità delle azioni sensibili</h2>
           </div>
           <code>/api/v2/platform-core/audit-logs</code>
         </div>
 
         {auditLogs.error ? <p className="surface-error">{auditLogs.error}</p> : null}
         {!auditLogs.error && auditLogs.items.length === 0 ? (
-          <p className="empty-copy">Nessun audit log disponibile nello scope attivo.</p>
+          <p className="empty-copy">Nessun evento disponibile nell'ambito attivo.</p>
         ) : null}
 
         {auditLogs.items.length > 0 ? (
-          <div className="table-wrap">
+          <div className="table-wrap" role="region" aria-label="Registro attività" tabIndex={0}>
             <table className="data-table">
+              <caption className="visually-hidden">Registro delle azioni sensibili</caption>
               <thead>
                 <tr>
                   <th>Azione</th>
                   <th>Attore</th>
-                  <th>Scope</th>
+                  <th>Ambito</th>
                   <th>Quando</th>
                 </tr>
               </thead>

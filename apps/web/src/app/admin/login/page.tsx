@@ -16,21 +16,33 @@ export default async function AdminLoginPage() {
 
   return (
     <AdminShell
-      activeSection="global_admin"
       eyebrow="Area operatori"
       title="Accedi all'area operatori"
       description="Questa superficie è riservata agli operatori autorizzati della piattaforma CityCore."
       routePath="/admin/login"
+      navigationItems={[
+        {
+          href: "/",
+          label: "Home pubblica",
+          meta: "Scegli una città",
+        },
+        {
+          href: "/admin/login",
+          label: "Accesso operatori",
+          meta: "Login sicuro",
+          current: true,
+        },
+      ]}
       statusLabel="Area operatori"
       asideTitle="Scope attivo"
-      asideText="Il primo obiettivo e usare un accesso pulito e affidabile: sessioni web reali, permessi espliciti e redirect coerenti con ruolo e scope."
+      asideText="L'accesso usa sessioni web reali, permessi espliciti e destinazioni coerenti con ruolo e ambito operativo."
     >
       <section className="section-header">
-        <p className="section-label">Admin Entry</p>
-        <h2>La console puo autenticarsi direttamente sulla piattaforma attiva</h2>
+        <p className="section-label">Accesso</p>
+        <h2>Entra nella console collegata alla piattaforma attiva</h2>
         <p>
-          Se non esiste ancora un `global_admin`, usa il bootstrap una sola volta. Altrimenti entra
-          con le credenziali gia presenti nel data model della piattaforma.
+          Se non esiste ancora un <code>global_admin</code>, usa il bootstrap una sola volta.
+          Altrimenti entra con le credenziali già presenti nella piattaforma.
         </p>
       </section>
 

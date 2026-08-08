@@ -50,12 +50,11 @@ pubblicazione, media, categorie, collezioni e catalogo moduli.
 
 ## Dati simulati e fallback
 
-`apps/web/src/lib/public-marketplace.ts` e `public-content.ts` contengono
-profili editoriali e copy statico. Se l'API non e raggiungibile, homepage,
-city page e business page usano quei fallback; la UI segnala `degraded` sulle
-pagine city/business. `/account` e solo una shell statica. Il runtime fonde
-inoltre dati API incompleti con copy editoriale statico, quindi non e una
-fedelta uno-a-uno al database.
+`apps/web/src/lib/public-marketplace.ts` contiene i profili editoriali usati
+solo come fallback degraded. Se l'API non e raggiungibile, homepage, city page
+e business page segnalano chiaramente lo stato; sulla scheda business richieste
+e ordini restano disattivati. Le superfici live mostrano i dati pubblici
+disponibili senza presentare copy editoriale come informazione dell'attività.
 
 ## Modello Prisma e uso effettivo
 
