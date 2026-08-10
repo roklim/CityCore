@@ -5,15 +5,19 @@ import { useMemo, useRef, useState } from "react";
 import type { PublicCityBusinessCard } from "../../lib/public-runtime";
 import {
   filterPublicBusinessesBySection,
-  getPublicBusinessCategoryLabel,
+  getPublicBusinessCategories,
   groupPublicBusinessesByCategory,
+  groupPublicBusinessesForDisplay,
 } from "../../lib/public-search";
 import styles from "./context-gateway.module.css";
 
 function BusinessCard({ business }: { business: PublicCityBusinessCard }) {
+  const categories = getPublicBusinessCategories(business);
   return (
     <article className={styles.directoryCard}>
-      <p className={styles.sectionKicker}>{business.categoryLabel}</p>
+      <p className={styles.sectionKicker}>
+        {categories.map((category) => category.label).join(" · ") || business.categoryLabel}
+      </p>
       <h4>{business.name}</h4>
       <p>{business.summary}</p>
       {business.area ? <p className={styles.directoryMeta}>{business.area}</p> : null}
@@ -45,12 +49,11 @@ export function CityBusinessDirectory({
     [activeSection, businesses, query],
   );
   const visibleSections = useMemo(
-    () => groupPublicBusinessesByCategory(visibleBusinesses),
-    [visibleBusinesses],
+    () => groupPublicBusinessesForDisplay(visibleBusinesses, activeSection),
+    [activeSection, visibleBusinesses],
   );
   const ungroupedBusinesses = useMemo(
-    () =>
-      visibleBusinesses.filter((business) => !getPublicBusinessCategoryLabel(business.category)),
+    () => visibleBusinesses.filter((business) => !getPublicBusinessCategories(business).length),
     [visibleBusinesses],
   );
   const hasQuery = query.trim().length > 0;

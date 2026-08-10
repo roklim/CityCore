@@ -294,7 +294,25 @@ export function mapPublicBusiness(business: {
     moduleCode: ModuleCode;
     active: boolean;
   }>;
+  categoryAssignments: Array<{
+    sortOrder: number;
+    category: {
+      id: string;
+      cityId: string;
+      name: string;
+      slug: string;
+    };
+  }>;
 }) {
+  const categories = business.categoryAssignments
+    .filter((assignment) => assignment.category.cityId === business.city.id)
+    .sort(
+      (left, right) =>
+        left.sortOrder - right.sortOrder ||
+        left.category.name.localeCompare(right.category.name, "it"),
+    )
+    .map(({ category }) => ({ id: category.id, name: category.name, slug: category.slug }));
+
   return {
     id: business.id,
     name: business.name,
@@ -325,6 +343,7 @@ export function mapPublicBusiness(business: {
     city: business.city,
     template: business.template,
     modules: business.modules,
+    categories,
     createdAt: business.createdAt,
     updatedAt: business.updatedAt,
   };

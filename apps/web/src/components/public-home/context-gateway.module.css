@@ -219,37 +219,9 @@
   opacity: 0.72;
 }
 
-.locationButton {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 52px;
-  border: 0;
-  border-radius: 11px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 13px;
-  padding: 0 18px;
-  background: linear-gradient(180deg, var(--ctx-accent-hot) 0%, var(--ctx-accent) 100%);
-  color: #090d13;
-  font-size: 16px;
-  font-weight: 700;
-  box-shadow:
-    0 18px 38px rgba(240, 185, 11, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  cursor: pointer;
-}
-
-.locationButton:disabled,
 .searchInput:disabled {
   cursor: progress;
   opacity: 0.72;
-}
-
-.locationIcon {
-  width: 16px;
-  height: 16px;
-  overflow: visible;
 }
 
 .entryStatus {
@@ -799,7 +771,6 @@
 .searchShell:focus-within,
 .brand:focus-visible,
 .searchSubmitButton:focus-visible,
-.locationButton:focus-visible,
 .cityPill:focus-visible,
 .operatorLink:focus-visible,
 .cityHeroCta:focus-visible,
@@ -882,8 +853,7 @@
     width: min(310px, calc(100vw - 80px));
   }
 
-  .entryFormWrap .searchShell,
-  .entryFormWrap .locationButton {
+  .entryFormWrap .searchShell {
     width: min(310px, calc(100vw - 80px));
   }
 
@@ -962,8 +932,7 @@
     width: min(310px, calc(100vw - 80px));
   }
 
-  .entryFormWrap .searchShell,
-  .entryFormWrap .locationButton {
+  .entryFormWrap .searchShell {
     width: min(310px, calc(100vw - 80px));
   }
 
@@ -985,8 +954,7 @@
     width: calc(100vw - 56px);
   }
 
-  .entryFormWrap .searchShell,
-  .entryFormWrap .locationButton {
+  .entryFormWrap .searchShell {
     width: calc(100vw - 56px);
   }
 

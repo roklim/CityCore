@@ -3,6 +3,7 @@ import { getTemplateDefinition, MODULE_DEFINITIONS } from "@platform/templates";
 import {
   fetchPlatformApi,
   type PublicBusinessResponse,
+  type PublicBusinessCategory,
   type PublicBusinessServicesResponse,
   type PublicPickupOrderMenuResponse,
   type PublicOpeningHoursResponse,
@@ -35,6 +36,7 @@ export type HomepageCityCard = {
 export type PublicCityBusinessCard = PublicBusinessProfile & {
   href: string;
   category: string | null;
+  categories: PublicBusinessCategory[];
   searchTerms: string[];
   services: string[];
 };
@@ -48,6 +50,7 @@ export type PublicBusinessDetail = PublicBusinessProfile & {
   publicEmail: string | null;
   website: string | null;
   currency: string;
+  categories: PublicBusinessCategory[];
 };
 
 const socialLabels = [
@@ -178,6 +181,7 @@ function normalizeRuntimeCity(city: PublicPlatformCity): PublicPlatformCity {
 function normalizeRuntimeBusiness(business: PublicPlatformBusiness): PublicPlatformBusiness {
   return {
     ...business,
+    categories: Array.isArray(business.categories) ? business.categories : [],
     publicEmail: sanitizeLegacyLink(business.publicEmail),
     website: sanitizeLegacyLink(business.website),
   };
@@ -189,6 +193,12 @@ function truncateText(value: string, maxLength: number) {
   }
 
   return `${value.slice(0, maxLength - 3).trimEnd()}...`;
+}
+
+export function getPublicBusinessDisplayName(
+  business: Pick<PublicPlatformBusiness, "name" | "publicTitle">,
+) {
+  return business.publicTitle?.trim() || business.name;
 }
 
 function pickBusinessModuleCode(business: PublicPlatformBusiness) {
@@ -211,16 +221,18 @@ function mergeRuntimeBusinessWithEditorial(
     business.publicDescription ??
     "Questa attività non ha ancora pubblicato una descrizione.";
   const addressLine = business.addressLine1 ?? "";
+  const categoryLabel = business.categories.length
+    ? business.categories.map((category) => category.name).join(" · ")
+    : (getPublicBusinessCategoryLabel(business.template.category) ?? business.template.name);
 
   return {
     ...editorialBusiness,
-    name: business.name,
+    name: getPublicBusinessDisplayName(business),
     slug: business.slug,
     citySlug: business.city.slug,
     templateCode: business.template.code as PublicBusinessProfile["templateCode"],
     moduleCode: moduleCode as PublicBusinessProfile["moduleCode"],
-    categoryLabel:
-      getPublicBusinessCategoryLabel(business.template.category) ?? business.template.name,
+    categoryLabel,
     summary: truncateText(summary, 180),
     area: business.addressLine1 ?? "",
     trustLine: business.publicDescription ? truncateText(business.publicDescription, 180) : "",
@@ -237,6 +249,7 @@ function mergeRuntimeBusinessWithEditorial(
     publicEmail: business.publicEmail,
     website: business.website,
     currency: business.currency,
+    categories: business.categories,
   };
 }
 
@@ -264,6 +277,7 @@ function mergeRuntimeCityWithEditorial(
       return {
         ...merged,
         category: business.template.category,
+        categories: business.categories,
         searchTerms: searchTermsByBusiness.get(business.id) ?? [],
         services: serviceNamesByBusiness.get(business.id) ?? [],
       };
@@ -406,6 +420,7 @@ export async function getPublicCitySurfaceData(
             businessSlug: business.slug,
           }),
           category: getTemplateDefinition(business.templateCode)?.category ?? null,
+          categories: [],
           searchTerms: [],
           services: [],
         })),
@@ -493,6 +508,7 @@ export async function getPublicBusinessSurfaceData(
         publicEmail: null,
         website: null,
         currency: "EUR",
+        categories: [],
       },
       degraded: true,
       live: false,

@@ -3,9 +3,9 @@ import {
   filterPublicBusinesses,
   filterPublicBusinessesBySection,
   findMatchingCitySlug,
-  getGeolocationFallbackMessage,
   getPublicBusinessCategoryLabel,
   groupPublicBusinessesByCategory,
+  groupPublicBusinessesForDisplay,
   normalizeSearchText,
 } from "./public-search";
 
@@ -47,11 +47,7 @@ describe("public search", () => {
     expect(filterPublicBusinesses(businesses, "")).toEqual(businesses);
   });
 
-  it("uses a transparent manual fallback after geolocation", () => {
-    expect(getGeolocationFallbackMessage("unmapped")).toContain("Scegli una città attiva");
-  });
-
-  it("groups real template categories in the canonical product order", () => {
+  it("falls back to template categories in canonical order when assignments are absent", () => {
     const businesses = [
       {
         name: "Agenda Cagli",
@@ -145,5 +141,114 @@ describe("public search", () => {
 
     expect(groupPublicBusinessesByCategory(businesses)).toEqual([]);
     expect(filterPublicBusinessesBySection(businesses, "", "all")).toEqual(businesses);
+  });
+
+  it("groups a business with one assigned city category", () => {
+    const business = {
+      name: "Forno Civico",
+      summary: "Pizza di quartiere",
+      category: "commerce",
+      categoryLabel: "Local Business",
+      categories: [{ id: "cat-pizza", name: "Pizza", slug: "pizza" }],
+      area: "Centro",
+    };
+
+    expect(groupPublicBusinessesByCategory([business])).toEqual([
+      { id: "pizza", label: "Pizza", businesses: [business] },
+    ]);
+  });
+
+  it("groups a business under all of its assigned categories", () => {
+    const business = {
+      name: "Forno Civico",
+      summary: "Pizza da asporto",
+      category: "commerce",
+      categoryLabel: "Local Business",
+      categories: [
+        { id: "cat-restaurant", name: "Ristorante", slug: "ristorante" },
+        { id: "cat-takeaway", name: "Asporto", slug: "asporto" },
+      ],
+      area: "Centro",
+    };
+
+    expect(
+      groupPublicBusinessesByCategory([business])
+        .map((section) => section.id)
+        .sort(),
+    ).toEqual(["asporto", "ristorante"]);
+    expect(groupPublicBusinessesForDisplay([business], "all")).toHaveLength(1);
+  });
+
+  it("filters a multi-category business by its first category", () => {
+    const business = {
+      name: "Forno Civico",
+      summary: "Pizza da asporto",
+      category: "commerce",
+      categoryLabel: "Local Business",
+      categories: [
+        { id: "cat-restaurant", name: "Ristorante", slug: "ristorante" },
+        { id: "cat-takeaway", name: "Asporto", slug: "asporto" },
+      ],
+      area: "Centro",
+    };
+
+    expect(filterPublicBusinessesBySection([business], "", "ristorante")).toEqual([business]);
+  });
+
+  it("filters a multi-category business by its second category", () => {
+    const business = {
+      name: "Forno Civico",
+      summary: "Pizza da asporto",
+      category: "commerce",
+      categoryLabel: "Local Business",
+      categories: [
+        { id: "cat-restaurant", name: "Ristorante", slug: "ristorante" },
+        { id: "cat-takeaway", name: "Asporto", slug: "asporto" },
+      ],
+      area: "Centro",
+    };
+
+    expect(filterPublicBusinessesBySection([business], "", "asporto")).toEqual([business]);
+  });
+
+  it("keeps a business without assignments or template category uncategorized", () => {
+    const business = {
+      name: "Spazio civico",
+      summary: "Informazioni locali",
+      category: null,
+      categoryLabel: "Custom",
+      categories: [],
+      area: "Centro",
+    };
+
+    expect(groupPublicBusinessesByCategory([business])).toEqual([]);
+    expect(filterPublicBusinessesBySection([business], "", "all")).toEqual([business]);
+  });
+
+  it("combines text search with a real assigned category", () => {
+    const businesses = [
+      {
+        name: "Forno Civico",
+        summary: "Impasti del giorno",
+        category: "commerce",
+        categoryLabel: "Local Business",
+        categories: [{ id: "cat-pizza", name: "Pizza", slug: "pizza" }],
+        area: "Centro",
+        searchTerms: ["Margherita"],
+      },
+      {
+        name: "Bottega Verde",
+        summary: "Prodotti locali",
+        category: "commerce",
+        categoryLabel: "Local Business",
+        categories: [{ id: "cat-shop", name: "Negozi", slug: "negozi" }],
+        area: "Centro",
+        searchTerms: ["Margherita"],
+      },
+    ];
+
+    expect(filterPublicBusinessesBySection(businesses, "margherita", "pizza")).toEqual([
+      businesses[0],
+    ]);
   });
 });

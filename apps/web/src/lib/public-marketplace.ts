@@ -49,7 +49,7 @@ const cityProfiles: Record<string, Omit<PublicCityProfile, "slug">> = {
   cagli: {
     name: "Cagli",
     region: "Marche",
-    claim: "Citta compatta, identita chiara, business leggibili.",
+    claim: "Città compatta, identità chiara, attività leggibili.",
     shortPitch:
       "Scopri attività, strutture, servizi e pagine locali senza passare da directory fredde o percorsi confusi.",
     neighborhoods: ["Centro storico", "Porta Massara", "San Geronzio", "Ponte Murato"],
@@ -62,7 +62,7 @@ const cityProfiles: Record<string, Omit<PublicCityProfile, "slug">> = {
     region: "Emilia-Romagna",
     claim: "Territorio vivo, pagine chiare, percorsi brevi.",
     shortPitch:
-      "Perfetta per ospitalita, servizi e vetrine locali: l'utente entra, capisce e sceglie senza attrito.",
+      "Perfetta per ospitalità, servizi e vetrine locali: l'utente entra, capisce e sceglie senza attrito.",
     neighborhoods: ["Marina Centro", "Borgo San Giuliano", "Miramare", "Bellariva"],
     quickFilters: ["hospitality", "booking", "listings", "events"],
     featuredModules: ["hospitality", "booking", "events"],
@@ -71,9 +71,9 @@ const cityProfiles: Record<string, Omit<PublicCityProfile, "slug">> = {
   bologna: {
     name: "Bologna",
     region: "Emilia-Romagna",
-    claim: "Offerta ricca, filtri chiari, identita forti.",
+    claim: "Offerta ricca, filtri chiari, identità forti.",
     shortPitch:
-      "La pagina citta deve aiutare a scegliere tra molte opzioni senza sembrare una bacheca sovraccarica.",
+      "La pagina della città deve aiutare a scegliere tra molte opzioni senza sembrare una bacheca sovraccarica.",
     neighborhoods: ["Centro", "Bolognina", "Saragozza", "Murri"],
     quickFilters: ["catalog", "booking", "listings", "directory"],
     featuredModules: ["catalog", "booking", "listings"],
@@ -161,18 +161,18 @@ const seededBusinesses = {
       openNowLabel: "Scheda aggiornata",
       heroTitle: "Un business locale deve spiegarsi in pochi secondi.",
       heroDescription:
-        "Contenuti chiari, CTA pulita e struttura pronta a crescere senza perdere leggibilita.",
+        "Contenuti chiari, CTA pulita e struttura pronta a crescere senza perdere leggibilità.",
       highlights: ["Catalogo base", "Galleria curata", "Contatto rapido"],
       serviceMoments: ["Scoperta", "Confronto", "Contatto"],
       faq: [
         {
-          question: "La pagina puo evolvere senza essere rifatta?",
-          answer: "Si, la struttura e gia pensata per moduli e sezioni riordinabili.",
+          question: "La pagina può evolvere senza essere rifatta?",
+          answer: "Sì, la struttura è già pensata per moduli e sezioni riordinabili.",
         },
         {
-          question: "Il catalogo e solo visivo?",
+          question: "Il catalogo è solo visivo?",
           answer:
-            "Per ora e uno scaffold coerente con il core piattaforma e con la pagina pubblica.",
+            "Per ora è una struttura coerente con il core della piattaforma e con la pagina pubblica.",
         },
       ],
     }),
@@ -180,9 +180,9 @@ const seededBusinesses = {
       name: "Studio Aurora",
       templateCode: "studio_service",
       summary:
-        "Studio professionale con servizi leggibili, disponibilita guidata e CTA costruita per arrivare presto al contatto giusto.",
+        "Studio professionale con servizi leggibili, disponibilità guidata e CTA costruita per arrivare presto al contatto giusto.",
       area: "Porta Massara",
-      eta: "Disponibilita guidata",
+      eta: "Disponibilità guidata",
       vibe: "Servizio essenziale",
       trustLine: "Servizi, tono e informazioni pratiche raccontati senza rumore visivo.",
       priceHint: "Booking",
@@ -192,7 +192,7 @@ const seededBusinesses = {
       heroTitle:
         "Prenotare o chiedere informazioni deve essere semplice come scegliere il servizio.",
       heroDescription:
-        "Servizi chiari, prossimi passi leggibili e una CTA che porta subito alla disponibilita.",
+        "Servizi chiari, prossimi passi leggibili e una CTA che porta subito alla disponibilità.",
       highlights: ["Servizi chiari", "Agenda futura", "Contatto diretto"],
       serviceMoments: ["Prima visita", "Richiesta rapida", "Routine periodica"],
       faq: [
@@ -201,8 +201,8 @@ const seededBusinesses = {
           answer: "No, il percorso pubblico deve restare immediato e leggero.",
         },
         {
-          question: "Le disponibilita sono gia definitive?",
-          answer: "Sono uno scaffold di modulo pronto a crescere senza riscrivere la pagina.",
+          question: "Le disponibilità sono già definitive?",
+          answer: "Sono una base modulare pronta a crescere senza riscrivere la pagina.",
         },
       ],
     }),
@@ -214,12 +214,12 @@ const seededBusinesses = {
       area: "San Geronzio",
       eta: "Aggiornamento continuo",
       vibe: "Editoriale locale",
-      trustLine: "Scoperta locale, priorita chiare e filtri leggeri.",
+      trustLine: "Scoperta locale, priorità chiare e filtri leggeri.",
       priceHint: "Listings",
       contactPhone: "+39 0721 900122",
       addressLine: "Corso XX Settembre 4, Cagli",
       openNowLabel: "Pubblicazioni attive",
-      heroTitle: "Una citta vive meglio quando eventi e vetrine hanno una forma leggibile.",
+      heroTitle: "Una città vive meglio quando eventi e vetrine hanno una forma leggibile.",
       heroDescription:
         "Questa pagina mostra come raccolte editoriali e business possano convivere nello stesso ecosistema.",
       highlights: ["Eventi locali", "Vetrine curate", "Contesto cittadino"],
@@ -227,11 +227,12 @@ const seededBusinesses = {
       faq: [
         {
           question: "Gli annunci sono separati dai business?",
-          answer: "Si, ma restano dentro la stessa grammatica di piattaforma.",
+          answer: "Sì, ma restano dentro la stessa grammatica di piattaforma.",
         },
         {
-          question: "La citta puo promuovere contenuti in evidenza?",
-          answer: "Si, la surface city-first prevede featured e collezioni editoriali.",
+          question: "La città può promuovere contenuti in evidenza?",
+          answer:
+            "Sì, la superficie city-first prevede contenuti e collezioni editoriali in evidenza.",
         },
       ],
     }),
@@ -254,7 +255,7 @@ const seededBusinesses = {
       heroDescription:
         "Niente booking engine enorme: solo cio che serve per capire struttura, posizione e prossimi passi.",
       highlights: ["Check-in flessibile", "Mappa immediata", "Camere chiare"],
-      serviceMoments: ["Weekend mare", "Lavoro in citta", "Pernottamento breve"],
+      serviceMoments: ["Weekend mare", "Lavoro in città", "Pernottamento breve"],
       faq: [
         {
           question: "La richiesta e immediata?",
@@ -262,7 +263,7 @@ const seededBusinesses = {
         },
         {
           question: "Vedo le policy prima di inviare?",
-          answer: "Si, le regole base stanno nella sezione pratica sopra le FAQ.",
+          answer: "Sì, le regole base stanno nella sezione pratica sopra le FAQ.",
         },
       ],
     }),
@@ -287,11 +288,11 @@ const seededBusinesses = {
       faq: [
         {
           question: "Posso capire subito il servizio principale?",
-          answer: "Si, la pagina mette il modulo principale sopra i dettagli secondari.",
+          answer: "Sì, la pagina mette il modulo principale sopra i dettagli secondari.",
         },
         {
-          question: "La superficie e gia pronta per crescere?",
-          answer: "Si, contenuti e moduli possono espandersi senza cambiare la gerarchia.",
+          question: "La superficie è già pronta per crescere?",
+          answer: "Sì, contenuti e moduli possono espandersi senza cambiare la gerarchia.",
         },
       ],
     }),
@@ -299,7 +300,7 @@ const seededBusinesses = {
       name: "Rimini Highlights",
       templateCode: "events_listings",
       summary:
-        "Hub editoriale per eventi, luoghi e novita locali con collezioni curate e segnali utili per chi arriva in citta.",
+        "Hub editoriale per eventi, luoghi e novità locali con collezioni curate e segnali utili per chi arriva in città.",
       area: "Miramare",
       eta: "Aggiornato oggi",
       vibe: "Agenda cittadina",
@@ -308,19 +309,19 @@ const seededBusinesses = {
       contactPhone: "+39 0541 400123",
       addressLine: "Viale Regina Margherita 88, Rimini",
       openNowLabel: "Aggiornamento attivo",
-      heroTitle: "Gli eventi locali funzionano meglio quando la citta li racconta con chiarezza.",
+      heroTitle: "Gli eventi locali funzionano meglio quando la città li racconta con chiarezza.",
       heroDescription:
         "Featured, collezioni e annunci entrano in un'unica esperienza invece di disperdersi in pagine isolate.",
       highlights: ["Agenda locale", "Segnalazioni", "Collezioni curate"],
       serviceMoments: ["Weekend", "Scoperta", "Attivazioni"],
       faq: [
         {
-          question: "Questa pagina e un marketplace?",
-          answer: "No, e un layer editoriale cittadino sopra business e moduli.",
+          question: "Questa pagina è un marketplace?",
+          answer: "No, è un livello editoriale cittadino sopra attività e moduli.",
         },
         {
-          question: "Puo convivere con business e strutture?",
-          answer: "Si, e proprio uno dei punti forti del modello city-first.",
+          question: "Può convivere con attività e strutture?",
+          answer: "Sì, è proprio uno dei punti forti del modello city-first.",
         },
       ],
     }),
@@ -347,7 +348,7 @@ export function getCityProfile(citySlug: string): PublicCityProfile {
     slug: citySlug,
     name: titleFromSlug(citySlug),
     region: "Italia",
-    claim: "Una citta pensata per farti scegliere in fretta e bene.",
+    claim: "Una città pensata per farti scegliere in fretta e bene.",
     shortPitch:
       "Anche senza dati completi, la struttura resta orientata alla scoperta locale e alla scelta rapida da telefono.",
     neighborhoods: ["Centro", "Stazione", "Mercato", "Quartiere nord"],
@@ -361,7 +362,7 @@ export function getCityProfile(citySlug: string): PublicCityProfile {
           "Un esempio di attività locale con pagina leggibile, CTA forte e struttura pronta per contenuti, catalogo e contatti.",
         area: "Centro",
         eta: "Risposta rapida",
-        vibe: "Attivita locale",
+        vibe: "Attività locale",
         trustLine: "Informazioni pratiche subito visibili e percorso rapido verso l'azione.",
         priceHint: "Catalog",
         contactPhone: "+39 000 000000",
@@ -374,14 +375,13 @@ export function getCityProfile(citySlug: string): PublicCityProfile {
         serviceMoments: ["Scelta rapida", "Telefono", "Percorso diretto"],
         faq: [
           {
-            question: "Perche questa pagina e diversa dai vecchi prototipi?",
-            answer:
-              "Perche parla il linguaggio dell'utente, non quello della vecchia roadmap tecnica.",
+            question: "Perché questa pagina è facile da consultare?",
+            answer: "Perché usa il linguaggio dell'utente e mette in evidenza le azioni utili.",
           },
           {
-            question: "E gia collegata a un modulo specialistico completo?",
+            question: "È già collegata a un modulo specialistico completo?",
             answer:
-              "Non ancora, ma la struttura e pronta per innestarlo senza cambiare il linguaggio della pagina.",
+              "Non ancora, ma la struttura è pronta per accoglierlo senza cambiare il linguaggio della pagina.",
           },
         ],
       }),
@@ -406,28 +406,28 @@ export function getBusinessProfile(citySlug: string, businessSlug: string) {
     name: titleFromSlug(businessSlug),
     templateCode: guessTemplate,
     summary:
-      "Pagina pubblica fallback costruita per restare credibile anche quando non esiste ancora un record completo nel data layer pubblico.",
+      "Pagina pubblica essenziale per presentare informazioni, contatti e servizi dell'attività.",
     area: "Centro",
     eta: "Risposta rapida",
-    vibe: "Attivita locale",
-    trustLine: "Identity chiara, CTA centrale e informazioni pratiche senza rumore.",
+    vibe: "Attività locale",
+    trustLine: "Identità chiara, azione principale e informazioni pratiche senza rumore.",
     priceHint: "Profile",
     contactPhone: "+39 000 000000",
     addressLine: `Via Principale 12, ${city.name}`,
     openNowLabel: "Contatto disponibile oggi",
-    heroTitle: `${titleFromSlug(businessSlug)} deve convincere senza sembrare un prototipo.`,
+    heroTitle: `${titleFromSlug(businessSlug)} presenta informazioni e contatti in modo chiaro.`,
     heroDescription:
       "Questa pagina mostra la forma finale desiderata: chiara, ordinata, orientata all'azione e leggibile soprattutto da telefono.",
     highlights: ["Hero forte", "CTA above the fold", "Trust blocks ordinati"],
     serviceMoments: ["Scoperta", "Contatto", "Conversione"],
     faq: [
       {
-        question: "La pagina e pronta anche se i dati pubblici sono pochi?",
+        question: "La pagina è pronta anche se i dati pubblici sono pochi?",
         answer:
-          "Si, la struttura e progettata per reggere anche prima del collegamento completo ai dati pubblici.",
+          "Sì, la struttura è progettata per valorizzare anche un insieme essenziale di informazioni.",
       },
       {
-        question: "Che tipo di modulo puo ospitare?",
+        question: "Che tipo di modulo può ospitare?",
         answer: `Qualsiasi modulo principale della piattaforma, in questo caso ${getModuleLabel(
           getTemplateDefinition(guessTemplate).primaryModule,
         )}.`,

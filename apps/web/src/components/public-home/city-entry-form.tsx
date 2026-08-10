@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { findMatchingCitySlug, getGeolocationFallbackMessage } from "../../lib/public-search";
+import { findMatchingCitySlug } from "../../lib/public-search";
 import styles from "./context-gateway.module.css";
 
 type CityOption = {
@@ -13,16 +13,13 @@ type CityOption = {
 export function CityEntryForm({
   cities,
   searchPlaceholder,
-  locationLabel,
 }: {
   cities: CityOption[];
   searchPlaceholder: string;
-  locationLabel: string;
 }) {
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [isLocating, setIsLocating] = useState(false);
   const [isPending, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cityNames = cities.map((city) => city.name);
@@ -47,38 +44,6 @@ export function CityEntryForm({
 
     setStatusMessage(null);
     goToCity(match);
-  };
-
-  const handleLocation = () => {
-    if (isPending || isLocating) return;
-
-    if (!("geolocation" in navigator)) {
-      setStatusMessage(getGeolocationFallbackMessage("unsupported"));
-      return;
-    }
-
-    setIsLocating(true);
-    setStatusMessage("Verifico la disponibilità della posizione...");
-
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        // The public city contract intentionally does not expose geographic coordinates.
-        // Do not infer a city from a local hardcoded map or transmit the user's position.
-        setStatusMessage(getGeolocationFallbackMessage("unmapped"));
-        setIsLocating(false);
-        searchInputRef.current?.focus();
-      },
-      () => {
-        setStatusMessage(getGeolocationFallbackMessage("denied"));
-        setIsLocating(false);
-        searchInputRef.current?.focus();
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 60000,
-        timeout: 8000,
-      },
-    );
   };
 
   return (
@@ -108,30 +73,6 @@ export function CityEntryForm({
             {isPending ? "Apro…" : "Cerca"}
           </button>
         </div>
-
-        <button
-          className={styles.locationButton}
-          disabled={isPending || isLocating}
-          onClick={handleLocation}
-          type="button"
-        >
-          <svg
-            aria-hidden="true"
-            className={styles.locationIcon}
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M17 3 9.7 10.3M17 3l-5 14-2.9-6.1L3 8l14-5Z"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.8"
-            />
-          </svg>
-          <span>{isLocating ? "Ricerca posizione…" : locationLabel}</span>
-        </button>
       </form>
 
       <datalist id="citycore-city-options">

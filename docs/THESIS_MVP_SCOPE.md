@@ -2,101 +2,86 @@
 
 ## Obiettivo
 
-Dimostrare una directory locale city-first in cui un amministratore abilita una
-citta e un'attivita, l'owner completa la scheda e un visitatore la trova,
-consulta e invia una richiesta di contatto tracciata.
+Dimostrare una piattaforma locale city-first in cui un amministratore abilita
+una città e un'attività, l'owner completa e pubblica la scheda e un visitatore
+la trova, la consulta e invia una richiesta tracciata.
 
-## Flusso end-to-end di accettazione
+## Core MVP
 
-1. Il global admin accede e attiva/crea una city dal registry.
-2. Crea un business associato alla city e assegna owner/local admin.
-3. L'owner accede solo al proprio business, inserisce identita, categorie,
-   servizi, contatti e orari e visualizza l'anteprima.
-4. L'owner pubblica il business.
-5. La city pubblica mostra il business; il visitatore usa ricerca e filtri,
-   apre il profilo e invia una richiesta di contatto.
-6. L'owner vede la richiesta nella propria inbox.
+```text
+City
+→ Business
+→ categorie
+→ servizi
+→ orari
+→ pubblicazione
+→ directory
+→ ricerca
+→ inquiry
+→ inbox owner
+```
 
-Il flusso e completo soltanto quando i passi 3--6 non dipendono da fallback
-editoriali o chiamate dirette all'API non rappresentate nella UI.
+Il core è un unico flusso verificabile:
 
-## Inclusioni
+1. Il global admin crea o abilita una città e un business e assegna l'owner.
+2. L'owner, limitato al proprio business, gestisce profilo, categorie, servizi
+   e orari.
+3. La readiness espone i requisiti mancanti e abilita la pubblicazione solo
+   quando la scheda è completa.
+4. Il business pubblicato appare nella directory cittadina e nella ricerca con
+   filtri basati su categorie e servizi reali.
+5. Il visitatore apre la pagina pubblica e invia un'inquiry.
+6. L'owner legge e chiude l'inquiry dalla propria inbox.
 
-- Directory locale, registry e gestione city/business.
-- Categorie cittadine, servizi essenziali, contatti e orari.
-- Pagine pubbliche, ricerca testuale e filtri per categoria/servizio.
-- Auth, ruoli, access grant e isolamento verificato del local admin.
-- Pubblicazione business e semplice richiesta di contatto/inbox.
-- Test essenziali su scope, pubblicazione e ricerca; benchmark ripetibile di
-  ricerca su un dataset seed.
+Il flusso non dipende da fallback editoriali o da chiamate API prive di una
+superficie UI corrispondente.
 
-## Stato al termine della Fase 2
+## Funzionalità incluse
 
-- Completato: modello/API per categorie, assegnazioni, servizi, orari,
-  publish readiness e inquiry scoped.
-- In corso: seed dimostrativo e test automatizzati del nuovo backend.
-- Non iniziato: ricerca/filtri, UI amministrativa, benchmark e assistente IA.
+- Registry e gestione di City e Business.
+- Autenticazione, ruoli, access grant e isolamento del local admin.
+- Profilo pubblico con contatti, indirizzo e social configurati dall'owner.
+- Categorie cittadine e assegnazioni atomiche al business.
+- Servizi con stato editoriale, prezzo indicativo e durata opzionali.
+- Orari settimanali e stato aperto/chiuso calcolato nel fuso del business.
+- Readiness, pubblicazione e rimozione dalla directory.
+- Home, directory cittadina, ricerca testuale e filtri.
+- Pagina business pubblica con SEO essenziale e dati strutturati `LocalBusiness`.
+- Inquiry pubblica e inbox owner con stato e nota interna.
+- Test essenziali per scope, pubblicazione, ricerca e trasformazioni UI.
 
-## Stato al termine della Fase 3
+## Estensione opzionale
 
-- Completato: seed demo ripetibile, test unitari backend e guardia per il DB
-  di test.
-- In corso: test d'integrazione completi, da eseguire solo con PostgreSQL test
-  dedicato.
-- Non iniziato: UI amministrativa MVP, ricerca/filtri, ranking e IA.
+`Pickup ordering = estensione dimostrativa opzionale`
+
+Il pickup ordering può essere attivato come modulo aggiuntivo, ma non appartiene
+al percorso necessario della tesi. Non è richiesto dalla readiness e non può
+bloccare publish, directory, ricerca, inquiry o inbox owner.
 
 ## Esclusioni
 
-## Aggiornamento Fase 3B
+- Booking avanzato e hospitality verticale.
+- Pagamenti ed e-commerce completi.
+- Rating e recensioni.
+- Distanze, coordinate e mappe avanzate.
+- App consumer, preferiti, notifiche e profilo consumer.
+- Raccomandazioni personalizzate, chatbot pubblico e builder completo.
+- Eventi avanzati e contenuti editoriali promossi.
 
-- Database PostgreSQL di integrazione isolato e ripetibile con Docker Compose.
-- Suite Fastify `inject()` su categorie, business, servizi, orari,
-  pubblicazione e inquiry, senza test skipped.
-- Nessuna UI amministrativa, ricerca, ranking o funzionalità IA introdotta.
+## Evidenze per la tesi
 
-## Aggiornamento Fase 3C
+| Tema                              | Evidenza MVP                                              |
+| --------------------------------- | --------------------------------------------------------- |
+| Architettura software             | Monorepo, core city-first, API Fastify e schema Prisma    |
+| Organizzazione dei servizi locali | City, Business, categorie, servizi e orari                |
+| Ricerca                           | Query testuale e filtri su categorie e servizi pubblicati |
+| Multi-tenancy e sicurezza         | Access grant, permission e test di isolamento             |
+| Ciclo di pubblicazione            | Readiness, publish/unpublish e visibilità pubblica        |
+| Validazione end-to-end            | Flusso admin → owner → visitatore → inbox owner           |
 
-- Verifica isolata in copia temporanea per installazione pulita, Prisma generate
-  e build, senza interrompere il runtime locale.
-- Copertura test estesa per sicurezza inquiry, rate limiting e visibilita
-  pubblica condizionata da city/business.
+## Stato attuale
 
-## Aggiornamento Fase 3D
-
-- Suite d'integrazione resa piu granulare per categorie, assegnazioni e
-  visibilita dei servizi, con PostgreSQL test reale.
-- Fase 3 chiusa sul perimetro backend verificato; la fase successiva resta la
-  UI amministrativa, non implementata qui.
-
-Booking avanzato, pagamenti, e-commerce, recensioni, hospitality, eventi
-avanzati, app mobile, mappe avanzate, raccomandazioni personalizzate,
-chatbot pubblico e builder completo. L'assistente IA resta un'idea controllata
-per una fase successiva: non e requisito implementativo di questo MVP.
-
-## Priorita
-
-| Priorita | Lavoro                                                                                                                                                          |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Must     | Riparare installazione locale; CRUD/UI city-business-owner; categorie, servizi, orari; pubblicazione; ricerca/filtri; contact request; test scope/pubblicazione |
-| Should   | Preview coerente al dato persistito; audit esteso; seed dimostrativo; benchmark e documentazione tesi                                                           |
-| Could    | Suggestion IA con output vincolato; upload media essenziale; collezioni featured                                                                                |
-
-## Collegamento con la tesi
-
-| Tema di tesi                      | Evidenza MVP                                          |
-| --------------------------------- | ----------------------------------------------------- |
-| Architettura software             | Monorepo, piattaforma city-first, API e schema Prisma |
-| Organizzazione dei servizi locali | City, business, categorie, servizi e orari            |
-| Ricerca efficiente                | Query/filtri, indici Prisma, benchmark ripetibile     |
-| Multi-tenancy e sicurezza         | Access grant, scope filter, test di isolamento        |
-| Validazione prototipale           | Flusso admin-owner-visitatore e seed demo             |
-
-## Piano sintetico di due settimane
-
-- Giorni 1--2: ripristino `npm ci`/Docker/Prisma, seed coerente, test auth e
-  scope.
-- Giorni 3--5: modelli/API/UI di categorie, servizi, orari e pubblicazione.
-- Giorni 6--8: ricerca/filtri e pagine pubbliche solo live data.
-- Giorni 9--10: richieste di contatto e inbox owner.
-- Giorni 11--12: test e benchmark; correzioni e seed demo.
-- Giorni 13--14: verifica end-to-end, screenshot/dati della tesi e demo.
+Il percorso core è implementato e ha superato lo STEP 4: installazione pulita,
+controlli Prisma e qualità, test frontend/backend/integration, build e verifica
+runtime del flusso owner → visitatore → inbox. Il pickup ordering resta
+un'estensione dimostrativa opzionale e non condiziona il risultato del core.

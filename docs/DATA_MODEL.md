@@ -1,4 +1,4 @@
-# Data model — Fase 2
+# Data model
 
 La Fase 2 riusa `CityCategory` e `BusinessCategoryAssignment`; aggiunge
 `BusinessService`, `BusinessOpeningDay`, `BusinessOpeningInterval` e
@@ -15,6 +15,10 @@ erDiagram
   BUSINESS ||--o{ BUSINESS_OPENING_DAY : opens
   BUSINESS_OPENING_DAY ||--o{ BUSINESS_OPENING_INTERVAL : contains
   BUSINESS ||--o{ BUSINESS_INQUIRY : receives
+  BUSINESS ||--o| BUSINESS_ORDERING_SETTINGS : configures
+  BUSINESS ||--o{ PICKUP_ORDER : receives
+  PICKUP_ORDER ||--|{ PICKUP_ORDER_ITEM : contains
+  BUSINESS_SERVICE o|--o{ PICKUP_ORDER_ITEM : snapshots
 ```
 
 Categorie: slug unico per city, parent nella stessa city e solo due livelli;
@@ -27,3 +31,8 @@ usano `PublicationStatus.published`. Inquiry: `new -> read -> closed`.
 
 Indici aggiunti: servizio `(businessId,status,sortOrder)`, giorno/interval
 orari, inquiry `(businessId,status,createdAt)` e unicita servizio per slug.
+
+Il pickup ordering usa `BusinessOrderingSettings`, `PickupOrder` e
+`PickupOrderItem`. Gli item conservano nome e prezzo come snapshot e il
+collegamento al servizio può diventare nullo. Questi modelli supportano soltanto
+l'estensione dimostrativa opzionale: non sono requisiti di readiness o publish.

@@ -52,8 +52,80 @@ describe("business opening hours", () => {
         new Date("2026-08-03T12:00:00Z"),
       ).detail,
     ).toBe("Riapre alle 15:00"));
-  it("returns unknown for unavailable hours or invalid timezone", () => {
+  it("returns tomorrow's opening after the last closing interval", () =>
+    expect(
+      getBusinessOpeningStatus(
+        [
+          {
+            weekday: 0,
+            isClosed: false,
+            note: null,
+            intervals: [{ opensAt: "09:00", closesAt: "13:00", sortOrder: 0 }],
+          },
+          {
+            weekday: 1,
+            isClosed: false,
+            note: null,
+            intervals: [{ opensAt: "09:00", closesAt: "18:00", sortOrder: 0 }],
+          },
+        ],
+        "Europe/Rome",
+        new Date("2026-08-03T18:00:00Z"),
+      ),
+    ).toEqual({ state: "closed", label: "Chiuso", detail: "Apre domani alle 09:00" }));
+  it("skips a closed tomorrow and returns the following opening", () =>
+    expect(
+      getBusinessOpeningStatus(
+        [
+          ...monday(),
+          { weekday: 1, isClosed: true, note: null, intervals: [] },
+          {
+            weekday: 2,
+            isClosed: false,
+            note: null,
+            intervals: [{ opensAt: "09:00", closesAt: "18:00", sortOrder: 0 }],
+          },
+        ],
+        "Europe/Rome",
+        new Date("2026-08-03T18:00:00Z"),
+      ).detail,
+    ).toBe("Apre mercoledì alle 09:00"));
+  it("skips multiple consecutive closed days in an unordered schedule", () =>
+    expect(
+      getBusinessOpeningStatus(
+        [
+          {
+            weekday: 4,
+            isClosed: false,
+            note: null,
+            intervals: [{ opensAt: "10:00", closesAt: "18:00", sortOrder: 0 }],
+          },
+          { weekday: 2, isClosed: true, note: null, intervals: [] },
+          ...monday(),
+          { weekday: 3, isClosed: true, note: null, intervals: [] },
+          { weekday: 1, isClosed: true, note: null, intervals: [] },
+        ],
+        "Europe/Rome",
+        new Date("2026-08-03T18:00:00Z"),
+      ).detail,
+    ).toBe("Apre venerdì alle 10:00"));
+  it("returns closed without a detail when the entire week is closed", () =>
+    expect(
+      getBusinessOpeningStatus(
+        Array.from({ length: 7 }, (_, weekday) => ({
+          weekday,
+          isClosed: true,
+          note: null,
+          intervals: [],
+        })),
+        "Europe/Rome",
+        new Date("2026-08-03T18:00:00Z"),
+      ),
+    ).toEqual({ state: "closed", label: "Chiuso", detail: null }));
+  it("returns unknown for unavailable hours", () => {
     expect(getBusinessOpeningStatus([], "Europe/Rome").state).toBe("unknown");
+  });
+  it("returns unknown for an invalid timezone", () => {
     expect(getBusinessOpeningStatus(monday(), "Invalid/Zone").state).toBe("unknown");
   });
   it("calculates weekdays in the business timezone", () =>

@@ -144,6 +144,16 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
               active: true,
             },
           },
+          categoryAssignments: {
+            where: { category: { active: true } },
+            orderBy: { sortOrder: "asc" },
+            select: {
+              sortOrder: true,
+              category: {
+                select: { id: true, cityId: true, name: true, slug: true },
+              },
+            },
+          },
         },
       }),
       prisma.business.count({ where }),
@@ -223,6 +233,16 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
               active: true,
             },
           },
+          categoryAssignments: {
+            where: { category: { active: true } },
+            orderBy: { sortOrder: "asc" },
+            select: {
+              sortOrder: true,
+              category: {
+                select: { id: true, cityId: true, name: true, slug: true },
+              },
+            },
+          },
         },
       }),
       prisma.business.count({ where }),
@@ -280,6 +300,16 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
           select: {
             moduleCode: true,
             active: true,
+          },
+        },
+        categoryAssignments: {
+          where: { category: { active: true } },
+          orderBy: { sortOrder: "asc" },
+          select: {
+            sortOrder: true,
+            category: {
+              select: { id: true, cityId: true, name: true, slug: true },
+            },
           },
         },
       },

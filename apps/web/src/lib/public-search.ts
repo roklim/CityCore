@@ -1,8 +1,11 @@
+import type { PublicBusinessCategory } from "./platform-api";
+
 export type SearchableBusiness = {
   name: string;
   summary: string;
   categoryLabel: string;
   area: string;
+  categories?: readonly PublicBusinessCategory[];
   searchTerms?: readonly string[];
 };
 
@@ -30,6 +33,21 @@ const categoryOrder = ["commerce", "service", "hospitality", "editorial", "custo
 export function getPublicBusinessCategoryLabel(category: string | null) {
   if (!category) return null;
   return categoryLabels[category] ?? null;
+}
+
+/** Real city assignments take precedence; the template is used only when none exist. */
+export function getPublicBusinessCategories(business: CategorizedPublicBusiness) {
+  if (business.categories?.length) {
+    return business.categories.map((category) => ({
+      id: category.slug,
+      label: category.name,
+    }));
+  }
+
+  const fallbackLabel = getPublicBusinessCategoryLabel(business.category);
+  return business.category && fallbackLabel
+    ? [{ id: business.category, label: fallbackLabel }]
+    : [];
 }
 
 export function normalizeSearchText(value: string) {
@@ -80,6 +98,7 @@ export function filterPublicBusinesses<TBusiness extends SearchableBusiness>(
       business.summary,
       business.categoryLabel,
       business.area,
+      ...(business.categories?.map((category) => category.name) ?? []),
       ...(business.searchTerms ?? []),
     ];
 
@@ -93,18 +112,16 @@ export function groupPublicBusinessesByCategory<TBusiness extends CategorizedPub
   const groups = new Map<string, TBusiness[]>();
 
   for (const business of businesses) {
-    const category = business.category;
-    const label = getPublicBusinessCategoryLabel(category);
-
-    if (!category || !label) continue;
-
-    groups.set(category, [...(groups.get(category) ?? []), business]);
+    for (const category of getPublicBusinessCategories(business)) {
+      groups.set(category.id, [...(groups.get(category.id) ?? []), business]);
+    }
   }
 
   return [...groups.entries()]
     .map(([id, items]) => ({
       id,
-      label: getPublicBusinessCategoryLabel(id) ?? id,
+      label:
+        getPublicBusinessCategories(items[0]).find((category) => category.id === id)?.label ?? id,
       businesses: items,
     }))
     .sort((left, right) => {
@@ -119,6 +136,30 @@ export function groupPublicBusinessesByCategory<TBusiness extends CategorizedPub
     });
 }
 
+export function groupPublicBusinessesForDisplay<TBusiness extends CategorizedPublicBusiness>(
+  businesses: readonly TBusiness[],
+  sectionId: string,
+): PublicBusinessSection<TBusiness>[] {
+  if (sectionId !== "all") {
+    const category = businesses
+      .flatMap((business) => getPublicBusinessCategories(business))
+      .find((candidate) => candidate.id === sectionId);
+    return category && businesses.length
+      ? [{ id: category.id, label: category.label, businesses: [...businesses] }]
+      : [];
+  }
+
+  const groups = new Map<string, PublicBusinessSection<TBusiness>>();
+  for (const business of businesses) {
+    const category = getPublicBusinessCategories(business)[0];
+    if (!category) continue;
+    const group = groups.get(category.id);
+    if (group) group.businesses.push(business);
+    else groups.set(category.id, { ...category, businesses: [business] });
+  }
+  return [...groups.values()].sort((left, right) => left.label.localeCompare(right.label, "it"));
+}
+
 export function filterPublicBusinessesBySection<TBusiness extends CategorizedPublicBusiness>(
   businesses: readonly TBusiness[],
   query: string,
@@ -128,16 +169,7 @@ export function filterPublicBusinessesBySection<TBusiness extends CategorizedPub
 
   if (sectionId === "all") return searchedBusinesses;
 
-  return searchedBusinesses.filter((business) => business.category === sectionId);
-}
-
-export function getGeolocationFallbackMessage(reason: "unsupported" | "denied" | "unmapped") {
-  switch (reason) {
-    case "unsupported":
-      return "La posizione non è disponibile su questo dispositivo. Scegli una città attiva.";
-    case "denied":
-      return "Non possiamo leggere la tua posizione. Scegli una città attiva.";
-    case "unmapped":
-      return "La posizione è disponibile, ma non possiamo associarla a una città pubblica. Scegli una città attiva.";
-  }
+  return searchedBusinesses.filter((business) =>
+    getPublicBusinessCategories(business).some((category) => category.id === sectionId),
+  );
 }

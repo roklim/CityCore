@@ -25,14 +25,48 @@ type BusinessPageProps = {
   params: Promise<{ citySlug: string; businessSlug: string }>;
 };
 
+const schemaWeekdays = [
+  "https://schema.org/Monday",
+  "https://schema.org/Tuesday",
+  "https://schema.org/Wednesday",
+  "https://schema.org/Thursday",
+  "https://schema.org/Friday",
+  "https://schema.org/Saturday",
+  "https://schema.org/Sunday",
+] as const;
+
 export async function generateMetadata({ params }: BusinessPageProps): Promise<Metadata> {
   const { citySlug, businessSlug } = await params;
   const surface = await getPublicBusinessSurfaceData(citySlug, businessSlug);
 
-  if (!surface) return { title: "Attività non trovata" };
-  if (surface.degraded) return { title: "Contenuti dimostrativi" };
+  if (!surface) {
+    return { title: "Attività non trovata", robots: { index: false, follow: false } };
+  }
 
-  return { title: surface.business.name, description: surface.business.summary };
+  if (surface.degraded) {
+    const canonical = `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`;
+    const title = "Scheda attività temporaneamente non disponibile";
+    const description = "I dati pubblici dell'attività non sono disponibili in questo momento.";
+
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: { type: "website", locale: "it_IT", title, description, url: canonical },
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const canonical = `/${encodeURIComponent(surface.city.slug)}/${encodeURIComponent(surface.business.slug)}`;
+  const title = surface.business.name;
+  const description = surface.business.summary;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { type: "website", locale: "it_IT", title, description, url: canonical },
+  };
 }
 
 export default async function BusinessPage({ params }: BusinessPageProps) {
@@ -79,27 +113,44 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
   const hasStructuredAddress = Boolean(
     business.addressLine || business.locality || business.province,
   );
-  const structuredData =
-    !degraded && hasStructuredAddress
-      ? {
-          "@context": "https://schema.org",
-          "@type": "LocalBusiness",
-          name: business.name,
-          description: business.summary,
-          address: {
-            "@type": "PostalAddress",
-            ...(business.addressLine ? { streetAddress: business.addressLine } : {}),
-            ...(business.locality ? { addressLocality: business.locality } : {}),
-            ...(business.province ? { addressRegion: business.province } : {}),
-          },
-          ...(business.contactPhone ? { telephone: business.contactPhone } : {}),
-          ...(business.publicEmail ? { email: business.publicEmail } : {}),
-          ...(website ? { url: website } : {}),
-          ...(business.socialLinks.length
-            ? { sameAs: business.socialLinks.map((link) => link.url) }
-            : {}),
-        }
-      : null;
+  const structuredData = !degraded
+    ? {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        name: business.name,
+        description: business.summary,
+        ...(hasStructuredAddress
+          ? {
+              address: {
+                "@type": "PostalAddress",
+                ...(business.addressLine ? { streetAddress: business.addressLine } : {}),
+                ...(business.locality ? { addressLocality: business.locality } : {}),
+                ...(business.province ? { addressRegion: business.province } : {}),
+              },
+            }
+          : {}),
+        ...(business.contactPhone ? { telephone: business.contactPhone } : {}),
+        ...(business.publicEmail ? { email: business.publicEmail } : {}),
+        ...(website ? { url: website } : {}),
+        ...(business.socialLinks.length
+          ? { sameAs: business.socialLinks.map((link) => link.url) }
+          : {}),
+        ...(openingDays.some((day) => !day.isClosed && day.intervals.length)
+          ? {
+              openingHoursSpecification: openingDays.flatMap((day) =>
+                day.isClosed
+                  ? []
+                  : day.intervals.map((interval) => ({
+                      "@type": "OpeningHoursSpecification",
+                      dayOfWeek: schemaWeekdays[day.weekday],
+                      opens: interval.opensAt,
+                      closes: interval.closesAt,
+                    })),
+              ),
+            }
+          : {}),
+      }
+    : null;
   const currentWeekday =
     openingHoursResult?.status === "fulfilled"
       ? getCurrentWeekdayInTimezone(new Date(), openingHoursResult.value.timezone)
@@ -151,6 +202,15 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
       }
     >
       <section className="public-stack">
+        {business.categories.length ? (
+          <div className="pill-row" aria-label="Categorie attività">
+            {business.categories.map((category) => (
+              <span className="pill" key={category.id}>
+                {category.name}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {structuredData ? (
           <script
             type="application/ld+json"

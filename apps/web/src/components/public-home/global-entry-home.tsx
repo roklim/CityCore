@@ -44,8 +44,7 @@ export function GlobalEntryHome({
 
             <CityEntryForm
               cities={cities.map((city) => ({ slug: city.slug, name: city.name }))}
-              locationLabel="Usa la mia posizione"
-              searchPlaceholder="Cerca la tua citta..."
+              searchPlaceholder="Cerca la tua città…"
             />
 
             {degraded ? (
@@ -68,7 +67,7 @@ export function GlobalEntryHome({
               <h2>Entra nel contesto giusto.</h2>
               <p>
                 Prima scegli la città. Poi CityCore diventa ricerca locale, categorie, attività
-                vicine e azioni utili.
+                pubblicate e azioni utili.
               </p>
             </div>
 

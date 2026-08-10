@@ -253,6 +253,11 @@ export type PlatformBusinessesResponse = {
   items: PlatformBusiness[];
 };
 
+export type PlatformBusinessResponse = {
+  status: "ok";
+  item: PlatformBusiness;
+};
+
 export type PlatformBusinessService = {
   id: string;
   name: string;
@@ -271,6 +276,61 @@ export type PlatformBusinessService = {
 export type PlatformBusinessServicesResponse = {
   status: "ok";
   items: PlatformBusinessService[];
+};
+
+export type PlatformCityCategory = {
+  id: string;
+  cityId: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: string | null;
+  active: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PlatformBusinessCategoryAssignment = PlatformCityCategory & {
+  primary: boolean;
+  assignmentId: string;
+};
+
+export type PlatformBusinessCategoriesResponse = {
+  status: "ok";
+  items: PlatformBusinessCategoryAssignment[];
+  availableCategories: PlatformCityCategory[];
+};
+
+export type PlatformOpeningInterval = {
+  id: string;
+  opensAt: string;
+  closesAt: string;
+  sortOrder: number;
+};
+
+export type PlatformOpeningDay = {
+  id: string;
+  weekday: number;
+  isClosed: boolean;
+  note: string | null;
+  intervals: PlatformOpeningInterval[];
+};
+
+export type PlatformOpeningHoursResponse = {
+  status: "ok";
+  items: PlatformOpeningDay[];
+};
+
+export type PlatformPublishReadiness = {
+  canPublish: boolean;
+  missingRequirements: string[];
+  warnings: string[];
+};
+
+export type PlatformPublishReadinessResponse = {
+  status: "ok";
+  item: PlatformPublishReadiness;
 };
 
 export type PlatformBusinessInquiry = {
@@ -365,8 +425,15 @@ export type PublicPlatformBusiness = {
     moduleCode: string;
     active: boolean;
   }>;
+  categories: PublicBusinessCategory[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type PublicBusinessCategory = {
+  id: string;
+  name: string;
+  slug: string;
 };
 
 export type PublicCitiesResponse = {

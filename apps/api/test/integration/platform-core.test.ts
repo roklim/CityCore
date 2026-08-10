@@ -231,6 +231,27 @@ describe("platform core integration", () => {
       { categoryIds: [category.id], primaryCategoryId: category.id },
     );
     expect(replace.statusCode).toBe(200);
+    const inactiveCategory = await prisma.cityCategory.create({
+      data: { cityId, name: "Inactive", slug: "inactive", active: false },
+    });
+    const otherCity = await prisma.city.create({
+      data: { name: "Category scope city", slug: "category-scope-city", status: "active" },
+    });
+    const foreignCategory = await prisma.cityCategory.create({
+      data: { cityId: otherCity.id, name: "Foreign", slug: "foreign" },
+    });
+    const categoriesResponse = await request(
+      "GET",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business/categories",
+    );
+    expect(categoriesResponse.statusCode).toBe(200);
+    expect(categoriesResponse.json().items[0].id).toBe(category.id);
+    expect(
+      categoriesResponse.json().availableCategories.map((item: { id: string }) => item.id),
+    ).toEqual(expect.arrayContaining([category.id, inactiveCategory.id]));
+    expect(
+      categoriesResponse.json().availableCategories.map((item: { id: string }) => item.id),
+    ).not.toContain(foreignCategory.id);
     const failed = await request(
       "PUT",
       "/api/v2/platform-core/cities/test-city/businesses/test-business/categories",
@@ -708,6 +729,76 @@ describe("platform core integration", () => {
         await request(
           "GET",
           "/api/v2/public/cities/test-city/businesses/test-business",
+          undefined,
+          "",
+        )
+      ).statusCode,
+    ).toBe(404);
+  });
+
+  it("exposes only active same-city category assignments for public businesses", async () => {
+    const restaurant = await prisma.cityCategory.create({
+      data: { cityId, name: "Ristorante", slug: "ristorante" },
+    });
+    const pizza = await prisma.cityCategory.create({
+      data: { cityId, name: "Pizza", slug: "pizza" },
+    });
+    const inactive = await prisma.cityCategory.create({
+      data: { cityId, name: "Nascosta", slug: "nascosta", active: false },
+    });
+    const otherCity = await prisma.city.create({
+      data: { name: "Foreign City", slug: "foreign-city", status: "active" },
+    });
+    const foreign = await prisma.cityCategory.create({
+      data: { cityId: otherCity.id, name: "Fuori città", slug: "fuori-citta" },
+    });
+    await prisma.businessCategoryAssignment.createMany({
+      data: [
+        { businessId, categoryId: restaurant.id, sortOrder: 1 },
+        { businessId, categoryId: pizza.id, sortOrder: 0 },
+        { businessId, categoryId: inactive.id, sortOrder: -1 },
+        { businessId, categoryId: foreign.id, sortOrder: -2 },
+      ],
+    });
+    await prisma.business.update({
+      where: { id: businessId },
+      data: { status: "active", publishedAt: new Date() },
+    });
+
+    const expectedCategories = [
+      { id: pizza.id, name: "Pizza", slug: "pizza" },
+      { id: restaurant.id, name: "Ristorante", slug: "ristorante" },
+    ];
+    const globalResponse = await request("GET", "/api/v2/public/businesses", undefined, "");
+    const cityResponse = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/businesses",
+      undefined,
+      "",
+    );
+    const detailResponse = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/businesses/test-business",
+      undefined,
+      "",
+    );
+
+    expect(globalResponse.statusCode).toBe(200);
+    expect(cityResponse.statusCode).toBe(200);
+    expect(detailResponse.statusCode).toBe(200);
+    expect(
+      globalResponse.json().items.find((item: { id: string }) => item.id === businessId).categories,
+    ).toEqual(expectedCategories);
+    expect(cityResponse.json().items[0].categories).toEqual(expectedCategories);
+    expect(detailResponse.json().item.categories).toEqual(expectedCategories);
+    expect(
+      globalResponse.json().items.some((item: { slug: string }) => item.slug === "other-business"),
+    ).toBe(false);
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/public/cities/test-city/businesses/other-business",
           undefined,
           "",
         )

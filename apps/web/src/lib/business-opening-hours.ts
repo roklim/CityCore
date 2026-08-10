@@ -68,16 +68,37 @@ export function getBusinessOpeningStatus(
   if (!current || !days.length)
     return { state: "unknown", label: "Orari non disponibili", detail: null };
   const day = days.find((entry) => entry.weekday === current.weekday);
-  if (!day || day.isClosed) return { state: "closed", label: "Chiuso", detail: null };
-  for (const interval of day.intervals) {
-    const [oh, om] = interval.opensAt.split(":").map(Number);
-    const [ch, cm] = interval.closesAt.split(":").map(Number);
-    const opens = oh * 60 + om;
-    const closes = ch * 60 + cm;
-    if (current.minutes >= opens && current.minutes < closes)
-      return { state: "open", label: "Aperto ora", detail: `Chiude alle ${interval.closesAt}` };
-    if (current.minutes < opens)
-      return { state: "closed", label: "Chiuso", detail: `Riapre alle ${interval.opensAt}` };
+  if (day && !day.isClosed) {
+    const intervals = [...day.intervals].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.opensAt.localeCompare(b.opensAt),
+    );
+    for (const interval of intervals) {
+      const [oh, om] = interval.opensAt.split(":").map(Number);
+      const [ch, cm] = interval.closesAt.split(":").map(Number);
+      const opens = oh * 60 + om;
+      const closes = ch * 60 + cm;
+      if (current.minutes >= opens && current.minutes < closes)
+        return { state: "open", label: "Aperto ora", detail: `Chiude alle ${interval.closesAt}` };
+      if (current.minutes < opens)
+        return { state: "closed", label: "Chiuso", detail: `Riapre alle ${interval.opensAt}` };
+    }
+  }
+  for (let offset = 1; offset <= 7; offset += 1) {
+    const nextWeekday = (current.weekday + offset) % 7;
+    const nextDay = days.find((entry) => entry.weekday === nextWeekday);
+    if (!nextDay || nextDay.isClosed || !nextDay.intervals.length) continue;
+    const nextInterval = [...nextDay.intervals].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.opensAt.localeCompare(b.opensAt),
+    )[0];
+    const dayLabel = weekdays[nextWeekday].toLocaleLowerCase("it");
+    return {
+      state: "closed",
+      label: "Chiuso",
+      detail:
+        offset === 1
+          ? `Apre domani alle ${nextInterval.opensAt}`
+          : `Apre ${dayLabel} alle ${nextInterval.opensAt}`,
+    };
   }
   return { state: "closed", label: "Chiuso", detail: null };
 }

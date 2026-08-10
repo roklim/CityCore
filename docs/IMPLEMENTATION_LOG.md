@@ -1,5 +1,36 @@
 # Implementation log — Fase 1
 
+## Final Verification Gate — STEP 4 — 2026-08-10
+
+- Completata l'installazione pulita e verificati Prisma, migrazioni, typecheck,
+  lint, format, build API/Web/root e `verify:platform`.
+- Superati 59 test frontend, 10 test backend unitari e 16 test d'integrazione
+  sul PostgreSQL test dedicato; coverage backend: 81,96% statement, 61,74%
+  branch, 84,21% function e 85,52% line.
+- Verificato da UI il flusso owner → pubblicazione → directory/ricerca → inquiry
+  → inbox, compresi isolamento dello scope e layout responsive.
+- Corretti il controllo dei file shell nel verifier e il JSON-LD business, che
+  ora include gli orari persistiti quando disponibili.
+- Confermato il pickup ordering come estensione dimostrativa opzionale, fuori
+  dai requisiti di readiness e publish.
+
+## Chiusura MVP tesi — STEP 3 — 2026-08-10
+
+- Chiuso il percorso core
+  `City → Business → categorie → servizi → orari → pubblicazione → directory → ricerca → inquiry → inbox owner`.
+- Completata l'area owner con profilo, categorie, servizi, orari, readiness,
+  publish/unpublish e gestione inquiry nel perimetro dell'access grant attivo.
+- Completate le superfici pubbliche con categorie reali, servizi, orari,
+  stato aperto/chiuso, social, ricerca e filtri.
+- Allineata la SEO di home, città e business con title, description, canonical,
+  Open Graph e JSON-LD `LocalBusiness` composto soltanto da dati persistiti.
+- Rimossa dalla home la geolocalizzazione non collegata a coordinate cittadine;
+  corretti i testi italiani visibili senza redesign.
+- Classificato il pickup ordering come estensione dimostrativa opzionale,
+  esclusa dai requisiti di readiness e pubblicazione.
+- Nessuna nuova feature fuori scope; la verifica completa resta demandata allo
+  STEP 4.
+
 ## Fase 3D — 2026-08-05
 
 - Suite di integrazione portata a 12 casi Fastify/Prisma indipendenti.

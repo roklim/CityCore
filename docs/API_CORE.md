@@ -1,4 +1,4 @@
-# API core — Fase 2
+# API core
 
 Tutte le route admin richiedono JWT Bearer e rispettano l'access grant attivo.
 
@@ -13,6 +13,7 @@ Tutte le route admin richiedono JWT Bearer e rispettano l'access grant attivo.
 | GET/POST         | `.../publish-readiness`, `.../publish`, `.../unpublish`                      | businesses.read/manage          |
 | GET/PATCH        | `.../inquiries`, `.../inquiries/:inquiryId`                                  | businesses.read/manage          |
 | GET              | `/api/v2/public/cities/:citySlug/businesses/:businessSlug/services`          | pubblico                        |
+| GET              | `.../businesses/:businessSlug/opening-hours`                                 | pubblico                        |
 | POST             | `/api/v2/public/cities/:citySlug/businesses/:businessSlug/inquiries`         | pubblico                        |
 
 I body sono validati con Zod. Errori attesi: `400` input non valido, `404`
@@ -36,6 +37,20 @@ sono `npm run db:test:up`, `db:test:migrate`, `test:integration` e
 esplicito contenente `test` e diverso da `DATABASE_URL`.
 
 Le inquiry rifiutano anche le transizioni di stato non consentite.
+
+## Estensione pickup ordering
+
+Il pickup ordering è un'estensione dimostrativa opzionale e non partecipa alla
+readiness o alla pubblicazione del core MVP. Quando è abilitato espone menu,
+disponibilità e creazione ordine sotto
+`/api/v2/public/cities/:citySlug/businesses/:businessSlug/orders/*`; l'owner
+gestisce impostazioni e ordini sotto le corrispondenti route
+`/api/v2/platform-core/.../pickup-ordering` e `.../pickup-orders`.
+
+La GET delle categorie business restituisce sia `items`, cioè le assegnazioni
+correnti, sia `availableCategories`, limitate alla città del business. Le
+categorie inattive restano visibili a scopo informativo ma il replacement
+atomico accetta solamente categorie attive.
 
 Per la verifica pulita Windows, una copia temporanea senza dipendenze e
 artefatti viene installata con `npm ci`: Prisma generate e le build operano

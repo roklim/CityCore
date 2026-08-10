@@ -236,11 +236,17 @@ export function registerCategoryRoutes(app: FastifyInstance) {
         })
       )
         return reply.code(404).send({ status: "error", error: "Business not found" });
-      const items = await prisma.businessCategoryAssignment.findMany({
-        where: { businessId: business.id },
-        orderBy: [{ primary: "desc" }, { sortOrder: "asc" }],
-        include: { category: true },
-      });
+      const [items, availableCategories] = await prisma.$transaction([
+        prisma.businessCategoryAssignment.findMany({
+          where: { businessId: business.id },
+          orderBy: [{ primary: "desc" }, { sortOrder: "asc" }],
+          include: { category: true },
+        }),
+        prisma.cityCategory.findMany({
+          where: { cityId: business.cityId },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        }),
+      ]);
       return {
         status: "ok",
         items: items.map((item) => ({
@@ -249,6 +255,7 @@ export function registerCategoryRoutes(app: FastifyInstance) {
           assignmentId: item.id,
           sortOrder: item.sortOrder,
         })),
+        availableCategories: availableCategories.map(mapCategory),
       };
     },
   );

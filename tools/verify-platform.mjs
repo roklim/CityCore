@@ -237,7 +237,8 @@ await runCheck("UI shell files", () =>
   assertFiles([
     "apps/web/src/app/layout.tsx",
     "apps/web/src/app/globals.css",
-    "apps/web/src/components/app-shell.tsx",
+    "apps/web/src/components/public-shell.tsx",
+    "apps/web/src/components/admin-shell.tsx",
     "packages/ui/src/index.ts",
   ]),
 );
