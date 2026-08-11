@@ -7,7 +7,7 @@ services:
     buildCommand: npm ci && npm run build:api
     startCommand: npm --workspace @platform/api run start
     healthCheckPath: /health
-    autoDeploy: false
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production
