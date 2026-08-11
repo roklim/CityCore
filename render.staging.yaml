@@ -2,9 +2,9 @@ services:
   - type: web
     name: citycore-api-staging
     env: node
-    plan: starter
+    plan: free
     rootDir: .
-    buildCommand: npm ci && npm run build:api
+    buildCommand: npm ci --include=dev && npm run build:api
     startCommand: npm --workspace @platform/api run start
     healthCheckPath: /health
     autoDeployTrigger: commit
