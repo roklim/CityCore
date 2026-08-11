@@ -80,6 +80,19 @@ export type PlatformCity = {
   updatedAt: string;
 };
 
+export type PlatformTemplate = {
+  code: string;
+  name: string;
+  category: string;
+  primaryModule: string;
+  defaultCtaLabel: string;
+  summary: string;
+  persisted: boolean;
+  templateId: string | null;
+  active: boolean;
+  updatedAt: string | null;
+};
+
 export type PlatformCityRegistryEntry = {
   id: string;
   name: string;
@@ -238,17 +251,29 @@ export type PlatformAuditLog = {
   } | null;
 };
 
-export type PlatformCitiesResponse = {
+export type PlatformPaginatedResponse = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type PlatformTemplatesResponse = {
+  status: "ok";
+  items: PlatformTemplate[];
+};
+
+export type PlatformCitiesResponse = PlatformPaginatedResponse & {
   status: "ok";
   items: PlatformCity[];
 };
 
-export type PlatformCityRegistryResponse = {
+export type PlatformCityRegistryResponse = PlatformPaginatedResponse & {
   status: "ok";
   items: PlatformCityRegistryEntry[];
 };
 
-export type PlatformBusinessesResponse = {
+export type PlatformBusinessesResponse = PlatformPaginatedResponse & {
   status: "ok";
   items: PlatformBusiness[];
 };
@@ -355,12 +380,12 @@ export type PlatformBusinessInquiriesResponse = {
   total: number;
 };
 
-export type PlatformAccessGrantsResponse = {
+export type PlatformAccessGrantsResponse = PlatformPaginatedResponse & {
   status: "ok";
   items: PlatformAccessGrant[];
 };
 
-export type PlatformAuditLogsResponse = {
+export type PlatformAuditLogsResponse = PlatformPaginatedResponse & {
   status: "ok";
   items: PlatformAuditLog[];
 };

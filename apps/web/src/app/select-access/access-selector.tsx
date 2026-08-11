@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
+import { adminRoleLabel, adminScopeLabel } from "../../lib/admin-labels";
 import type { AuthAccess } from "../../lib/platform-api";
 import { selectAccessAction, type AdminAuthActionState } from "../admin/actions";
 
@@ -64,12 +65,12 @@ export function AccessSelector({ accesses }: { accesses: AuthAccess[] }) {
               defaultChecked={access === accesses[0]}
             />
             <div className="selector-copy">
-              <strong>{access.role.replaceAll("_", " ")}</strong>
+              <strong>{adminRoleLabel(access.role)}</strong>
               <p>{describeAccess(access)}</p>
               <div className="pill-row">
-                <span className="pill">{access.scopeType}</span>
-                {access.city ? <span className="pill">{access.city.slug}</span> : null}
-                {access.business ? <span className="pill">{access.business.slug}</span> : null}
+                <span className="pill">{adminScopeLabel(access.scopeType)}</span>
+                {access.city ? <span className="pill">{access.city.name}</span> : null}
+                {access.business ? <span className="pill">{access.business.name}</span> : null}
               </div>
             </div>
           </label>

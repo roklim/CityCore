@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "../../components/admin-shell";
 import { AdminSubmitButton } from "../../components/admin-submit-button";
+import { adminRoleLabel } from "../../lib/admin-labels";
 import { getWebSession } from "../../lib/web-session";
 import { logoutAction } from "../admin/actions";
 import { AccessSelector } from "./access-selector";
@@ -22,13 +23,21 @@ export default async function SelectAccessPage() {
 
   return (
     <AdminShell
+      brandHref={session.auth.redirectTo || "/admin"}
+      breadcrumbs={[
+        { href: session.auth.redirectTo || "/admin", label: "Dashboard" },
+        { label: "Cambia accesso" },
+      ]}
       eyebrow="Area operatori"
       title="Scegli la superficie da aprire"
       description="Il tuo account dispone di più scope operativi. Seleziona il permesso con cui proseguire."
-      routePath="/select-access"
       navigationItems={[
         { href: "/", label: "Home pubblica", meta: "Scegli una città" },
-        { href: "/admin", label: "Console operatori", meta: "Apri lo scope corrente" },
+        {
+          href: session.auth.redirectTo || "/admin",
+          label: "Scope corrente",
+          meta: adminRoleLabel(session.auth.activeAccess.role),
+        },
         {
           href: "/select-access",
           label: "Cambia accesso",

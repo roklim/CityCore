@@ -19,7 +19,6 @@ export default async function AdminLoginPage() {
       eyebrow="Area operatori"
       title="Accedi all'area operatori"
       description="Questa superficie è riservata agli operatori autorizzati della piattaforma CityCore."
-      routePath="/admin/login"
       navigationItems={[
         {
           href: "/",

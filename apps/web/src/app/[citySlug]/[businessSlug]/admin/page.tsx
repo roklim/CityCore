@@ -17,6 +17,8 @@ import {
   PlatformApiError,
 } from "../../../../lib/platform-api";
 import { readinessReasonLabel, readinessSummary } from "../../../../lib/business-admin-logic";
+import { adminRoleLabel, adminStatusLabel } from "../../../../lib/admin-labels";
+import { getBusinessAdminNavigation } from "../../../../lib/admin-navigation";
 import { getWebSession } from "../../../../lib/web-session";
 import { logoutAction } from "../../../admin/actions";
 import {
@@ -49,7 +51,7 @@ async function loadBusiness(
 ): Promise<PlatformBusiness | null> {
   try {
     const response = await fetchPlatformApi<PlatformBusinessesResponse>(
-      `/api/v2/platform-core/businesses?citySlug=${encodeURIComponent(citySlug)}&limit=100`,
+      `/api/v2/platform-core/businesses?citySlug=${encodeURIComponent(citySlug)}&q=${encodeURIComponent(businessSlug)}&page=1&limit=100`,
       { token, cache: "no-store" },
     );
     return response.items.find((item) => item.slug === businessSlug) ?? null;
@@ -155,41 +157,32 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
     business.modules.filter((module) => module.active).map((module) => module.moduleCode),
   );
   const publicPath = `/${citySlug}/${business.slug}`;
-  const anchorItems = [
-    ["overview", "Panoramica"],
-    ["profile", "Profilo"],
-    ["categories", "Categorie"],
-    ["services", "Servizi"],
-    ["opening-hours", "Orari"],
-    ["publication", "Pubblicazione"],
-    ["inquiries", "Richieste"],
-    ["modules", "Moduli"],
-    ["pickup-orders", "Ordini ritiro"],
-  ] as const;
+  const isPlatformContext = session.auth.activeAccess.scopeType !== "business";
 
   return (
     <AdminShell
       eyebrow="Area operatori"
       title={`${business.name} · area operatori`}
       description="Gestisci il percorso completo dell'attività: profilo, categorie, servizi, orari, pubblicazione e richieste."
-      routePath={`/${citySlug}/${businessSlug}/admin`}
-      navigationItems={[
-        { href: "/", label: "Home pubblica", meta: "Scegli una città" },
-        { href: `/${citySlug}`, label: business.city.name, meta: "Directory pubblica" },
-        ...(business.status === "active"
-          ? [{ href: publicPath, label: "Scheda pubblica", meta: business.name }]
-          : []),
-        {
-          href: `/${citySlug}/${businessSlug}/admin`,
-          label: "Gestione attività",
-          meta: "Profilo e pubblicazione",
-          current: true,
-        },
-        ...(session.auth.accesses.length > 1
-          ? [{ href: "/select-access", label: "Cambia accesso", meta: "Scegli un altro scope" }]
-          : []),
-      ]}
-      statusLabel={`Area operatori · ${session.auth.activeAccess.role.replaceAll("_", " ")}`}
+      brandHref={isPlatformContext ? "/admin" : `/${citySlug}/${businessSlug}/admin`}
+      breadcrumbs={
+        isPlatformContext
+          ? [
+              { href: "/admin", label: "Dashboard" },
+              { href: "/admin/businesses", label: "Attività" },
+              { label: business.name },
+            ]
+          : [{ label: "Dashboard" }, { label: business.name }]
+      }
+      navigationItems={getBusinessAdminNavigation({
+        access: session.auth.activeAccess,
+        businessName: business.name,
+        businessPath: publicPath,
+        cityPath: `/${citySlug}`,
+        isPublished: business.status === "active",
+        hasMultipleAccesses: session.auth.accesses.length > 1,
+      })}
+      statusLabel={adminRoleLabel(session.auth.activeAccess.role)}
       asideTitle="Scope attivo"
       asideText={`Utente: ${session.auth.user.email}. Ambito: ${session.auth.activeAccess.scopeType}. Attività: ${business.city.slug}/${business.slug}.`}
       headerActions={
@@ -207,14 +200,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
         </>
       }
     >
-      <nav className="business-admin-anchor-nav" aria-label="Sezioni gestione attività">
-        {anchorItems.map(([id, label]) => (
-          <a href={`#${id}`} key={id}>
-            {label}
-          </a>
-        ))}
-      </nav>
-
       {notice ? (
         <p className="surface-success" role="status">
           {notice}
@@ -234,7 +219,7 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
         <div className="stats-grid">
           <article className="metric-card">
             <span>Stato</span>
-            <strong>{business.status === "active" ? "Pubblicata" : "Bozza"}</strong>
+            <strong>{adminStatusLabel(business.status)}</strong>
             <p>Piano {business.plan}</p>
           </article>
           <article className="metric-card">
@@ -261,7 +246,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <p className="section-label">Profilo</p>
             <h2 id="profile-title">Profilo pubblico</h2>
           </div>
-          <code>businesses.manage</code>
         </div>
         {canManageBusiness ? (
           <BusinessProfileForm business={business} />
@@ -276,7 +260,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <p className="section-label">Categorie</p>
             <h2 id="categories-title">Categorie della città</h2>
           </div>
-          <code>businesses.manage</code>
         </div>
         {categories ? (
           <form action={updateBusinessCategoriesAction} className="business-management-form">
@@ -328,7 +311,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <p className="section-label">Servizi</p>
             <h2 id="services-title">Catalogo pubblico</h2>
           </div>
-          <code>catalog.manage</code>
         </div>
         {canManageCatalog ? (
           <CreateMenuItemForm
@@ -369,7 +351,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <p className="section-label">Orari</p>
             <h2 id="opening-title">Orari di apertura</h2>
           </div>
-          <code>settings.manage</code>
         </div>
         {canManageSettings ? (
           <OpeningHoursEditor
@@ -390,7 +371,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
               {readiness ? readinessSummary(readiness.item) : "Readiness non disponibile"}
             </h2>
           </div>
-          <code>businesses.manage</code>
         </div>
         {readiness?.item.missingRequirements.length ? (
           <ul className="detail-list">
@@ -447,7 +427,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <p className="section-label">Richieste</p>
             <h2 id="inquiries-title">Messaggi ricevuti</h2>
           </div>
-          <code>businesses.manage</code>
         </div>
         {inquiries?.items.length ? (
           <div className="admin-inquiry-list">
@@ -512,7 +491,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <p className="section-label">Moduli</p>
             <h2 id="modules-title">Funzioni del business</h2>
           </div>
-          <code>modules.manage</code>
         </div>
         <p className="muted-copy">
           Il modulo principale resta sempre attivo; gli altri moduli sono configurabili.
@@ -559,7 +537,6 @@ export default async function BusinessAdminPage({ params, searchParams }: Busine
             <p className="section-label">Estensione opzionale</p>
             <h2 id="pickup-title">Ordini ritiro</h2>
           </div>
-          <code>pickup-ordering</code>
         </div>
         <p className="muted-copy">
           Estensione dimostrativa opzionale: non è necessaria per readiness, pubblicazione o

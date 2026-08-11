@@ -181,28 +181,38 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         });
       }
 
-      const entries = await prisma.cityRegistry.findMany({
-        where: filters.length > 0 ? { AND: filters } : undefined,
-        orderBy: [{ name: "asc" }],
-        take: parsed.data.limit,
-        include: {
-          cities: {
-            orderBy: [{ createdAt: "asc" }],
-            take: 1,
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
-              active: true,
+      const where: Prisma.CityRegistryWhereInput | undefined =
+        filters.length > 0 ? { AND: filters } : undefined;
+      const [entries, total] = await prisma.$transaction([
+        prisma.cityRegistry.findMany({
+          where,
+          orderBy: [{ name: "asc" }],
+          skip: (parsed.data.page - 1) * parsed.data.limit,
+          take: parsed.data.limit,
+          include: {
+            cities: {
+              orderBy: [{ createdAt: "asc" }],
+              take: 1,
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                active: true,
+              },
             },
           },
-        },
-      });
+        }),
+        prisma.cityRegistry.count({ where }),
+      ]);
 
       return reply.send({
         status: "ok",
         items: entries.map(mapCityRegistryEntry),
+        page: parsed.data.page,
+        limit: parsed.data.limit,
+        total,
+        totalPages: Math.ceil(total / parsed.data.limit),
       });
     },
   );
@@ -218,26 +228,45 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
       }
 
       const auth = getRequestAuth(request);
-      const cities = await prisma.city.findMany({
-        where: {
-          ...buildAccessibleCityFilter(auth),
-          status: parsed.data.status,
-          active: parsed.data.active,
-        },
-        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-        take: parsed.data.limit,
-        include: {
-          _count: {
-            select: {
-              businesses: true,
+      const where: Prisma.CityWhereInput = {
+        ...buildAccessibleCityFilter(auth),
+        status: parsed.data.status,
+        active: parsed.data.active,
+        ...(parsed.data.q
+          ? {
+              OR: [
+                { name: { contains: parsed.data.q, mode: "insensitive" as const } },
+                { slug: { contains: slugify(parsed.data.q) } },
+                { province: { contains: parsed.data.q, mode: "insensitive" as const } },
+                { region: { contains: parsed.data.q, mode: "insensitive" as const } },
+              ],
+            }
+          : {}),
+      };
+      const [cities, total] = await prisma.$transaction([
+        prisma.city.findMany({
+          where,
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+          skip: (parsed.data.page - 1) * parsed.data.limit,
+          take: parsed.data.limit,
+          include: {
+            _count: {
+              select: {
+                businesses: true,
+              },
             },
           },
-        },
-      });
+        }),
+        prisma.city.count({ where }),
+      ]);
 
       return {
         status: "ok",
         items: cities.map(mapCity),
+        page: parsed.data.page,
+        limit: parsed.data.limit,
+        total,
+        totalPages: Math.ceil(total / parsed.data.limit),
       };
     },
   );
@@ -474,60 +503,84 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
       }
 
       const auth = getRequestAuth(request);
-      const businesses = await prisma.business.findMany({
-        where: {
-          ...buildAccessibleBusinessFilter(auth),
-          status: parsed.data.status,
-          city: parsed.data.citySlug
-            ? {
-                slug: parsed.data.citySlug,
-              }
-            : undefined,
-        },
-        orderBy: [{ createdAt: "desc" }],
-        take: parsed.data.limit,
-        include: {
-          city: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
+      const where: Prisma.BusinessWhereInput = {
+        ...buildAccessibleBusinessFilter(auth),
+        status: parsed.data.status,
+        city: parsed.data.citySlug
+          ? {
+              slug: parsed.data.citySlug,
+            }
+          : undefined,
+        template: parsed.data.templateCode ? { code: parsed.data.templateCode } : undefined,
+        ...(parsed.data.q
+          ? {
+              OR: [
+                { name: { contains: parsed.data.q, mode: "insensitive" as const } },
+                { slug: { contains: slugify(parsed.data.q) } },
+                { legalName: { contains: parsed.data.q, mode: "insensitive" as const } },
+                {
+                  ownerUser: {
+                    is: { email: { contains: parsed.data.q, mode: "insensitive" as const } },
+                  },
+                },
+              ],
+            }
+          : {}),
+      };
+      const [businesses, total] = await prisma.$transaction([
+        prisma.business.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }],
+          skip: (parsed.data.page - 1) * parsed.data.limit,
+          take: parsed.data.limit,
+          include: {
+            city: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+              },
+            },
+            template: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                category: true,
+                primaryModule: true,
+                defaultCtaLabel: true,
+              },
+            },
+            modules: {
+              orderBy: {
+                moduleCode: "asc",
+              },
+              select: {
+                moduleCode: true,
+                active: true,
+              },
+            },
+            ownerUser: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                status: true,
+              },
             },
           },
-          template: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-              category: true,
-              primaryModule: true,
-              defaultCtaLabel: true,
-            },
-          },
-          modules: {
-            orderBy: {
-              moduleCode: "asc",
-            },
-            select: {
-              moduleCode: true,
-              active: true,
-            },
-          },
-          ownerUser: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              status: true,
-            },
-          },
-        },
-      });
+        }),
+        prisma.business.count({ where }),
+      ]);
 
       return {
         status: "ok",
         items: businesses.map(mapBusiness),
+        page: parsed.data.page,
+        limit: parsed.data.limit,
+        total,
+        totalPages: Math.ceil(total / parsed.data.limit),
       };
     },
   );
@@ -1091,77 +1144,91 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
       }
 
       const auth = getRequestAuth(request);
-      const grants = await prisma.accessGrant.findMany({
-        where: {
-          role: parsed.data.role,
-          scopeType: parsed.data.scopeType,
-          active: parsed.data.active,
-          user: parsed.data.userEmail
+      const where: Prisma.AccessGrantWhereInput = {
+        role: parsed.data.role,
+        scopeType: parsed.data.scopeType,
+        active: parsed.data.active,
+        user: parsed.data.q
+          ? {
+              OR: [
+                { email: { contains: parsed.data.q, mode: "insensitive" } },
+                { name: { contains: parsed.data.q, mode: "insensitive" } },
+              ],
+            }
+          : parsed.data.userEmail
+            ? { email: parsed.data.userEmail }
+            : undefined,
+        ...buildAccessibleAccessGrantFilter(auth),
+        city:
+          parsed.data.citySlug && !parsed.data.businessSlug
             ? {
-                email: parsed.data.userEmail,
+                slug: parsed.data.citySlug,
               }
             : undefined,
-          ...buildAccessibleAccessGrantFilter(auth),
-          city:
-            parsed.data.citySlug && !parsed.data.businessSlug
-              ? {
-                  slug: parsed.data.citySlug,
-                }
-              : undefined,
-          business: parsed.data.businessSlug
-            ? {
-                slug: parsed.data.businessSlug,
-                city: parsed.data.citySlug
-                  ? {
-                      slug: parsed.data.citySlug,
-                    }
-                  : undefined,
-              }
-            : undefined,
-        },
-        orderBy: [{ createdAt: "desc" }],
-        take: parsed.data.limit,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              phone: true,
-              status: true,
-              lastLoginAt: true,
+        business: parsed.data.businessSlug
+          ? {
+              slug: parsed.data.businessSlug,
+              city: parsed.data.citySlug
+                ? {
+                    slug: parsed.data.citySlug,
+                  }
+                : undefined,
+            }
+          : undefined,
+      };
+      const [grants, total] = await prisma.$transaction([
+        prisma.accessGrant.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }],
+          skip: (parsed.data.page - 1) * parsed.data.limit,
+          take: parsed.data.limit,
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+                status: true,
+                lastLoginAt: true,
+              },
             },
-          },
-          city: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
+            city: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+              },
             },
-          },
-          business: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
-              city: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  status: true,
+            business: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                city: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    status: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
+        }),
+        prisma.accessGrant.count({ where }),
+      ]);
 
       return reply.send({
         status: "ok",
         items: grants.map(mapAccessGrant),
+        page: parsed.data.page,
+        limit: parsed.data.limit,
+        total,
+        totalPages: Math.ceil(total / parsed.data.limit),
       });
     },
   );
@@ -1177,79 +1244,112 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
       }
 
       const auth = getRequestAuth(request);
-      const logs = await prisma.auditLog.findMany({
-        where: {
-          action: parsed.data.action
+      const toExclusive = parsed.data.to ? new Date(parsed.data.to) : null;
+      if (toExclusive) toExclusive.setUTCDate(toExclusive.getUTCDate() + 1);
+      const where: Prisma.AuditLogWhereInput = {
+        action: parsed.data.action
+          ? {
+              contains: parsed.data.action,
+              mode: "insensitive",
+            }
+          : undefined,
+        targetType: parsed.data.targetType
+          ? {
+              equals: parsed.data.targetType,
+              mode: "insensitive",
+            }
+          : undefined,
+        scopeType: parsed.data.scopeType,
+        createdAt:
+          parsed.data.from || toExclusive
+            ? { gte: parsed.data.from, lt: toExclusive ?? undefined }
+            : undefined,
+        city:
+          parsed.data.citySlug && !parsed.data.businessSlug
             ? {
-                contains: parsed.data.action,
-                mode: "insensitive",
+                slug: parsed.data.citySlug,
               }
             : undefined,
-          targetType: parsed.data.targetType
-            ? {
-                equals: parsed.data.targetType,
-                mode: "insensitive",
-              }
-            : undefined,
-          scopeType: parsed.data.scopeType,
-          city:
-            parsed.data.citySlug && !parsed.data.businessSlug
-              ? {
-                  slug: parsed.data.citySlug,
-                }
-              : undefined,
-          business: parsed.data.businessSlug
-            ? {
-                slug: parsed.data.businessSlug,
-                city: parsed.data.citySlug
-                  ? {
-                      slug: parsed.data.citySlug,
-                    }
-                  : undefined,
-              }
-            : undefined,
-          ...buildAccessibleAuditLogFilter(auth),
-        },
-        orderBy: [{ createdAt: "desc" }],
-        take: parsed.data.limit,
-        include: {
-          actorUser: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
+        business: parsed.data.businessSlug
+          ? {
+              slug: parsed.data.businessSlug,
+              city: parsed.data.citySlug
+                ? {
+                    slug: parsed.data.citySlug,
+                  }
+                : undefined,
+            }
+          : undefined,
+        ...buildAccessibleAuditLogFilter(auth),
+        ...(parsed.data.q
+          ? {
+              OR: [
+                { action: { contains: parsed.data.q, mode: "insensitive" as const } },
+                { targetType: { contains: parsed.data.q, mode: "insensitive" as const } },
+                {
+                  actorUser: {
+                    is: {
+                      OR: [
+                        { email: { contains: parsed.data.q, mode: "insensitive" as const } },
+                        { name: { contains: parsed.data.q, mode: "insensitive" as const } },
+                      ],
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+      };
+      const [logs, total] = await prisma.$transaction([
+        prisma.auditLog.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }],
+          skip: (parsed.data.page - 1) * parsed.data.limit,
+          take: parsed.data.limit,
+          include: {
+            actorUser: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+              },
             },
-          },
-          city: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
+            city: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+              },
             },
-          },
-          business: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
-              city: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  status: true,
+            business: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                city: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    status: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
+        }),
+        prisma.auditLog.count({ where }),
+      ]);
 
       return reply.send({
         status: "ok",
         items: logs.map(mapAuditLog),
+        page: parsed.data.page,
+        limit: parsed.data.limit,
+        total,
+        totalPages: Math.ceil(total / parsed.data.limit),
       });
     },
   );

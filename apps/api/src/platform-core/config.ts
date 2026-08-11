@@ -111,6 +111,9 @@ export const templateCatalogMap = new Map(templateCatalog.map((entry) => [entry.
 
 const hexColorPattern = /^#?[0-9a-f]{6}$/i;
 const optionalTrimmedString = z.string().trim().min(1);
+const optionalQueryBoolean = z
+  .union([z.boolean(), z.enum(["true", "false"]).transform((value) => value === "true")])
+  .optional();
 const nullableTrimmedString = (max: number) =>
   z.union([z.string().trim().min(1).max(max), z.null()]).optional();
 const nullableEmailString = z.union([z.string().trim().email(), z.null()]).optional();
@@ -152,8 +155,10 @@ export const updateCitySchema = z.object({
 });
 
 export const listCitiesQuerySchema = z.object({
+  q: optionalTrimmedString.max(120).optional(),
   status: z.enum(cityStatuses).optional(),
-  active: z.coerce.boolean().optional(),
+  active: optionalQueryBoolean,
+  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
 });
 
@@ -161,14 +166,18 @@ export const listCityRegistryQuerySchema = z.object({
   q: optionalTrimmedString.max(120).optional(),
   provinceCode: optionalTrimmedString.max(8).optional(),
   regionCode: optionalTrimmedString.max(16).optional(),
-  activeMunicipality: z.coerce.boolean().optional(),
-  linked: z.coerce.boolean().optional(),
+  activeMunicipality: optionalQueryBoolean,
+  linked: optionalQueryBoolean,
+  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
 });
 
 export const listBusinessesQuerySchema = z.object({
+  q: optionalTrimmedString.max(160).optional(),
   citySlug: optionalTrimmedString.max(120).optional(),
   status: z.enum(businessStatuses).optional(),
+  templateCode: z.enum(templateCodes).optional(),
+  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
 });
 
@@ -297,21 +306,27 @@ export const updateBusinessSchema = z
   });
 
 export const listAccessGrantsQuerySchema = z.object({
+  q: optionalTrimmedString.max(200).optional(),
   role: z.enum(accessRoles).optional(),
   scopeType: z.enum(scopeTypes).optional(),
-  active: z.coerce.boolean().optional(),
+  active: optionalQueryBoolean,
   userEmail: optionalTrimmedString.max(200).optional(),
   citySlug: optionalTrimmedString.max(120).optional(),
   businessSlug: optionalTrimmedString.max(120).optional(),
+  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
 });
 
 export const listAuditLogsQuerySchema = z.object({
+  q: optionalTrimmedString.max(200).optional(),
   action: optionalTrimmedString.max(200).optional(),
   targetType: optionalTrimmedString.max(120).optional(),
   scopeType: z.enum(scopeTypes).optional(),
   citySlug: optionalTrimmedString.max(120).optional(),
   businessSlug: optionalTrimmedString.max(120).optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
 });
 
