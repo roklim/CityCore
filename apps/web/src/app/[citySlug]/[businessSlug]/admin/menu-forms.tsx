@@ -2,8 +2,10 @@
 
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PlatformBusinessService } from "../../../../lib/platform-api";
 import {
+  archiveMenuItemAction,
   createMenuItemAction,
   createMenuItemProgressiveAction,
   deleteMenuItemAction,
@@ -13,14 +15,6 @@ import {
 } from "./actions";
 
 const initialState: BusinessMutationState = { error: null, notice: null };
-
-function reloadWithNotice(notice: string) {
-  const url = new URL(window.location.href);
-  url.searchParams.delete("error");
-  url.searchParams.set("notice", notice);
-  url.hash = "services";
-  window.location.assign(url);
-}
 
 function ActionFeedback({ state }: { state: BusinessMutationState }) {
   if (state.error) {
@@ -132,6 +126,7 @@ export function CreateMenuItemForm({
   businessSlug: string;
   currency: string;
 }) {
+  const router = useRouter();
   const submittingRef = useRef(false);
   const [state, setState] = useState(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,11 +134,18 @@ export function CreateMenuItemForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submittingRef.current) return;
+    const form = event.currentTarget;
     submittingRef.current = true;
     setIsSubmitting(true);
     const result = await createMenuItemAction(initialState, new FormData(event.currentTarget));
     setState(result);
-    if (result.notice) return reloadWithNotice(result.notice);
+    if (result.notice) {
+      form.reset();
+      submittingRef.current = false;
+      setIsSubmitting(false);
+      router.refresh();
+      return;
+    }
     submittingRef.current = false;
     setIsSubmitting(false);
   }
@@ -157,6 +159,11 @@ export function CreateMenuItemForm({
     >
       <input type="hidden" name="citySlug" value={citySlug} />
       <input type="hidden" name="businessSlug" value={businessSlug} />
+      <input
+        type="hidden"
+        name="returnTo"
+        value={`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin/services`}
+      />
       <ServiceFields currency={currency} disabled={isSubmitting} />
       <ActionFeedback state={state} />
       <button className="form-button" disabled={isSubmitting} type="submit">
@@ -177,6 +184,7 @@ export function UpdateMenuItemForm({
   currency: string;
   service: PlatformBusinessService;
 }) {
+  const router = useRouter();
   const submittingRef = useRef(false);
   const [state, setState] = useState(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -188,7 +196,12 @@ export function UpdateMenuItemForm({
     setIsSubmitting(true);
     const result = await updateMenuItemAction(initialState, new FormData(event.currentTarget));
     setState(result);
-    if (result.notice) return reloadWithNotice(result.notice);
+    if (result.notice) {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+      router.refresh();
+      return;
+    }
     submittingRef.current = false;
     setIsSubmitting(false);
   }
@@ -203,6 +216,11 @@ export function UpdateMenuItemForm({
       >
         <input type="hidden" name="citySlug" value={citySlug} />
         <input type="hidden" name="businessSlug" value={businessSlug} />
+        <input
+          type="hidden"
+          name="returnTo"
+          value={`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin/services`}
+        />
         <input type="hidden" name="serviceId" value={service.id} />
         <ServiceFields currency={currency} disabled={isSubmitting} service={service} />
         <ActionFeedback state={state} />
@@ -210,12 +228,31 @@ export function UpdateMenuItemForm({
           {isSubmitting ? "Salvataggio…" : "Salva servizio"}
         </button>
       </form>
-      <form action={deleteMenuItemAction} className="business-delete-form">
+      <form
+        action={service.status === "archived" ? deleteMenuItemAction : archiveMenuItemAction}
+        className="business-delete-form"
+        onSubmit={(event) => {
+          if (
+            service.status === "archived" &&
+            !window.confirm(`Eliminare definitivamente “${service.name}”?`)
+          ) {
+            event.preventDefault();
+          }
+        }}
+      >
         <input type="hidden" name="citySlug" value={citySlug} />
         <input type="hidden" name="businessSlug" value={businessSlug} />
         <input type="hidden" name="serviceId" value={service.id} />
-        <button className="ghost-button danger-button" type="submit">
-          Elimina servizio
+        <input
+          type="hidden"
+          name="returnTo"
+          value={`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin/services`}
+        />
+        <button
+          className={`ghost-button${service.status === "archived" ? " danger-button" : ""}`}
+          type="submit"
+        >
+          {service.status === "archived" ? "Elimina definitivamente" : "Archivia servizio"}
         </button>
       </form>
     </article>

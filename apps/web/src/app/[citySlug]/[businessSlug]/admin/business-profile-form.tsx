@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PlatformBusiness } from "../../../../lib/platform-api";
 import { socialFields, type SocialField } from "../../../../lib/business-admin-logic";
 import { updateBusinessProfileAction, type BusinessMutationState } from "./actions";
@@ -16,9 +17,11 @@ const socialLabels: Record<SocialField, string> = {
 };
 
 export function BusinessProfileForm({ business }: { business: PlatformBusiness }) {
+  const router = useRouter();
   const submittingRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [state, setState] = useState(initialState);
+  const [isDirty, setIsDirty] = useState(false);
   const [name, setName] = useState(business.name);
   const [slug, setSlug] = useState(business.slug);
   const socialLinks = business.socialLinks ?? {};
@@ -35,9 +38,16 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
     setState(result);
     if (result.notice) {
       const nextSlug = result.nextBusinessSlug ?? business.slug;
-      window.location.assign(
-        `/${encodeURIComponent(business.city.slug)}/${encodeURIComponent(nextSlug)}/admin?notice=${encodeURIComponent(result.notice)}`,
-      );
+      setIsDirty(false);
+      submittingRef.current = false;
+      setIsSubmitting(false);
+      if (nextSlug !== business.slug) {
+        router.replace(
+          `/${encodeURIComponent(business.city.slug)}/${encodeURIComponent(nextSlug)}/admin/profile?notice=${encodeURIComponent(result.notice)}`,
+        );
+      } else {
+        router.refresh();
+      }
       return;
     }
     submittingRef.current = false;
@@ -45,7 +55,12 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
   }
 
   return (
-    <form aria-busy={isSubmitting} className="business-management-form" onSubmit={handleSubmit}>
+    <form
+      aria-busy={isSubmitting}
+      className="business-management-form"
+      onChange={() => setIsDirty(true)}
+      onSubmit={handleSubmit}
+    >
       <input type="hidden" name="citySlug" value={business.city.slug} />
       <input type="hidden" name="businessSlug" value={business.slug} />
       <input type="hidden" name="businessStatus" value={business.status} />
@@ -82,7 +97,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
             />
             <small id="business-slug-help">
               {business.status === "active"
-                ? "Lo slug è bloccato finché l'attività è pubblicata."
+                ? "Per modificare lo slug devi prima rimuovere l'attività dalla pubblicazione."
                 : "Identificatore usato nell'indirizzo pubblico."}
             </small>
           </label>
@@ -110,7 +125,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
       </fieldset>
 
       <fieldset className="business-form-fieldset" disabled={isSubmitting}>
-        <legend>Contatti e indirizzo</legend>
+        <legend>Contatti</legend>
         <div className="business-profile-grid">
           <label className="field">
             <span>Telefono pubblico</span>
@@ -124,6 +139,12 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
             <span>Sito web</span>
             <input defaultValue={business.website ?? ""} name="website" type="url" />
           </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="business-form-fieldset" disabled={isSubmitting}>
+        <legend>Indirizzo</legend>
+        <div className="business-profile-grid">
           <label className="field">
             <span>Indirizzo</span>
             <input defaultValue={business.addressLine1 ?? ""} maxLength={160} name="addressLine1" />
@@ -187,6 +208,12 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
           {state.error} I dati inseriti sono stati conservati.
         </p>
       ) : null}
+      {state.notice ? (
+        <p className="surface-success" role="status">
+          {state.notice}
+        </p>
+      ) : null}
+      {isDirty ? <p className="business-unsaved-indicator">Modifiche non salvate</p> : null}
       <button className="form-button" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Salvataggio…" : "Salva profilo"}
       </button>

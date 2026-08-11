@@ -851,6 +851,68 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
     },
   );
 
+  app.get(
+    "/api/v2/platform-core/cities/:citySlug/businesses/:businessSlug",
+    { preHandler: requirePermission("businesses.read") },
+    async (request, reply) => {
+      const params = parsePayload(publicBusinessParamsSchema, request.params);
+
+      if (!params.success) {
+        return reply.code(params.response.statusCode).send(params.response.body);
+      }
+
+      const auth = getRequestAuth(request);
+      const business = await prisma.business.findFirst({
+        where: {
+          ...buildAccessibleBusinessFilter(auth),
+          slug: params.data.businessSlug,
+          city: { slug: params.data.citySlug },
+        },
+        include: {
+          city: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+            },
+          },
+          template: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              category: true,
+              primaryModule: true,
+              defaultCtaLabel: true,
+            },
+          },
+          modules: {
+            orderBy: { moduleCode: "asc" },
+            select: {
+              moduleCode: true,
+              active: true,
+            },
+          },
+          ownerUser: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              status: true,
+            },
+          },
+        },
+      });
+
+      if (!business) {
+        return reply.code(404).send({ status: "error", error: "Business not found" });
+      }
+
+      return reply.send({ status: "ok", item: mapBusiness(business) });
+    },
+  );
+
   app.patch(
     "/api/v2/platform-core/cities/:citySlug/businesses/:businessSlug",
     { preHandler: requirePermission("businesses.manage") },

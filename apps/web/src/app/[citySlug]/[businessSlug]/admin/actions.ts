@@ -29,14 +29,24 @@ function adminPath(citySlug: string, businessSlug: string) {
   return `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin`;
 }
 
+function returnPath(formData: FormData, citySlug: string, businessSlug: string, section: string) {
+  const fallback = `${adminPath(citySlug, businessSlug)}/${section}`;
+  const value = requiredText(formData.get("returnTo"));
+  return value === fallback || value.startsWith(`${fallback}?`) ? value : fallback;
+}
+
 function finish(
+  formData: FormData,
   citySlug: string,
   businessSlug: string,
+  section: string,
   key: "notice" | "error",
   message: string,
 ): never {
-  revalidatePath(adminPath(citySlug, businessSlug));
-  redirect(`${adminPath(citySlug, businessSlug)}?${key}=${encodeURIComponent(message)}`);
+  revalidatePath(adminPath(citySlug, businessSlug), "layout");
+  const path = returnPath(formData, citySlug, businessSlug, section);
+  const separator = path.includes("?") ? "&" : "?";
+  redirect(`${path}${separator}${key}=${encodeURIComponent(message)}`);
 }
 
 function requiredText(value: FormDataEntryValue | null) {
@@ -87,6 +97,10 @@ async function getActionContext(formData: FormData) {
     redirect("/admin/login");
   }
 
+  if (!citySlug || !businessSlug) {
+    redirect("/admin");
+  }
+
   return { citySlug, businessSlug, session };
 }
 
@@ -94,7 +108,7 @@ function revalidateBusinessSurfaces(citySlug: string, businessSlug: string) {
   revalidatePath("/");
   revalidatePath(`/${encodeURIComponent(citySlug)}`);
   revalidatePath(`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`);
-  revalidatePath(adminPath(citySlug, businessSlug));
+  revalidatePath(adminPath(citySlug, businessSlug), "layout");
 }
 
 export async function updateBusinessProfileAction(
@@ -153,7 +167,14 @@ export async function updateBusinessCategoriesAction(formData: FormData) {
     .getAll("categoryIds")
     .filter((value): value is string => typeof value === "string" && Boolean(value));
   if (!categoryIds.length) {
-    finish(citySlug, businessSlug, "error", "Seleziona almeno una categoria attiva.");
+    finish(
+      formData,
+      citySlug,
+      businessSlug,
+      "categories",
+      "error",
+      "Seleziona almeno una categoria attiva.",
+    );
   }
 
   try {
@@ -162,10 +183,10 @@ export async function updateBusinessCategoriesAction(formData: FormData) {
       { method: "PUT", token: session.token, body: { categoryIds } },
     );
   } catch (error) {
-    finish(citySlug, businessSlug, "error", messageFor(error));
+    finish(formData, citySlug, businessSlug, "categories", "error", messageFor(error));
   }
   revalidateBusinessSurfaces(citySlug, businessSlug);
-  finish(citySlug, businessSlug, "notice", "Categorie aggiornate.");
+  finish(formData, citySlug, businessSlug, "categories", "notice", "Categorie aggiornate.");
 }
 
 export async function updateOpeningHoursAction(
@@ -185,7 +206,7 @@ export async function updateOpeningHoursAction(
   } catch (error) {
     return { error: messageFor(error), notice: null };
   }
-  revalidatePath(adminPath(citySlug, businessSlug));
+  revalidatePath(adminPath(citySlug, businessSlug), "layout");
   revalidatePath(`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`);
   return { error: null, notice: "Orari aggiornati." };
 }
@@ -198,10 +219,10 @@ export async function publishBusinessAction(formData: FormData) {
       { method: "POST", token: session.token },
     );
   } catch (error) {
-    finish(citySlug, businessSlug, "error", messageFor(error));
+    finish(formData, citySlug, businessSlug, "publication", "error", messageFor(error));
   }
   revalidateBusinessSurfaces(citySlug, businessSlug);
-  finish(citySlug, businessSlug, "notice", "Attività pubblicata.");
+  finish(formData, citySlug, businessSlug, "publication", "notice", "Attività pubblicata.");
 }
 
 export async function unpublishBusinessAction(formData: FormData) {
@@ -212,17 +233,26 @@ export async function unpublishBusinessAction(formData: FormData) {
       { method: "POST", token: session.token },
     );
   } catch (error) {
-    finish(citySlug, businessSlug, "error", messageFor(error));
+    finish(formData, citySlug, businessSlug, "publication", "error", messageFor(error));
   }
   revalidateBusinessSurfaces(citySlug, businessSlug);
-  finish(citySlug, businessSlug, "notice", "Attività rimossa dalla directory pubblica.");
+  finish(
+    formData,
+    citySlug,
+    businessSlug,
+    "publication",
+    "notice",
+    "Attività rimossa dalla directory pubblica.",
+  );
 }
 
 export async function updatePickupOrderStatusAction(formData: FormData) {
   const { citySlug, businessSlug, session } = await getActionContext(formData);
   const orderId = requiredText(formData.get("orderId"));
   const status = requiredText(formData.get("status"));
-  if (!citySlug || !businessSlug || !orderId || !orderStatuses.has(status)) return;
+  if (!citySlug || !businessSlug || !orderId || !orderStatuses.has(status)) {
+    finish(formData, citySlug, businessSlug, "orders", "error", "Dati ordine non validi.");
+  }
   try {
     await fetchPlatformApi(
       `/api/v2/platform-core/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/pickup-orders/${encodeURIComponent(orderId)}`,
@@ -233,9 +263,9 @@ export async function updatePickupOrderStatusAction(formData: FormData) {
       error instanceof PlatformApiError && error.status === 409
         ? "Questo passaggio di stato non è disponibile."
         : messageFor(error);
-    finish(citySlug, businessSlug, "error", message);
+    finish(formData, citySlug, businessSlug, "orders", "error", message);
   }
-  finish(citySlug, businessSlug, "notice", "Stato ordine aggiornato.");
+  finish(formData, citySlug, businessSlug, "orders", "notice", "Stato ordine aggiornato.");
 }
 
 export async function updateInquiryStatusAction(formData: FormData) {
@@ -243,22 +273,35 @@ export async function updateInquiryStatusAction(formData: FormData) {
   const inquiryId = requiredText(formData.get("inquiryId"));
   const status = requiredText(formData.get("status"));
   const internalNote = optionalText(formData.get("internalNote"));
-  if (!citySlug || !businessSlug || !inquiryId || !inquiryStatuses.has(status)) return;
+  if (!citySlug || !businessSlug || !inquiryId || (status && !inquiryStatuses.has(status))) {
+    finish(formData, citySlug, businessSlug, "inquiries", "error", "Dati richiesta non validi.");
+  }
 
   try {
     await fetchPlatformApi(
       `/api/v2/platform-core/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/inquiries/${encodeURIComponent(inquiryId)}`,
-      { method: "PATCH", token: session.token, body: { status, internalNote } },
+      {
+        method: "PATCH",
+        token: session.token,
+        body: { ...(status ? { status } : {}), internalNote },
+      },
     );
   } catch (error) {
     const message =
       error instanceof PlatformApiError && error.status === 409
         ? "Questo passaggio di stato non è disponibile."
         : messageFor(error);
-    finish(citySlug, businessSlug, "error", message);
+    finish(formData, citySlug, businessSlug, "inquiries", "error", message);
   }
 
-  finish(citySlug, businessSlug, "notice", "Stato richiesta aggiornato.");
+  finish(
+    formData,
+    citySlug,
+    businessSlug,
+    "inquiries",
+    "notice",
+    status ? "Stato richiesta aggiornato." : "Nota interna salvata.",
+  );
 }
 
 export async function createMenuItemAction(
@@ -309,7 +352,7 @@ export async function createMenuItemAction(
   } catch (error) {
     return { error: messageFor(error), notice: null };
   }
-  revalidatePath(adminPath(citySlug, businessSlug));
+  revalidatePath(adminPath(citySlug, businessSlug), "layout");
   revalidatePath(`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`);
   return { error: null, notice: "Servizio creato." };
 }
@@ -363,7 +406,7 @@ export async function updateMenuItemAction(
   } catch (error) {
     return { error: messageFor(error), notice: null };
   }
-  revalidatePath(adminPath(citySlug, businessSlug));
+  revalidatePath(adminPath(citySlug, businessSlug), "layout");
   revalidatePath(`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`);
   return { error: null, notice: "Servizio aggiornato." };
 }
@@ -374,8 +417,15 @@ export async function createMenuItemProgressiveAction(formData: FormData) {
   if (!citySlug || !businessSlug) redirect("/admin");
 
   const result = await createMenuItemAction({ error: null, notice: null }, formData);
-  if (result.error) finish(citySlug, businessSlug, "error", result.error);
-  finish(citySlug, businessSlug, "notice", result.notice ?? "Servizio creato.");
+  if (result.error) finish(formData, citySlug, businessSlug, "services", "error", result.error);
+  finish(
+    formData,
+    citySlug,
+    businessSlug,
+    "services",
+    "notice",
+    result.notice ?? "Servizio creato.",
+  );
 }
 
 export async function updateMenuItemProgressiveAction(formData: FormData) {
@@ -384,24 +434,50 @@ export async function updateMenuItemProgressiveAction(formData: FormData) {
   if (!citySlug || !businessSlug) redirect("/admin");
 
   const result = await updateMenuItemAction({ error: null, notice: null }, formData);
-  if (result.error) finish(citySlug, businessSlug, "error", result.error);
-  finish(citySlug, businessSlug, "notice", result.notice ?? "Servizio aggiornato.");
+  if (result.error) finish(formData, citySlug, businessSlug, "services", "error", result.error);
+  finish(
+    formData,
+    citySlug,
+    businessSlug,
+    "services",
+    "notice",
+    result.notice ?? "Servizio aggiornato.",
+  );
+}
+
+export async function archiveMenuItemAction(formData: FormData) {
+  const { citySlug, businessSlug, session } = await getActionContext(formData);
+  const serviceId = requiredText(formData.get("serviceId"));
+  if (!serviceId) {
+    finish(formData, citySlug, businessSlug, "services", "error", "Dati non validi.");
+  }
+
+  try {
+    await fetchPlatformApi(
+      `/api/v2/platform-core/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/services/${encodeURIComponent(serviceId)}`,
+      { method: "PATCH", token: session.token, body: { status: "archived" } },
+    );
+  } catch (error) {
+    finish(formData, citySlug, businessSlug, "services", "error", messageFor(error));
+  }
+  revalidateBusinessSurfaces(citySlug, businessSlug);
+  finish(formData, citySlug, businessSlug, "services", "notice", "Servizio archiviato.");
 }
 
 export async function deleteMenuItemAction(formData: FormData) {
   const { citySlug, businessSlug, session } = await getActionContext(formData);
   const serviceId = requiredText(formData.get("serviceId"));
-  if (!serviceId) finish(citySlug, businessSlug, "error", "Dati non validi.");
+  if (!serviceId) finish(formData, citySlug, businessSlug, "services", "error", "Dati non validi.");
   try {
     await fetchPlatformApi(
       `/api/v2/platform-core/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/services/${encodeURIComponent(serviceId)}`,
       { method: "DELETE", token: session.token },
     );
   } catch (error) {
-    finish(citySlug, businessSlug, "error", messageFor(error));
+    finish(formData, citySlug, businessSlug, "services", "error", messageFor(error));
   }
   revalidateBusinessSurfaces(citySlug, businessSlug);
-  finish(citySlug, businessSlug, "notice", "Servizio eliminato.");
+  finish(formData, citySlug, businessSlug, "services", "notice", "Servizio eliminato.");
 }
 
 export async function updateBusinessModulesAction(formData: FormData) {
@@ -409,7 +485,9 @@ export async function updateBusinessModulesAction(formData: FormData) {
   const moduleCodes = formData
     .getAll("moduleCodes")
     .filter((value): value is string => typeof value === "string");
-  if (!citySlug || !businessSlug) return;
+  if (!citySlug || !businessSlug) {
+    finish(formData, citySlug, businessSlug, "modules", "error", "Contesto attività non valido.");
+  }
 
   try {
     await fetchPlatformApi(
@@ -417,7 +495,7 @@ export async function updateBusinessModulesAction(formData: FormData) {
       { method: "PUT", token: session.token, body: { moduleCodes } },
     );
   } catch (error) {
-    finish(citySlug, businessSlug, "error", messageFor(error));
+    finish(formData, citySlug, businessSlug, "modules", "error", messageFor(error));
   }
-  finish(citySlug, businessSlug, "notice", "Moduli aggiornati.");
+  finish(formData, citySlug, businessSlug, "modules", "notice", "Moduli aggiornati.");
 }

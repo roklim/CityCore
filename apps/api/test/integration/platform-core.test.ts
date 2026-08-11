@@ -161,6 +161,33 @@ describe("platform core integration", () => {
   });
 
   it("updates only the scoped business and enforces publish slug rules", async () => {
+    const detail = await request(
+      "GET",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business",
+    );
+    expect(detail.statusCode).toBe(200);
+    expect(detail.json().item.id).toBe(businessId);
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business",
+          undefined,
+          otherToken,
+        )
+      ).statusCode,
+    ).toBe(404);
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business",
+          undefined,
+          "",
+        )
+      ).statusCode,
+    ).toBe(401);
+
     const updated = await request(
       "PATCH",
       "/api/v2/platform-core/cities/test-city/businesses/test-business",

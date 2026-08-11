@@ -4,11 +4,18 @@ const statusLabels: Record<string, string> = {
   paused: "In pausa",
   disabled: "Disabilitato",
   published: "Pubblicato",
+  in_review: "In revisione",
+  archived: "Archiviato",
   coming_soon: "In preparazione",
   invited: "Invitato",
   new: "Nuova",
   read: "Letta",
   closed: "Chiusa",
+  accepted: "Accettato",
+  preparing: "In preparazione",
+  ready: "Pronto",
+  completed: "Completato",
+  cancelled: "Annullato",
 };
 
 const auditActionLabels: Record<string, string> = {
@@ -32,9 +39,11 @@ export function adminStatusLabel(status: string) {
 }
 
 export function adminStatusTone(status: string) {
-  if (["active", "published", "read"].includes(status)) return "positive";
-  if (["disabled", "closed"].includes(status)) return "muted";
-  if (["paused", "coming_soon", "invited"].includes(status)) return "warning";
+  if (["active", "published", "read", "ready", "completed"].includes(status)) return "positive";
+  if (["disabled", "closed", "archived", "cancelled"].includes(status)) return "muted";
+  if (["paused", "coming_soon", "invited", "in_review", "preparing"].includes(status)) {
+    return "warning";
+  }
   return "neutral";
 }
 

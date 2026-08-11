@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { AuthAccess } from "./platform-api";
+import type { AuthAccess, PlatformBusiness } from "./platform-api";
 import { adminRoleLabel, adminStatusLabel, auditActionLabel } from "./admin-labels";
-import { getBusinessAdminNavigation, getPlatformAdminNavigation } from "./admin-navigation";
+import { getPlatformAdminNavigation } from "./admin-navigation";
+import { getBusinessAdminNavigation } from "./business-admin-navigation";
 import { pageHref, positivePage, queryString } from "./admin-query";
 
 function access(scopeType: AuthAccess["scopeType"]): AuthAccess {
@@ -37,6 +38,57 @@ function access(scopeType: AuthAccess["scopeType"]): AuthAccess {
   };
 }
 
+function business(
+  status: PlatformBusiness["status"] = "draft",
+  withCatalog = true,
+): PlatformBusiness {
+  return {
+    id: "business-1",
+    name: "Forno Civico",
+    slug: "forno-civico",
+    legalName: null,
+    category: null,
+    status,
+    plan: "free",
+    subscriptionStatus: "trialing",
+    publicEmail: null,
+    publicPhone: null,
+    website: null,
+    addressLine1: null,
+    addressLine2: null,
+    postalCode: null,
+    locality: null,
+    province: null,
+    socialLinks: null,
+    timezone: "Europe/Rome",
+    currency: "EUR",
+    locale: "it-IT",
+    primaryColor: null,
+    accentColor: null,
+    publicTitle: null,
+    publicSubtitle: null,
+    publicDescription: null,
+    seoTitle: null,
+    seoDescription: null,
+    bookingPolicy: null,
+    cancellationPolicy: null,
+    notesInternal: null,
+    city: { id: "city-1", name: "Cagli", slug: "cagli", status: "active" },
+    template: {
+      id: "template-1",
+      code: "local-business",
+      name: "Attività locale",
+      category: "local",
+      primaryModule: "profile",
+      defaultCtaLabel: null,
+    },
+    modules: withCatalog ? [{ moduleCode: "catalog", active: true }] : [],
+    owner: null,
+    createdAt: "2026-08-11T00:00:00.000Z",
+    updatedAt: "2026-08-11T00:00:00.000Z",
+  };
+}
+
 describe("admin navigation", () => {
   it("exposes all platform sections and marks only the current route", () => {
     const items = getPlatformAdminNavigation(access("platform"), "/admin/businesses", true);
@@ -61,40 +113,48 @@ describe("admin navigation", () => {
 
   it("adds the activities return path only for platform and city operators", () => {
     const common = {
-      businessName: "Forno Civico",
-      businessPath: "/cagli/forno-civico",
-      cityPath: "/cagli",
-      isPublished: false,
+      business: business(),
+      currentPath: "/cagli/forno-civico/admin",
       hasMultipleAccesses: false,
     };
+    const platformItems = getBusinessAdminNavigation({ ...common, access: access("platform") });
+    const businessItems = getBusinessAdminNavigation({ ...common, access: access("business") });
 
-    expect(getBusinessAdminNavigation({ ...common, access: access("platform") })[0]?.href).toBe(
-      "/admin/businesses",
-    );
-    expect(getBusinessAdminNavigation({ ...common, access: access("business") })[0]?.href).toBe(
-      "#overview",
-    );
+    expect(platformItems.some((item) => item.href === "/admin/businesses")).toBe(true);
+    expect(businessItems.some((item) => item.href === "/admin/businesses")).toBe(false);
+    expect(businessItems[0]?.href).toBe("/cagli/forno-civico/admin");
   });
 
   it("offers the public page only for a published business", () => {
     const common = {
       access: access("business"),
-      businessName: "Forno Civico",
-      businessPath: "/cagli/forno-civico",
-      cityPath: "/cagli",
+      currentPath: "/cagli/forno-civico/admin",
       hasMultipleAccesses: false,
     };
 
     expect(
-      getBusinessAdminNavigation({ ...common, isPublished: false }).some(
-        (item) => item.href === common.businessPath,
+      getBusinessAdminNavigation({ ...common, business: business("draft") }).some(
+        (item) => item.href === "/cagli/forno-civico",
       ),
     ).toBe(false);
     expect(
-      getBusinessAdminNavigation({ ...common, isPublished: true }).some(
-        (item) => item.href === common.businessPath,
+      getBusinessAdminNavigation({ ...common, business: business("active") }).some(
+        (item) => item.href === "/cagli/forno-civico",
       ),
     ).toBe(true);
+  });
+
+  it("uses real routed sections and hides pickup orders without the catalog module", () => {
+    const items = getBusinessAdminNavigation({
+      access: access("business"),
+      business: business("draft", false),
+      currentPath: "/cagli/forno-civico/admin/services",
+      hasMultipleAccesses: false,
+    });
+
+    expect(items.some((item) => item.href.startsWith("#"))).toBe(false);
+    expect(items.find((item) => item.href.endsWith("/services"))?.current).toBe(true);
+    expect(items.some((item) => item.href.endsWith("/orders"))).toBe(false);
   });
 });
 

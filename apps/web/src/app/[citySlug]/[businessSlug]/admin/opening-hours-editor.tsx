@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PlatformOpeningDay } from "../../../../lib/platform-api";
 import {
   buildOpeningWeekPayload,
@@ -44,13 +45,33 @@ export function OpeningHoursEditor({
   businessSlug: string;
   items: PlatformOpeningDay[];
 }) {
+  const router = useRouter();
   const [days, setDays] = useState(() => initialDays(items));
   const [state, setState] = useState(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const submittingRef = useRef(false);
 
   function updateDay(weekday: number, update: (day: OpeningDayDraft) => OpeningDayDraft) {
+    setIsDirty(true);
     setDays((current) => current.map((day) => (day.weekday === weekday ? update(day) : day)));
+  }
+
+  function copyMondayToWeekdays() {
+    setIsDirty(true);
+    setDays((current) => {
+      const monday = current[0];
+      return current.map((day) =>
+        day.weekday >= 1 && day.weekday <= 4
+          ? {
+              ...day,
+              isClosed: monday.isClosed,
+              note: monday.note,
+              intervals: monday.intervals.map((interval) => ({ ...interval })),
+            }
+          : day,
+      );
+    });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -68,10 +89,10 @@ export function OpeningHoursEditor({
     const result = await updateOpeningHoursAction(initialState, formData);
     setState(result);
     if (result.notice) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("notice", result.notice);
-      url.hash = "opening-hours";
-      window.location.assign(url);
+      setIsDirty(false);
+      submittingRef.current = false;
+      setIsSubmitting(false);
+      router.refresh();
       return;
     }
     submittingRef.current = false;
@@ -184,7 +205,7 @@ export function OpeningHoursEditor({
                       }
                       type="button"
                     >
-                      + Aggiungi fascia
+                      + Fascia
                     </button>
                   ) : null}
                 </div>
@@ -203,6 +224,15 @@ export function OpeningHoursEditor({
                   value={day.note ?? ""}
                 />
               </label>
+              {day.weekday === 0 ? (
+                <button
+                  className="ghost-button opening-copy-button"
+                  onClick={copyMondayToWeekdays}
+                  type="button"
+                >
+                  Applica lunedì a lun–ven
+                </button>
+              ) : null}
             </fieldset>
           ))}
         </div>
@@ -212,6 +242,12 @@ export function OpeningHoursEditor({
           {state.error} Gli orari inseriti sono stati conservati.
         </p>
       ) : null}
+      {state.notice ? (
+        <p className="surface-success" role="status">
+          {state.notice}
+        </p>
+      ) : null}
+      {isDirty ? <p className="business-unsaved-indicator">Modifiche non salvate</p> : null}
       <button className="form-button" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Salvataggio…" : "Salva settimana"}
       </button>

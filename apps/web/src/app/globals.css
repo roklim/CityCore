@@ -2032,35 +2032,6 @@ label.public-privacy {
   color: #cbffe4;
 }
 
-.business-admin-anchor-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--cc-border-subtle);
-  border-radius: var(--platform-radius-md);
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.business-admin-anchor-nav a {
-  min-height: 40px;
-  padding: 10px 12px;
-  border-radius: var(--platform-radius-sm);
-  color: var(--cc-text-secondary);
-  text-decoration: none;
-}
-
-.business-admin-anchor-nav a:hover,
-.business-admin-anchor-nav a:focus-visible {
-  background: rgba(240, 185, 11, 0.1);
-  color: var(--cc-text-primary);
-}
-
-.data-card[id],
-#overview {
-  scroll-margin-top: 24px;
-}
-
 .business-form-fieldset {
   display: grid;
   min-width: 0;
@@ -2138,12 +2109,23 @@ label.public-privacy {
 
 .opening-day-card {
   display: grid;
+  grid-template-columns: minmax(150px, 0.55fr) minmax(280px, 1.45fr) minmax(180px, 0.7fr);
   min-width: 0;
+  align-items: start;
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--cc-border-subtle);
   border-radius: var(--platform-radius-sm);
   background: rgba(255, 255, 255, 0.02);
+}
+
+.opening-day-card > .opening-interval-list {
+  min-width: 0;
+}
+
+.opening-day-card > .opening-copy-button {
+  grid-column: 2 / -1;
+  justify-self: start;
 }
 
 .opening-interval-row {
@@ -2176,17 +2158,218 @@ label.public-privacy {
   gap: 10px;
 }
 
+.business-unsaved-indicator,
+.business-selection-summary {
+  width: fit-content;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(240, 185, 11, 0.32);
+  border-radius: 999px;
+  background: rgba(240, 185, 11, 0.08);
+  color: var(--cc-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.business-dashboard-stats {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.business-dashboard-stats .metric-card {
+  min-width: 0;
+}
+
+.business-dashboard-stats .metric-card strong {
+  overflow-wrap: anywhere;
+  font-size: clamp(24px, 2.5vw, 36px);
+}
+
+.business-quick-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.business-readonly-grid,
+.business-inquiry-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.business-readonly-grid > div,
+.business-inquiry-details > div,
+.business-hours-readonly > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: var(--platform-radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.business-readonly-grid dt,
+.business-inquiry-details dt,
+.business-hours-readonly dt {
+  color: var(--cc-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.business-readonly-grid dd,
+.business-inquiry-details dd,
+.business-hours-readonly dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.business-module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 12px;
+}
+
+.business-module-card {
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: var(--platform-radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.business-module-card.is-primary {
+  border-color: rgba(240, 185, 11, 0.3);
+}
+
+.business-module-card input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.business-module-card span {
+  display: grid;
+  gap: 5px;
+}
+
+.business-filter-tabs,
+.business-inquiry-actions,
+.business-order-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.business-filter-tabs a {
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 999px;
+  color: var(--cc-text-secondary);
+  text-decoration: none;
+}
+
+.business-filter-tabs a[aria-current="page"] {
+  border-color: rgba(240, 185, 11, 0.38);
+  background: rgba(240, 185, 11, 0.1);
+  color: var(--cc-text-primary);
+}
+
+.business-message-preview {
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.business-inquiry-detail-form,
+.business-hours-readonly,
+.business-order-list {
+  display: grid;
+  gap: 12px;
+}
+
+.business-readiness-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(226, 79, 79, 0.3);
+  border-radius: var(--platform-radius-sm);
+  background: rgba(226, 79, 79, 0.08);
+}
+
+.business-readiness-summary.is-ready {
+  border-color: rgba(46, 189, 133, 0.32);
+  background: rgba(46, 189, 133, 0.08);
+}
+
+.business-readiness-list {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+}
+
+.business-order-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: var(--platform-radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.business-order-card p,
+.business-order-card ul {
+  margin: 0;
+}
+
+.business-order-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.business-order-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+@media (max-width: 1100px) {
+  .business-dashboard-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .opening-day-card {
+    grid-template-columns: minmax(140px, 0.55fr) minmax(240px, 1.45fr);
+  }
+
+  .opening-day-card > .field {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 800px) {
+  .business-dashboard-stats,
+  .business-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .opening-day-card {
+    grid-template-columns: 1fr;
+  }
+
+  .opening-day-card > .field,
+  .opening-day-card > .opening-copy-button {
+    grid-column: auto;
+  }
+}
+
 @media (max-width: 640px) {
-  .business-admin-anchor-nav {
-    flex-wrap: nowrap;
-    max-width: 100%;
-    overflow-x: auto;
-  }
-
-  .business-admin-anchor-nav a {
-    flex: 0 0 auto;
-  }
-
   .business-category-child {
     margin-left: 10px;
   }
@@ -2208,6 +2391,31 @@ label.public-privacy {
   .business-publication-actions button,
   .business-publication-actions a,
   .business-delete-form button {
+    width: 100%;
+  }
+
+  .business-dashboard-stats,
+  .business-quick-grid,
+  .business-readonly-grid,
+  .business-inquiry-details {
+    grid-template-columns: 1fr;
+  }
+
+  .business-filter-tabs {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .business-filter-tabs a {
+    flex: 0 0 auto;
+  }
+
+  .business-inquiry-actions,
+  .business-inquiry-actions button,
+  .business-order-action,
+  .business-order-action label,
+  .business-order-action button {
     width: 100%;
   }
 }

@@ -589,6 +589,17 @@ export type PlatformPickupOrder = {
   }>;
 };
 
+export type PlatformPickupOrderingResponse = {
+  status: "ok";
+  item: {
+    enabled: boolean;
+    pickupLeadMinutes: number;
+    slotMinutes: number;
+    slotCapacity: number;
+    minimumOrderCents: number;
+  } | null;
+};
+
 export type PlatformPickupOrdersResponse = {
   status: "ok";
   items: PlatformPickupOrder[];
