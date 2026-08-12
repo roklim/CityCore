@@ -6,12 +6,14 @@ import { PublicPickupOrderForm } from "../../../components/public-business/publi
 import { PublicShell } from "../../../components/public-shell";
 import {
   getPublicBusinessOpeningHours,
+  getPublicBusinessMetadataData,
   getPublicBusinessServices,
   getPublicBusinessSurfaceData,
   getPublicPickupOrderMenu,
+  formatPublicBusinessLocation,
 } from "../../../lib/public-runtime";
 import {
-  formatOpeningDay,
+  formatOpeningDayWithNote,
   formatServiceDuration,
   getBusinessOpeningStatus,
   getCurrentWeekdayInTimezone,
@@ -37,7 +39,7 @@ const schemaWeekdays = [
 
 export async function generateMetadata({ params }: BusinessPageProps): Promise<Metadata> {
   const { citySlug, businessSlug } = await params;
-  const surface = await getPublicBusinessSurfaceData(citySlug, businessSlug);
+  const surface = await getPublicBusinessMetadataData(citySlug, businessSlug);
 
   if (!surface) {
     return { title: "Attività non trovata", robots: { index: false, follow: false } };
@@ -57,9 +59,9 @@ export async function generateMetadata({ params }: BusinessPageProps): Promise<M
     };
   }
 
-  const canonical = `/${encodeURIComponent(surface.city.slug)}/${encodeURIComponent(surface.business.slug)}`;
-  const title = surface.business.name;
-  const description = surface.business.summary;
+  const canonical = `/${encodeURIComponent(surface.citySlug)}/${encodeURIComponent(surface.business.slug)}`;
+  const title = surface.business.seoTitle ?? surface.business.name;
+  const description = surface.business.seoDescription ?? surface.business.summary;
 
   return {
     title,
@@ -107,11 +109,18 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
     emailHref,
     website,
   });
-  const locationLine = [business.addressLine, business.locality, business.province]
+  const locationLine = formatPublicBusinessLocation({
+    addressLine: business.addressLine,
+    addressLine2: business.addressLine2,
+    postalCode: business.postalCode,
+    locality: business.locality,
+    province: business.province,
+  });
+  const structuredStreetAddress = [business.addressLine, business.addressLine2]
     .filter((value): value is string => Boolean(value))
     .join(", ");
   const hasStructuredAddress = Boolean(
-    business.addressLine || business.locality || business.province,
+    structuredStreetAddress || business.postalCode || business.locality || business.province,
   );
   const structuredData = !degraded
     ? {
@@ -123,9 +132,11 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
           ? {
               address: {
                 "@type": "PostalAddress",
-                ...(business.addressLine ? { streetAddress: business.addressLine } : {}),
+                ...(structuredStreetAddress ? { streetAddress: structuredStreetAddress } : {}),
+                ...(business.postalCode ? { postalCode: business.postalCode } : {}),
                 ...(business.locality ? { addressLocality: business.locality } : {}),
                 ...(business.province ? { addressRegion: business.province } : {}),
+                ...(city.country ? { addressCountry: city.country } : {}),
               },
             }
           : {}),
@@ -145,6 +156,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
                       dayOfWeek: schemaWeekdays[day.weekday],
                       opens: interval.opensAt,
                       closes: interval.closesAt,
+                      ...(day.note ? { description: day.note } : {}),
                     })),
               ),
             }
@@ -190,7 +202,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
 
   return (
     <PublicShell
-      toneLabel={business.categoryLabel}
+      toneLabel={business.categories[0]?.name ?? business.categoryLabel}
       title={business.name}
       description={business.summary}
       contextLabel={city.name}
@@ -245,19 +257,6 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
           </div>
         </section>
 
-        {pickupOrderMenu ? (
-          <PublicPickupOrderForm
-            citySlug={city.slug}
-            businessSlug={business.slug}
-            currency={pickupOrderMenu.currency}
-            timezone={pickupOrderMenu.timezone}
-            minimumOrderCents={pickupOrderMenu.minimumOrderCents}
-            items={pickupOrderMenu.items}
-          />
-        ) : null}
-
-        <PublicInquiryForm citySlug={city.slug} businessSlug={business.slug} />
-
         <section className="public-list-grid" id="services">
           <div className="section-header">
             <p className="section-label">Servizi</p>
@@ -309,7 +308,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
                     day.weekday === currentWeekday ? "public-opening-day-current" : undefined
                   }
                 >
-                  <strong>{weekdays[day.weekday]}</strong> · {formatOpeningDay(day)}
+                  <strong>{weekdays[day.weekday]}</strong> · {formatOpeningDayWithNote(day)}
                   {day.weekday === currentWeekday ? " · Oggi" : ""}
                 </p>
               ))
@@ -360,6 +359,19 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
             </div>
           ) : null}
         </section>
+
+        {pickupOrderMenu ? (
+          <PublicPickupOrderForm
+            citySlug={city.slug}
+            businessSlug={business.slug}
+            currency={pickupOrderMenu.currency}
+            timezone={pickupOrderMenu.timezone}
+            minimumOrderCents={pickupOrderMenu.minimumOrderCents}
+            items={pickupOrderMenu.items}
+          />
+        ) : null}
+
+        <PublicInquiryForm citySlug={city.slug} businessSlug={business.slug} />
       </section>
     </PublicShell>
   );

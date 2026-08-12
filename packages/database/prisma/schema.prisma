@@ -412,6 +412,7 @@ model BusinessService {
   priceLabel        String?           @map("price_label") @db.VarChar(80)
   priceCents        Int?              @map("price_cents")
   durationMinutes   Int?              @map("duration_minutes")
+  pickupEnabled     Boolean           @default(false) @map("pickup_enabled")
   status            PublicationStatus @default(draft)
   sortOrder         Int               @default(0) @map("sort_order")
   business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)

@@ -17,7 +17,7 @@ import {
   type PlatformBusinessesResponse,
   type PlatformCitiesResponse,
 } from "../../../lib/platform-api";
-import { toggleAccessGrantAction } from "../platform-actions";
+import { resetAccessPasswordAction, toggleAccessGrantAction } from "../platform-actions";
 import { AccessGrantForm } from "./access-grant-form";
 
 export const metadata = { title: "Ruoli e accessi" };
@@ -170,7 +170,8 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
                     <th>Scope</th>
                     <th>Ambito</th>
                     <th>Ultimo utilizzo</th>
-                    <th>Stato</th>
+                    <th>Stato account</th>
+                    <th>Stato accesso</th>
                     <th>Azione</th>
                   </tr>
                 </thead>
@@ -188,29 +189,66 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
                         <td>{grant.business?.name ?? grant.city?.name ?? "Piattaforma"}</td>
                         <td>{formatDate(grant.lastUsedAt)}</td>
                         <td>
+                          <AdminStatusBadge status={grant.user.status} />
+                        </td>
+                        <td>
                           <AdminStatusBadge status={grant.active ? "active" : "disabled"} />
                         </td>
                         <td>
-                          {isCurrent ? (
-                            <span className="admin-muted-label">Accesso corrente</span>
-                          ) : canManageAccess ? (
-                            <form action={toggleAccessGrantAction}>
-                              <input name="returnTo" type="hidden" value={returnTo} />
-                              <input name="accessGrantId" type="hidden" value={grant.id} />
-                              <input
-                                name="active"
-                                type="hidden"
-                                value={grant.active ? "false" : "true"}
-                              />
-                              <AdminSubmitButton
-                                className="table-action-button"
-                                pendingLabel="Aggiornamento…"
-                              >
-                                {grant.active ? "Disabilita" : "Riattiva"}
-                              </AdminSubmitButton>
-                            </form>
-                          ) : (
+                          {!canManageAccess ? (
                             <span className="admin-muted-label">Sola lettura</span>
+                          ) : (
+                            <div className="admin-table-actions">
+                              {isCurrent ? (
+                                <span className="admin-muted-label">Accesso corrente</span>
+                              ) : (
+                                <form action={toggleAccessGrantAction}>
+                                  <input name="returnTo" type="hidden" value={returnTo} />
+                                  <input name="accessGrantId" type="hidden" value={grant.id} />
+                                  <input
+                                    name="active"
+                                    type="hidden"
+                                    value={grant.active ? "false" : "true"}
+                                  />
+                                  <AdminSubmitButton
+                                    className="table-action-button"
+                                    pendingLabel="Aggiornamento…"
+                                  >
+                                    {grant.active ? "Disabilita" : "Riattiva"}
+                                  </AdminSubmitButton>
+                                </form>
+                              )}
+                              <details>
+                                <summary>Imposta password temporanea</summary>
+                                <form
+                                  action={resetAccessPasswordAction}
+                                  className="admin-edit-form"
+                                >
+                                  <input name="returnTo" type="hidden" value={returnTo} />
+                                  <input name="accessGrantId" type="hidden" value={grant.id} />
+                                  <label className="field">
+                                    <span>Nuova password temporanea</span>
+                                    <input
+                                      autoComplete="new-password"
+                                      minLength={12}
+                                      name="temporaryPassword"
+                                      required
+                                      type="password"
+                                    />
+                                    <small>
+                                      Minimo 12 caratteri. Il salvataggio invalida tutte le sessioni
+                                      precedenti dell&apos;utente.
+                                    </small>
+                                  </label>
+                                  <AdminSubmitButton
+                                    className="table-action-button"
+                                    pendingLabel="Impostazione…"
+                                  >
+                                    Imposta password
+                                  </AdminSubmitButton>
+                                </form>
+                              </details>
+                            </div>
                           )}
                         </td>
                       </tr>

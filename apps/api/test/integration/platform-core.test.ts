@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../src/app.js";
-import { createAuthToken } from "../../src/auth.js";
+import { createAuthToken, hashPassword, verifyPassword } from "../../src/auth.js";
 import { prisma } from "../../src/database.js";
 
 const databaseUrl = process.env.DATABASE_URL_TEST;
@@ -117,6 +117,14 @@ describe("platform core integration", () => {
       adminToken,
     );
     expect(child.statusCode).toBe(201);
+    const cityUpdate = await request(
+      "PATCH",
+      "/api/v2/platform-core/cities/test-city",
+      { name: "Test City Updated" },
+      adminToken,
+    );
+    expect(cityUpdate.statusCode).toBe(200);
+    expect(cityUpdate.json().item.activeCategoryCount).toBe(2);
     const tree = await request(
       "GET",
       "/api/v2/platform-core/cities/test-city/categories",
@@ -378,7 +386,12 @@ describe("platform core integration", () => {
     const service = await request(
       "POST",
       "/api/v2/platform-core/cities/test-city/businesses/test-business/services",
-      { name: "Consultation", status: "published" },
+      {
+        name: "Consultation",
+        shortDescription: "Initial assessment",
+        description: "Detailed service description",
+        status: "published",
+      },
     );
     expect(service.statusCode).toBe(201);
     const publish = await request(
@@ -403,6 +416,12 @@ describe("platform core integration", () => {
     expect(publicBusinesses.statusCode).toBe(200);
     expect(publicBusinesses.json()).toEqual(
       expect.objectContaining({ page: 1, limit: 1, total: 1 }),
+    );
+    expect(publicBusinesses.json().items[0]).toEqual(
+      expect.objectContaining({
+        serviceNames: ["Consultation"],
+        serviceSearchTerms: ["Consultation", "Initial assessment", "Detailed service description"],
+      }),
     );
     const publicServices = await request(
       "GET",
@@ -603,7 +622,7 @@ describe("platform core integration", () => {
     const service = await request(
       "POST",
       "/api/v2/platform-core/cities/test-city/businesses/test-business/services",
-      { name: "Pizza test", priceCents: 750, status: "published" },
+      { name: "Pizza test", priceCents: 750, pickupEnabled: true, status: "published" },
     );
     const days = Array.from({ length: 7 }, (_, weekday) => ({
       weekday,
@@ -648,6 +667,25 @@ describe("platform core integration", () => {
     );
     expect(menu.statusCode).toBe(200);
     expect(menu.json().items[0].priceCents).toBe(750);
+    await prisma.businessService.create({
+      data: {
+        businessId,
+        name: "Not available for pickup",
+        slug: "not-for-pickup",
+        priceCents: 500,
+        pickupEnabled: false,
+        status: "published",
+      },
+    });
+    const refreshedMenu = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/businesses/test-business/orders/menu",
+      undefined,
+      "",
+    );
+    expect(refreshedMenu.json().items.map((item: { name: string }) => item.name)).toEqual([
+      "Pizza test",
+    ]);
     const availability = await request(
       "GET",
       `/api/v2/public/cities/test-city/businesses/test-business/orders/availability?date=${pickupDate}`,
@@ -935,5 +973,386 @@ describe("platform core integration", () => {
     expect((await prisma.business.findUniqueOrThrow({ where: { id: businessId } })).slug).toBe(
       "test-business",
     );
+  });
+
+  it("protects administrative business fields and revokes a replaced owner", async () => {
+    expect(
+      (
+        await request("PATCH", "/api/v2/platform-core/cities/test-city/businesses/test-business", {
+          status: "active",
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await request("PATCH", "/api/v2/platform-core/cities/test-city/businesses/test-business", {
+          plan: "enterprise",
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect(
+      (
+        await request("PATCH", "/api/v2/platform-core/cities/test-city/businesses/test-business", {
+          ownerEmail: "delegated@example.test",
+        })
+      ).statusCode,
+    ).toBe(403);
+
+    const ownerGrant = await prisma.accessGrant.findFirstOrThrow({
+      where: { businessId, role: "local_admin" },
+    });
+    await prisma.business.update({
+      where: { id: businessId },
+      data: { ownerUserId: ownerGrant.userId },
+    });
+    const ordinaryProfileUpdate = await request(
+      "PATCH",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business",
+      { name: "Test Business updated" },
+    );
+    expect(ordinaryProfileUpdate.statusCode).toBe(200);
+    expect(
+      (await prisma.accessGrant.findUniqueOrThrow({ where: { id: ownerGrant.id } })).active,
+    ).toBe(true);
+    const cityAdminToken = await createCityAdmin();
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/platform-core/businesses",
+          {
+            citySlug: "test-city",
+            templateCode: "local_business",
+            name: "Unauthorized enterprise",
+            plan: "enterprise",
+          },
+          cityAdminToken,
+        )
+      ).statusCode,
+    ).toBe(403);
+    const removed = await request(
+      "PATCH",
+      "/api/v2/platform-core/cities/test-city/businesses/test-business",
+      { ownerEmail: null },
+      cityAdminToken,
+    );
+    expect(removed.statusCode).toBe(200);
+    expect(
+      (await prisma.accessGrant.findUniqueOrThrow({ where: { id: ownerGrant.id } })).active,
+    ).toBe(false);
+  });
+
+  it("creates a usable owner account and persists the accepted business profile", async () => {
+    const cityAdminToken = await createCityAdmin();
+    const invalidTimezone = await request(
+      "POST",
+      "/api/v2/platform-core/businesses",
+      {
+        citySlug: "test-city",
+        templateCode: "local_business",
+        name: "Invalid timezone business",
+        timezone: "Not/A-Timezone",
+      },
+      cityAdminToken,
+    );
+    expect(invalidTimezone.statusCode).toBe(400);
+
+    const response = await request(
+      "POST",
+      "/api/v2/platform-core/businesses",
+      {
+        citySlug: "test-city",
+        templateCode: "local_business",
+        name: "Created business",
+        ownerEmail: "created-owner@example.test",
+        ownerPassword: "OwnerPassword!2026",
+        locality: "Cagli",
+        province: "PU",
+        lat: 43.547,
+        lng: 12.648,
+        currency: "EUR",
+        locale: "it-IT",
+        privacyContactEmail: "privacy@example.test",
+        socialLinks: { instagram: "https://instagram.com/created-business" },
+      },
+      cityAdminToken,
+    );
+    expect(response.statusCode).toBe(201);
+    const created = await prisma.business.findUniqueOrThrow({
+      where: { id: response.json().item.id },
+      include: { ownerUser: true },
+    });
+    expect(created).toEqual(
+      expect.objectContaining({ locality: "Cagli", province: "PU", lat: 43.547, lng: 12.648 }),
+    );
+    expect(created.ownerUser?.status).toBe("active");
+    expect(verifyPassword("OwnerPassword!2026", created.ownerUser?.passwordHash)).toBe(true);
+
+    const existingPasswordHash = hashPassword("ExistingOwner!2026");
+    const invitedOwner = await prisma.user.create({
+      data: {
+        email: "invited-with-password@example.test",
+        status: "invited",
+        passwordHash: existingPasswordHash,
+      },
+    });
+    const assignedExistingOwner = await request(
+      "POST",
+      "/api/v2/platform-core/businesses",
+      {
+        citySlug: "test-city",
+        templateCode: "local_business",
+        name: "Existing owner business",
+        ownerEmail: invitedOwner.email,
+      },
+      cityAdminToken,
+    );
+    expect(assignedExistingOwner.statusCode).toBe(201);
+    expect(await prisma.user.findUniqueOrThrow({ where: { id: invitedOwner.id } })).toEqual(
+      expect.objectContaining({ status: "active", passwordHash: existingPasswordHash }),
+    );
+
+    const disabledOwner = await prisma.user.create({
+      data: { email: "disabled-owner@example.test", status: "disabled" },
+    });
+    const rejectedDisabledOwner = await request(
+      "POST",
+      "/api/v2/platform-core/businesses",
+      {
+        citySlug: "test-city",
+        templateCode: "local_business",
+        name: "Disabled owner business",
+        ownerEmail: disabledOwner.email,
+      },
+      cityAdminToken,
+    );
+    expect(rejectedDisabledOwner.statusCode).toBe(409);
+  });
+
+  it("rotates a scoped temporary password and invalidates previous sessions", async () => {
+    const ownerGrant = await prisma.accessGrant.findFirstOrThrow({
+      where: { businessId, role: "local_admin" },
+      include: { user: true },
+    });
+    const previousAuthVersion = ownerGrant.user.authVersion;
+    const cityAdminToken = await createCityAdmin();
+    const rotated = await request(
+      "PATCH",
+      `/api/v2/platform-core/access-grants/${ownerGrant.id}`,
+      { temporaryPassword: "Temporary!2026" },
+      cityAdminToken,
+    );
+    expect(rotated.statusCode).toBe(200);
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: ownerGrant.userId } });
+    expect(user.status).toBe("active");
+    expect(user.authVersion).toBe(previousAuthVersion + 1);
+    expect(verifyPassword("Temporary!2026", user.passwordHash)).toBe(true);
+    expect(
+      (await request("GET", "/api/v2/platform-core/cities/test-city/businesses/test-business"))
+        .statusCode,
+    ).toBe(401);
+  });
+
+  it("rejects orphaned scoped grants and keeps customer inboxes from staff", async () => {
+    const ownerGrant = await prisma.accessGrant.findFirstOrThrow({
+      where: { businessId, role: "local_admin" },
+    });
+    await prisma.accessGrant.update({ where: { id: ownerGrant.id }, data: { businessId: null } });
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/platform-core/businesses",
+          undefined,
+          createAuthToken(ownerGrant.userId, 1, ownerGrant.id),
+        )
+      ).statusCode,
+    ).toBe(401);
+
+    const staff = await prisma.user.create({
+      data: { email: "staff@example.test", status: "active" },
+    });
+    const staffGrant = await prisma.accessGrant.create({
+      data: { userId: staff.id, role: "staff", scopeType: "business", cityId, businessId },
+    });
+    const staffToken = createAuthToken(staff.id, staff.authVersion, staffGrant.id);
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business/inquiries",
+          undefined,
+          staffToken,
+        )
+      ).statusCode,
+    ).toBe(403);
+    expect(
+      (
+        await request(
+          "GET",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business/pickup-orders",
+          undefined,
+          staffToken,
+        )
+      ).statusCode,
+    ).toBe(403);
+  });
+
+  it("preserves readiness invariants for published businesses and categories", async () => {
+    const category = await prisma.cityCategory.create({
+      data: { cityId, name: "Only active category", slug: "only-active" },
+    });
+    await prisma.businessCategoryAssignment.create({
+      data: { businessId, categoryId: category.id },
+    });
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/platform-core/cities/test-city/businesses/test-business/publish",
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await request("PATCH", "/api/v2/platform-core/cities/test-city/businesses/test-business", {
+          publicSubtitle: null,
+          publicDescription: null,
+        })
+      ).statusCode,
+    ).toBe(409);
+    const cityAdminToken = await createCityAdmin();
+    expect(
+      (
+        await request(
+          "PATCH",
+          `/api/v2/platform-core/cities/test-city/categories/${category.id}`,
+          { active: false },
+          cityAdminToken,
+        )
+      ).statusCode,
+    ).toBe(409);
+    expect(
+      (
+        await request(
+          "DELETE",
+          `/api/v2/platform-core/cities/test-city/businesses/test-business/categories/${category.id}`,
+        )
+      ).statusCode,
+    ).toBe(409);
+  });
+
+  it("initializes the first global admin once and returns a usable session", async () => {
+    const initialStatus = await request(
+      "GET",
+      "/api/v2/auth/bootstrap-status",
+      undefined,
+      "",
+      "203.0.113.20",
+    );
+    expect(initialStatus.statusCode).toBe(200);
+    expect(initialStatus.json()).toEqual(
+      expect.objectContaining({ required: true, available: true, secretRequired: false }),
+    );
+
+    const initialized = await request(
+      "POST",
+      "/api/v2/auth/bootstrap-admin",
+      {
+        email: "global-admin@example.test",
+        password: "Bootstrap!2026",
+        name: "Global Admin",
+      },
+      "",
+      "203.0.113.20",
+    );
+    expect(initialized.statusCode).toBe(201);
+    expect(
+      (await request("GET", "/api/v2/auth/me", undefined, initialized.json().token, "203.0.113.20"))
+        .statusCode,
+    ).toBe(200);
+
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/auth/bootstrap-admin",
+          {
+            email: "second-admin@example.test",
+            password: "Bootstrap!2026",
+          },
+          "",
+          "203.0.113.21",
+        )
+      ).statusCode,
+    ).toBe(409);
+  });
+
+  it("counts only failed logins and rate limits repeated invalid credentials", async () => {
+    const password = "LoginPassword!2026";
+    await prisma.user.update({
+      where: { email: "owner@example.test" },
+      data: { passwordHash: hashPassword(password) },
+    });
+
+    for (let attempt = 0; attempt < 7; attempt += 1) {
+      expect(
+        (
+          await request(
+            "POST",
+            "/api/v2/auth/login",
+            { email: "owner@example.test", password: "wrong-password" },
+            "",
+            "203.0.113.30",
+          )
+        ).statusCode,
+      ).toBe(401);
+    }
+
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/auth/login",
+          { email: "owner@example.test", password },
+          "",
+          "203.0.113.30",
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await request(
+          "POST",
+          "/api/v2/auth/login",
+          { email: "owner@example.test", password: "wrong-password" },
+          "",
+          "203.0.113.30",
+        )
+      ).statusCode,
+    ).toBe(401);
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      expect(
+        (
+          await request(
+            "POST",
+            "/api/v2/auth/login",
+            { email: "missing-user@example.test", password: "wrong-password" },
+            "",
+            "203.0.113.31",
+          )
+        ).statusCode,
+      ).toBe(401);
+    }
+    const blocked = await request(
+      "POST",
+      "/api/v2/auth/login",
+      { email: "missing-user@example.test", password: "wrong-password" },
+      "",
+      "203.0.113.31",
+    );
+    expect(blocked.statusCode).toBe(429);
+    expect(Number(blocked.headers["retry-after"])).toBeGreaterThan(0);
   });
 });

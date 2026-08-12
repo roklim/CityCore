@@ -12,6 +12,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(16),
+  AUTH_BOOTSTRAP_SECRET: z.string().min(16).optional(),
+  WEB_ORIGINS: z.string().optional(),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).optional(),
 });
 
 export const env = envSchema.parse(process.env);

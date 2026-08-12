@@ -16,3 +16,20 @@ export function normalizePhoneHref(value: string | null) {
   const number = value?.replace(/[^\d+]/g, "");
   return number && /^\+?\d{5,}$/u.test(number) ? `tel:${number}` : null;
 }
+
+export function resolvePublicSiteUrl(
+  configuredUrl: string | undefined,
+  nodeEnv: string | undefined,
+) {
+  const candidate =
+    configuredUrl?.trim() || (nodeEnv === "development" ? "http://localhost:3000" : "");
+
+  if (!candidate) return null;
+
+  try {
+    const url = new URL(candidate);
+    return ["http:", "https:"].includes(url.protocol) ? url : null;
+  } catch {
+    return null;
+  }
+}

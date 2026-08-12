@@ -73,7 +73,7 @@ function business(
     bookingPolicy: null,
     cancellationPolicy: null,
     notesInternal: null,
-    city: { id: "city-1", name: "Cagli", slug: "cagli", status: "active" },
+    city: { id: "city-1", name: "Cagli", slug: "cagli", status: "active", active: true },
     template: {
       id: "template-1",
       code: "local-business",

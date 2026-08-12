@@ -2,11 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { clearSessionToken, getSessionToken, setSessionToken } from "../../lib/web-session";
-import {
-  fetchPlatformApi,
-  type AuthSessionResponse,
-  PlatformApiError,
-} from "../../lib/platform-api";
+import { getAdminAuthErrorMessage } from "../../lib/admin-auth-errors";
+import { fetchPlatformApi, type AuthSessionResponse } from "../../lib/platform-api";
 
 export type AdminAuthActionState = {
   error: string | null;
@@ -17,18 +14,6 @@ function readField(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function mapApiError(error: unknown, fallback: string) {
-  if (error instanceof PlatformApiError) {
-    return error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return fallback;
-}
-
 export async function bootstrapAdminAction(
   _previousState: AdminAuthActionState,
   formData: FormData,
@@ -36,6 +21,7 @@ export async function bootstrapAdminAction(
   const email = readField(formData, "email");
   const password = readField(formData, "password");
   const name = readField(formData, "name");
+  const bootstrapSecret = readField(formData, "bootstrapSecret");
 
   if (!email || !password) {
     return {
@@ -50,6 +36,7 @@ export async function bootstrapAdminAction(
         email,
         password,
         name: name || undefined,
+        bootstrapSecret: bootstrapSecret || undefined,
       },
     });
 
@@ -62,7 +49,7 @@ export async function bootstrapAdminAction(
     await setSessionToken(response.token);
   } catch (error) {
     return {
-      error: mapApiError(error, "Bootstrap admin non riuscito."),
+      error: getAdminAuthErrorMessage(error, "Bootstrap admin non riuscito."),
     };
   }
 
@@ -103,7 +90,7 @@ export async function loginAction(
     redirectTo = response.redirectTo || "/admin";
   } catch (error) {
     return {
-      error: mapApiError(error, "Login non riuscito."),
+      error: getAdminAuthErrorMessage(error, "Login non riuscito."),
     };
   }
 
@@ -151,7 +138,7 @@ export async function selectAccessAction(
     redirectTo = response.redirectTo || "/admin";
   } catch (error) {
     return {
-      error: mapApiError(error, "Cambio accesso non riuscito."),
+      error: getAdminAuthErrorMessage(error, "Cambio accesso non riuscito."),
     };
   }
 

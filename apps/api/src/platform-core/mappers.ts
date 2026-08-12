@@ -30,6 +30,7 @@ export function mapCity(city: {
   updatedAt: Date;
   _count?: {
     businesses: number;
+    categories?: number;
   };
 }) {
   return {
@@ -47,6 +48,7 @@ export function mapCity(city: {
     seoTitle: city.seoTitle,
     seoDescription: city.seoDescription,
     businessCount: city._count?.businesses ?? 0,
+    activeCategoryCount: city._count?.categories ?? 0,
     createdAt: city.createdAt,
     updatedAt: city.updatedAt,
   };
@@ -152,6 +154,7 @@ export function mapBusiness(business: {
     name: string;
     slug: string;
     status: CityStatus;
+    active: boolean;
   };
   template: {
     id: string;
@@ -281,6 +284,7 @@ export function mapPublicBusiness(business: {
     name: string;
     slug: string;
     status: CityStatus;
+    active: boolean;
   };
   template: {
     id: string;
@@ -302,6 +306,11 @@ export function mapPublicBusiness(business: {
       name: string;
       slug: string;
     };
+  }>;
+  services: Array<{
+    name: string;
+    shortDescription: string | null;
+    description: string | null;
   }>;
 }) {
   const categories = business.categoryAssignments
@@ -344,6 +353,12 @@ export function mapPublicBusiness(business: {
     template: business.template,
     modules: business.modules,
     categories,
+    serviceNames: business.services.map((service) => service.name),
+    serviceSearchTerms: business.services.flatMap((service) =>
+      [service.name, service.shortDescription, service.description].filter((term): term is string =>
+        Boolean(term),
+      ),
+    ),
     createdAt: business.createdAt,
     updatedAt: business.updatedAt,
   };

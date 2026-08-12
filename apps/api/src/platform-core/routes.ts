@@ -47,6 +47,7 @@ import { registerPublicBusinessMvpRoutes } from "./routes-public-mvp.js";
 import { registerPickupOrderingRoutes } from "./routes-pickup-ordering.js";
 import { ensureTemplateRecord } from "./template-service.js";
 import { buildBusinessUpdateData, buildCityUpdateData } from "./update-data.js";
+import { getBusinessPublishReadiness } from "./mvp-domain.js";
 import {
   hasOwn,
   isPrismaError,
@@ -253,6 +254,11 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
             _count: {
               select: {
                 businesses: true,
+                categories: {
+                  where: {
+                    active: true,
+                  },
+                },
               },
             },
           },
@@ -282,6 +288,11 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
       }
 
       const auth = getRequestAuth(request);
+      const normalizedCitySlug = slugify(parsed.data.slug ?? parsed.data.name);
+
+      if (!normalizedCitySlug) {
+        return reply.code(400).send({ status: "error", error: "City slug cannot be empty" });
+      }
 
       if (parsed.data.registryId) {
         const registry = await prisma.cityRegistry.findUnique({
@@ -307,7 +318,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
             data: {
               registryId: parsed.data.registryId ?? null,
               name: parsed.data.name,
-              slug: slugify(parsed.data.slug ?? parsed.data.name),
+              slug: normalizedCitySlug,
               province: parsed.data.province ?? null,
               region: parsed.data.region ?? null,
               country: parsed.data.country ?? "IT",
@@ -383,6 +394,10 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
           status: "error",
           error: "No fields to update",
         });
+      }
+
+      if (hasOwn(parsed.data, "slug") && parsed.data.slug && !slugify(parsed.data.slug)) {
+        return reply.code(400).send({ status: "error", error: "City slug cannot be empty" });
       }
 
       const auth = getRequestAuth(request);
@@ -469,6 +484,11 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
               _count: {
                 select: {
                   businesses: true,
+                  categories: {
+                    where: {
+                      active: true,
+                    },
+                  },
                 },
               },
             },
@@ -540,6 +560,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                 name: true,
                 slug: true,
                 status: true,
+                active: true,
               },
             },
             template: {
@@ -634,6 +655,33 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         });
       }
 
+      if (
+        (parsed.data.plan !== "free" || parsed.data.subscriptionStatus !== "trialing") &&
+        !canAccess(auth.activeAccess, "platform.manage", { scopeType: "platform" })
+      ) {
+        return reply.code(403).send({ status: "error", error: "Insufficient permissions" });
+      }
+
+      const normalizedBusinessSlug = slugify(parsed.data.slug ?? parsed.data.name);
+      if (!normalizedBusinessSlug) {
+        return reply.code(400).send({ status: "error", error: "Business slug cannot be empty" });
+      }
+
+      const assetIds = [parsed.data.logoAssetId, parsed.data.coverAssetId].filter(
+        (value): value is string => typeof value === "string",
+      );
+      if (assetIds.length > 0) {
+        const validAssets = await prisma.mediaAsset.count({
+          where: { id: { in: assetIds }, cityId: city.id },
+        });
+        if (validAssets !== new Set(assetIds).size) {
+          return reply.code(400).send({
+            status: "error",
+            error: "Logo and cover assets must belong to the selected city.",
+          });
+        }
+      }
+
       const template = await ensureTemplateRecord(parsed.data.templateCode);
       const definition = templateCatalogMap.get(parsed.data.templateCode);
 
@@ -658,18 +706,39 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
               },
               select: {
                 id: true,
+                passwordHash: true,
+                status: true,
               },
             });
 
             if (existingOwner) {
+              if (existingOwner.status === "disabled") throw new Error("OWNER_DISABLED");
               ownerUserId = existingOwner.id;
+              if (parsed.data.ownerPassword && !existingOwner.passwordHash) {
+                await tx.user.update({
+                  where: { id: existingOwner.id },
+                  data: {
+                    passwordHash: hashPassword(parsed.data.ownerPassword),
+                    status: "active",
+                    authVersion: { increment: 1 },
+                  },
+                });
+              } else if (existingOwner.status === "invited" && existingOwner.passwordHash) {
+                await tx.user.update({
+                  where: { id: existingOwner.id },
+                  data: { status: "active" },
+                });
+              }
             } else {
               const createdOwner = await tx.user.create({
                 data: {
                   email: parsed.data.ownerEmail,
                   name: normalizeOptionalString(parsed.data.ownerName),
                   phone: normalizeOptionalString(parsed.data.ownerPhone),
-                  status: "invited",
+                  status: parsed.data.ownerPassword ? "active" : "invited",
+                  passwordHash: parsed.data.ownerPassword
+                    ? hashPassword(parsed.data.ownerPassword)
+                    : null,
                 },
                 select: {
                   id: true,
@@ -685,7 +754,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
               cityId: city.id,
               templateId: template.id,
               name: parsed.data.name,
-              slug: slugify(parsed.data.slug ?? parsed.data.name),
+              slug: normalizedBusinessSlug,
               legalName: normalizeOptionalString(parsed.data.legalName),
               category: parsed.data.category ?? definition.category,
               status: parsed.data.status,
@@ -697,6 +766,10 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
               addressLine1: normalizeOptionalString(parsed.data.addressLine1),
               addressLine2: normalizeOptionalString(parsed.data.addressLine2),
               postalCode: normalizeOptionalString(parsed.data.postalCode),
+              locality: normalizeOptionalString(parsed.data.locality),
+              province: normalizeOptionalString(parsed.data.province),
+              lat: parsed.data.lat ?? null,
+              lng: parsed.data.lng ?? null,
               timezone: parsed.data.timezone ?? "Europe/Rome",
               currency: parsed.data.currency ?? "EUR",
               locale: parsed.data.locale ?? "it-IT",
@@ -711,6 +784,10 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
               bookingPolicy: normalizeOptionalString(parsed.data.bookingPolicy),
               cancellationPolicy: normalizeOptionalString(parsed.data.cancellationPolicy),
               notesInternal: normalizeOptionalString(parsed.data.notesInternal),
+              privacyContactEmail: parsed.data.privacyContactEmail ?? null,
+              socialLinksJson: parsed.data.socialLinks ?? Prisma.JsonNull,
+              logoAssetId: parsed.data.logoAssetId ?? null,
+              coverAssetId: parsed.data.coverAssetId ?? null,
             },
             include: {
               city: {
@@ -719,6 +796,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                   name: true,
                   slug: true,
                   status: true,
+                  active: true,
                 },
               },
               template: {
@@ -801,6 +879,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                   name: true,
                   slug: true,
                   status: true,
+                  active: true,
                 },
               },
               template: {
@@ -839,6 +918,12 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
           item: mapBusiness(business),
         });
       } catch (error) {
+        if (error instanceof Error && error.message === "OWNER_DISABLED") {
+          return reply.code(409).send({
+            status: "error",
+            error: "The owner account is disabled. Reactivate it through access management first.",
+          });
+        }
         if (isPrismaError(error, "P2002")) {
           return reply.code(409).send({
             status: "error",
@@ -875,6 +960,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
               name: true,
               slug: true,
               status: true,
+              active: true,
             },
           },
           template: {
@@ -947,6 +1033,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
           id: true,
           slug: true,
           status: true,
+          ownerUserId: true,
           city: {
             select: {
               id: true,
@@ -976,6 +1063,39 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         });
       }
 
+      if (hasOwn(parsed.data, "status")) {
+        return reply.code(400).send({
+          status: "error",
+          error: "Business status must be changed through the publish workflow.",
+        });
+      }
+
+      if (
+        (hasOwn(parsed.data, "plan") || hasOwn(parsed.data, "subscriptionStatus")) &&
+        !canAccess(auth.activeAccess, "platform.manage", { scopeType: "platform" })
+      ) {
+        return reply.code(403).send({ status: "error", error: "Insufficient permissions" });
+      }
+
+      const includesOwnerFields =
+        hasOwn(parsed.data, "ownerEmail") ||
+        hasOwn(parsed.data, "ownerName") ||
+        hasOwn(parsed.data, "ownerPhone");
+      if (
+        includesOwnerFields &&
+        !canAccess(auth.activeAccess, "business_users.manage", {
+          scopeType: "business",
+          cityId: business.city.id,
+          businessId: business.id,
+        })
+      ) {
+        return reply.code(403).send({ status: "error", error: "Insufficient permissions" });
+      }
+
+      if (hasOwn(parsed.data, "slug") && parsed.data.slug && !slugify(parsed.data.slug)) {
+        return reply.code(400).send({ status: "error", error: "Business slug cannot be empty" });
+      }
+
       if (hasOwn(parsed.data, "slug") && parsed.data.slug && business.status === "active") {
         return reply.code(409).send({
           status: "error",
@@ -1003,6 +1123,43 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         }
       }
 
+      if (business.status === "active") {
+        const current = await prisma.business.findUniqueOrThrow({
+          where: { id: business.id },
+          include: {
+            city: true,
+            categoryAssignments: { where: { category: { active: true } } },
+          },
+        });
+        const readiness = getBusinessPublishReadiness({
+          name: parsed.data.name ?? current.name,
+          slug: parsed.data.slug ? slugify(parsed.data.slug) : current.slug,
+          cityStatus: current.city.status,
+          cityActive: current.city.active,
+          publicSubtitle: hasOwn(parsed.data, "publicSubtitle")
+            ? (parsed.data.publicSubtitle ?? null)
+            : current.publicSubtitle,
+          publicDescription: hasOwn(parsed.data, "publicDescription")
+            ? (parsed.data.publicDescription ?? null)
+            : current.publicDescription,
+          publicEmail: hasOwn(parsed.data, "publicEmail")
+            ? (parsed.data.publicEmail ?? null)
+            : current.publicEmail,
+          publicPhone: hasOwn(parsed.data, "publicPhone")
+            ? (parsed.data.publicPhone ?? null)
+            : current.publicPhone,
+          website: hasOwn(parsed.data, "website") ? (parsed.data.website ?? null) : current.website,
+          activeCategoryCount: current.categoryAssignments.length,
+        });
+        if (!readiness.canPublish) {
+          return reply.code(409).send({
+            status: "error",
+            error: "Published business updates must preserve publish readiness.",
+            ...readiness,
+          });
+        }
+      }
+
       try {
         const updatedBusiness = await prisma.$transaction(async (tx) => {
           let ownerUserId: string | null | undefined;
@@ -1017,11 +1174,21 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                 },
                 select: {
                   id: true,
+                  passwordHash: true,
+                  status: true,
                 },
               });
 
               if (existingOwner) {
                 ownerUserId = existingOwner.id;
+                if (existingOwner.status === "disabled") throw new Error("OWNER_DISABLED");
+
+                if (existingOwner.status === "invited" && existingOwner.passwordHash) {
+                  await tx.user.update({
+                    where: { id: existingOwner.id },
+                    data: { status: "active" },
+                  });
+                }
 
                 if (hasOwn(parsed.data, "ownerName") || hasOwn(parsed.data, "ownerPhone")) {
                   await tx.user.update({
@@ -1029,8 +1196,12 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                       id: existingOwner.id,
                     },
                     data: {
-                      name: normalizeOptionalString(parsed.data.ownerName),
-                      phone: normalizeOptionalString(parsed.data.ownerPhone),
+                      ...(hasOwn(parsed.data, "ownerName")
+                        ? { name: normalizeOptionalString(parsed.data.ownerName) }
+                        : {}),
+                      ...(hasOwn(parsed.data, "ownerPhone")
+                        ? { phone: normalizeOptionalString(parsed.data.ownerPhone) }
+                        : {}),
                     },
                   });
                 }
@@ -1040,7 +1211,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                     email: parsed.data.ownerEmail,
                     name: normalizeOptionalString(parsed.data.ownerName),
                     phone: normalizeOptionalString(parsed.data.ownerPhone),
-                    status: "active",
+                    status: "invited",
                   },
                   select: {
                     id: true,
@@ -1073,6 +1244,23 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                 : {}),
             },
           });
+
+          if (
+            ownerUserId !== undefined &&
+            business.ownerUserId &&
+            business.ownerUserId !== ownerUserId
+          ) {
+            await tx.accessGrant.updateMany({
+              where: {
+                userId: business.ownerUserId,
+                role: "local_admin",
+                scopeType: "business",
+                businessId: business.id,
+                active: true,
+              },
+              data: { active: false },
+            });
+          }
 
           if (ownerUserId) {
             const ownerGrant = await tx.accessGrant.findFirst({
@@ -1145,6 +1333,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                   name: true,
                   slug: true,
                   status: true,
+                  active: true,
                 },
               },
               template: {
@@ -1183,6 +1372,12 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
           item: mapBusiness(updatedBusiness),
         });
       } catch (error) {
+        if (error instanceof Error && error.message === "OWNER_DISABLED") {
+          return reply.code(409).send({
+            status: "error",
+            error: "The owner account is disabled. Reactivate it through access management first.",
+          });
+        }
         if (isPrismaError(error, "P2002")) {
           return reply.code(409).send({
             status: "error",
@@ -1545,8 +1740,9 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
                   data: {
                     name: normalizeOptionalString(parsed.data.userName),
                     phone: normalizeOptionalString(parsed.data.userPhone),
-                    status: parsed.data.userStatus,
+                    status: "active",
                     passwordHash: hashPassword(parsed.data.password),
+                    authVersion: { increment: 1 },
                   },
                 });
               }
@@ -1716,6 +1912,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         },
         select: {
           id: true,
+          userId: true,
           active: true,
           scopeType: true,
           cityId: true,
@@ -1749,6 +1946,17 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
       }
 
       const updatedGrant = await prisma.$transaction(async (tx) => {
+        if (parsed.data.temporaryPassword) {
+          await tx.user.update({
+            where: { id: grant.userId },
+            data: {
+              status: "active",
+              passwordHash: hashPassword(parsed.data.temporaryPassword),
+              authVersion: { increment: 1 },
+            },
+          });
+        }
+
         const nextGrant = await tx.accessGrant.update({
           where: {
             id: grant.id,
@@ -1806,6 +2014,7 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
             metadataJson: {
               previousActive: grant.active,
               nextActive: parsed.data.active,
+              temporaryPasswordRotated: Boolean(parsed.data.temporaryPassword),
               fields: Object.keys(parsed.data).sort(),
             },
           },

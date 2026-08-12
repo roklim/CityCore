@@ -1,5 +1,32 @@
 # Implementation log — Fase 1
 
+## Audit end-to-end multi-ruolo — 2026-08-12
+
+- Corrette escalation via PATCH business, revoca owner, credenziali
+  iniziali/reset amministrativo, grant orfani fail-open, stato pubblico
+  città+business e dati demo sul catalogo live vuoto.
+- Uniformati onboarding città/attività, categorie principali, impostazioni
+  locali, configurazione pickup, messaggi di errore e distinzione stato
+  account/accesso.
+- Allineata la superficie pubblica a SEO persistita, indirizzo completo, note
+  orari, form responsive, robots e sitemap con origine configurabile.
+- Il rate limit login ora conteggia soltanto le credenziali errate e viene
+  azzerato dopo un accesso riuscito; bootstrap e sessione iniziale sono coperti
+  da test d'integrazione.
+- Gate conclusivo superato: 81 test web, 10 unit test API e 23 test
+  d'integrazione; lint, format, typecheck, build e `verify:platform` verdi.
+
+## Onboarding amministrativo guidato — 2026-08-11
+
+- Aggiunta la gestione completa delle categorie cittadine dalla UI: creazione,
+  gerarchia, modifica, attivazione/disattivazione ed eliminazione protetta.
+- Reso esplicito il percorso `città attiva → categoria attiva → attività in
+bozza → checklist → pubblicazione`.
+- La creazione delle attività propone soltanto città pubbliche con almeno una
+  categoria attiva e segnala i prerequisiti mancanti con collegamenti diretti.
+- Aggiunte azioni contestuali alla readiness e una guida operativa per utenti
+  non tecnici; invariati permessi, routing city-first e modello dati.
+
 ## Final Verification Gate — STEP 4 — 2026-08-10
 
 - Completata l'installazione pulita e verificati Prisma, migrazioni, typecheck,

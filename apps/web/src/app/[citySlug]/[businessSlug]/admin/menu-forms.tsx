@@ -113,6 +113,14 @@ function ServiceFields({
         <span>Descrizione completa</span>
         <textarea defaultValue={service?.description ?? ""} maxLength={5000} name="description" />
       </label>
+      <label className="admin-check-field">
+        <input
+          defaultChecked={service?.pickupEnabled ?? false}
+          name="pickupEnabled"
+          type="checkbox"
+        />
+        Disponibile per ordini di ritiro
+      </label>
     </fieldset>
   );
 }

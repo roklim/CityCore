@@ -99,6 +99,55 @@ const readinessLabels: Record<string, string> = {
   public_contact: "Contatto pubblico mancante",
 };
 
+export const readinessRequirements = [
+  ["name", "Nome attività"],
+  ["slug", "Slug"],
+  ["active_city", "Città attiva"],
+  ["description", "Descrizione"],
+  ["active_category", "Categoria"],
+  ["public_contact", "Contatto pubblico"],
+] as const;
+
+export type ReadinessAction = {
+  label: string;
+  href: string | null;
+};
+
+export function readinessAction(
+  reason: string,
+  citySlug: string,
+  businessSlug: string,
+  canManageCity: boolean,
+): ReadinessAction {
+  const businessBase = `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin`;
+
+  if (reason === "active_category") {
+    return { label: "Scegli una categoria", href: `${businessBase}/categories` };
+  }
+  if (reason === "active_city") {
+    return canManageCity
+      ? {
+          label: "Attiva la città",
+          href: `/admin/cities/${encodeURIComponent(citySlug)}/categories`,
+        }
+      : { label: "Contatta l'amministratore della città", href: null };
+  }
+  if (["name", "slug", "description", "public_contact"].includes(reason)) {
+    return { label: "Completa il profilo", href: `${businessBase}/profile` };
+  }
+  return { label: "Controlla la configurazione", href: businessBase };
+}
+
+export function nextReadinessAction(
+  readiness: PlatformPublishReadiness,
+  citySlug: string,
+  businessSlug: string,
+  canManageCity: boolean,
+) {
+  const reason = readiness.missingRequirements[0];
+  return reason ? readinessAction(reason, citySlug, businessSlug, canManageCity) : null;
+}
+
 export function readinessReasonLabel(reason: string) {
   return readinessLabels[reason] ?? "Requisito di pubblicazione non soddisfatto";
 }

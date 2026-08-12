@@ -121,6 +121,36 @@ const nullableUrlString = z.union([z.string().trim().url().max(200), z.null()]).
 const nullableHexColorString = z
   .union([z.string().trim().regex(hexColorPattern), z.null()])
   .optional();
+const timeZoneString = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .refine((value) => {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: value }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Expected a valid IANA timezone.");
+const currencyString = z
+  .string()
+  .trim()
+  .regex(/^[A-Z]{3}$/u, "Expected an ISO 4217 currency code.");
+const localeString = z
+  .string()
+  .trim()
+  .min(2)
+  .max(35)
+  .refine((value) => {
+    try {
+      Intl.getCanonicalLocales(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Expected a valid locale.");
 
 export const createCitySchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -221,9 +251,9 @@ export const createBusinessSchema = z
     province: optionalTrimmedString.max(120).optional(),
     lat: z.number().min(-90).max(90).optional(),
     lng: z.number().min(-180).max(180).optional(),
-    timezone: optionalTrimmedString.max(80).optional(),
-    currency: optionalTrimmedString.max(8).optional(),
-    locale: optionalTrimmedString.max(12).optional(),
+    timezone: timeZoneString.optional(),
+    currency: currencyString.optional(),
+    locale: localeString.optional(),
     primaryColor: z.string().trim().regex(hexColorPattern).optional(),
     accentColor: z.string().trim().regex(hexColorPattern).optional(),
     publicTitle: optionalTrimmedString.max(160).optional(),
@@ -241,10 +271,11 @@ export const createBusinessSchema = z
     ownerName: optionalTrimmedString.max(120).optional(),
     ownerEmail: z.string().trim().email().optional(),
     ownerPhone: optionalTrimmedString.max(60).optional(),
+    ownerPassword: z.string().min(12).max(200).optional(),
     modules: z.array(z.enum(moduleCodes)).max(8).optional(),
   })
   .superRefine((value, context) => {
-    if ((value.ownerName || value.ownerPhone) && !value.ownerEmail) {
+    if ((value.ownerName || value.ownerPhone || value.ownerPassword) && !value.ownerEmail) {
       context.addIssue({
         code: "custom",
         path: ["ownerEmail"],
@@ -272,9 +303,9 @@ export const updateBusinessSchema = z
     province: nullableTrimmedString(120),
     lat: z.union([z.number().min(-90).max(90), z.null()]).optional(),
     lng: z.union([z.number().min(-180).max(180), z.null()]).optional(),
-    timezone: optionalTrimmedString.max(80).optional(),
-    currency: optionalTrimmedString.max(8).optional(),
-    locale: optionalTrimmedString.max(12).optional(),
+    timezone: timeZoneString.optional(),
+    currency: currencyString.optional(),
+    locale: localeString.optional(),
     primaryColor: nullableHexColorString,
     accentColor: nullableHexColorString,
     publicTitle: nullableTrimmedString(160),
@@ -403,4 +434,5 @@ export const accessGrantParamsSchema = z.object({
 
 export const updateAccessGrantSchema = z.object({
   active: z.boolean().optional(),
+  temporaryPassword: z.string().min(12).max(200).optional(),
 });

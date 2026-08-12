@@ -74,6 +74,9 @@ export function registerCategoryRoutes(app: FastifyInstance) {
       ) {
         return reply.code(404).send({ status: "error", error: "City not found" });
       }
+      const normalizedSlug = slugify(body.data.slug ?? body.data.name);
+      if (!normalizedSlug)
+        return reply.code(400).send({ status: "error", error: "Category slug cannot be empty" });
       if (body.data.parentId) {
         const parent = await prisma.cityCategory.findFirst({
           where: { id: body.data.parentId, cityId: city.id },
@@ -89,7 +92,7 @@ export function registerCategoryRoutes(app: FastifyInstance) {
           data: {
             cityId: city.id,
             name: body.data.name,
-            slug: slugify(body.data.slug ?? body.data.name),
+            slug: normalizedSlug,
             description: body.data.description ?? null,
             parentId: body.data.parentId ?? null,
             active: body.data.active,
@@ -136,6 +139,8 @@ export function registerCategoryRoutes(app: FastifyInstance) {
       if (!body.success) return reply.code(body.response.statusCode).send(body.response.body);
       if (Object.keys(body.data).length === 0)
         return reply.code(400).send({ status: "error", error: "No fields to update" });
+      if (hasOwn(body.data, "slug") && body.data.slug && !slugify(body.data.slug))
+        return reply.code(400).send({ status: "error", error: "Category slug cannot be empty" });
       const auth = getRequestAuth(request);
       const item = await prisma.cityCategory.findFirst({
         where: { id: params.data.categoryId, city: { slug: params.data.citySlug } },
@@ -161,6 +166,31 @@ export function registerCategoryRoutes(app: FastifyInstance) {
             !canSetCategoryParent(item.id, body.data.parentId, parentById)
           )
             return reply.code(400).send({ status: "error", error: "Invalid category parent" });
+        }
+      }
+      if (item.active && hasOwn(body.data, "active") && body.data.active === false) {
+        const publishedBusinessesLosingTheirLastCategory = await prisma.business.count({
+          where: {
+            status: "active",
+            categoryAssignments: { some: { categoryId: item.id } },
+            NOT: {
+              categoryAssignments: {
+                some: {
+                  categoryId: { not: item.id },
+                  category: { active: true },
+                },
+              },
+            },
+          },
+        });
+
+        if (publishedBusinessesLosingTheirLastCategory > 0) {
+          return reply.code(409).send({
+            status: "error",
+            error:
+              "This category is the last active category of a published business. Unpublish or reassign the business first.",
+            affectedBusinesses: publishedBusinessesLosingTheirLastCategory,
+          });
         }
       }
       try {
@@ -199,17 +229,22 @@ export function registerCategoryRoutes(app: FastifyInstance) {
       const auth = getRequestAuth(request);
       const item = await prisma.cityCategory.findFirst({
         where: { id: params.data.categoryId, city: { slug: params.data.citySlug } },
-        include: { _count: { select: { children: true, businessAssignments: true } } },
+        include: {
+          _count: {
+            select: { children: true, businessAssignments: true, collectionItems: true },
+          },
+        },
       });
       if (
         !item ||
         !canAccess(auth.activeAccess, "cities.manage", { scopeType: "city", cityId: item.cityId })
       )
         return reply.code(404).send({ status: "error", error: "Category not found" });
-      if (item._count.children || item._count.businessAssignments)
+      if (item._count.children || item._count.businessAssignments || item._count.collectionItems)
         return reply.code(409).send({
           status: "error",
-          error: "Category with children or assignments cannot be deleted; deactivate it instead",
+          error:
+            "Category with children, business assignments or collection items cannot be deleted; remove its dependencies first.",
         });
       await prisma.cityCategory.delete({ where: { id: item.id } });
       return reply.code(204).send();
@@ -319,7 +354,7 @@ export function registerCategoryRoutes(app: FastifyInstance) {
       const auth = getRequestAuth(request);
       const business = await prisma.business.findFirst({
         where: { slug: params.data.businessSlug, city: { slug: params.data.citySlug } },
-        select: { id: true, cityId: true },
+        select: { id: true, cityId: true, status: true },
       });
       if (
         !business ||
@@ -330,6 +365,22 @@ export function registerCategoryRoutes(app: FastifyInstance) {
         })
       )
         return reply.code(404).send({ status: "error", error: "Business not found" });
+      if (business.status === "active") {
+        const activeAssignmentCount = await prisma.businessCategoryAssignment.count({
+          where: {
+            businessId: business.id,
+            category: { active: true },
+          },
+        });
+
+        if (activeAssignmentCount <= 1) {
+          return reply.code(409).send({
+            status: "error",
+            error:
+              "A published business must keep at least one active category. Unpublish it before removing the last category.",
+          });
+        }
+      }
       const deleted = await prisma.businessCategoryAssignment.deleteMany({
         where: { businessId: business.id, categoryId: params.data.categoryId },
       });

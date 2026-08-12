@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildOpeningWeekPayload,
   buildSocialLinksFromForm,
+  nextReadinessAction,
+  readinessAction,
   readinessReasonLabel,
   validateOpeningWeek,
 } from "./business-admin-logic";
@@ -63,5 +65,35 @@ describe("business admin form logic", () => {
     expect(readinessReasonLabel("description")).toBe("Descrizione pubblica mancante");
     expect(readinessReasonLabel("active_category")).toBe("Categoria attiva mancante");
     expect(readinessReasonLabel("unknown")).toBe("Requisito di pubblicazione non soddisfatto");
+  });
+
+  it("routes every missing readiness requirement to a concrete next step", () => {
+    expect(readinessAction("description", "cagli", "forno", true)).toEqual({
+      label: "Completa il profilo",
+      href: "/cagli/forno/admin/profile",
+    });
+    expect(readinessAction("active_category", "cagli", "forno", true)).toEqual({
+      label: "Scegli una categoria",
+      href: "/cagli/forno/admin/categories",
+    });
+    expect(readinessAction("active_city", "cagli", "forno", false)).toEqual({
+      label: "Contatta l'amministratore della città",
+      href: null,
+    });
+  });
+
+  it("selects the first missing readiness requirement as the next action", () => {
+    expect(
+      nextReadinessAction(
+        {
+          canPublish: false,
+          missingRequirements: ["active_category", "public_contact"],
+          warnings: [],
+        },
+        "cagli",
+        "forno",
+        true,
+      ),
+    ).toEqual({ label: "Scegli una categoria", href: "/cagli/forno/admin/categories" });
   });
 });

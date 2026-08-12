@@ -76,6 +76,7 @@ export type PlatformCity = {
   seoTitle: string | null;
   seoDescription: string | null;
   businessCount: number;
+  activeCategoryCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -157,6 +158,7 @@ export type PlatformBusiness = {
     name: string;
     slug: string;
     status: "active" | "coming_soon" | "disabled";
+    active: boolean;
   };
   template: {
     id: string;
@@ -268,6 +270,11 @@ export type PlatformCitiesResponse = PlatformPaginatedResponse & {
   items: PlatformCity[];
 };
 
+export type PlatformCityResponse = {
+  status: "ok";
+  item: PlatformCity;
+};
+
 export type PlatformCityRegistryResponse = PlatformPaginatedResponse & {
   status: "ok";
   items: PlatformCityRegistryEntry[];
@@ -292,6 +299,7 @@ export type PlatformBusinessService = {
   priceLabel: string | null;
   priceCents: number | null;
   durationMinutes: number | null;
+  pickupEnabled: boolean;
   status: "draft" | "in_review" | "published" | "archived";
   sortOrder: number;
   createdAt: string;
@@ -314,6 +322,16 @@ export type PlatformCityCategory = {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+};
+
+export type PlatformCityCategoryTree = PlatformCityCategory & {
+  children: PlatformCityCategoryTree[];
+};
+
+export type PlatformCityCategoriesResponse = {
+  status: "ok";
+  items: PlatformCityCategory[];
+  tree: PlatformCityCategoryTree[];
 };
 
 export type PlatformBusinessCategoryAssignment = PlatformCityCategory & {
@@ -451,6 +469,8 @@ export type PublicPlatformBusiness = {
     active: boolean;
   }>;
   categories: PublicBusinessCategory[];
+  serviceNames: string[];
+  serviceSearchTerms: string[];
   createdAt: string;
   updatedAt: string;
 };

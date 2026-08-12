@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatOpeningInterval,
+  formatOpeningDayWithNote,
   formatServiceDuration,
   getBusinessOpeningStatus,
   getCurrentWeekdayInTimezone,
@@ -132,4 +133,14 @@ describe("business opening hours", () => {
     expect(getCurrentWeekdayInTimezone(new Date("2026-08-02T22:30:00Z"), "Europe/Rome")).toBe(0));
   it("formats opening intervals", () =>
     expect(formatOpeningInterval("09:00", "13:00")).toBe("09:00–13:00"));
+  it("keeps a persisted opening-hours note next to the real interval", () => {
+    expect(
+      formatOpeningDayWithNote({
+        weekday: 0,
+        isClosed: false,
+        note: "Solo su appuntamento",
+        intervals: [{ opensAt: "09:00", closesAt: "13:00", sortOrder: 0 }],
+      }),
+    ).toBe("09:00–13:00 · Solo su appuntamento");
+  });
 });

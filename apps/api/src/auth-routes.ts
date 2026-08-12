@@ -11,11 +11,13 @@ import {
   verifyPassword,
 } from "./auth.js";
 import { prisma } from "./database.js";
+import { env } from "./config.js";
 
 const bootstrapAdminSchema = z.object({
   email: z.string().trim().email(),
-  password: z.string().min(8).max(200),
+  password: z.string().min(12).max(200),
   name: z.string().trim().min(2).max(120).optional(),
+  bootstrapSecret: z.string().min(16).max(500).optional(),
 });
 
 const loginSchema = z.object({
@@ -27,6 +29,63 @@ const loginSchema = z.object({
 const selectAccessSchema = z.object({
   accessGrantId: z.string().trim().min(1),
 });
+
+function createAuthRateLimiter(limit = 8, windowMs = 10 * 60 * 1_000, maxEntries = 5_000) {
+  const entries = new Map<string, { count: number; resetAt: number }>();
+
+  function prune(now: number) {
+    for (const [entryKey, entry] of entries) {
+      if (entry.resetAt <= now) entries.delete(entryKey);
+    }
+
+    while (entries.size >= maxEntries) {
+      const oldestKey = entries.keys().next().value as string | undefined;
+      if (!oldestKey) break;
+      entries.delete(oldestKey);
+    }
+  }
+
+  return {
+    check(key: string, now = Date.now()) {
+      const previous = entries.get(key);
+      if (!previous || previous.resetAt <= now) {
+        return { allowed: true, retryAfterSeconds: 0 };
+      }
+      if (previous.count >= limit) {
+        return {
+          allowed: false,
+          retryAfterSeconds: Math.max(1, Math.ceil((previous.resetAt - now) / 1_000)),
+        };
+      }
+      return { allowed: true, retryAfterSeconds: 0 };
+    },
+    recordFailure(key: string, now = Date.now()) {
+      const previous = entries.get(key);
+      if (!previous || previous.resetAt <= now) {
+        prune(now);
+        entries.set(key, { count: 1, resetAt: now + windowMs });
+        return;
+      }
+      previous.count += 1;
+    },
+    reset(key: string) {
+      entries.delete(key);
+    },
+  };
+}
+
+async function getBootstrapState() {
+  const initialized =
+    (await prisma.accessGrant.count({
+      where: { role: "global_admin", scopeType: "platform" },
+    })) > 0;
+  const required = !initialized;
+  return {
+    required,
+    available: required && (env.NODE_ENV !== "production" || Boolean(env.AUTH_BOOTSTRAP_SECRET)),
+    secretRequired: env.NODE_ENV === "production",
+  };
+}
 
 function parsePayload<T>(schema: z.ZodSchema<T>, payload: unknown) {
   const result = schema.safeParse(payload);
@@ -88,6 +147,14 @@ async function audit(
 }
 
 export function registerAuthRoutes(app: FastifyInstance) {
+  const loginRateLimiter = createAuthRateLimiter();
+  const bootstrapRateLimiter = createAuthRateLimiter(4);
+
+  app.get("/api/v2/auth/bootstrap-status", async () => ({
+    status: "ok",
+    ...(await getBootstrapState()),
+  }));
+
   app.post("/api/v2/auth/bootstrap-admin", async (request, reply) => {
     const parsed = parsePayload(bootstrapAdminSchema, request.body);
 
@@ -95,87 +162,115 @@ export function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(parsed.response.statusCode).send(parsed.response.body);
     }
 
-    const existingGlobalAdminCount = await prisma.accessGrant.count({
-      where: {
-        role: "global_admin",
-        scopeType: "platform",
-        active: true,
-      },
-    });
+    const bootstrapRateKey = request.ip;
+    const rateLimit = bootstrapRateLimiter.check(bootstrapRateKey);
+    if (!rateLimit.allowed) {
+      reply.header("Retry-After", String(rateLimit.retryAfterSeconds));
+      return reply.code(429).send({ status: "error", error: "Too many bootstrap requests" });
+    }
 
-    if (existingGlobalAdminCount > 0) {
+    const bootstrapState = await getBootstrapState();
+    if (!bootstrapState.required) {
       return reply.code(409).send({
         status: "error",
         error: "A global admin already exists.",
       });
     }
 
+    if (!bootstrapState.available) {
+      bootstrapRateLimiter.recordFailure(bootstrapRateKey);
+      return reply.code(403).send({ status: "error", error: "Admin bootstrap is not available" });
+    }
+
+    if (
+      env.NODE_ENV === "production" &&
+      parsed.data.bootstrapSecret !== env.AUTH_BOOTSTRAP_SECRET
+    ) {
+      bootstrapRateLimiter.recordFailure(bootstrapRateKey);
+      return reply.code(403).send({ status: "error", error: "Admin bootstrap is not available" });
+    }
+
     const passwordHash = hashPassword(parsed.data.password);
 
-    const user = await prisma.$transaction(async (tx) => {
-      const existingUser = await tx.user.findUnique({
-        where: {
-          email: parsed.data.email,
-        },
-        select: {
-          id: true,
-        },
-      });
+    const user = await prisma
+      .$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(1122334455)`;
+        const existingGlobalAdminCount = await tx.accessGrant.count({
+          where: { role: "global_admin", scopeType: "platform" },
+        });
+        if (existingGlobalAdminCount > 0) throw new Error("BOOTSTRAP_ALREADY_COMPLETED");
 
-      const createdOrUpdatedUser = existingUser
-        ? await tx.user.update({
-            where: {
-              id: existingUser.id,
-            },
-            data: {
-              email: parsed.data.email,
-              name: parsed.data.name?.trim() ?? null,
-              status: "active",
-              passwordHash,
-              authVersion: {
-                increment: 1,
-              },
-            },
-            select: {
-              id: true,
-            },
-          })
-        : await tx.user.create({
-            data: {
-              email: parsed.data.email,
-              name: parsed.data.name?.trim() ?? null,
-              status: "active",
-              passwordHash,
-            },
-            select: {
-              id: true,
-            },
-          });
-
-      await tx.accessGrant.create({
-        data: {
-          userId: createdOrUpdatedUser.id,
-          role: "global_admin",
-          scopeType: "platform",
-          active: true,
-        },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          actorUserId: createdOrUpdatedUser.id,
-          action: "platform.auth.bootstrap_admin_created",
-          targetType: "user",
-          targetId: createdOrUpdatedUser.id,
-          scopeType: "platform",
-          metadataJson: {
+        const existingUser = await tx.user.findUnique({
+          where: {
             email: parsed.data.email,
           },
-        },
+          select: {
+            id: true,
+          },
+        });
+
+        const createdOrUpdatedUser = existingUser
+          ? await tx.user.update({
+              where: {
+                id: existingUser.id,
+              },
+              data: {
+                email: parsed.data.email,
+                name: parsed.data.name?.trim() ?? null,
+                status: "active",
+                passwordHash,
+                authVersion: {
+                  increment: 1,
+                },
+              },
+              select: {
+                id: true,
+              },
+            })
+          : await tx.user.create({
+              data: {
+                email: parsed.data.email,
+                name: parsed.data.name?.trim() ?? null,
+                status: "active",
+                passwordHash,
+              },
+              select: {
+                id: true,
+              },
+            });
+
+        await tx.accessGrant.create({
+          data: {
+            userId: createdOrUpdatedUser.id,
+            role: "global_admin",
+            scopeType: "platform",
+            active: true,
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            actorUserId: createdOrUpdatedUser.id,
+            action: "platform.auth.bootstrap_admin_created",
+            targetType: "user",
+            targetId: createdOrUpdatedUser.id,
+            scopeType: "platform",
+            metadataJson: {
+              email: parsed.data.email,
+            },
+          },
+        });
+
+        return createdOrUpdatedUser;
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.message === "BOOTSTRAP_ALREADY_COMPLETED") return null;
+        throw error;
       });
 
-      return createdOrUpdatedUser;
-    });
+    if (!user) {
+      return reply.code(409).send({ status: "error", error: "A global admin already exists." });
+    }
 
     const context = await buildAuthContext(user.id, undefined);
 
@@ -213,6 +308,13 @@ export function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(parsed.response.statusCode).send(parsed.response.body);
     }
 
+    const loginRateKey = `${request.ip}:${parsed.data.email.trim().toLowerCase()}`;
+    const rateLimit = loginRateLimiter.check(loginRateKey);
+    if (!rateLimit.allowed) {
+      reply.header("Retry-After", String(rateLimit.retryAfterSeconds));
+      return reply.code(429).send({ status: "error", error: "Too many login attempts" });
+    }
+
     const user = await prisma.user.findUnique({
       where: {
         email: parsed.data.email,
@@ -227,6 +329,7 @@ export function registerAuthRoutes(app: FastifyInstance) {
     });
 
     if (!user || !verifyPassword(parsed.data.password, user.passwordHash)) {
+      loginRateLimiter.recordFailure(loginRateKey);
       await audit("platform.auth.login_failed", {
         metadata: {
           email: parsed.data.email,
@@ -239,6 +342,8 @@ export function registerAuthRoutes(app: FastifyInstance) {
         error: "Invalid credentials",
       });
     }
+
+    loginRateLimiter.reset(loginRateKey);
 
     if (user.status !== "active") {
       await audit("platform.auth.login_failed", {

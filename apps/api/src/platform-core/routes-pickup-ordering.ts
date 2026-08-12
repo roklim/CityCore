@@ -235,7 +235,12 @@ export function registerPickupOrderingRoutes(app: FastifyInstance) {
       if (!orderingIsEnabled(business))
         return reply.code(404).send({ status: "error", error: "Pickup ordering is not available" });
       const items = await prisma.businessService.findMany({
-        where: { businessId: business.id, status: "published", priceCents: { not: null } },
+        where: {
+          businessId: business.id,
+          status: "published",
+          priceCents: { not: null },
+          pickupEnabled: true,
+        },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
         select: {
           id: true,
@@ -311,6 +316,7 @@ export function registerPickupOrderingRoutes(app: FastifyInstance) {
           id: { in: body.data.items.map((item) => item.serviceId) },
           status: "published",
           priceCents: { not: null },
+          pickupEnabled: true,
         },
         select: { id: true, name: true, priceCents: true },
       });
@@ -442,7 +448,7 @@ export function registerPickupOrderingRoutes(app: FastifyInstance) {
 
   app.get(
     "/api/v2/platform-core/cities/:citySlug/businesses/:businessSlug/pickup-orders",
-    { preHandler: requirePermission("businesses.read") },
+    { preHandler: requirePermission("businesses.manage") },
     async (request, reply) => {
       const params = parsePayload(businessParamsSchema, request.params);
       const query = parsePayload(orderListQuerySchema, request.query);
@@ -452,7 +458,7 @@ export function registerPickupOrderingRoutes(app: FastifyInstance) {
         params.data.citySlug,
         params.data.businessSlug,
         request,
-        "businesses.read",
+        "businesses.manage",
       );
       if (!business) return reply.code(404).send({ status: "error", error: "Business not found" });
       const where = { businessId: business.id, status: query.data.status };

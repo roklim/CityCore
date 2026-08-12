@@ -42,9 +42,18 @@ export function AccessGrantForm({
         <input autoComplete="name" name="userName" />
       </label>
       <label className="field">
-        <span>Password iniziale (facoltativa)</span>
-        <input autoComplete="new-password" minLength={8} name="password" type="password" />
-        <small>Se omessa, il nuovo utente resta invitato.</small>
+        <span>Password temporanea</span>
+        <input
+          autoComplete="new-password"
+          minLength={12}
+          name="password"
+          required
+          type="password"
+        />
+        <small>
+          Minimo 12 caratteri. Attiva un nuovo account; se l&apos;email esiste gi&agrave;, la sua
+          password non viene modificata.
+        </small>
       </label>
       <label className="field">
         <span>Ruolo</span>

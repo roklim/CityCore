@@ -15,6 +15,13 @@ const socialLabels: Record<SocialField, string> = {
   tiktok: "TikTok",
   youtube: "YouTube",
 };
+const supportedTimezones = ["Europe/Rome", "Europe/Paris", "Europe/Berlin", "Europe/London", "UTC"];
+const supportedCurrencies = ["EUR", "CHF", "GBP", "USD"];
+const supportedLocales = ["it-IT", "en-GB", "en-US", "fr-FR", "de-DE"];
+
+function includeCurrent(options: string[], current: string) {
+  return options.includes(current) ? options : [current, ...options];
+}
 
 export function BusinessProfileForm({ business }: { business: PlatformBusiness }) {
   const router = useRouter();
@@ -173,15 +180,34 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
         <div className="business-profile-grid">
           <label className="field">
             <span>Timezone</span>
-            <input defaultValue={business.timezone} maxLength={80} name="timezone" required />
+            <select defaultValue={business.timezone} name="timezone" required>
+              {includeCurrent(supportedTimezones, business.timezone).map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+            <small>Determina orari, stato aperto/chiuso e fasce di ritiro.</small>
           </label>
           <label className="field">
             <span>Valuta</span>
-            <input defaultValue={business.currency} maxLength={8} name="currency" required />
+            <select defaultValue={business.currency} name="currency" required>
+              {includeCurrent(supportedCurrencies, business.currency).map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="field">
-            <span>Locale</span>
-            <input defaultValue={business.locale} maxLength={12} name="locale" required />
+            <span>Lingua e formato</span>
+            <select defaultValue={business.locale} name="locale" required>
+              {includeCurrent(supportedLocales, business.locale).map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
       </fieldset>

@@ -117,12 +117,25 @@ async function checkRedis(): Promise<DependencyCheck> {
 }
 
 export function buildApp() {
+  const configuredOrigins = new Set(
+    (env.WEB_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
   const app = Fastify({
     logger: env.NODE_ENV !== "test",
+    trustProxy: env.TRUST_PROXY_HOPS ?? (env.NODE_ENV === "production" ? 1 : false),
   });
 
   void app.register(cors, {
-    origin: true,
+    origin(origin, callback) {
+      if (!origin || env.NODE_ENV !== "production" || configuredOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
   });
 
   void app.register(helmet);

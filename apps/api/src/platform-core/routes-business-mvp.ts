@@ -59,6 +59,7 @@ function mapService(service: {
   priceLabel: string | null;
   priceCents: number | null;
   durationMinutes: number | null;
+  pickupEnabled: boolean;
   status: "draft" | "in_review" | "published" | "archived";
   sortOrder: number;
   createdAt: Date;
@@ -120,17 +121,21 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
         "catalog.manage",
       );
       if (!business) return reply.code(404).send({ status: "error", error: "Business not found" });
+      const normalizedSlug = slugify(body.data.slug ?? body.data.name);
+      if (!normalizedSlug)
+        return reply.code(400).send({ status: "error", error: "Service slug cannot be empty" });
       try {
         const item = await prisma.businessService.create({
           data: {
             businessId: business.id,
             name: body.data.name,
-            slug: slugify(body.data.slug ?? body.data.name),
+            slug: normalizedSlug,
             shortDescription: body.data.shortDescription ?? null,
             description: body.data.description ?? null,
             priceLabel: body.data.priceLabel ?? null,
             priceCents: body.data.priceCents ?? null,
             durationMinutes: body.data.durationMinutes ?? null,
+            pickupEnabled: body.data.pickupEnabled,
             status: body.data.status,
             sortOrder: body.data.sortOrder,
           },
@@ -177,6 +182,8 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
       if (!body.success) return reply.code(body.response.statusCode).send(body.response.body);
       if (Object.keys(body.data).length === 0)
         return reply.code(400).send({ status: "error", error: "No fields to update" });
+      if (hasOwn(body.data, "slug") && body.data.slug && !slugify(body.data.slug))
+        return reply.code(400).send({ status: "error", error: "Service slug cannot be empty" });
       const business = await requireBusinessAccess(
         params.data.citySlug,
         params.data.businessSlug,
@@ -211,6 +218,9 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
               : {}),
             ...(hasOwn(body.data, "durationMinutes")
               ? { durationMinutes: body.data.durationMinutes ?? null }
+              : {}),
+            ...(hasOwn(body.data, "pickupEnabled")
+              ? { pickupEnabled: body.data.pickupEnabled }
               : {}),
             ...(hasOwn(body.data, "status") ? { status: body.data.status } : {}),
             ...(hasOwn(body.data, "sortOrder") ? { sortOrder: body.data.sortOrder } : {}),
@@ -513,7 +523,7 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
 
   app.get(
     "/api/v2/platform-core/cities/:citySlug/businesses/:businessSlug/inquiries",
-    { preHandler: requirePermission("businesses.read") },
+    { preHandler: requirePermission("businesses.manage") },
     async (request, reply) => {
       const params = parsePayload(businessParamsSchema, request.params);
       const query = parsePayload(inquiryListQuerySchema, request.query);
@@ -523,7 +533,7 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
         params.data.citySlug,
         params.data.businessSlug,
         request,
-        "businesses.read",
+        "businesses.manage",
       );
       if (!business) return reply.code(404).send({ status: "error", error: "Business not found" });
       const where = { businessId: business.id, status: query.data.status };
@@ -548,7 +558,7 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
 
   app.get(
     "/api/v2/platform-core/cities/:citySlug/businesses/:businessSlug/inquiries/:inquiryId",
-    { preHandler: requirePermission("businesses.read") },
+    { preHandler: requirePermission("businesses.manage") },
     async (request, reply) => {
       const params = parsePayload(inquiryParamsSchema, request.params);
       if (!params.success) return reply.code(params.response.statusCode).send(params.response.body);
@@ -556,7 +566,7 @@ export function registerBusinessMvpRoutes(app: FastifyInstance) {
         params.data.citySlug,
         params.data.businessSlug,
         request,
-        "businesses.read",
+        "businesses.manage",
       );
       if (!business) return reply.code(404).send({ status: "error", error: "Business not found" });
       const item = await prisma.businessInquiry.findFirst({

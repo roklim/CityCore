@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   AdminCollectionError,
   AdminEmptyState,
@@ -29,6 +30,7 @@ export default async function BusinessCategoriesPage({
     session.token,
   );
   const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
+  const canManageCity = session.auth.activeAccess.permissions.includes("cities.manage");
 
   return (
     <>
@@ -58,10 +60,23 @@ export default async function BusinessCategoriesPage({
             retryHref={path}
           />
         ) : !categories.data.availableCategories.length ? (
-          <AdminEmptyState
-            title="Nessuna categoria disponibile."
-            text="Un amministratore della città deve prima configurare categorie attive."
-          />
+          <div className="admin-state-card">
+            <strong>Nessuna categoria disponibile.</strong>
+            <p>
+              Prima di pubblicare l'attività, configura almeno una categoria attiva per questa
+              città.
+            </p>
+            {canManageCity ? (
+              <Link
+                className="ghost-button"
+                href={`/admin/cities/${encodeURIComponent(citySlug)}/categories`}
+              >
+                Crea le categorie della città
+              </Link>
+            ) : (
+              <small>Chiedi all'amministratore della città di crearne una.</small>
+            )}
+          </div>
         ) : canManage ? (
           <BusinessCategorySelector
             assignments={categories.data.items}

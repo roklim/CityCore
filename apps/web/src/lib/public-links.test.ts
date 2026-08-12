@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeExternalUrl, normalizePhoneHref } from "./public-links";
+import { normalizeExternalUrl, normalizePhoneHref, resolvePublicSiteUrl } from "./public-links";
 
 describe("public links", () => {
   it.each([
@@ -22,4 +22,22 @@ describe("public links", () => {
   it.each(["", "call me"])("rejects invalid phone %s", (value) =>
     expect(normalizePhoneHref(value)).toBeNull(),
   );
+
+  it("uses the configured public site URL in production", () => {
+    expect(resolvePublicSiteUrl("https://citycore.example.org", "production")?.toString()).toBe(
+      "https://citycore.example.org/",
+    );
+  });
+
+  it("falls back to localhost only in development", () => {
+    expect(resolvePublicSiteUrl(undefined, "development")?.toString()).toBe(
+      "http://localhost:3000/",
+    );
+    expect(resolvePublicSiteUrl(undefined, "production")).toBeNull();
+  });
+
+  it("rejects invalid or unsafe public site URLs", () => {
+    expect(resolvePublicSiteUrl("javascript:alert(1)", "production")).toBeNull();
+    expect(resolvePublicSiteUrl("not a URL", "production")).toBeNull();
+  });
 });

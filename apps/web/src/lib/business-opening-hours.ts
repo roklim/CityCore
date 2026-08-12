@@ -47,6 +47,10 @@ export function formatOpeningDay(day: PublicOpeningDay) {
     ? "Chiuso"
     : day.intervals.map((item) => formatOpeningInterval(item.opensAt, item.closesAt)).join(" · ");
 }
+export function formatOpeningDayWithNote(day: PublicOpeningDay) {
+  const hours = formatOpeningDay(day);
+  return day.note?.trim() ? `${hours} · ${day.note.trim()}` : hours;
+}
 export function formatServiceDuration(minutes: number | null) {
   if (!minutes) return null;
   if (minutes < 60) return `${minutes} min`;

@@ -25,7 +25,7 @@ export default async function AdminPage() {
   const [activeCities, publishedBusinesses, draftBusinesses, activeGrants, recentAudit] =
     await Promise.all([
       loadAdminResponse<PlatformCitiesResponse>(
-        "/api/v2/platform-core/cities?status=active&page=1&limit=1",
+        "/api/v2/platform-core/cities?status=active&active=true&page=1&limit=1",
         session.token,
       ),
       loadAdminResponse<PlatformBusinessesResponse>(

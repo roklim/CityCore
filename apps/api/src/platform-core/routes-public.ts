@@ -123,6 +123,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
               name: true,
               slug: true,
               status: true,
+              active: true,
             },
           },
           template: {
@@ -152,6 +153,15 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
               category: {
                 select: { id: true, cityId: true, name: true, slug: true },
               },
+            },
+          },
+          services: {
+            where: { status: "published" },
+            orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+            select: {
+              name: true,
+              shortDescription: true,
+              description: true,
             },
           },
         },
@@ -212,6 +222,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
               name: true,
               slug: true,
               status: true,
+              active: true,
             },
           },
           template: {
@@ -241,6 +252,15 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
               category: {
                 select: { id: true, cityId: true, name: true, slug: true },
               },
+            },
+          },
+          services: {
+            where: { status: "published" },
+            orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+            select: {
+              name: true,
+              shortDescription: true,
+              description: true,
             },
           },
         },
@@ -281,6 +301,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
             name: true,
             slug: true,
             status: true,
+            active: true,
           },
         },
         template: {
@@ -310,6 +331,15 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
             category: {
               select: { id: true, cityId: true, name: true, slug: true },
             },
+          },
+        },
+        services: {
+          where: { status: "published" },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+          select: {
+            name: true,
+            shortDescription: true,
+            description: true,
           },
         },
       },

@@ -93,6 +93,7 @@ export default async function BusinessServicesPage({
                   <th>Nome</th>
                   <th>Stato</th>
                   <th>Prezzo</th>
+                  <th>Ritiro</th>
                   <th>Durata</th>
                   <th>Ordine</th>
                   <th>Azioni</th>
@@ -111,6 +112,7 @@ export default async function BusinessServicesPage({
                     <td>
                       {formatPrice(service.priceCents, business.currency, service.priceLabel)}
                     </td>
+                    <td>{service.pickupEnabled ? "Disponibile" : "No"}</td>
                     <td>{service.durationMinutes ? `${service.durationMinutes} min` : "—"}</td>
                     <td>{service.sortOrder}</td>
                     <td>

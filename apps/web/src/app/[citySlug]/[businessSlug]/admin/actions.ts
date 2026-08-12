@@ -61,6 +61,18 @@ function parsePriceCents(value: FormDataEntryValue | null) {
   return cents > 0 && cents <= 1_000_000 ? cents : null;
 }
 
+function parseNonNegativePriceCents(value: FormDataEntryValue | null) {
+  const normalized = requiredText(value).replaceAll(" ", "").replace(",", ".");
+  if (!/^\d{1,6}(?:\.\d{1,2})?$/u.test(normalized)) return null;
+  const cents = Math.round(Number(normalized) * 100);
+  return cents >= 0 && cents <= 1_000_000 ? cents : null;
+}
+
+function boundedInteger(value: FormDataEntryValue | null, minimum: number, maximum: number) {
+  const parsed = Number(requiredText(value));
+  return Number.isInteger(parsed) && parsed >= minimum && parsed <= maximum ? parsed : null;
+}
+
 function optionalText(value: FormDataEntryValue | null) {
   return requiredText(value) || null;
 }
@@ -166,6 +178,7 @@ export async function updateBusinessCategoriesAction(formData: FormData) {
   const categoryIds = formData
     .getAll("categoryIds")
     .filter((value): value is string => typeof value === "string" && Boolean(value));
+  const primaryCategoryId = requiredText(formData.get("primaryCategoryId"));
   if (!categoryIds.length) {
     finish(
       formData,
@@ -176,11 +189,21 @@ export async function updateBusinessCategoriesAction(formData: FormData) {
       "Seleziona almeno una categoria attiva.",
     );
   }
+  if (!primaryCategoryId || !categoryIds.includes(primaryCategoryId)) {
+    finish(
+      formData,
+      citySlug,
+      businessSlug,
+      "categories",
+      "error",
+      "Scegli una categoria primaria tra quelle selezionate.",
+    );
+  }
 
   try {
     await fetchPlatformApi(
       `/api/v2/platform-core/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/categories`,
-      { method: "PUT", token: session.token, body: { categoryIds } },
+      { method: "PUT", token: session.token, body: { categoryIds, primaryCategoryId } },
     );
   } catch (error) {
     finish(formData, citySlug, businessSlug, "categories", "error", messageFor(error));
@@ -268,6 +291,42 @@ export async function updatePickupOrderStatusAction(formData: FormData) {
   finish(formData, citySlug, businessSlug, "orders", "notice", "Stato ordine aggiornato.");
 }
 
+export async function updatePickupOrderingAction(formData: FormData) {
+  const { citySlug, businessSlug, session } = await getActionContext(formData);
+  const pickupLeadMinutes = boundedInteger(formData.get("pickupLeadMinutes"), 0, 720);
+  const slotMinutes = boundedInteger(formData.get("slotMinutes"), 5, 120);
+  const slotCapacity = boundedInteger(formData.get("slotCapacity"), 1, 100);
+  const minimumOrderCents = parseNonNegativePriceCents(formData.get("minimumOrder"));
+  if (
+    pickupLeadMinutes === null ||
+    slotMinutes === null ||
+    slotCapacity === null ||
+    minimumOrderCents === null
+  ) {
+    finish(formData, citySlug, businessSlug, "orders", "error", "Impostazioni non valide.");
+  }
+  try {
+    await fetchPlatformApi(
+      `/api/v2/platform-core/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/pickup-ordering`,
+      {
+        method: "PUT",
+        token: session.token,
+        body: {
+          enabled: formData.get("enabled") === "on",
+          pickupLeadMinutes,
+          slotMinutes,
+          slotCapacity,
+          minimumOrderCents,
+        },
+      },
+    );
+  } catch (error) {
+    finish(formData, citySlug, businessSlug, "orders", "error", messageFor(error));
+  }
+  revalidatePath(adminPath(citySlug, businessSlug), "layout");
+  finish(formData, citySlug, businessSlug, "orders", "notice", "Ritiro aggiornato.");
+}
+
 export async function updateInquiryStatusAction(formData: FormData) {
   const { citySlug, businessSlug, session } = await getActionContext(formData);
   const inquiryId = requiredText(formData.get("inquiryId"));
@@ -344,6 +403,7 @@ export async function createMenuItemAction(
           priceLabel,
           priceCents,
           durationMinutes,
+          pickupEnabled: formData.get("pickupEnabled") === "on",
           status,
           sortOrder: serviceSortOrder,
         },
@@ -398,6 +458,7 @@ export async function updateMenuItemAction(
           priceLabel,
           priceCents,
           durationMinutes,
+          pickupEnabled: formData.get("pickupEnabled") === "on",
           status,
           sortOrder: serviceSortOrder,
         },

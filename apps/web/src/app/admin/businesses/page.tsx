@@ -2,8 +2,8 @@ import Link from "next/link";
 import { AdminCollectionError, AdminEmptyState } from "../../../components/admin-collection-state";
 import { AdminPagination } from "../../../components/admin-pagination";
 import { AdminStatusBadge } from "../../../components/admin-status-badge";
-import { AdminSubmitButton } from "../../../components/admin-submit-button";
 import { PlatformAdminShell } from "../../../components/platform-admin-shell";
+import { isBusinessPublic } from "../../../lib/business-visibility";
 import {
   positivePage,
   queryString,
@@ -16,7 +16,7 @@ import {
   type PlatformCitiesResponse,
   type PlatformTemplatesResponse,
 } from "../../../lib/platform-api";
-import { createBusinessAction } from "../platform-actions";
+import { BusinessCreateForm } from "./business-create-form";
 
 export const metadata = { title: "Gestione attività" };
 
@@ -55,6 +55,11 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
     loadAdminResponse<PlatformTemplatesResponse>("/api/v2/platform-core/templates", session.token),
   ]);
   const activeTemplates = templates.data?.items.filter((item) => item.active) ?? [];
+  const activeCities =
+    cities.data?.items.filter((item) => item.active && item.status === "active") ?? [];
+  const readyCities = activeCities.filter((item) => item.activeCategoryCount > 0);
+  const citiesWithoutCategories = activeCities.filter((item) => item.activeCategoryCount === 0);
+  const defaultCity = readyCities.some((item) => item.slug === city) ? city : "";
 
   return (
     <PlatformAdminShell
@@ -74,6 +79,22 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
           {error}
         </p>
       ) : null}
+
+      <section className="admin-state-card" aria-labelledby="business-flow-title">
+        <div>
+          <p className="section-label">Percorso guidato</p>
+          <h2 id="business-flow-title">Crea in bozza, completa, pubblica</h2>
+        </div>
+        <p>
+          Per creare un'attività serve una città pubblica con almeno una categoria attiva. Dopo la
+          creazione troverai una checklist con il prossimo passaggio da completare.
+        </p>
+        <div className="admin-filter-actions">
+          <Link className="ghost-button" href="/admin/cities">
+            Configura città e categorie
+          </Link>
+        </div>
+      </section>
 
       <section className="admin-toolbar" aria-labelledby="business-filters-title">
         <div className="section-header">
@@ -128,65 +149,50 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
         </form>
       </section>
 
-      {canCreateBusiness && cities.data?.items.length && activeTemplates.length ? (
+      {canCreateBusiness && readyCities.length && activeTemplates.length ? (
         <details className="admin-create-panel">
-          <summary>Nuova attività</summary>
-          <form action={createBusinessAction} className="admin-edit-form">
-            <input name="returnTo" type="hidden" value={returnTo} />
-            <label className="field">
-              <span>Nome attività</span>
-              <input minLength={2} name="name" required />
-            </label>
-            <label className="field">
-              <span>Slug (facoltativo)</span>
-              <input name="slug" />
-            </label>
-            <label className="field">
-              <span>Città</span>
-              <select name="citySlug" required defaultValue={city}>
-                <option disabled value="">
-                  Seleziona città
-                </option>
-                {cities.data.items.map((item) => (
-                  <option key={item.id} value={item.slug}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Template</span>
-              <select name="templateCode" required defaultValue={activeTemplates[0]?.code}>
-                {activeTemplates.map((item) => (
-                  <option key={item.code} value={item.code}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Email pubblica</span>
-              <input name="publicEmail" type="email" />
-            </label>
-            <label className="field">
-              <span>Telefono pubblico</span>
-              <input name="publicPhone" />
-            </label>
-            <label className="field">
-              <span>Email owner</span>
-              <input name="ownerEmail" type="email" />
-            </label>
-            <label className="field">
-              <span>Nome owner</span>
-              <input name="ownerName" />
-            </label>
-            <p className="admin-form-note">
-              La nuova attività viene creata in bozza. La pubblicazione resta disponibile soltanto
-              dopo la readiness.
-            </p>
-            <AdminSubmitButton pendingLabel="Creazione…">Crea attività</AdminSubmitButton>
-          </form>
+          <summary>Nuova attività in una città pronta</summary>
+          <BusinessCreateForm
+            cities={readyCities}
+            defaultCity={defaultCity}
+            returnTo={returnTo}
+            templates={activeTemplates}
+          />
         </details>
+      ) : canCreateBusiness ? (
+        <section
+          className="admin-state-card is-error"
+          aria-labelledby="business-prerequisites-title"
+        >
+          <div>
+            <p className="section-label">Prima di creare un'attività</p>
+            <h2 id="business-prerequisites-title">Completa i prerequisiti</h2>
+          </div>
+          <p>
+            {!activeCities.length
+              ? "Non ci sono città pubbliche. Attiva una città per proseguire."
+              : !activeTemplates.length
+                ? "Non ci sono template attivi disponibili."
+                : "Le città attive non hanno ancora categorie disponibili."}
+          </p>
+          {citiesWithoutCategories.length ? (
+            <div className="admin-filter-actions">
+              {citiesWithoutCategories.map((item) => (
+                <Link
+                  className="ghost-button"
+                  href={`/admin/cities/${encodeURIComponent(item.slug)}/categories`}
+                  key={item.id}
+                >
+                  Crea categorie per {item.name}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Link className="ghost-button" href="/admin/cities">
+              Vai alle città
+            </Link>
+          )}
+        </section>
       ) : null}
 
       <section className="data-card" aria-labelledby="business-table-title">
@@ -252,9 +258,9 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
                             className="table-link"
                             href={`/${business.city.slug}/${business.slug}/admin`}
                           >
-                            Gestisci
+                            Continua configurazione
                           </Link>
-                          {business.status === "active" ? (
+                          {isBusinessPublic(business) ? (
                             <Link
                               className="table-link"
                               href={`/${business.city.slug}/${business.slug}`}
@@ -262,7 +268,11 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
                               Apri pagina pubblica
                             </Link>
                           ) : (
-                            <span className="admin-muted-label">Non pubblicato</span>
+                            <span className="admin-muted-label">
+                              {business.status === "active"
+                                ? "Città non pubblica"
+                                : "Non pubblicato"}
+                            </span>
                           )}
                         </div>
                       </td>

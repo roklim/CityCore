@@ -3,6 +3,24 @@ import type { HomepageCityCard } from "../../lib/public-runtime";
 import styles from "./context-gateway.module.css";
 
 export function ActiveCityPills({ cities }: { cities: HomepageCityCard[] }) {
+  if (!cities.length) {
+    return (
+      <section
+        className={styles.activeCities}
+        id="active-cities"
+        aria-labelledby="active-cities-title"
+      >
+        <p className={styles.sectionKicker} id="active-cities-title">
+          Città attive
+        </p>
+        <p className={styles.emptyState} role="status">
+          Nessuna città è ancora disponibile pubblicamente. Torna presto per vedere le prime
+          directory locali.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <nav className={styles.activeCities} id="active-cities" aria-label="Città attive">
       <p className={styles.sectionKicker}>Città attive</p>

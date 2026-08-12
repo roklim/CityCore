@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CityUtilityHome } from "../../components/public-home/city-utility-home";
-import { getPublicCitySurfaceData } from "../../lib/public-runtime";
+import { getPublicCityMetadataData, getPublicCitySurfaceData } from "../../lib/public-runtime";
 
 type CityPageProps = {
   params: Promise<{ citySlug: string }>;
@@ -9,7 +9,7 @@ type CityPageProps = {
 
 export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
   const { citySlug } = await params;
-  const surface = await getPublicCitySurfaceData(citySlug);
+  const surface = await getPublicCityMetadataData(citySlug);
 
   if (!surface) {
     return { title: "Città non trovata", robots: { index: false, follow: false } };
@@ -30,9 +30,10 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   }
 
   const { city } = surface;
-  const title = `Attività e servizi a ${city.name}`;
+  const title = city.seoTitle ?? `Attività e servizi a ${city.name}`;
   const description =
-    city.publicHeroDescription ??
+    city.seoDescription ??
+    city.heroDescription ??
     `Esplora le attività pubblicate a ${city.name}, consulta servizi e orari e contattale direttamente.`;
   const canonical = `/${encodeURIComponent(city.slug)}`;
 

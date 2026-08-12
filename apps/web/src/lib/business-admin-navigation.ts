@@ -1,4 +1,5 @@
 import type { OperatorNavigationItem } from "../components/admin-shell";
+import { isBusinessPublic } from "./business-visibility";
 import type { AuthAccess, PlatformBusiness } from "./platform-api";
 
 export const businessAdminSections = [
@@ -53,7 +54,11 @@ export function getBusinessAdminNavigation({
     (module) => module.moduleCode === "catalog" && module.active,
   );
   const items: OperatorNavigationItem[] = businessAdminSections
-    .filter(({ segment }) => segment !== "orders" || hasCatalog)
+    .filter(
+      ({ segment }) =>
+        (segment !== "orders" || hasCatalog) &&
+        (!["inquiries", "orders"].includes(segment) || permissions.has("businesses.manage")),
+    )
     .map(({ segment, label, meta }) => {
       const href = segment ? `${base}/${segment}` : base;
       const requiredManagePermission =
@@ -77,7 +82,7 @@ export function getBusinessAdminNavigation({
       };
     });
 
-  if (business.status === "active") {
+  if (isBusinessPublic(business)) {
     items.push({
       href: `/${encodeURIComponent(business.city.slug)}/${encodeURIComponent(business.slug)}`,
       label: "Scheda pubblica",
@@ -92,7 +97,7 @@ export function getBusinessAdminNavigation({
       href: "/admin/businesses",
       label: "Torna alle attività",
       meta: "Elenco amministrativo",
-      dividerBefore: business.status !== "active",
+      dividerBefore: !isBusinessPublic(business),
       current: false,
     });
   } else {
@@ -100,7 +105,7 @@ export function getBusinessAdminNavigation({
       href: `/${encodeURIComponent(business.city.slug)}`,
       label: "Directory cittadina",
       meta: business.city.name,
-      dividerBefore: business.status !== "active",
+      dividerBefore: !isBusinessPublic(business),
       current: false,
     });
   }

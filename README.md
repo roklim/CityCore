@@ -79,8 +79,10 @@ cp apps/web/.env.example apps/web/.env.local
 
 Variabili minime:
 
-- `apps/web/.env.local`: `NEXT_PUBLIC_API_BASE_URL`
-- `apps/api/.env`: `NODE_ENV`, `PORT`, `DATABASE_URL`, `REDIS_URL`, `AUTH_SECRET`
+- `apps/web/.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SITE_URL`
+- `apps/api/.env`: `NODE_ENV`, `PORT`, `DATABASE_URL`, `REDIS_URL`, `AUTH_SECRET`;
+  in produzione anche `AUTH_BOOTSTRAP_SECRET`, `WEB_ORIGINS` e
+  `TRUST_PROXY_HOPS`
 
 3. Avvia database e cache:
 
@@ -180,4 +182,5 @@ npm run db:generate
 - `docs/PLATFORM_BLUEPRINT.md`
 - `docs/REPO_WORKFLOW.md`
 - `docs/CITY_REGISTRY.md`
+- `docs/ADMIN_ONBOARDING_FLOW.md`
 - `docs/STAGING_RUNBOOK.md`

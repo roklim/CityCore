@@ -23,6 +23,7 @@ export function CityEntryForm({
   const [isPending, startTransition] = useTransition();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cityNames = cities.map((city) => city.name);
+  const hasCities = cities.length > 0;
 
   const goToCity = (slug: string) => {
     startTransition(() => {
@@ -32,7 +33,7 @@ export function CityEntryForm({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isPending) return;
+    if (isPending || !hasCities) return;
 
     const match = findMatchingCitySlug(inputValue, cities);
 
@@ -57,20 +58,24 @@ export function CityEntryForm({
           <input
             autoComplete="off"
             className={styles.searchInput}
-            disabled={isPending}
+            disabled={isPending || !hasCities}
             id="citycore-city-search"
             list="citycore-city-options"
             onChange={(event) => {
               setInputValue(event.target.value);
               setStatusMessage(null);
             }}
-            placeholder={searchPlaceholder}
+            placeholder={hasCities ? searchPlaceholder : "Nessuna città disponibile"}
             ref={searchInputRef}
             type="search"
             value={inputValue}
           />
-          <button className={styles.searchSubmitButton} disabled={isPending} type="submit">
-            {isPending ? "Apro…" : "Cerca"}
+          <button
+            className={styles.searchSubmitButton}
+            disabled={isPending || !hasCities}
+            type="submit"
+          >
+            {isPending ? "Apro…" : hasCities ? "Cerca" : "Non disponibile"}
           </button>
         </div>
       </form>

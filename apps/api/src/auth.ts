@@ -212,6 +212,21 @@ function mapAccessGrant(grant: AccessGrantRecord): SessionAccess {
   };
 }
 
+function isStructurallyValidAccessGrant(grant: AccessGrantRecord) {
+  if (grant.role === "global_admin") {
+    return grant.scopeType === "platform" && grant.cityId === null && grant.businessId === null;
+  }
+
+  if (grant.role === "city_admin") {
+    return grant.scopeType === "city" && Boolean(grant.cityId && grant.city);
+  }
+
+  return (
+    grant.scopeType === "business" &&
+    Boolean(grant.businessId && grant.business && grant.business.city.id)
+  );
+}
+
 function sortAccesses(accesses: SessionAccess[]) {
   return [...accesses].sort((left, right) => {
     const priorityDiff = rolePriority[left.role] - rolePriority[right.role];
@@ -445,7 +460,7 @@ export async function buildAuthContext(userId: string, activeAccessId?: string) 
     return null;
   }
 
-  const accesses = user.accessGrants.map(mapAccessGrant);
+  const accesses = user.accessGrants.filter(isStructurallyValidAccessGrant).map(mapAccessGrant);
   const defaults = buildDefaultAccess(accesses, activeAccessId);
 
   if (!defaults) {

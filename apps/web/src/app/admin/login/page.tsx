@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "../../../components/admin-shell";
+import { fetchPlatformApi } from "../../../lib/platform-api";
 import { getWebSession } from "../../../lib/web-session";
 import { AdminLoginForms } from "./auth-forms";
 
@@ -13,6 +14,13 @@ export default async function AdminLoginPage() {
   if (session) {
     redirect(session.auth.redirectTo || "/admin");
   }
+
+  const bootstrapStatus = await fetchPlatformApi<{
+    status: "ok";
+    required: boolean;
+    available: boolean;
+    secretRequired?: boolean;
+  }>("/api/v2/auth/bootstrap-status").catch(() => null);
 
   return (
     <AdminShell
@@ -40,12 +48,12 @@ export default async function AdminLoginPage() {
         <p className="section-label">Accesso</p>
         <h2>Entra nella console collegata alla piattaforma attiva</h2>
         <p>
-          Se non esiste ancora un <code>global_admin</code>, usa il bootstrap una sola volta.
-          Altrimenti entra con le credenziali già presenti nella piattaforma.
+          Usa le credenziali ricevute dall&apos;amministratore. La creazione del primo account viene
+          mostrata solo quando la piattaforma ne ha realmente bisogno.
         </p>
       </section>
 
-      <AdminLoginForms />
+      <AdminLoginForms bootstrapStatus={bootstrapStatus} />
     </AdminShell>
   );
 }

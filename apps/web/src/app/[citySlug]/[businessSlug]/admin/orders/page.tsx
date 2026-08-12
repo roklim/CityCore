@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   AdminCollectionError,
   AdminEmptyState,
@@ -21,7 +22,7 @@ import type {
   PlatformPickupOrderingResponse,
   PlatformPickupOrdersResponse,
 } from "../../../../../lib/platform-api";
-import { updatePickupOrderStatusAction } from "../actions";
+import { updatePickupOrderingAction, updatePickupOrderStatusAction } from "../actions";
 
 export const metadata = { title: "Ordini ritiro attività" };
 
@@ -43,11 +44,11 @@ const nextStatuses = {
   cancelled: [],
 } as const;
 
-function formatDate(value: string) {
+function formatDate(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "Europe/Rome",
+    timeZone,
   }).format(new Date(value));
 }
 
@@ -83,7 +84,15 @@ export default async function BusinessOrdersPage({
         )
       : null;
   const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
+  const canManageSettings = session.auth.activeAccess.permissions.includes("settings.manage");
   const returnTo = page > 1 ? `${path}?page=${page}` : path;
+  const pickupSettings = settings?.data?.item ?? {
+    enabled: false,
+    pickupLeadMinutes: 30,
+    slotMinutes: 15,
+    slotCapacity: 4,
+    minimumOrderCents: 0,
+  };
 
   return (
     <>
@@ -97,6 +106,105 @@ export default async function BusinessOrdersPage({
           {error}
         </p>
       ) : null}
+      <section className="data-card" aria-labelledby="pickup-settings-title">
+        <div className="card-heading">
+          <div>
+            <p className="section-label">Configurazione opzionale</p>
+            <h2 id="pickup-settings-title">Ritiro in sede</h2>
+          </div>
+        </div>
+        {!hasCatalog ? (
+          <div className="admin-state-card">
+            <strong>Prima attiva il catalogo.</strong>
+            <p>Il ritiro usa i servizi contrassegnati come disponibili per gli ordini.</p>
+            <Link
+              className="ghost-button"
+              href={businessAdminSectionPath(citySlug, businessSlug, "modules")}
+            >
+              Vai ai moduli
+            </Link>
+          </div>
+        ) : settings?.failed ? (
+          <AdminCollectionError
+            message="Non è stato possibile caricare le impostazioni di ritiro."
+            retryHref={returnTo}
+          />
+        ) : settings?.data ? (
+          <form action={updatePickupOrderingAction} className="business-management-form">
+            <input name="citySlug" type="hidden" value={citySlug} />
+            <input name="businessSlug" type="hidden" value={businessSlug} />
+            <input name="returnTo" type="hidden" value={returnTo} />
+            <label className="admin-check-field">
+              <input
+                defaultChecked={pickupSettings.enabled}
+                disabled={!canManageSettings}
+                name="enabled"
+                type="checkbox"
+              />
+              Accetta ordini di ritiro
+            </label>
+            <div className="business-menu-fields">
+              <label className="field">
+                <span>Preavviso minimo (minuti)</span>
+                <input
+                  defaultValue={pickupSettings.pickupLeadMinutes}
+                  disabled={!canManageSettings}
+                  max={720}
+                  min={0}
+                  name="pickupLeadMinutes"
+                  required
+                  type="number"
+                />
+              </label>
+              <label className="field">
+                <span>Durata fascia (minuti)</span>
+                <input
+                  defaultValue={pickupSettings.slotMinutes}
+                  disabled={!canManageSettings}
+                  max={120}
+                  min={5}
+                  name="slotMinutes"
+                  required
+                  type="number"
+                />
+              </label>
+              <label className="field">
+                <span>Ordini per fascia</span>
+                <input
+                  defaultValue={pickupSettings.slotCapacity}
+                  disabled={!canManageSettings}
+                  max={100}
+                  min={1}
+                  name="slotCapacity"
+                  required
+                  type="number"
+                />
+              </label>
+              <label className="field">
+                <span>Ordine minimo ({business.currency})</span>
+                <input
+                  defaultValue={(pickupSettings.minimumOrderCents / 100)
+                    .toFixed(2)
+                    .replace(".", ",")}
+                  disabled={!canManageSettings}
+                  inputMode="decimal"
+                  name="minimumOrder"
+                  pattern="[0-9]+([,.][0-9]{1,2})?"
+                  required
+                />
+              </label>
+            </div>
+            <p className="admin-muted-label">
+              Gli orari mostrati ai clienti seguono il fuso {business.timezone}.
+            </p>
+            {canManageSettings ? (
+              <AdminSubmitButton pendingLabel="Salvataggio…">Salva impostazioni</AdminSubmitButton>
+            ) : (
+              <span className="admin-muted-label">Impostazioni in sola lettura</span>
+            )}
+          </form>
+        ) : null}
+      </section>
       <section className="data-card" aria-labelledby="orders-title">
         <div className="card-heading">
           <div>
@@ -127,7 +235,7 @@ export default async function BusinessOrdersPage({
                     <div className="business-order-heading">
                       <div>
                         <strong>{order.reference}</strong>
-                        <span>{formatDate(order.pickupAt)}</span>
+                        <span>{formatDate(order.pickupAt, business.timezone)}</span>
                       </div>
                       <AdminStatusBadge status={order.status} />
                     </div>

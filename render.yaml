@@ -17,3 +17,9 @@ services:
         sync: false
       - key: AUTH_SECRET
         sync: false
+      - key: AUTH_BOOTSTRAP_SECRET
+        sync: false
+      - key: WEB_ORIGINS
+        value: https://citycore-web.vercel.app,https://citycore-web-staging.vercel.app
+      - key: TRUST_PROXY_HOPS
+        value: 1

@@ -1,5 +1,6 @@
 import { buildBusinessPath, buildCityPath } from "@platform/shared";
 import { getTemplateDefinition, MODULE_DEFINITIONS } from "@platform/templates";
+import { cache } from "react";
 import {
   fetchPlatformApi,
   type PublicBusinessResponse,
@@ -51,6 +52,10 @@ export type PublicBusinessDetail = PublicBusinessProfile & {
   website: string | null;
   currency: string;
   categories: PublicBusinessCategory[];
+  addressLine2: string | null;
+  postalCode: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
 };
 
 const socialLabels = [
@@ -84,20 +89,37 @@ export type HomepageSurfaceData = {
 
 export type PublicCitySurfaceData = {
   city: Omit<PublicCityProfile, "businesses"> & {
+    country: string;
     businessCount: number;
     businesses: PublicCityBusinessCard[];
     publicHeroTitle: string | null;
     publicHeroDescription: string | null;
+    seoTitle: string | null;
+    seoDescription: string | null;
   };
   degraded: boolean;
   live: boolean;
 };
 
 export type PublicBusinessSurfaceData = {
-  city: PublicCityProfile;
+  city: PublicCityProfile & { country: string };
   business: PublicBusinessDetail;
   degraded: boolean;
   live: boolean;
+};
+
+export type PublicCityMetadataData = {
+  city: Pick<
+    PublicPlatformCity,
+    "name" | "slug" | "heroDescription" | "seoTitle" | "seoDescription"
+  >;
+  degraded: boolean;
+};
+
+export type PublicBusinessMetadataData = {
+  business: Pick<PublicBusinessDetail, "name" | "slug" | "summary" | "seoTitle" | "seoDescription">;
+  citySlug: string;
+  degraded: boolean;
 };
 
 export async function getPublicBusinessServices(citySlug: string, businessSlug: string) {
@@ -141,6 +163,22 @@ async function fetchAllPublicPages<TItem>(path: string) {
   return items;
 }
 
+export async function getPublicSitemapData() {
+  const [cities, businesses] = await Promise.all([
+    fetchAllPublicPages<PublicPlatformCity>("/api/v2/public/cities"),
+    fetchAllPublicPages<PublicPlatformBusiness>("/api/v2/public/businesses"),
+  ]);
+
+  return {
+    cities: cities.map((city) => ({ slug: city.slug })),
+    businesses: businesses.map((business) => ({
+      citySlug: business.city.slug,
+      businessSlug: business.slug,
+      updatedAt: business.updatedAt,
+    })),
+  };
+}
+
 function getModuleLabel(code: string) {
   return MODULE_DEFINITIONS.find((entry) => entry.code === code)?.label ?? code;
 }
@@ -182,9 +220,57 @@ function normalizeRuntimeBusiness(business: PublicPlatformBusiness): PublicPlatf
   return {
     ...business,
     categories: Array.isArray(business.categories) ? business.categories : [],
+    serviceNames: Array.isArray(business.serviceNames) ? business.serviceNames : [],
+    serviceSearchTerms: Array.isArray(business.serviceSearchTerms)
+      ? business.serviceSearchTerms
+      : [],
     publicEmail: sanitizeLegacyLink(business.publicEmail),
     website: sanitizeLegacyLink(business.website),
   };
+}
+
+const fetchPublicCityItem = cache(async (citySlug: string) => {
+  const response = await fetchPlatformApi<PublicCityResponse>(
+    `/api/v2/public/cities/${encodeURIComponent(citySlug)}`,
+  );
+  return normalizeRuntimeCity(response.item);
+});
+
+const fetchPublicBusinessItem = cache(async (citySlug: string, businessSlug: string) => {
+  const response = await fetchPlatformApi<PublicBusinessResponse>(
+    `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}`,
+  );
+  return normalizeRuntimeBusiness(response.item);
+});
+
+export function chooseHomepageCityCards(
+  liveCities: HomepageCityCard[],
+  fallbackCities: HomepageCityCard[],
+  degraded: boolean,
+) {
+  return degraded ? fallbackCities : liveCities;
+}
+
+export function formatPublicBusinessLocation({
+  addressLine,
+  addressLine2,
+  postalCode,
+  locality,
+  province,
+}: {
+  addressLine: string | null;
+  addressLine2: string | null;
+  postalCode: string | null;
+  locality: string | null;
+  province: string | null;
+}) {
+  const postalLocality = [postalCode, locality]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(" ");
+
+  return [addressLine, addressLine2, postalLocality, province]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(", ");
 }
 
 function truncateText(value: string, maxLength: number) {
@@ -246,10 +332,14 @@ function mergeRuntimeBusinessWithEditorial(
     socialLinks: mapSocialLinks(business.socialLinks),
     locality: business.locality,
     province: business.province,
+    addressLine2: business.addressLine2,
+    postalCode: business.postalCode,
     publicEmail: business.publicEmail,
     website: business.website,
     currency: business.currency,
     categories: business.categories,
+    seoTitle: business.seoTitle,
+    seoDescription: business.seoDescription,
   };
 }
 
@@ -264,12 +354,15 @@ function mergeRuntimeCityWithEditorial(
     ...editorialCity,
     name: city.name,
     slug: city.slug,
+    country: city.country,
     region: city.region ?? editorialCity.region,
     claim: city.heroTitle ?? editorialCity.claim,
     shortPitch: city.heroDescription ?? editorialCity.shortPitch,
     businessCount: city.businessCount,
     publicHeroTitle: city.heroTitle,
     publicHeroDescription: city.heroDescription,
+    seoTitle: city.seoTitle,
+    seoDescription: city.seoDescription,
     businesses: businesses.map((business) => {
       const editorialBusiness = getBusinessProfile(city.slug, business.slug);
       const merged = mergeRuntimeBusinessWithEditorial(business, editorialBusiness);
@@ -296,6 +389,69 @@ function mapHomeCity(city: PublicPlatformCity): HomepageCityCard {
   };
 }
 
+export async function getPublicCityMetadataData(
+  citySlug: string,
+): Promise<PublicCityMetadataData | null> {
+  const canonicalSlug = canonicalCitySlug(citySlug);
+
+  try {
+    return {
+      city: await fetchPublicCityItem(canonicalSlug),
+      degraded: false,
+    };
+  } catch (error) {
+    if (error instanceof PlatformApiError && error.status === 404) return null;
+
+    const fallbackCity = getFallbackCityProfile(canonicalSlug);
+    return fallbackCity
+      ? {
+          city: {
+            name: fallbackCity.name,
+            slug: fallbackCity.slug,
+            heroDescription: null,
+            seoTitle: null,
+            seoDescription: null,
+          },
+          degraded: true,
+        }
+      : null;
+  }
+}
+
+export async function getPublicBusinessMetadataData(
+  citySlug: string,
+  businessSlug: string,
+): Promise<PublicBusinessMetadataData | null> {
+  const canonicalCity = canonicalCitySlug(citySlug);
+  const canonicalBusiness = canonicalBusinessSlug(citySlug, businessSlug);
+
+  try {
+    const runtimeBusiness = await fetchPublicBusinessItem(canonicalCity, canonicalBusiness);
+    const business = mergeRuntimeBusinessWithEditorial(
+      runtimeBusiness,
+      getBusinessProfile(canonicalCity, canonicalBusiness),
+    );
+    return { business, citySlug: runtimeBusiness.city.slug, degraded: false };
+  } catch (error) {
+    if (error instanceof PlatformApiError && error.status === 404) return null;
+
+    const fallbackBusiness = getFallbackBusinessProfile(canonicalCity, canonicalBusiness);
+    return fallbackBusiness
+      ? {
+          business: {
+            name: fallbackBusiness.name,
+            slug: fallbackBusiness.slug,
+            summary: fallbackBusiness.summary,
+            seoTitle: null,
+            seoDescription: null,
+          },
+          citySlug: canonicalCity,
+          degraded: true,
+        }
+      : null;
+  }
+}
+
 export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
   const fallbackCities = getFeaturedCities().map((city) => ({
     name: city.name,
@@ -309,8 +465,11 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
     const runtimeCities = (
       await fetchAllPublicPages<PublicPlatformCity>("/api/v2/public/cities")
     ).map(normalizeRuntimeCity);
-    const featuredCities =
-      runtimeCities.length > 0 ? runtimeCities.map(mapHomeCity) : fallbackCities;
+    const featuredCities = chooseHomepageCityCards(
+      runtimeCities.map(mapHomeCity),
+      fallbackCities,
+      false,
+    );
 
     return {
       featuredCities,
@@ -318,7 +477,7 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
     };
   } catch {
     return {
-      featuredCities: fallbackCities,
+      featuredCities: chooseHomepageCityCards([], fallbackCities, true),
       degraded: true,
     };
   }
@@ -335,41 +494,19 @@ export async function getPublicCitySurfaceData(
 
     for (const candidateSlug of buildCityCandidates(citySlug)) {
       try {
-        const [cityResponse, businesses] = await Promise.all([
-          fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${candidateSlug}`),
+        const [runtimeCity, businesses] = await Promise.all([
+          fetchPublicCityItem(candidateSlug),
           fetchAllPublicPages<PublicPlatformBusiness>(
             `/api/v2/public/cities/${candidateSlug}/businesses`,
           ),
         ]);
-        const runtimeCity = normalizeRuntimeCity(cityResponse.item);
         const runtimeBusinesses = businesses.map(normalizeRuntimeBusiness);
-        const serviceResults = await Promise.allSettled(
-          runtimeBusinesses.map((business) =>
-            getPublicBusinessServices(runtimeCity.slug, business.slug),
-          ),
+        const searchTermsByBusiness = new Map(
+          runtimeBusinesses.map((business) => [business.id, business.serviceSearchTerms]),
         );
-        const searchTermsByBusiness = new Map<string, string[]>();
-        const serviceNamesByBusiness = new Map<string, string[]>();
-
-        for (const [index, result] of serviceResults.entries()) {
-          if (result.status !== "fulfilled") continue;
-
-          const business = runtimeBusinesses[index];
-          if (!business) continue;
-
-          searchTermsByBusiness.set(
-            business.id,
-            result.value.items.flatMap((service) =>
-              [service.name, service.shortDescription, service.description].filter(
-                (term): term is string => Boolean(term),
-              ),
-            ),
-          );
-          serviceNamesByBusiness.set(
-            business.id,
-            result.value.items.map((service) => service.name),
-          );
-        }
+        const serviceNamesByBusiness = new Map(
+          runtimeBusinesses.map((business) => [business.id, business.serviceNames]),
+        );
 
         return {
           city: mergeRuntimeCityWithEditorial(
@@ -410,9 +547,12 @@ export async function getPublicCitySurfaceData(
     return {
       city: {
         ...fallbackCity,
+        country: "IT",
         businessCount: fallbackCity.businesses.length,
         publicHeroTitle: null,
         publicHeroDescription: null,
+        seoTitle: null,
+        seoDescription: null,
         businesses: fallbackCity.businesses.map((business) => ({
           ...business,
           href: buildBusinessPath({
@@ -445,20 +585,17 @@ export async function getPublicBusinessSurfaceData(
 
     for (const candidate of buildBusinessCandidates(citySlug, businessSlug)) {
       try {
-        const [cityResponse, businessResponse] = await Promise.all([
-          fetchPlatformApi<PublicCityResponse>(`/api/v2/public/cities/${candidate.citySlug}`),
-          fetchPlatformApi<PublicBusinessResponse>(
-            `/api/v2/public/cities/${candidate.citySlug}/businesses/${candidate.businessSlug}`,
-          ),
+        const [runtimeCity, runtimeBusiness] = await Promise.all([
+          fetchPublicCityItem(candidate.citySlug),
+          fetchPublicBusinessItem(candidate.citySlug, candidate.businessSlug),
         ]);
-        const runtimeCity = normalizeRuntimeCity(cityResponse.item);
-        const runtimeBusiness = normalizeRuntimeBusiness(businessResponse.item);
 
         return {
           city: {
             ...editorialCity,
             name: runtimeCity.name,
             slug: runtimeCity.slug,
+            country: runtimeCity.country,
             region: runtimeCity.region ?? editorialCity.region,
             claim: runtimeCity.heroTitle ?? editorialCity.claim,
             shortPitch: runtimeCity.heroDescription ?? editorialCity.shortPitch,
@@ -494,7 +631,7 @@ export async function getPublicBusinessSurfaceData(
     }
 
     return {
-      city: fallbackCity,
+      city: { ...fallbackCity, country: "IT" },
       business: {
         ...fallbackBusiness,
         href: buildBusinessPath({
@@ -505,10 +642,14 @@ export async function getPublicBusinessSurfaceData(
         socialLinks: [],
         locality: null,
         province: null,
+        addressLine2: null,
+        postalCode: null,
         publicEmail: null,
         website: null,
         currency: "EUR",
         categories: [],
+        seoTitle: null,
+        seoDescription: null,
       },
       degraded: true,
       live: false,

@@ -69,7 +69,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
     <PlatformAdminShell
       breadcrumbs={[{ href: "/admin", label: "Dashboard" }, { label: "Città" }]}
       currentPath="/admin/cities"
-      description="Cerca, attiva e aggiorna le città accessibili nel tuo ambito operativo."
+      description="Aggiungi una città, rendila attiva e configura le categorie prima di creare le attività."
       session={session}
       title="Città"
     >
@@ -83,6 +83,17 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
           {error}
         </p>
       ) : null}
+
+      <section className="admin-state-card" aria-labelledby="city-flow-title">
+        <div>
+          <p className="section-label">Da dove iniziare</p>
+          <h2 id="city-flow-title">Città → categorie → attività</h2>
+        </div>
+        <p>
+          Una città diventa pubblica quando è abilitata e ha stato Attivo. Aggiungi poi almeno una
+          categoria attiva: CityCore ti guiderà alla creazione della prima attività.
+        </p>
+      </section>
 
       <section className="admin-toolbar" aria-labelledby="cities-filters-title">
         <div className="section-header">
@@ -155,7 +166,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
         <div className="card-heading">
           <div>
             <p className="section-label">Gestione città</p>
-            <h2 id="cities-table-title">Città attive e configurate</h2>
+            <h2 id="cities-table-title">Città configurate</h2>
           </div>
           {cities.data ? (
             <span className="admin-result-count">{cities.data.total} risultati</span>
@@ -177,6 +188,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                     <th>Provincia</th>
                     <th>Regione</th>
                     <th>Stato</th>
+                    <th>Categorie</th>
                     <th>Attività</th>
                     <th>Azioni</th>
                   </tr>
@@ -193,9 +205,16 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                       <td>
                         <AdminStatusBadge status={city.active ? city.status : "disabled"} />
                       </td>
+                      <td>{city.activeCategoryCount} attive</td>
                       <td>{city.businessCount}</td>
                       <td>
                         <div className="table-actions">
+                          <Link
+                            className="table-link"
+                            href={`/admin/cities/${encodeURIComponent(city.slug)}/categories`}
+                          >
+                            Categorie
+                          </Link>
                           <Link
                             className="table-link"
                             href={`/admin/businesses?city=${encodeURIComponent(city.slug)}`}
@@ -209,6 +228,24 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                           ) : (
                             <span className="admin-muted-label">Non pubblica</span>
                           )}
+                          {canManageCities && (!city.active || city.status !== "active") ? (
+                            <form action={updateCityAction}>
+                              <input name="returnTo" type="hidden" value={returnTo} />
+                              <input name="citySlug" type="hidden" value={city.slug} />
+                              <input name="name" type="hidden" value={city.name} />
+                              <input name="slug" type="hidden" value={city.slug} />
+                              <input name="province" type="hidden" value={city.province ?? ""} />
+                              <input name="region" type="hidden" value={city.region ?? ""} />
+                              <input name="status" type="hidden" value="active" />
+                              <input name="active" type="hidden" value="on" />
+                              <AdminSubmitButton
+                                className="table-action-button"
+                                pendingLabel="Attivazione…"
+                              >
+                                Attiva città
+                              </AdminSubmitButton>
+                            </form>
+                          ) : null}
                           {canManageCities ? (
                             <details className="admin-inline-details">
                               <summary>Gestisci</summary>
@@ -380,7 +417,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                                 className="table-action-button"
                                 pendingLabel="Aggiunta…"
                               >
-                                Aggiungi alla piattaforma
+                                Aggiungi e configura
                               </AdminSubmitButton>
                             </form>
                           )}

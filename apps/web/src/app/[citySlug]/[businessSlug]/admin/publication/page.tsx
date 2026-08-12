@@ -3,25 +3,22 @@ import { AdminCollectionError } from "../../../../../components/admin-collection
 import { AdminStatusBadge } from "../../../../../components/admin-status-badge";
 import { AdminSubmitButton } from "../../../../../components/admin-submit-button";
 import { businessAdminSectionPath } from "../../../../../lib/business-admin-navigation";
+import { isBusinessPublic } from "../../../../../lib/business-visibility";
 import {
   businessAdminApiPath,
   getBusinessAdminContext,
   loadBusinessAdminResponse,
 } from "../../../../../lib/business-admin-server";
-import { readinessReasonLabel, readinessSummary } from "../../../../../lib/business-admin-logic";
+import {
+  readinessAction,
+  readinessReasonLabel,
+  readinessRequirements,
+  readinessSummary,
+} from "../../../../../lib/business-admin-logic";
 import type { PlatformPublishReadinessResponse } from "../../../../../lib/platform-api";
 import { publishBusinessAction, unpublishBusinessAction } from "../actions";
 
 export const metadata = { title: "Pubblicazione attività" };
-
-const readinessRequirements = [
-  ["name", "Nome attività"],
-  ["slug", "Slug"],
-  ["active_city", "Città attiva"],
-  ["description", "Descrizione"],
-  ["active_category", "Categoria"],
-  ["public_contact", "Contatto pubblico"],
-] as const;
 
 export default async function BusinessPublicationPage({
   params,
@@ -39,6 +36,8 @@ export default async function BusinessPublicationPage({
     session.token,
   );
   const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
+  const canManageCity = session.auth.activeAccess.permissions.includes("cities.manage");
+  const isPublic = isBusinessPublic(business);
 
   return (
     <>
@@ -57,7 +56,11 @@ export default async function BusinessPublicationPage({
           <div>
             <p className="section-label">Visibilità</p>
             <h2 id="publication-title">
-              {business.status === "active" ? "Attività pubblicata" : "Attività non pubblicata"}
+              {isPublic
+                ? "Attività pubblicata"
+                : business.status === "active"
+                  ? "Attività pronta, città non pubblica"
+                  : "Attività non pubblicata"}
             </h2>
           </div>
           <AdminStatusBadge status={business.status} />
@@ -82,12 +85,20 @@ export default async function BusinessPublicationPage({
             <ul className="business-readiness-list">
               {readinessRequirements.map(([key, label]) => {
                 const missing = readiness.data.item.missingRequirements.includes(key);
+                const action = readinessAction(key, citySlug, businessSlug, canManageCity);
                 return (
                   <li className={missing ? "is-missing" : "is-complete"} key={key}>
                     <span aria-hidden="true">{missing ? "×" : "✓"}</span>
                     <div>
                       <strong>{label}</strong>
                       {missing ? <small>{readinessReasonLabel(key)}</small> : null}
+                      {missing && action.href ? (
+                        <Link className="table-link" href={action.href}>
+                          {action.label} →
+                        </Link>
+                      ) : missing ? (
+                        <small>{action.label}</small>
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -129,7 +140,7 @@ export default async function BusinessPublicationPage({
                   </AdminSubmitButton>
                 </form>
               ) : null}
-              {business.status === "active" ? (
+              {isPublic ? (
                 <Link
                   className="ghost-button"
                   href={`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`}
@@ -138,6 +149,21 @@ export default async function BusinessPublicationPage({
                 </Link>
               ) : null}
             </div>
+            {business.status === "active" && !isPublic ? (
+              <div className="admin-state-card">
+                <strong>La città non è visibile al pubblico.</strong>
+                <p>La scheda tornerà raggiungibile quando un amministratore riattiverà la città.</p>
+              </div>
+            ) : null}
+            {business.status === "paused" || business.status === "disabled" ? (
+              <div className="admin-state-card">
+                <strong>Stato gestito dall&apos;amministrazione.</strong>
+                <p>
+                  Contatta un amministratore di città o piattaforma per verificare la sospensione; i
+                  dati restano conservati.
+                </p>
+              </div>
+            ) : null}
             {!canManage ? (
               <p className="muted-copy">
                 Il tuo ruolo può consultare la readiness ma non cambiare la pubblicazione.

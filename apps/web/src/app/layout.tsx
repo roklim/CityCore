@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import { createCssVariables } from "@platform/ui";
+import { resolvePublicSiteUrl } from "../lib/public-links";
 import "./globals.css";
 
+const metadataBase = resolvePublicSiteUrl(process.env.NEXT_PUBLIC_SITE_URL, process.env.NODE_ENV);
+
 export const metadata: Metadata = {
+  ...(metadataBase ? { metadataBase } : {}),
   title: {
     default: "CityCore",
     template: "%s | CityCore",

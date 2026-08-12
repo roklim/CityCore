@@ -26,6 +26,12 @@ export function BusinessCategorySelector({
   const [selectedIds, setSelectedIds] = useState(
     () => new Set(assignments.filter((assignment) => assignment.active).map((item) => item.id)),
   );
+  const [primaryId, setPrimaryId] = useState(
+    () =>
+      assignments.find((assignment) => assignment.active && assignment.primary)?.id ??
+      assignments.find((assignment) => assignment.active)?.id ??
+      "",
+  );
   const returnTo = `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin/categories`;
 
   return (
@@ -39,20 +45,24 @@ export function BusinessCategorySelector({
       </div>
       <div className="business-category-grid">
         {activeCategories.map((category) => (
-          <label
+          <div
             className={`business-check-option${category.parentId ? " business-category-child" : ""}`}
             key={category.id}
           >
             <input
+              aria-label={`Assegna ${category.name}`}
               checked={selectedIds.has(category.id)}
               name="categoryIds"
               onChange={(event) => {
-                setSelectedIds((current) => {
-                  const next = new Set(current);
-                  if (event.target.checked) next.add(category.id);
-                  else next.delete(category.id);
-                  return next;
-                });
+                const next = new Set(selectedIds);
+                if (event.target.checked) {
+                  next.add(category.id);
+                  if (!primaryId) setPrimaryId(category.id);
+                } else {
+                  next.delete(category.id);
+                  if (primaryId === category.id) setPrimaryId(next.values().next().value ?? "");
+                }
+                setSelectedIds(next);
               }}
               type="checkbox"
               value={category.id}
@@ -64,7 +74,18 @@ export function BusinessCategorySelector({
                 {category.description ? ` · ${category.description}` : ""}
               </small>
             </span>
-          </label>
+            <label className="admin-check-field">
+              <input
+                checked={primaryId === category.id}
+                disabled={!selectedIds.has(category.id)}
+                name="primaryCategoryId"
+                onChange={() => setPrimaryId(category.id)}
+                type="radio"
+                value={category.id}
+              />
+              Primaria
+            </label>
+          </div>
         ))}
       </div>
       {inactiveAssignments.length ? (
