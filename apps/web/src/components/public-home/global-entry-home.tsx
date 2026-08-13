@@ -47,7 +47,11 @@ export function GlobalEntryHome({
 
               {cities.length ? (
                 <CityEntryForm
-                  cities={cities.map((city) => ({ slug: city.slug, name: city.name }))}
+                  cities={cities.map((city) => ({
+                    slug: city.slug,
+                    name: city.name,
+                    qualifier: city.searchQualifier,
+                  }))}
                 />
               ) : (
                 <p

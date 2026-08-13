@@ -28,6 +28,7 @@ import { getPublicBusinessCategoryLabel } from "./public-search";
 export type HomepageCityCard = {
   name: string;
   slug: string;
+  searchQualifier?: string | null;
   claim: string;
   shortPitch: string;
   businessCount: number;
@@ -382,6 +383,12 @@ function mapHomeCity(city: PublicPlatformCity): HomepageCityCard {
   return {
     name: city.name,
     slug: city.slug,
+    searchQualifier: [city.province, city.region]
+      .filter(
+        (value, index, values): value is string =>
+          Boolean(value) && values.indexOf(value) === index,
+      )
+      .join(" · "),
     claim: city.heroTitle ?? `Scopri le attività pubblicate a ${city.name}.`,
     shortPitch: city.heroDescription ?? "Scegli una città per esplorarne la directory locale.",
     businessCount: city.businessCount,
@@ -456,6 +463,7 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
   const fallbackCities = getFeaturedCities().map((city) => ({
     name: city.name,
     slug: city.slug,
+    searchQualifier: city.region,
     claim: city.claim,
     shortPitch: city.shortPitch,
     businessCount: city.businesses.length,

@@ -59,6 +59,88 @@ export function normalizeSearchText(value: string) {
     .replace(/\s+/g, " ");
 }
 
+export function normalizeCitySearchText(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("it-IT")
+    .replace(/['’`´\-‐‑‒–—―/]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export type CitySearchSuggestions<TCity> = {
+  items: TCity[];
+  total: number;
+  truncated: boolean;
+};
+
+const defaultCitySuggestionLimit = 5;
+const minimumCitySuggestionQueryLength = 2;
+
+function citySuggestionRank(query: string, city: { slug: string; name: string }) {
+  const normalizedName = normalizeCitySearchText(city.name);
+  const normalizedSlug = normalizeCitySearchText(city.slug);
+
+  if (normalizedName === query) return 0;
+  if (normalizedName.startsWith(query)) return 1;
+  if (normalizedName.split(" ").some((word) => word.length > 0 && word.startsWith(query))) return 2;
+  if (query.length >= 3 && normalizedName.includes(query)) return 3;
+  if (
+    normalizedSlug === query ||
+    normalizedSlug.startsWith(query) ||
+    (query.length >= 3 && normalizedSlug.includes(query))
+  )
+    return 4;
+
+  return null;
+}
+
+export function getCitySearchSuggestions<TCity extends { slug: string; name: string }>(
+  query: string,
+  cities: readonly TCity[],
+  limit = defaultCitySuggestionLimit,
+): CitySearchSuggestions<TCity> {
+  const normalizedQuery = normalizeCitySearchText(query);
+
+  if (normalizedQuery.length < minimumCitySuggestionQueryLength) {
+    return { items: [], total: 0, truncated: false };
+  }
+
+  const ranked = cities
+    .map((city, sourceIndex) => ({
+      city,
+      rank: citySuggestionRank(normalizedQuery, city),
+      sourceIndex,
+    }))
+    .filter(
+      (candidate): candidate is { city: TCity; rank: number; sourceIndex: number } =>
+        candidate.rank !== null,
+    )
+    .sort(
+      (left, right) =>
+        left.rank - right.rank ||
+        left.city.name.localeCompare(right.city.name, "it", { sensitivity: "base" }) ||
+        left.sourceIndex - right.sourceIndex,
+    );
+  const seenSlugs = new Set<string>();
+  const uniqueMatches = ranked.flatMap(({ city }) => {
+    const slugKey = normalizeCitySearchText(city.slug);
+    if (seenSlugs.has(slugKey)) return [];
+    seenSlugs.add(slugKey);
+    return [city];
+  });
+  const safeLimit = Number.isFinite(limit)
+    ? Math.max(0, Math.floor(limit))
+    : defaultCitySuggestionLimit;
+
+  return {
+    items: uniqueMatches.slice(0, safeLimit),
+    total: uniqueMatches.length,
+    truncated: uniqueMatches.length > safeLimit,
+  };
+}
+
 export type CitySearchResolution =
   | { status: "empty" }
   | { status: "match"; slug: string }
@@ -69,14 +151,12 @@ export function resolveCitySearch(
   query: string,
   cities: readonly { slug: string; name: string }[],
 ): CitySearchResolution {
-  const normalizedQuery = normalizeSearchText(query);
+  const normalizedQuery = normalizeCitySearchText(query);
 
   if (!normalizedQuery) return { status: "empty" };
 
   const exactMatches = cities.filter(
-    (city) =>
-      normalizeSearchText(city.name) === normalizedQuery ||
-      normalizeSearchText(city.slug) === normalizedQuery,
+    (city) => normalizeCitySearchText(city.name) === normalizedQuery,
   );
 
   if (exactMatches.length === 1) {
@@ -85,17 +165,13 @@ export function resolveCitySearch(
   }
   if (exactMatches.length > 1) return { status: "ambiguous" };
 
-  const partialMatches = cities.filter(
-    (city) =>
-      normalizeSearchText(city.name).includes(normalizedQuery) ||
-      normalizeSearchText(city.slug).includes(normalizedQuery),
-  );
+  const partialMatches = getCitySearchSuggestions(query, cities, cities.length);
 
-  if (partialMatches.length === 1) {
-    const slug = partialMatches[0]?.slug;
+  if (partialMatches.total === 1) {
+    const slug = partialMatches.items[0]?.slug;
     return slug ? { status: "match", slug } : { status: "unavailable" };
   }
-  if (partialMatches.length > 1) return { status: "ambiguous" };
+  if (partialMatches.total > 1) return { status: "ambiguous" };
 
   return { status: "unavailable" };
 }

@@ -3,6 +3,7 @@ import {
   filterPublicBusinesses,
   filterPublicBusinessesBySection,
   findMatchingCitySlug,
+  getCitySearchSuggestions,
   getPublicBusinessCategoryLabel,
   groupPublicBusinessesByCategory,
   groupPublicBusinessesForDisplay,
@@ -55,6 +56,173 @@ describe("public search", () => {
     expect(resolveCitySearch("Rimini", cities)).toEqual({ status: "unavailable" });
     expect(resolveCitySearch("San", cities)).toEqual({ status: "ambiguous" });
     expect(resolveCitySearch("Luca", cities)).toEqual({ status: "match", slug: "san-luca" });
+  });
+
+  it("keeps submit matching consistent with the suggestion thresholds", () => {
+    const cities = [{ slug: "cagli", name: "Cagli" }];
+
+    expect(resolveCitySearch("c", cities)).toEqual({ status: "unavailable" });
+    expect(resolveCitySearch("ag", cities)).toEqual({ status: "unavailable" });
+    expect(resolveCitySearch("ca", cities)).toEqual({ status: "match", slug: "cagli" });
+  });
+
+  it("does not prioritize an exact slug over multiple visible suggestions", () => {
+    const cities = [
+      { slug: "roma", name: "Capitale" },
+      { slug: "romagna", name: "Romanengo" },
+    ];
+
+    expect(getCitySearchSuggestions("roma", cities).items.map((city) => city.name)).toEqual([
+      "Romanengo",
+      "Capitale",
+    ]);
+    expect(resolveCitySearch("roma", cities)).toEqual({ status: "ambiguous" });
+  });
+
+  it("does not suggest cities before two normalized characters", () => {
+    const cities = [{ slug: "cagli", name: "Cagli" }];
+
+    expect(getCitySearchSuggestions("", cities)).toEqual({
+      items: [],
+      total: 0,
+      truncated: false,
+    });
+    expect(getCitySearchSuggestions(" c ", cities)).toEqual({
+      items: [],
+      total: 0,
+      truncated: false,
+    });
+    expect(getCitySearchSuggestions(" ca ", cities).items).toEqual(cities);
+  });
+
+  it("ranks exact, name prefix, word prefix, contains and slug fallback matches", () => {
+    const cities = [
+      { slug: "zona-roma", name: "Capitale" },
+      { slug: "aromatica", name: "Aromatica" },
+      { slug: "santa-roma", name: "Santa Roma" },
+      { slug: "romagna", name: "Romagna" },
+      { slug: "roma", name: "Roma" },
+    ];
+
+    expect(getCitySearchSuggestions("roma", cities, 10).items.map((city) => city.name)).toEqual([
+      "Roma",
+      "Romagna",
+      "Santa Roma",
+      "Aromatica",
+      "Capitale",
+    ]);
+  });
+
+  it("normalizes accents and recognizes word prefixes after Italian punctuation", () => {
+    const cities = [
+      { slug: "citta-di-castello", name: "Città di Castello" },
+      { slug: "laquila", name: "L'Aquila" },
+    ];
+
+    expect(getCitySearchSuggestions("citta", cities).items.map((city) => city.slug)).toEqual([
+      "citta-di-castello",
+    ]);
+    expect(getCitySearchSuggestions("aqu", cities).items.map((city) => city.slug)).toEqual([
+      "laquila",
+    ]);
+    expect(resolveCitySearch("L'Aquila", [{ slug: "l-aquila", name: "L’Aquila" }])).toEqual({
+      status: "match",
+      slug: "l-aquila",
+    });
+    expect(
+      resolveCitySearch("citta-di-castello", [
+        { slug: "citta-di-castello", name: "Città di Castello" },
+      ]),
+    ).toEqual({ status: "match", slug: "citta-di-castello" });
+  });
+
+  it("allows two-character prefixes but requires three characters for contains matches", () => {
+    const cities = [
+      { slug: "cagli", name: "Cagli" },
+      { slug: "porto-rosa", name: "Porto Rosa" },
+    ];
+
+    expect(getCitySearchSuggestions("ca", cities).items.map((city) => city.name)).toEqual([
+      "Cagli",
+    ]);
+    expect(getCitySearchSuggestions("ag", cities).items).toEqual([]);
+    expect(getCitySearchSuggestions("osa", cities).items.map((city) => city.name)).toEqual([
+      "Porto Rosa",
+    ]);
+  });
+
+  it("uses the slug only as the last ranking fallback", () => {
+    const cities = [
+      { slug: "san-luca-centro", name: "Centro storico" },
+      { slug: "san-luca", name: "San Luca" },
+    ];
+
+    expect(getCitySearchSuggestions("luca", cities).items.map((city) => city.name)).toEqual([
+      "San Luca",
+      "Centro storico",
+    ]);
+  });
+
+  it("sorts equal-ranked suggestions alphabetically in Italian", () => {
+    const cities = [
+      { slug: "caltagirone", name: "Caltagirone" },
+      { slug: "cagli", name: "Cagli" },
+      { slug: "camerino", name: "Camerino" },
+    ];
+
+    expect(getCitySearchSuggestions("ca", cities).items.map((city) => city.name)).toEqual([
+      "Cagli",
+      "Caltagirone",
+      "Camerino",
+    ]);
+  });
+
+  it("deduplicates normalized slugs after ranking and preserves extra city data", () => {
+    const cities = [
+      { slug: "cagli", name: "Cagli centro", businessCount: 2 },
+      { slug: "CAGLI", name: "Cagli", businessCount: 4 },
+    ];
+
+    expect(getCitySearchSuggestions("cagli", cities)).toEqual({
+      items: [{ slug: "CAGLI", name: "Cagli", businessCount: 4 }],
+      total: 1,
+      truncated: false,
+    });
+  });
+
+  it("applies the default and custom limits and reports total and truncation", () => {
+    const cities = Array.from({ length: 7 }, (_, index) => ({
+      slug: `casa-${index + 1}`,
+      name: `Casa ${index + 1}`,
+    }));
+
+    expect(getCitySearchSuggestions("ca", cities)).toMatchObject({ total: 7, truncated: true });
+    expect(getCitySearchSuggestions("ca", cities).items).toHaveLength(5);
+    expect(getCitySearchSuggestions("ca", cities, 2)).toEqual({
+      items: cities.slice(0, 2),
+      total: 7,
+      truncated: true,
+    });
+    expect(getCitySearchSuggestions("ca", cities, 10)).toEqual({
+      items: cities,
+      total: 7,
+      truncated: false,
+    });
+  });
+
+  it("handles zero, fractional and non-finite limits deterministically", () => {
+    const cities = [
+      { slug: "cagli", name: "Cagli" },
+      { slug: "camerino", name: "Camerino" },
+    ];
+
+    expect(getCitySearchSuggestions("ca", cities, 0)).toEqual({
+      items: [],
+      total: 2,
+      truncated: true,
+    });
+    expect(getCitySearchSuggestions("ca", cities, 1.9).items).toEqual([cities[0]]);
+    expect(getCitySearchSuggestions("ca", cities, Number.POSITIVE_INFINITY).items).toEqual(cities);
   });
 
   it("filters by business, locality, description and real service names", () => {
