@@ -179,23 +179,26 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
   if (degraded) {
     return (
       <PublicShell
-        toneLabel="Contenuti dimostrativi"
-        title="Scheda temporaneamente non disponibile."
+        toneLabel="Dati non disponibili"
+        title="Scheda temporaneamente non disponibile"
         description="I dati dell'attività non sono disponibili in questo momento."
         contextLabel={city.name}
         contextHref={`/${city.slug}`}
-        accentNote="Le richieste e gli ordini restano disattivati finché i dati live non tornano disponibili."
+        accentNote="Richieste e ordini non sono disponibili finché le informazioni non tornano raggiungibili."
+        breadcrumbs={[
+          { label: "Home", href: "/" },
+          { label: city.name, href: `/${city.slug}` },
+          { label: "Scheda non disponibile" },
+        ]}
       >
-        <section className="public-stack">
-          <section className="spotlight-card" aria-live="polite">
-            <p className="section-label">Aggiornamento in corso</p>
-            <h2>Riprova tra poco.</h2>
-            <p>Puoi tornare alla directory per esplorare le altre attività della città.</p>
-            <Link className="text-link" href={`/${city.slug}`}>
-              Torna a {city.name}
-            </Link>
-          </section>
-        </section>
+        <nav className="cta-row" aria-label="Come continuare">
+          <Link className="cta-button" href={`/${city.slug}#directory`}>
+            Vedi altre attività a {city.name}
+          </Link>
+          <Link className="text-link" href="/#active-cities">
+            Cambia città
+          </Link>
+        </nav>
       </PublicShell>
     );
   }
@@ -207,45 +210,39 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
       description={business.summary}
       contextLabel={city.name}
       contextHref={`/${city.slug}`}
-      accentNote={
-        locationLine
-          ? `Dove trovarla: ${locationLine}.`
-          : "Consulta i contatti per ricevere informazioni dall'attività."
-      }
+      breadcrumbs={[
+        { label: "Home", href: "/" },
+        { label: city.name, href: `/${city.slug}` },
+        { label: business.name },
+      ]}
     >
-      <section className="public-stack">
-        {business.categories.length ? (
-          <div className="pill-row" aria-label="Categorie attività">
-            {business.categories.map((category) => (
-              <span className="pill" key={category.id}>
-                {category.name}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {structuredData ? (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
-            }}
-          />
-        ) : null}
+      {structuredData ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+          }}
+        />
+      ) : null}
 
-        <section className="spotlight-card spotlight-primary business-action-card">
-          {openingStatus ? (
-            <div className="card-topline">
-              <span className="pill">
-                {openingStatus.label}
-                {openingStatus.detail ? ` · ${openingStatus.detail}` : ""}
-              </span>
+      <div className="public-stack public-business-page">
+        <section className="public-business-overview" aria-label="Informazioni principali">
+          {business.categories.length > 1 ? (
+            <div className="pill-row public-business-categories" aria-label="Categorie attività">
+              {business.categories.slice(1).map((category) => (
+                <span className="pill" key={category.id}>
+                  {category.name}
+                </span>
+              ))}
             </div>
           ) : null}
-          <div>
-            <p className="section-label">Prossimo passo</p>
-            <h2>{primaryAction.heading}</h2>
-          </div>
-          <div className="cta-row">
+          {openingStatus ? (
+            <p className="public-business-opening-status" role="status">
+              <strong>{openingStatus.label}</strong>
+              {openingStatus.detail ? <span> · {openingStatus.detail}</span> : null}
+            </p>
+          ) : null}
+          <nav className="cta-row public-business-quick-actions" aria-label="Azioni principali">
             <a
               className="cta-button"
               href={primaryAction.href}
@@ -254,96 +251,38 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
             >
               {primaryAction.label}
             </a>
-          </div>
+          </nav>
         </section>
 
-        <section className="public-list-grid" id="services">
+        <section className="public-business-section public-contact-details">
           <div className="section-header">
-            <p className="section-label">Servizi</p>
-            <h2>Servizi disponibili</h2>
-          </div>
-          {servicesResult?.status === "rejected" ? (
-            <p>I servizi non sono momentaneamente disponibili.</p>
-          ) : services.length ? (
-            services.map((service) => (
-              <article className="public-card" key={service.id}>
-                <h3>{service.name}</h3>
-                {service.shortDescription && service.shortDescription !== service.description ? (
-                  <p>{service.shortDescription}</p>
-                ) : null}
-                {service.description ? <p>{service.description}</p> : null}
-                {service.priceLabel || service.priceCents !== null || service.durationMinutes ? (
-                  <p>
-                    {[
-                      service.priceLabel ?? formatServicePrice(service.priceCents),
-                      formatServiceDuration(service.durationMinutes),
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                ) : null}
-              </article>
-            ))
-          ) : (
-            <p>Questa attività non ha ancora pubblicato servizi.</p>
-          )}
-        </section>
-
-        <section className="public-list-grid" id="opening-hours">
-          <div className="section-header">
-            <p className="section-label">Disponibilità</p>
-            <h2>Orari di apertura</h2>
-          </div>
-          {openingHoursResult?.status === "rejected" ? (
-            <p>Gli orari non sono momentaneamente disponibili.</p>
-          ) : openingDays.length ? (
-            openingDays
-              .slice()
-              .sort((a, b) => a.weekday - b.weekday)
-              .map((day) => (
-                <p
-                  key={day.weekday}
-                  aria-current={day.weekday === currentWeekday ? "date" : undefined}
-                  className={
-                    day.weekday === currentWeekday ? "public-opening-day-current" : undefined
-                  }
-                >
-                  <strong>{weekdays[day.weekday]}</strong> · {formatOpeningDayWithNote(day)}
-                  {day.weekday === currentWeekday ? " · Oggi" : ""}
-                </p>
-              ))
-          ) : (
-            <p>Gli orari non sono ancora disponibili.</p>
-          )}
-        </section>
-
-        <section className="public-list-grid">
-          <div className="section-header">
-            <p className="section-label">Informazioni</p>
+            <p className="section-label">Contatti</p>
             <h2>Contatti e indirizzo</h2>
           </div>
-          {phoneHref ? (
-            <a className="text-link" href={phoneHref}>
-              {business.contactPhone}
-            </a>
-          ) : null}
-          {emailHref ? (
-            <a className="text-link" href={emailHref}>
-              {business.publicEmail}
-            </a>
-          ) : null}
-          {website ? (
-            <a className="text-link" href={website} target="_blank" rel="noopener noreferrer">
-              Visita il sito
-            </a>
-          ) : null}
-          {locationLine ? <p>{locationLine}</p> : null}
+          <div className="public-contact-list">
+            {phoneHref ? (
+              <a className="text-link" href={phoneHref}>
+                {business.contactPhone}
+              </a>
+            ) : null}
+            {emailHref ? (
+              <a className="text-link" href={emailHref}>
+                {business.publicEmail}
+              </a>
+            ) : null}
+            {website ? (
+              <a className="text-link" href={website} target="_blank" rel="noopener noreferrer">
+                Apri il sito web
+              </a>
+            ) : null}
+            {locationLine ? <address>{locationLine}</address> : null}
+          </div>
           {!phoneHref && !emailHref && !website && !locationLine ? (
             <p>Usa il modulo di richiesta per contattare questa attività.</p>
           ) : null}
           {business.socialLinks.length ? (
-            <div className="public-social-links" aria-label="Seguici" role="group">
-              <strong>Seguici</strong>
+            <div className="public-social-links" aria-label="Canali social">
+              <strong>Social</strong>
               {business.socialLinks.map((social) => (
                 <a
                   key={social.label}
@@ -351,13 +290,84 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Seguici su ${social.label}`}
+                  aria-label={`Apri ${social.label}`}
                 >
                   {social.label}
                 </a>
               ))}
             </div>
           ) : null}
+        </section>
+
+        <section className="public-business-section public-services-section" id="services">
+          <div className="section-header">
+            <p className="section-label">Servizi</p>
+            <h2>Servizi disponibili</h2>
+          </div>
+          {servicesResult?.status === "rejected" ? (
+            <p>I servizi non sono momentaneamente disponibili.</p>
+          ) : services.length ? (
+            <ul className="public-service-list">
+              {services.map((service) => {
+                const facts = [
+                  service.priceLabel ?? formatServicePrice(service.priceCents),
+                  formatServiceDuration(service.durationMinutes),
+                ].filter(Boolean);
+
+                return (
+                  <li className="public-service-row" key={service.id}>
+                    <div className="public-service-copy">
+                      <h3>{service.name}</h3>
+                      {service.shortDescription &&
+                      service.shortDescription !== service.description ? (
+                        <p>{service.shortDescription}</p>
+                      ) : null}
+                      {service.description ? <p>{service.description}</p> : null}
+                    </div>
+                    {facts.length ? (
+                      <p className="public-service-facts">{facts.join(" · ")}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p>Questa attività non ha ancora pubblicato servizi.</p>
+          )}
+        </section>
+
+        <section className="public-business-section public-hours-section" id="opening-hours">
+          <div className="section-header">
+            <p className="section-label">Disponibilità</p>
+            <h2>Orari di apertura</h2>
+          </div>
+          {openingHoursResult?.status === "rejected" ? (
+            <p>Gli orari non sono momentaneamente disponibili.</p>
+          ) : openingDays.length ? (
+            <dl className="public-hours-list">
+              {openingDays
+                .slice()
+                .sort((a, b) => a.weekday - b.weekday)
+                .map((day) => {
+                  const isToday = day.weekday === currentWeekday;
+                  return (
+                    <div
+                      key={day.weekday}
+                      aria-current={isToday ? "date" : undefined}
+                      className={`public-hours-row${isToday ? " public-opening-day-current" : ""}`}
+                    >
+                      <dt>
+                        {weekdays[day.weekday]}
+                        {isToday ? <span> · Oggi</span> : null}
+                      </dt>
+                      <dd>{formatOpeningDayWithNote(day)}</dd>
+                    </div>
+                  );
+                })}
+            </dl>
+          ) : (
+            <p>Gli orari non sono ancora disponibili.</p>
+          )}
         </section>
 
         {pickupOrderMenu ? (
@@ -372,7 +382,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
         ) : null}
 
         <PublicInquiryForm citySlug={city.slug} businessSlug={business.slug} />
-      </section>
+      </div>
     </PublicShell>
   );
 }

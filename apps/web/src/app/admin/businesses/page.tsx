@@ -30,6 +30,7 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
   const status = searchParam(params, "status");
   const template = searchParam(params, "template");
   const page = positivePage(searchParam(params, "page"));
+  const create = searchParam(params, "create");
   const notice = searchParam(params, "notice");
   const error = searchParam(params, "error");
   const query = { q, citySlug: city, status, templateCode: template, page, limit: 20 };
@@ -41,6 +42,15 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
     page: page > 1 ? page : undefined,
   });
   const returnTo = currentQuery ? `/admin/businesses?${currentQuery}` : "/admin/businesses";
+  const createBusinessQuery = queryString({
+    q,
+    city,
+    status,
+    template,
+    page: page > 1 ? page : undefined,
+    create: "true",
+  });
+  const createBusinessReturnTo = `/admin/businesses?${createBusinessQuery}`;
   const canCreateBusiness = session.auth.activeAccess.permissions.includes("businesses.manage");
 
   const [businesses, cities, templates] = await Promise.all([
@@ -60,12 +70,13 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
   const readyCities = activeCities.filter((item) => item.activeCategoryCount > 0);
   const citiesWithoutCategories = activeCities.filter((item) => item.activeCategoryCount === 0);
   const defaultCity = readyCities.some((item) => item.slug === city) ? city : "";
+  const setupResourcesFailed = cities.failed || templates.failed;
 
   return (
     <PlatformAdminShell
       breadcrumbs={[{ href: "/admin", label: "Dashboard" }, { label: "Attività" }]}
       currentPath="/admin/businesses"
-      description="Cerca le attività del tuo scope, apri la gestione owner e controlla la visibilità pubblica."
+      description="Cerca le attività del tuo ambito, apri la gestione del locale e controlla la visibilità pubblica."
       session={session}
       title="Attività"
     >
@@ -89,11 +100,6 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
           Per creare un'attività serve una città pubblica con almeno una categoria attiva. Dopo la
           creazione troverai una checklist con il prossimo passaggio da completare.
         </p>
-        <div className="admin-filter-actions">
-          <Link className="ghost-button" href="/admin/cities">
-            Configura città e categorie
-          </Link>
-        </div>
       </section>
 
       <section className="admin-toolbar" aria-labelledby="business-filters-title">
@@ -103,7 +109,7 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
         </div>
         <form className="admin-filter-form admin-filter-form-wide" method="get">
           <label className="field">
-            <span>Nome, slug o owner</span>
+            <span>Nome, slug o gestore</span>
             <input defaultValue={q} name="q" placeholder="Es. Forno" type="search" />
           </label>
           <label className="field">
@@ -128,9 +134,9 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
             </select>
           </label>
           <label className="field">
-            <span>Template</span>
+            <span>Tipo di attività</span>
             <select defaultValue={template} name="template">
-              <option value="">Tutti i template</option>
+              <option value="">Tutti i tipi</option>
               {templates.data?.items.map((item) => (
                 <option key={item.code} value={item.code}>
                   {item.name}
@@ -139,23 +145,30 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
             </select>
           </label>
           <div className="admin-filter-actions">
-            <button className="form-button" type="submit">
+            <button className="admin-button form-button" type="submit">
               Applica filtri
             </button>
-            <Link className="ghost-button" href="/admin/businesses">
-              Azzera
-            </Link>
+            {q || city || status || template ? (
+              <Link className="admin-button ghost-button" href="/admin/businesses">
+                Azzera
+              </Link>
+            ) : null}
           </div>
         </form>
       </section>
 
-      {canCreateBusiness && readyCities.length && activeTemplates.length ? (
-        <details className="admin-create-panel">
+      {canCreateBusiness && setupResourcesFailed ? (
+        <AdminCollectionError
+          message="Non è stato possibile caricare città e tipi di attività necessari alla creazione."
+          retryHref={returnTo}
+        />
+      ) : canCreateBusiness && readyCities.length && activeTemplates.length ? (
+        <details className="admin-create-panel" open={create === "true"}>
           <summary>Nuova attività in una città pronta</summary>
           <BusinessCreateForm
             cities={readyCities}
             defaultCity={defaultCity}
-            returnTo={returnTo}
+            returnTo={createBusinessReturnTo}
             templates={activeTemplates}
           />
         </details>
@@ -172,14 +185,14 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
             {!activeCities.length
               ? "Non ci sono città pubbliche. Attiva una città per proseguire."
               : !activeTemplates.length
-                ? "Non ci sono template attivi disponibili."
+                ? "Non ci sono tipi di attività attivi disponibili."
                 : "Le città attive non hanno ancora categorie disponibili."}
           </p>
           {citiesWithoutCategories.length ? (
             <div className="admin-filter-actions">
               {citiesWithoutCategories.map((item) => (
                 <Link
-                  className="ghost-button"
+                  className="admin-button ghost-button"
                   href={`/admin/cities/${encodeURIComponent(item.slug)}/categories`}
                   key={item.id}
                 >
@@ -188,7 +201,7 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
               ))}
             </div>
           ) : (
-            <Link className="ghost-button" href="/admin/cities">
+            <Link className="admin-button ghost-button" href="/admin/cities">
               Vai alle città
             </Link>
           )}
@@ -224,8 +237,8 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
                   <tr>
                     <th>Attività</th>
                     <th>Città</th>
-                    <th>Template</th>
-                    <th>Owner</th>
+                    <th>Tipo di attività</th>
+                    <th>Gestore</th>
                     <th>Stato</th>
                     <th>Azioni</th>
                   </tr>
@@ -256,14 +269,14 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
                         <div className="table-actions">
                           <Link
                             className="table-link"
-                            href={`/${business.city.slug}/${business.slug}/admin`}
+                            href={`/${encodeURIComponent(business.city.slug)}/${encodeURIComponent(business.slug)}/admin`}
                           >
                             Continua configurazione
                           </Link>
                           {isBusinessPublic(business) ? (
                             <Link
                               className="table-link"
-                              href={`/${business.city.slug}/${business.slug}`}
+                              href={`/${encodeURIComponent(business.city.slug)}/${encodeURIComponent(business.slug)}`}
                             >
                               Apri pagina pubblica
                             </Link>
@@ -292,7 +305,11 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
         ) : (
           <AdminEmptyState
             title="Nessuna attività corrisponde ai filtri."
-            text="Modifica la ricerca oppure crea una nuova attività."
+            text={
+              canCreateBusiness
+                ? "Modifica la ricerca oppure crea una nuova attività."
+                : "Modifica la ricerca per trovare un'attività accessibile nel tuo ambito."
+            }
           />
         )}
       </section>

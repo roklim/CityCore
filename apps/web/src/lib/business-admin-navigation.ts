@@ -3,15 +3,15 @@ import { isBusinessPublic } from "./business-visibility";
 import type { AuthAccess, PlatformBusiness } from "./platform-api";
 
 export const businessAdminSections = [
-  { segment: "", label: "Panoramica", meta: "Stato e azioni rapide" },
+  { segment: "", label: "Panoramica", meta: "Stato e prossime azioni" },
   { segment: "profile", label: "Profilo", meta: "Identità e contatti" },
-  { segment: "categories", label: "Categorie", meta: "Classificazione" },
-  { segment: "services", label: "Servizi", meta: "Catalogo" },
+  { segment: "categories", label: "Categorie", meta: "Visibilità nelle ricerche" },
+  { segment: "services", label: "Servizi", meta: "Offerta e prezzi" },
   { segment: "hours", label: "Orari", meta: "Settimana di apertura" },
-  { segment: "publication", label: "Pubblicazione", meta: "Readiness e visibilità" },
-  { segment: "inquiries", label: "Richieste", meta: "Inbox owner" },
-  { segment: "modules", label: "Moduli", meta: "Funzioni attive" },
-  { segment: "orders", label: "Ordini ritiro", meta: "Estensione opzionale" },
+  { segment: "publication", label: "Pubblicazione", meta: "Controlli e visibilità" },
+  { segment: "inquiries", label: "Richieste", meta: "Messaggi ricevuti" },
+  { segment: "modules", label: "Moduli", meta: "Funzioni disponibili" },
+  { segment: "orders", label: "Ordini ritiro", meta: "Ritiro e disponibilità" },
 ] as const;
 
 export type BusinessAdminSegment = (typeof businessAdminSections)[number]["segment"];
@@ -41,7 +41,7 @@ export function getBusinessAdminNavigation({
   access,
   business,
   currentPath,
-  hasMultipleAccesses,
+  hasMultipleAccesses: _hasMultipleAccesses,
 }: {
   access: AuthAccess;
   business: PlatformBusiness;
@@ -76,7 +76,7 @@ export function getBusinessAdminNavigation({
         label,
         meta:
           requiredManagePermission && !permissions.has(requiredManagePermission)
-            ? `${meta} · sola lettura`
+            ? `${meta} · puoi solo consultare`
             : meta,
         current: href === currentPath,
       };
@@ -106,15 +106,6 @@ export function getBusinessAdminNavigation({
       label: "Directory cittadina",
       meta: business.city.name,
       dividerBefore: !isBusinessPublic(business),
-      current: false,
-    });
-  }
-
-  if (hasMultipleAccesses) {
-    items.push({
-      href: "/select-access",
-      label: "Cambia accesso",
-      meta: "Scegli un altro ambito",
       current: false,
     });
   }

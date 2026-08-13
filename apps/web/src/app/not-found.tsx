@@ -1,19 +1,19 @@
-import { PublicFeedback } from "../components/public-feedback";
+import Link from "next/link";
 import { PublicShell } from "../components/public-shell";
 
 export default function NotFound() {
   return (
     <PublicShell
       toneLabel="Pagina non trovata"
-      title="Qui non c'è una pagina CityCore."
-      description="La città o l'attività richiesta non è disponibile pubblicamente, oppure l'indirizzo non è corretto."
+      title="Questa pagina non è disponibile"
+      description="L'indirizzo potrebbe essere errato, oppure la città o l'attività non è ancora pubblicata."
+      breadcrumbs={[{ label: "Home", href: "/" }, { label: "Pagina non disponibile" }]}
     >
-      <PublicFeedback
-        headingLevel={2}
-        title="Controlla l'indirizzo o scegli una città"
-        body="Le schede pubbliche sono disponibili solo per città e attività attive."
-        action={{ href: "/", label: "Torna alla home" }}
-      />
+      <nav className="cta-row" aria-label="Come continuare">
+        <Link className="cta-button" href="/">
+          Torna alla home
+        </Link>
+      </nav>
     </PublicShell>
   );
 }

@@ -14,15 +14,23 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button className="form-button" type="submit" disabled={pending}>
-      {pending ? "Attivazione..." : "Apri superficie"}
+    <button
+      aria-busy={pending}
+      className="admin-button form-button"
+      data-pending={pending || undefined}
+      type="submit"
+      disabled={pending}
+    >
+      <span aria-live="polite">
+        {pending ? "Apertura in corso…" : "Continua con l'accesso selezionato"}
+      </span>
     </button>
   );
 }
 
 function describeAccess(access: AuthAccess) {
   if (access.scopeType === "platform") {
-    return "Governance completa della piattaforma.";
+    return "Gestione completa di città, attività e accessi.";
   }
 
   if (access.scopeType === "city") {
@@ -50,31 +58,48 @@ function ErrorBanner({ state }: { state: AdminAuthActionState }) {
   );
 }
 
-export function AccessSelector({ accesses }: { accesses: AuthAccess[] }) {
+export function AccessSelector({
+  accesses,
+  currentAccessId,
+}: {
+  accesses: AuthAccess[];
+  currentAccessId: string;
+}) {
   const [state, formAction] = useActionState(selectAccessAction, initialState);
 
   return (
-    <form action={formAction} className="selector-card">
-      <div className="selector-list">
-        {accesses.map((access) => (
-          <label className="selector-item" key={access.id}>
-            <input
-              type="radio"
-              name="accessGrantId"
-              value={access.id}
-              defaultChecked={access === accesses[0]}
-            />
-            <div className="selector-copy">
-              <strong>{adminRoleLabel(access.role)}</strong>
-              <p>{describeAccess(access)}</p>
-              <div className="pill-row">
-                <span className="pill">{adminScopeLabel(access.scopeType)}</span>
-                {access.city ? <span className="pill">{access.city.name}</span> : null}
-                {access.business ? <span className="pill">{access.business.name}</span> : null}
+    <form action={formAction} aria-label="Scelta dell'accesso operativo" className="selector-card">
+      <div className="selector-list" role="radiogroup" aria-label="Accessi disponibili">
+        {accesses.map((access) => {
+          const isCurrent = access.id === currentAccessId;
+          const descriptionId = `access-description-${access.id}`;
+          return (
+            <label
+              aria-current={isCurrent ? "true" : undefined}
+              className="selector-item"
+              key={access.id}
+            >
+              <input
+                aria-describedby={descriptionId}
+                defaultChecked={isCurrent}
+                name="accessGrantId"
+                required
+                type="radio"
+                value={access.id}
+              />
+              <div className="selector-copy">
+                <strong>{adminRoleLabel(access.role)}</strong>
+                <p id={descriptionId}>{describeAccess(access)}</p>
+                <div className="pill-row">
+                  {isCurrent ? <span className="pill">Accesso in uso</span> : null}
+                  <span className="pill">{adminScopeLabel(access.scopeType)}</span>
+                  {access.city ? <span className="pill">{access.city.name}</span> : null}
+                  {access.business ? <span className="pill">{access.business.name}</span> : null}
+                </div>
               </div>
-            </div>
-          </label>
-        ))}
+            </label>
+          );
+        })}
       </div>
 
       <ErrorBanner state={state} />

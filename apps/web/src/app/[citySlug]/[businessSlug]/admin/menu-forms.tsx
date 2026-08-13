@@ -47,14 +47,21 @@ function ServiceFields({
   return (
     <fieldset className="business-form-fieldset" disabled={disabled}>
       <legend>{service ? `Modifica ${service.name}` : "Nuovo servizio"}</legend>
+      <p className="admin-form-note">
+        Salva in bozza finché i contenuti non sono completi; usa “Pubblicato” per mostrare il
+        servizio nella scheda pubblica.
+      </p>
       <div className="business-menu-fields">
         <label className="field">
-          <span>Nome</span>
+          <span>Nome *</span>
           <input defaultValue={service?.name ?? ""} maxLength={160} name="name" required />
         </label>
         <label className="field">
           <span>Slug</span>
           <input defaultValue={service?.slug ?? ""} maxLength={160} name="slug" />
+          <small>
+            {service ? "Identificatore del servizio." : "Facoltativo: viene creato dal nome."}
+          </small>
         </label>
         <label className="field">
           <span>Stato</span>
@@ -78,6 +85,7 @@ function ServiceFields({
         <label className="field">
           <span>Etichetta prezzo</span>
           <input defaultValue={service?.priceLabel ?? ""} maxLength={80} name="priceLabel" />
+          <small>Se presente, sostituisce il prezzo numerico nella scheda pubblica.</small>
         </label>
         <label className="field">
           <span>Durata (minuti)</span>
@@ -99,6 +107,7 @@ function ServiceFields({
             required
             type="number"
           />
+          <small>I valori più bassi vengono mostrati prima.</small>
         </label>
       </div>
       <label className="field">
@@ -121,6 +130,10 @@ function ServiceFields({
         />
         Disponibile per ordini di ritiro
       </label>
+      <p className="admin-form-note">
+        Per comparire nel menu di ritiro, il servizio deve essere pubblicato e avere un prezzo
+        numerico.
+      </p>
     </fieldset>
   );
 }
@@ -174,7 +187,7 @@ export function CreateMenuItemForm({
       />
       <ServiceFields currency={currency} disabled={isSubmitting} />
       <ActionFeedback state={state} />
-      <button className="form-button" disabled={isSubmitting} type="submit">
+      <button className="admin-button form-button" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Creazione…" : "Crea servizio"}
       </button>
     </form>
@@ -232,7 +245,7 @@ export function UpdateMenuItemForm({
         <input type="hidden" name="serviceId" value={service.id} />
         <ServiceFields currency={currency} disabled={isSubmitting} service={service} />
         <ActionFeedback state={state} />
-        <button className="form-button" disabled={isSubmitting} type="submit">
+        <button className="admin-button form-button" disabled={isSubmitting} type="submit">
           {isSubmitting ? "Salvataggio…" : "Salva servizio"}
         </button>
       </form>
@@ -257,7 +270,7 @@ export function UpdateMenuItemForm({
           value={`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin/services`}
         />
         <button
-          className={`ghost-button${service.status === "archived" ? " danger-button" : ""}`}
+          className={`admin-button ghost-button${service.status === "archived" ? " danger-button" : ""}`}
           type="submit"
         >
           {service.status === "archived" ? "Elimina definitivamente" : "Archivia servizio"}

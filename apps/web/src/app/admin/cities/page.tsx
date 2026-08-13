@@ -30,23 +30,47 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
   const session = await requirePlatformAdminSession();
   const q = searchParam(params, "q");
   const status = searchParam(params, "status");
+  const active = searchParam(params, "active");
   const page = positivePage(searchParam(params, "page"));
   const registryQ = searchParam(params, "registryQ");
   const linked = searchParam(params, "linked");
   const registryPage = positivePage(searchParam(params, "registryPage"));
+  const create = searchParam(params, "create");
   const notice = searchParam(params, "notice");
   const error = searchParam(params, "error");
-  const filters = { q, status, page, limit: 20 };
+  const filters = { q, status, active, page, limit: 20 };
   const registryFilters = { q: registryQ, linked, page: registryPage, limit: 15 };
   const currentQuery = queryString({
     q,
     status,
+    active,
     page: page > 1 ? page : undefined,
     registryQ,
     linked,
     registryPage: registryPage > 1 ? registryPage : undefined,
   });
   const returnTo = currentQuery ? `/admin/cities?${currentQuery}` : "/admin/cities";
+  const createCityQuery = queryString({
+    q,
+    status,
+    active,
+    page: page > 1 ? page : undefined,
+    registryQ,
+    linked,
+    registryPage: registryPage > 1 ? registryPage : undefined,
+    create: "true",
+  });
+  const createCityReturnTo = `/admin/cities?${createCityQuery}`;
+  const registryStateQuery = queryString({
+    registryQ,
+    linked,
+    registryPage: registryPage > 1 ? registryPage : undefined,
+  });
+  const clearCitiesHref = registryStateQuery
+    ? `/admin/cities?${registryStateQuery}`
+    : "/admin/cities";
+  const cityStateQuery = queryString({ q, status, active, page: page > 1 ? page : undefined });
+  const clearRegistryHref = cityStateQuery ? `/admin/cities?${cityStateQuery}` : "/admin/cities";
   const isPlatformScope = session.auth.activeAccess.scopeType === "platform";
   const canCreateCity =
     session.auth.activeAccess.permissions.includes("platform.manage") && isPlatformScope;
@@ -101,6 +125,11 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
           <h2 id="cities-filters-title">Trova una città</h2>
         </div>
         <form className="admin-filter-form" method="get">
+          {registryQ ? <input name="registryQ" type="hidden" value={registryQ} /> : null}
+          {linked ? <input name="linked" type="hidden" value={linked} /> : null}
+          {registryPage > 1 ? (
+            <input name="registryPage" type="hidden" value={registryPage} />
+          ) : null}
           <label className="field">
             <span>Nome, slug, provincia o regione</span>
             <input defaultValue={q} name="q" placeholder="Es. Cagli" type="search" />
@@ -114,22 +143,32 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
               <option value="disabled">Disabilitato</option>
             </select>
           </label>
+          <label className="field">
+            <span>Visibilità</span>
+            <select defaultValue={active} name="active">
+              <option value="">Tutte</option>
+              <option value="true">Abilitate</option>
+              <option value="false">Non abilitate</option>
+            </select>
+          </label>
           <div className="admin-filter-actions">
-            <button className="form-button" type="submit">
+            <button className="admin-button form-button" type="submit">
               Applica filtri
             </button>
-            <Link className="ghost-button" href="/admin/cities">
-              Azzera
-            </Link>
+            {q || status || active ? (
+              <Link className="admin-button ghost-button" href={clearCitiesHref}>
+                Azzera filtri città
+              </Link>
+            ) : null}
           </div>
         </form>
       </section>
 
       {canCreateCity ? (
-        <details className="admin-create-panel">
+        <details className="admin-create-panel" open={create === "true"}>
           <summary>Nuova città</summary>
           <form action={createCityAction} className="admin-edit-form">
-            <input name="returnTo" type="hidden" value={returnTo} />
+            <input name="returnTo" type="hidden" value={createCityReturnTo} />
             <label className="field">
               <span>Nome</span>
               <input name="name" required minLength={2} />
@@ -213,7 +252,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                             className="table-link"
                             href={`/admin/cities/${encodeURIComponent(city.slug)}/categories`}
                           >
-                            Categorie
+                            Configura categorie
                           </Link>
                           <Link
                             className="table-link"
@@ -222,7 +261,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                             Vedi attività
                           </Link>
                           {city.active && city.status === "active" ? (
-                            <Link className="table-link" href={`/${city.slug}`}>
+                            <Link className="table-link" href={`/${encodeURIComponent(city.slug)}`}>
                               Pagina pubblica
                             </Link>
                           ) : (
@@ -248,7 +287,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                           ) : null}
                           {canManageCities ? (
                             <details className="admin-inline-details">
-                              <summary>Gestisci</summary>
+                              <summary>Modifica città</summary>
                               <form
                                 action={updateCityAction}
                                 className="admin-edit-form is-compact"
@@ -305,13 +344,17 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
               page={cities.data.page}
               total={cities.data.total}
               totalPages={cities.data.totalPages}
-              query={{ q, status }}
+              query={{ q, status, active, registryQ, linked, registryPage }}
             />
           </>
         ) : (
           <AdminEmptyState
             title="Non ci sono città corrispondenti ai filtri."
-            text="Modifica la ricerca oppure crea una nuova città se il tuo ruolo lo consente."
+            text={
+              canCreateCity
+                ? "Modifica la ricerca oppure crea una nuova città."
+                : "Modifica la ricerca per trovare una città accessibile nel tuo ambito."
+            }
           />
         )}
       </section>
@@ -320,8 +363,8 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
         <section className="data-card" aria-labelledby="registry-title">
           <div className="card-heading">
             <div>
-              <p className="section-label">Onboarding territoriale</p>
-              <h2 id="registry-title">Città disponibili</h2>
+              <p className="section-label">Registro territoriale</p>
+              <h2 id="registry-title">Comuni da aggiungere</h2>
             </div>
             {registry.data ? (
               <span className="admin-result-count">{registry.data.total} comuni</span>
@@ -330,6 +373,8 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
           <form className="admin-filter-form is-compact" method="get">
             {q ? <input name="q" type="hidden" value={q} /> : null}
             {status ? <input name="status" type="hidden" value={status} /> : null}
+            {active ? <input name="active" type="hidden" value={active} /> : null}
+            {page > 1 ? <input name="page" type="hidden" value={page} /> : null}
             <label className="field">
               <span>Comune</span>
               <input
@@ -348,9 +393,14 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
               </select>
             </label>
             <div className="admin-filter-actions">
-              <button className="ghost-button" type="submit">
+              <button className="admin-button ghost-button" type="submit">
                 Filtra comuni
               </button>
+              {registryQ || linked ? (
+                <Link className="admin-button ghost-button" href={clearRegistryHref}>
+                  Azzera filtri comuni
+                </Link>
+              ) : null}
             </div>
           </form>
           {registry.failed ? (
@@ -433,7 +483,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                 pageParam="registryPage"
                 total={registry.data.total}
                 totalPages={registry.data.totalPages}
-                query={{ q, status, registryQ, linked }}
+                query={{ q, status, active, page, registryQ, linked }}
               />
             </>
           ) : (

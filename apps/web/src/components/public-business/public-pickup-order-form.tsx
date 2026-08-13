@@ -230,11 +230,15 @@ export function PublicPickupOrderForm({
   }
 
   return (
-    <section className="public-pickup-order" id="order" aria-labelledby="pickup-order-title">
-      <div className="section-header">
-        <p className="section-label">Ordina e ritira</p>
-        <h2 id="pickup-order-title">Scegli cosa ordinare e l'orario di ritiro</h2>
-        <p>Il menu e gli orari disponibili sono aggiornati dalla piattaforma.</p>
+    <section
+      className="public-pickup-order public-secondary-service"
+      id="order"
+      aria-labelledby="pickup-order-title"
+    >
+      <div className="section-header public-form-header">
+        <p className="section-label">Servizio opzionale</p>
+        <h2 id="pickup-order-title">Ordina per il ritiro</h2>
+        <p>Scegli dal menu e indica quando vuoi passare a ritirare.</p>
       </div>
 
       <form
@@ -247,7 +251,7 @@ export function PublicPickupOrderForm({
           className="public-order-menu"
           aria-describedby={errors.items ? "order-items-error" : undefined}
         >
-          <legend>Menu</legend>
+          <legend>1. Scegli cosa ordinare</legend>
           {items.map((item, index) => {
             const quantity = cart[item.id] ?? 0;
             return (
@@ -266,7 +270,7 @@ export function PublicPickupOrderForm({
                     type="button"
                     onClick={() => changeQuantity(item, -1)}
                     disabled={quantity === 0 || state === "submitting"}
-                    aria-label={`Rimuovi una ${item.name}`}
+                    aria-label={`Rimuovi un'unità di ${item.name}`}
                   >
                     −
                   </button>
@@ -282,7 +286,7 @@ export function PublicPickupOrderForm({
                     type="button"
                     onClick={() => changeQuantity(item, 1)}
                     disabled={quantity === 20 || state === "submitting"}
-                    aria-label={`Aggiungi una ${item.name}`}
+                    aria-label={`Aggiungi un'unità di ${item.name}`}
                   >
                     +
                   </button>
@@ -295,7 +299,7 @@ export function PublicPickupOrderForm({
               {errors.items}
             </p>
           ) : null}
-          <p className="public-order-total">
+          <p className="public-order-total" id="order-total">
             Totale <strong>{formatPrice(totalCents, currency)}</strong>
             {minimumOrderCents ? ` · Minimo ${formatPrice(minimumOrderCents, currency)}` : ""}
           </p>
@@ -305,8 +309,8 @@ export function PublicPickupOrderForm({
           className="public-order-pickup"
           aria-describedby={errors.pickup ? "pickup-error" : undefined}
         >
-          <legend>Ritiro</legend>
-          <label>
+          <legend>2. Scegli data e orario</legend>
+          <label className="public-form-field">
             Data
             <input
               ref={
@@ -318,6 +322,7 @@ export function PublicPickupOrderForm({
               }
               type="date"
               name="pickupDate"
+              required
               value={pickupDate}
               min={initialDate}
               max={maxPickupDate(initialDate)}
@@ -335,7 +340,11 @@ export function PublicPickupOrderForm({
               disabled={state === "submitting"}
             />
           </label>
-          <div className="public-slot-list" aria-live="polite">
+          <div
+            className="public-slot-list"
+            aria-busy={availabilityState === "loading"}
+            aria-live="polite"
+          >
             {availabilityState === "loading" ? <p>Caricamento orari disponibili…</p> : null}
             {availabilityState === "error" ? (
               <div className="public-availability-error">
@@ -358,6 +367,7 @@ export function PublicPickupOrderForm({
                 key={slot.id}
                 type="button"
                 disabled={!slot.available || state === "submitting"}
+                aria-label={`${slot.time}${slot.available ? "" : ", non disponibile"}`}
                 aria-pressed={pickupTime === slot.time}
                 onClick={() => {
                   setPickupTime(slot.time);
@@ -372,6 +382,7 @@ export function PublicPickupOrderForm({
                 }}
               >
                 {slot.time}
+                {!slot.available ? " · non disponibile" : ""}
               </button>
             ))}
           </div>
@@ -382,76 +393,81 @@ export function PublicPickupOrderForm({
           ) : null}
         </fieldset>
 
-        <div className="public-form-grid">
-          {(["name", "email", "phone"] as const).map((field) => (
-            <label key={field}>
-              {field === "name" ? "Nome" : field === "email" ? "Email" : "Telefono (facoltativo)"}
-              <input
-                ref={
-                  errors[field]
-                    ? (element) => {
-                        if (element && !firstError.current) firstError.current = element;
-                      }
-                    : undefined
-                }
-                type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
-                autoComplete={field === "name" ? "name" : field === "email" ? "email" : "tel"}
-                maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
-                name={field}
-                value={values[field]}
-                onChange={(event) => update(field, event.target.value)}
-                aria-invalid={Boolean(errors[field])}
-                aria-describedby={errors[field] ? `${field}-order-error` : undefined}
-              />
-              {errors[field] ? (
-                <span className="public-form-error" id={`${field}-order-error`}>
-                  {errors[field]}
-                </span>
-              ) : null}
-            </label>
-          ))}
-        </div>
+        <fieldset className="public-order-contact">
+          <legend>3. Inserisci i tuoi dati</legend>
+          <div className="public-form-grid">
+            {(["name", "email", "phone"] as const).map((field) => (
+              <label className="public-form-field" key={field}>
+                {field === "name" ? "Nome" : field === "email" ? "Email" : "Telefono (facoltativo)"}
+                <input
+                  ref={
+                    errors[field]
+                      ? (element) => {
+                          if (element && !firstError.current) firstError.current = element;
+                        }
+                      : undefined
+                  }
+                  type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                  autoComplete={field === "name" ? "name" : field === "email" ? "email" : "tel"}
+                  maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
+                  name={field}
+                  required={field !== "phone"}
+                  value={values[field]}
+                  onChange={(event) => update(field, event.target.value)}
+                  aria-invalid={Boolean(errors[field])}
+                  aria-describedby={errors[field] ? `${field}-order-error` : undefined}
+                />
+                {errors[field] ? (
+                  <span className="public-form-error" id={`${field}-order-error`}>
+                    {errors[field]}
+                  </span>
+                ) : null}
+              </label>
+            ))}
+          </div>
 
-        <label>
-          Note per l'ordine (facoltative)
-          <textarea
-            maxLength={1000}
-            name="notes"
-            value={values.notes}
-            onChange={(event) => update("notes", event.target.value)}
-            aria-invalid={Boolean(errors.notes)}
-            aria-describedby={errors.notes ? "order-notes-error" : undefined}
-          />
-          {errors.notes ? (
-            <span className="public-form-error" id="order-notes-error">
-              {errors.notes}
+          <label className="public-form-field public-form-field-wide">
+            Note per l'ordine (facoltative)
+            <textarea
+              maxLength={1000}
+              name="notes"
+              value={values.notes}
+              onChange={(event) => update("notes", event.target.value)}
+              aria-invalid={Boolean(errors.notes)}
+              aria-describedby={errors.notes ? "order-notes-error" : undefined}
+            />
+            {errors.notes ? (
+              <span className="public-form-error" id="order-notes-error">
+                {errors.notes}
+              </span>
+            ) : null}
+          </label>
+
+          <label className="public-privacy">
+            <input
+              ref={
+                errors.privacyAccepted
+                  ? (element) => {
+                      if (element && !firstError.current) firstError.current = element;
+                    }
+                  : undefined
+              }
+              type="checkbox"
+              name="privacyAccepted"
+              required
+              checked={values.privacyAccepted}
+              onChange={(event) => update("privacyAccepted", event.target.checked)}
+              aria-invalid={Boolean(errors.privacyAccepted)}
+              aria-describedby={errors.privacyAccepted ? "order-privacy-error" : undefined}
+            />{" "}
+            Acconsento al trattamento dei dati per gestire questo ordine.
+          </label>
+          {errors.privacyAccepted ? (
+            <span className="public-form-error" id="order-privacy-error">
+              {errors.privacyAccepted}
             </span>
           ) : null}
-        </label>
-
-        <label className="public-privacy">
-          <input
-            ref={
-              errors.privacyAccepted
-                ? (element) => {
-                    if (element && !firstError.current) firstError.current = element;
-                  }
-                : undefined
-            }
-            type="checkbox"
-            name="privacyAccepted"
-            checked={values.privacyAccepted}
-            onChange={(event) => update("privacyAccepted", event.target.checked)}
-            aria-invalid={Boolean(errors.privacyAccepted)}
-            aria-describedby={errors.privacyAccepted ? "order-privacy-error" : undefined}
-          />{" "}
-          Acconsento al trattamento dei dati per gestire questo ordine.
-        </label>
-        {errors.privacyAccepted ? (
-          <span className="public-form-error" id="order-privacy-error">
-            {errors.privacyAccepted}
-          </span>
-        ) : null}
+        </fieldset>
 
         <input
           className="public-honeypot"
@@ -462,13 +478,16 @@ export function PublicPickupOrderForm({
           autoComplete="off"
           aria-hidden="true"
         />
-        <button
-          className="cta-button"
-          type="submit"
-          disabled={state === "submitting" || availabilityState !== "ready" || !minimumReached}
-        >
-          {state === "submitting" ? "Invio ordine in corso…" : "Conferma ordine e ritiro"}
-        </button>
+        <div className="public-form-actions">
+          <button
+            className="cta-button"
+            type="submit"
+            aria-describedby="order-total"
+            disabled={state === "submitting" || availabilityState !== "ready" || !minimumReached}
+          >
+            {state === "submitting" ? "Invio ordine in corso…" : "Conferma ordine e ritiro"}
+          </button>
+        </div>
         {feedback ? (
           <p
             aria-live="polite"

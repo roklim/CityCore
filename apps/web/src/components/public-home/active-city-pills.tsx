@@ -11,7 +11,7 @@ export function ActiveCityPills({ cities }: { cities: HomepageCityCard[] }) {
         aria-labelledby="active-cities-title"
       >
         <p className={styles.sectionKicker} id="active-cities-title">
-          Città attive
+          Scegli una città
         </p>
         <p className={styles.emptyState} role="status">
           Nessuna città è ancora disponibile pubblicamente. Torna presto per vedere le prime
@@ -22,8 +22,8 @@ export function ActiveCityPills({ cities }: { cities: HomepageCityCard[] }) {
   }
 
   return (
-    <nav className={styles.activeCities} id="active-cities" aria-label="Città attive">
-      <p className={styles.sectionKicker}>Città attive</p>
+    <nav className={styles.activeCities} id="active-cities" aria-label="Scegli una città">
+      <p className={styles.sectionKicker}>Città disponibili</p>
       <div className={styles.cityPills}>
         {cities.map((city) => (
           <Link className={styles.cityPill} href={city.href} key={city.slug}>

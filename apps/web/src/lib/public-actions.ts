@@ -18,12 +18,12 @@ export function getPublicBusinessPrimaryAction({
   emailHref: string | null;
   website: string | null;
 }): PublicBusinessPrimaryAction {
-  if (pickupOrderAvailable) {
-    return { label: "Ordina e ritira", heading: "Ordina per il ritiro", href: "#order" };
-  }
-
   if (inquiryAvailable) {
     return { label: "Invia una richiesta", heading: "Invia una richiesta", href: "#contact" };
+  }
+
+  if (pickupOrderAvailable) {
+    return { label: "Ordina e ritira", heading: "Ordina per il ritiro", href: "#order" };
   }
 
   if (phoneHref) {
@@ -44,26 +44,4 @@ export function getPublicBusinessPrimaryAction({
   }
 
   return { label: "Vedi i servizi", heading: "Scopri cosa offre", href: "#services" };
-}
-
-export type CityMobileNavigationItem = {
-  label: string;
-  href: string;
-  icon: "home" | "places" | "profile";
-  current?: "location";
-};
-
-export function getCityMobileNavigation(citySlug: string): CityMobileNavigationItem[] {
-  const encodedCitySlug = encodeURIComponent(citySlug);
-
-  return [
-    { label: "Home", href: "/", icon: "home" },
-    {
-      label: "Attività",
-      href: `/${encodedCitySlug}#directory`,
-      icon: "places",
-      current: "location",
-    },
-    { label: "Operatori", href: "/admin/login", icon: "profile" },
-  ];
 }

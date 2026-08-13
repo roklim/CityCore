@@ -39,6 +39,13 @@ export default async function BusinessServicesPage({
   );
   const canManage = session.auth.activeAccess.permissions.includes("catalog.manage");
   const selectedService = services.data?.items.find((service) => service.id === query.edit);
+  const publishedCount =
+    services.data?.items.filter((service) => service.status === "published").length ?? 0;
+  const pickupCount =
+    services.data?.items.filter(
+      (service) =>
+        service.status === "published" && service.pickupEnabled && service.priceCents !== null,
+    ).length ?? 0;
 
   return (
     <>
@@ -60,7 +67,7 @@ export default async function BusinessServicesPage({
 
       {canManage ? (
         <details className="admin-create-panel business-service-create">
-          <summary>+ Nuovo servizio</summary>
+          <summary>Nuovo servizio</summary>
           <CreateMenuItemForm
             businessSlug={businessSlug}
             citySlug={citySlug}
@@ -76,9 +83,21 @@ export default async function BusinessServicesPage({
             <h2 id="services-title">Servizi configurati</h2>
           </div>
           {services.data ? (
-            <span className="admin-result-count">{services.data.items.length} servizi</span>
+            <span className="admin-result-count">
+              {services.data.items.length} totali · {publishedCount} pubblicati
+            </span>
           ) : null}
         </div>
+        {services.data ? (
+          <div className="admin-state-card admin-state-inline">
+            <strong>Visibilità del catalogo</strong>
+            <p>
+              Solo i servizi pubblicati compaiono nella scheda. Per il ritiro servono anche un
+              prezzo numerico e l’opzione dedicata: {pickupCount} servizi sono idonei al menu di
+              ritiro.
+            </p>
+          </div>
+        ) : null}
         {services.failed ? (
           <AdminCollectionError
             message="Non è stato possibile caricare i servizi."
@@ -112,7 +131,7 @@ export default async function BusinessServicesPage({
                     <td>
                       {formatPrice(service.priceCents, business.currency, service.priceLabel)}
                     </td>
-                    <td>{service.pickupEnabled ? "Disponibile" : "No"}</td>
+                    <td>{service.pickupEnabled ? "Attivo" : "Non attivo"}</td>
                     <td>{service.durationMinutes ? `${service.durationMinutes} min` : "—"}</td>
                     <td>{service.sortOrder}</td>
                     <td>
@@ -147,8 +166,8 @@ export default async function BusinessServicesPage({
               <p className="section-label">Modifica</p>
               <h2 id="edit-service-title">{selectedService.name}</h2>
             </div>
-            <Link className="ghost-button" href={path}>
-              Annulla
+            <Link className="admin-button ghost-button" href={path}>
+              Chiudi modifica
             </Link>
           </div>
           <UpdateMenuItemForm

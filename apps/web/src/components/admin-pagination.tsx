@@ -22,33 +22,35 @@ export function AdminPagination({
 
   return (
     <nav className="admin-pagination" aria-label="Paginazione risultati">
-      <p>
+      <p aria-live="polite" className="pagination-summary">
         Pagina {page} di {totalPages} · {total} risultati
       </p>
-      <div>
+      <div className="admin-pagination-actions">
         {page > 1 ? (
           <Link
-            className="ghost-button"
+            aria-label={`Vai alla pagina ${page - 1}`}
+            className="admin-button ghost-button"
             href={pageHref(pathname, query, page - 1, pageParam)}
             rel="prev"
           >
             Precedente
           </Link>
         ) : (
-          <span className="ghost-button is-disabled" aria-disabled="true">
+          <span className="admin-button ghost-button is-disabled" aria-disabled="true">
             Precedente
           </span>
         )}
         {page < totalPages ? (
           <Link
-            className="ghost-button"
+            aria-label={`Vai alla pagina ${page + 1}`}
+            className="admin-button ghost-button"
             href={pageHref(pathname, query, page + 1, pageParam)}
             rel="next"
           >
             Successiva
           </Link>
         ) : (
-          <span className="ghost-button is-disabled" aria-disabled="true">
+          <span className="admin-button ghost-button is-disabled" aria-disabled="true">
             Successiva
           </span>
         )}

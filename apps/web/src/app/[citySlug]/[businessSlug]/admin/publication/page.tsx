@@ -16,7 +16,8 @@ import {
   readinessSummary,
 } from "../../../../../lib/business-admin-logic";
 import type { PlatformPublishReadinessResponse } from "../../../../../lib/platform-api";
-import { publishBusinessAction, unpublishBusinessAction } from "../actions";
+import { publishBusinessAction } from "../actions";
+import { UnpublishBusinessForm } from "./unpublish-business-form";
 
 export const metadata = { title: "Pubblicazione attività" };
 
@@ -86,18 +87,23 @@ export default async function BusinessPublicationPage({
               {readinessRequirements.map(([key, label]) => {
                 const missing = readiness.data.item.missingRequirements.includes(key);
                 const action = readinessAction(key, citySlug, businessSlug, canManageCity);
+                const canCompleteRequirement = key === "active_city" ? canManageCity : canManage;
                 return (
                   <li className={missing ? "is-missing" : "is-complete"} key={key}>
                     <span aria-hidden="true">{missing ? "×" : "✓"}</span>
                     <div>
                       <strong>{label}</strong>
                       {missing ? <small>{readinessReasonLabel(key)}</small> : null}
-                      {missing && action.href ? (
+                      {missing && action.href && canCompleteRequirement ? (
                         <Link className="table-link" href={action.href}>
                           {action.label} →
                         </Link>
                       ) : missing ? (
-                        <small>{action.label}</small>
+                        <small>
+                          {canCompleteRequirement
+                            ? action.label
+                            : "Serve un amministratore con permessi di gestione"}
+                        </small>
                       ) : null}
                     </div>
                   </li>
@@ -105,9 +111,20 @@ export default async function BusinessPublicationPage({
               })}
             </ul>
             {readiness.data.item.warnings.length ? (
-              <div className="admin-state-card">
+              <div className="admin-state-card admin-state-inline">
                 <strong>Indicazioni utili</strong>
-                <p>Configura un telefono o un’email pubblica per offrire un contatto diretto.</p>
+                <p>
+                  La scheda è pubblicabile, ma un telefono o un’email pubblica rende il contatto più
+                  immediato.
+                </p>
+                {canManage ? (
+                  <Link
+                    className="admin-button ghost-button"
+                    href={businessAdminSectionPath(citySlug, businessSlug, "profile")}
+                  >
+                    Controlla contatti
+                  </Link>
+                ) : null}
               </div>
             ) : null}
             <div className="business-publication-actions">
@@ -121,42 +138,55 @@ export default async function BusinessPublicationPage({
                       Pubblica attività
                     </AdminSubmitButton>
                   ) : (
-                    <button className="form-button" disabled type="submit">
+                    <button
+                      aria-describedby="publish-blocked-help"
+                      className="admin-button form-button"
+                      disabled
+                      type="submit"
+                    >
                       Pubblica attività
                     </button>
                   )}
                 </form>
               ) : null}
               {canManage && business.status === "active" ? (
-                <form action={unpublishBusinessAction}>
-                  <input name="citySlug" type="hidden" value={citySlug} />
-                  <input name="businessSlug" type="hidden" value={businessSlug} />
-                  <input name="returnTo" type="hidden" value={path} />
-                  <AdminSubmitButton
-                    className="ghost-button danger-button"
-                    pendingLabel="Rimozione…"
-                  >
-                    Rimuovi dalla pubblicazione
-                  </AdminSubmitButton>
-                </form>
+                <UnpublishBusinessForm
+                  businessSlug={businessSlug}
+                  citySlug={citySlug}
+                  returnTo={path}
+                />
               ) : null}
               {isPublic ? (
                 <Link
-                  className="ghost-button"
+                  className="admin-button ghost-button"
                   href={`/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`}
                 >
                   Apri scheda pubblica →
                 </Link>
               ) : null}
             </div>
+            {canManage && business.status === "draft" && !readiness.data.item.canPublish ? (
+              <p className="admin-muted-label" id="publish-blocked-help">
+                Completa gli elementi contrassegnati con × prima di pubblicare.
+              </p>
+            ) : null}
+            {canManage && business.status === "active" ? (
+              <div className="admin-state-card admin-state-inline">
+                <strong>Prima di rimuovere la scheda</strong>
+                <p>
+                  La pagina pubblica e l’invio di nuove richieste non saranno disponibili. Profilo,
+                  servizi e richieste già ricevute resteranno conservati.
+                </p>
+              </div>
+            ) : null}
             {business.status === "active" && !isPublic ? (
-              <div className="admin-state-card">
+              <div className="admin-state-card admin-state-inline">
                 <strong>La città non è visibile al pubblico.</strong>
                 <p>La scheda tornerà raggiungibile quando un amministratore riattiverà la città.</p>
               </div>
             ) : null}
             {business.status === "paused" || business.status === "disabled" ? (
-              <div className="admin-state-card">
+              <div className="admin-state-card admin-state-inline">
                 <strong>Stato gestito dall&apos;amministrazione.</strong>
                 <p>
                   Contatta un amministratore di città o piattaforma per verificare la sospensione; i

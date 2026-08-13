@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { PublicSiteHeader } from "./public-shell";
 
 type PublicFeedbackProps = {
   title: string;
@@ -7,6 +9,17 @@ type PublicFeedbackProps = {
   live?: boolean;
   headingLevel?: 1 | 2;
 };
+
+export function PublicFeedbackPage({ children }: { children: ReactNode }) {
+  return (
+    <div className="public-shell">
+      <PublicSiteHeader />
+      <main className="feedback-page" id="main-content">
+        {children}
+      </main>
+    </div>
+  );
+}
 
 export function PublicFeedback({
   title,

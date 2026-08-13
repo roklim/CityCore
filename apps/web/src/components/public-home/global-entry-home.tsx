@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { HomepageCityCard } from "../../lib/public-runtime";
+import { PublicSiteHeader } from "../public-shell";
 import { ActiveCityPills } from "./active-city-pills";
 import { CityEntryForm } from "./city-entry-form";
 import { CityLineArt } from "./city-line-art";
@@ -12,33 +12,20 @@ export function GlobalEntryHome({
   cities: HomepageCityCard[];
   degraded: boolean;
 }) {
-  const totalBusinesses = cities.reduce((total, city) => total + city.businessCount, 0);
-
   return (
     <main className={styles.contextStage} id="main-content">
       <div className={styles.globalEntry}>
         <div className={styles.entryShell}>
           <section className={styles.entryPanel} aria-labelledby="global-entry-title">
-            <header className={styles.topbar}>
-              <Link className={styles.brand} href="/" aria-label="CityCore, home">
-                <span>CityCore</span>
-                <span className={styles.accent}>.</span>
-              </Link>
-              <Link className={styles.operatorLink} href="/admin/login">
-                Area operatori
-              </Link>
-            </header>
+            <PublicSiteHeader changeCityHref="#citycore-city-search" exploreHref="#active-cities" />
 
             <div className={styles.entryHero}>
+              <p className={styles.sectionKicker}>Scopri cosa c'è vicino a te</p>
               <h1 className={styles.entryTitle} id="global-entry-title">
-                <span>Trova la</span>
-                <span>
-                  tua città<span className={styles.accent}>.</span>
-                </span>
+                La tua città, tutto connesso<span className={styles.accent}>.</span>
               </h1>
               <p className={styles.entryBody}>
-                <span>Esplora attività, servizi e luoghi</span>
-                <span>nella tua città.</span>
+                Scegli una città per trovare attività, servizi, orari e contatti in un solo posto.
               </p>
             </div>
 
@@ -49,7 +36,8 @@ export function GlobalEntryHome({
 
             {degraded ? (
               <p className={styles.entryStatus} role="status">
-                I dati live non sono disponibili: stai visualizzando contenuti dimostrativi.
+                Le informazioni aggiornate non sono raggiungibili in questo momento. I contenuti
+                mostrati sono dimostrativi.
               </p>
             ) : null}
 
@@ -57,38 +45,6 @@ export function GlobalEntryHome({
 
             <CityLineArt />
           </section>
-
-          <aside className={styles.entryVisualPanel} aria-label="Panoramica CityCore">
-            <div className={styles.visualCopy}>
-              <Link className={styles.brand} href="/" aria-label="CityCore, home">
-                <span>CityCore</span>
-                <span className={styles.accent}>.</span>
-              </Link>
-              <h2>Entra nel contesto giusto.</h2>
-              <p>
-                Prima scegli la città. Poi CityCore diventa ricerca locale, categorie, attività
-                pubblicate e azioni utili.
-              </p>
-            </div>
-
-            <div className={styles.visualFrame}>
-              <div className={styles.visualStats}>
-                <div className={styles.visualStat}>
-                  <strong>{cities.length.toString().padStart(2, "0")}</strong>
-                  <span>Città attive</span>
-                </div>
-                <div className={styles.visualStat}>
-                  <strong>{totalBusinesses.toString().padStart(2, "0")}</strong>
-                  <span>Attività pubbliche</span>
-                </div>
-                <div className={styles.visualStat}>
-                  <strong aria-hidden="true">↗</strong>
-                  <span>Scegli e continua</span>
-                </div>
-              </div>
-              <CityLineArt />
-            </div>
-          </aside>
         </div>
       </div>
     </main>

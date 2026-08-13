@@ -49,7 +49,7 @@ export function CityEntryForm({
 
   return (
     <div className={styles.entryFormWrap}>
-      <form className={styles.entryForm} onSubmit={handleSubmit}>
+      <form className={styles.entryForm} onSubmit={handleSubmit} aria-label="Cerca una città">
         <div className={styles.searchShell}>
           <label className={styles.srOnly} htmlFor="citycore-city-search">
             Cerca una città attiva
@@ -57,6 +57,12 @@ export function CityEntryForm({
           <span className={styles.searchIcon} aria-hidden="true" />
           <input
             autoComplete="off"
+            aria-describedby={
+              statusMessage
+                ? "citycore-city-search-help citycore-city-search-error"
+                : "citycore-city-search-help"
+            }
+            aria-invalid={Boolean(statusMessage)}
             className={styles.searchInput}
             disabled={isPending || !hasCities}
             id="citycore-city-search"
@@ -75,10 +81,16 @@ export function CityEntryForm({
             disabled={isPending || !hasCities}
             type="submit"
           >
-            {isPending ? "Apro…" : hasCities ? "Cerca" : "Non disponibile"}
+            {isPending ? "Apro…" : hasCities ? "Vai alla città" : "Non disponibile"}
           </button>
         </div>
       </form>
+
+      <p className={styles.entryStatus} id="citycore-city-search-help">
+        {hasCities
+          ? "Scrivi il nome oppure sceglilo dai suggerimenti."
+          : "Non ci sono ancora città pubblicate."}
+      </p>
 
       <datalist id="citycore-city-options">
         {cityNames.map((cityName) => (
@@ -87,7 +99,12 @@ export function CityEntryForm({
       </datalist>
 
       {statusMessage ? (
-        <p aria-live="polite" className={styles.entryStatus}>
+        <p
+          aria-live="polite"
+          className={styles.entryStatus}
+          id="citycore-city-search-error"
+          role="alert"
+        >
           {statusMessage}
         </p>
       ) : null}

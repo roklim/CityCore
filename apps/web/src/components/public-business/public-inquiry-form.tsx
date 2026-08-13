@@ -121,17 +121,24 @@ export function PublicInquiryForm({
   return (
     <form
       aria-busy={state === "submitting"}
-      className="public-inquiry-form"
+      aria-labelledby="public-inquiry-title"
+      aria-describedby="public-inquiry-description"
+      className="public-inquiry-form public-contact-form"
       id="contact"
       onSubmit={submit}
       noValidate
     >
-      <p className="section-label">Contatti</p>
-      <h2>Invia una richiesta</h2>
-      <p>Riceverai una risposta usando i dati che hai fornito.</p>
+      <div className="public-form-header">
+        <p className="section-label">Richieste</p>
+        <h2 id="public-inquiry-title">Contatta l'attività</h2>
+        <p id="public-inquiry-description">
+          Inserisci i tuoi recapiti e spiega di cosa hai bisogno. L'attività potrà risponderti
+          direttamente.
+        </p>
+      </div>
       <div className="public-form-grid">
         {(["name", "email", "phone"] as const).map((field) => (
-          <label key={field}>
+          <label className="public-form-field" key={field}>
             {field === "name" ? "Nome" : field === "email" ? "Email" : "Telefono (facoltativo)"}
             <input
               ref={
@@ -145,6 +152,7 @@ export function PublicInquiryForm({
               autoComplete={field === "name" ? "name" : field === "email" ? "email" : "tel"}
               maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
               name={field}
+              required={field !== "phone"}
               value={values[field]}
               onChange={(event) => update(field, event.target.value)}
               aria-invalid={Boolean(errors[field])}
@@ -158,7 +166,7 @@ export function PublicInquiryForm({
           </label>
         ))}
       </div>
-      <label>
+      <label className="public-form-field public-form-field-wide">
         Messaggio
         <textarea
           ref={
@@ -171,6 +179,7 @@ export function PublicInquiryForm({
           value={values.message}
           maxLength={4000}
           name="message"
+          required
           onChange={(event) => update("message", event.target.value)}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? "message-error" : undefined}
@@ -192,6 +201,7 @@ export function PublicInquiryForm({
           }
           type="checkbox"
           name="privacyAccepted"
+          required
           checked={values.privacyAccepted}
           onChange={(event) => update("privacyAccepted", event.target.checked)}
           aria-invalid={Boolean(errors.privacyAccepted)}
@@ -214,9 +224,11 @@ export function PublicInquiryForm({
         autoComplete="off"
         aria-hidden="true"
       />
-      <button className="cta-button" disabled={state === "submitting"} type="submit">
-        {state === "submitting" ? "Invio in corso..." : "Invia richiesta"}
-      </button>
+      <div className="public-form-actions">
+        <button className="cta-button" disabled={state === "submitting"} type="submit">
+          {state === "submitting" ? "Invio in corso..." : "Invia richiesta"}
+        </button>
+      </div>
       {feedback ? (
         <p
           aria-live="polite"

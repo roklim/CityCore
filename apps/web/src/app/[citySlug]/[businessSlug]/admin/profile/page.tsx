@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { AdminStatusBadge } from "../../../../../components/admin-status-badge";
+import { businessAdminSectionPath } from "../../../../../lib/business-admin-navigation";
 import { getBusinessAdminContext } from "../../../../../lib/business-admin-server";
 import { BusinessProfileForm } from "../business-profile-form";
 
@@ -15,6 +17,7 @@ export default async function BusinessProfilePage({
   const feedback = await searchParams;
   const { session, business } = await getBusinessAdminContext(citySlug, businessSlug);
   const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
+  const publicationPath = businessAdminSectionPath(citySlug, businessSlug, "publication");
 
   return (
     <>
@@ -28,6 +31,19 @@ export default async function BusinessProfilePage({
           {feedback.error}
         </p>
       ) : null}
+      <div className="action-bar">
+        <div>
+          <strong>
+            {canManage ? "Prima completa i dati essenziali" : "Profilo in sola lettura"}
+          </strong>
+          <p className="muted-copy">
+            Nome, una presentazione e almeno un contatto pubblico servono per superare la readiness.
+          </p>
+        </div>
+        <Link className="admin-button ghost-button" href={publicationPath}>
+          Controlla pubblicazione
+        </Link>
+      </div>
       <section className="data-card" aria-labelledby="profile-title">
         <div className="card-heading">
           <div>
@@ -46,7 +62,12 @@ export default async function BusinessProfilePage({
             </div>
             <div>
               <span>Contatto</span>
-              <strong>{business.publicEmail ?? business.publicPhone ?? "Non configurato"}</strong>
+              <strong>
+                {business.publicEmail ??
+                  business.publicPhone ??
+                  business.website ??
+                  "Non configurato"}
+              </strong>
             </div>
             <div>
               <span>Località</span>

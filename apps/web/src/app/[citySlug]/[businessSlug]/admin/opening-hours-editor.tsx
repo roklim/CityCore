@@ -36,6 +36,13 @@ function initialDays(items: PlatformOpeningDay[]): OpeningDayDraft[] {
   });
 }
 
+function readableOpeningError(message: string) {
+  return message.replace(/giorno ([1-7])/gu, (_match, day: string) => {
+    const label = weekdayLabels[Number(day) - 1];
+    return label ? label.toLowerCase() : `giorno ${day}`;
+  });
+}
+
 export function OpeningHoursEditor({
   citySlug,
   businessSlug,
@@ -51,6 +58,8 @@ export function OpeningHoursEditor({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const submittingRef = useRef(false);
+  const openDayCount = days.filter((day) => !day.isClosed).length;
+  const intervalCount = days.reduce((total, day) => total + day.intervals.length, 0);
 
   function updateDay(weekday: number, update: (day: OpeningDayDraft) => OpeningDayDraft) {
     setIsDirty(true);
@@ -81,7 +90,7 @@ export function OpeningHoursEditor({
     const payload = buildOpeningWeekPayload(formData);
     const errors = validateOpeningWeek(payload.days);
     if (errors.length) {
-      setState({ error: errors[0], notice: null });
+      setState({ error: readableOpeningError(errors[0]), notice: null });
       return;
     }
     submittingRef.current = true;
@@ -103,6 +112,13 @@ export function OpeningHoursEditor({
     <form aria-busy={isSubmitting} className="business-management-form" onSubmit={handleSubmit}>
       <input type="hidden" name="citySlug" value={citySlug} />
       <input type="hidden" name="businessSlug" value={businessSlug} />
+      <div className="business-selection-summary" role="status">
+        <strong>{openDayCount}</strong>
+        <span>
+          {openDayCount === 1 ? "giorno aperto" : "giorni aperti"} · {intervalCount}{" "}
+          {intervalCount === 1 ? "fascia" : "fasce"}
+        </span>
+      </div>
       <fieldset className="business-form-fieldset" disabled={isSubmitting}>
         <legend>Settimana di apertura</legend>
         <div className="opening-week-grid">
@@ -126,7 +142,7 @@ export function OpeningHoursEditor({
                   }
                   type="checkbox"
                 />
-                Chiuso
+                Chiuso tutto il giorno
               </label>
               <input type="hidden" name={`day-${day.weekday}-count`} value={day.intervals.length} />
               {!day.isClosed ? (
@@ -176,7 +192,7 @@ export function OpeningHoursEditor({
                       </label>
                       <button
                         aria-label={`Rimuovi fascia ${index + 1} di ${weekdayLabels[day.weekday]}`}
-                        className="ghost-button"
+                        className="admin-button ghost-button"
                         onClick={() =>
                           updateDay(day.weekday, (current) => ({
                             ...current,
@@ -193,7 +209,7 @@ export function OpeningHoursEditor({
                   ))}
                   {day.intervals.length < 4 ? (
                     <button
-                      className="ghost-button opening-add-button"
+                      className="admin-button ghost-button opening-add-button"
                       onClick={() =>
                         updateDay(day.weekday, (current) => ({
                           ...current,
@@ -221,16 +237,17 @@ export function OpeningHoursEditor({
                       note: event.target.value || null,
                     }))
                   }
+                  placeholder="Es. solo su appuntamento"
                   value={day.note ?? ""}
                 />
               </label>
               {day.weekday === 0 ? (
                 <button
-                  className="ghost-button opening-copy-button"
+                  className="admin-button ghost-button opening-copy-button"
                   onClick={copyMondayToWeekdays}
                   type="button"
                 >
-                  Applica lunedì a lun–ven
+                  Copia lunedì su mar–ven
                 </button>
               ) : null}
             </fieldset>
@@ -248,7 +265,7 @@ export function OpeningHoursEditor({
         </p>
       ) : null}
       {isDirty ? <p className="business-unsaved-indicator">Modifiche non salvate</p> : null}
-      <button className="form-button" disabled={isSubmitting} type="submit">
+      <button className="admin-button form-button" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Salvataggio…" : "Salva settimana"}
       </button>
     </form>

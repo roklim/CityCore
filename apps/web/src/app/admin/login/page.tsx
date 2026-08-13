@@ -24,9 +24,9 @@ export default async function AdminLoginPage() {
 
   return (
     <AdminShell
-      eyebrow="Area operatori"
-      title="Accedi all'area operatori"
-      description="Questa superficie è riservata agli operatori autorizzati della piattaforma CityCore."
+      eyebrow="Accesso riservato"
+      title="Accedi a CityCore"
+      description="Entra con le credenziali ricevute per aprire le città e le attività che puoi gestire."
       navigationItems={[
         {
           href: "/",
@@ -36,23 +36,14 @@ export default async function AdminLoginPage() {
         {
           href: "/admin/login",
           label: "Accesso operatori",
-          meta: "Login sicuro",
+          meta: "Inserisci le credenziali",
           current: true,
         },
       ]}
       statusLabel="Area operatori"
-      asideTitle="Scope attivo"
-      asideText="L'accesso usa sessioni web reali, permessi espliciti e destinazioni coerenti con ruolo e ambito operativo."
+      asideTitle="Dopo l'accesso"
+      asideText="CityCore ti porterà automaticamente nell'area corretta per il tuo ruolo. Se hai più accessi, potrai scegliere quale usare."
     >
-      <section className="section-header">
-        <p className="section-label">Accesso</p>
-        <h2>Entra nella console collegata alla piattaforma attiva</h2>
-        <p>
-          Usa le credenziali ricevute dall&apos;amministratore. La creazione del primo account viene
-          mostrata solo quando la piattaforma ne ha realmente bisogno.
-        </p>
-      </section>
-
       <AdminLoginForms bootstrapStatus={bootstrapStatus} />
     </AdminShell>
   );

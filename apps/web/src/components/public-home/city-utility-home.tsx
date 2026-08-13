@@ -1,62 +1,30 @@
-import Link from "next/link";
 import type { PublicCitySurfaceData } from "../../lib/public-runtime";
+import { PublicShell } from "../public-shell";
 import { CityBusinessDirectory } from "./city-business-directory";
-import styles from "./context-gateway.module.css";
-import { MobileBottomNav } from "./mobile-bottom-nav";
 
 export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData }) {
   const { city, degraded, live } = surface;
   const activityLabel = city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
-  const heroTitle = city.publicHeroTitle ?? city.name;
   const heroDescription =
     city.publicHeroDescription ?? "Consulta le attività pubblicate e scegli come contattarle.";
 
   return (
-    <main className={`${styles.contextStage} ${styles.cityHome}`} id="main-content">
-      <div className={styles.cityShell}>
-        <section className={styles.citySidebar} aria-labelledby="city-home-title">
-          <header className={styles.cityTopbar}>
-            <Link className={styles.brand} href="/" aria-label="CityCore, torna alla home">
-              <span>CityCore</span>
-              <span className={styles.accent}>.</span>
-            </Link>
-
-            <Link className={styles.operatorLink} href="/admin/login">
-              Area operatori
-            </Link>
-          </header>
-
-          <div className={styles.cityHero}>
-            <p className={styles.currentCity}>
-              <span className={styles.pinIcon} aria-hidden="true" />
-              <span>{city.name}</span>
-            </p>
-
-            <h1 className={styles.cityTitle} id="city-home-title">
-              <span>
-                {heroTitle}
-                <span className={styles.accent}>.</span>
-              </span>
-            </h1>
-
-            <p className={styles.cityIntro}>{heroDescription}</p>
-            {live ? (
-              <p className={styles.cityCount}>
-                {city.businessCount} {activityLabel}
-              </p>
-            ) : null}
-            <a className={styles.cityHeroCta} href="#directory">
-              Esplora le attività <span aria-hidden="true">→</span>
-            </a>
-          </div>
-        </section>
-
-        <div className={styles.cityMain}>
-          <CityBusinessDirectory businesses={city.businesses} degraded={degraded} />
-        </div>
-      </div>
-
-      <MobileBottomNav citySlug={city.slug} />
-    </main>
+    <PublicShell
+      toneLabel="Directory cittadina"
+      title={city.name}
+      description={heroDescription}
+      contextLabel={city.name}
+      contextHref={`/${city.slug}`}
+      accentNote={live ? `${city.businessCount} ${activityLabel}` : undefined}
+      breadcrumbs={[{ label: "Home", href: "/" }, { label: city.name }]}
+    >
+      <section className="public-city-continuation" aria-label={`Attività a ${city.name}`}>
+        <CityBusinessDirectory
+          businesses={city.businesses}
+          cityName={city.name}
+          degraded={degraded}
+        />
+      </section>
+    </PublicShell>
   );
 }

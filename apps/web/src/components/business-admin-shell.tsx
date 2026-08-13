@@ -15,14 +15,14 @@ import { AdminShell, type AdminBreadcrumb } from "./admin-shell";
 import { AdminSubmitButton } from "./admin-submit-button";
 
 const sectionDescriptions: Record<string, string> = {
-  "": "Controlla lo stato dell’attività e raggiungi rapidamente ogni area di gestione.",
+  "": "Controlla lo stato dell’attività e continua dal prossimo passaggio utile.",
   profile: "Aggiorna identità, contatti, indirizzo, impostazioni locali e canali social.",
-  categories: "Scegli le categorie attive che descrivono correttamente l’attività.",
-  services: "Crea e aggiorna il catalogo senza perdere di vista stato, prezzo e ordine.",
+  categories: "Scegli come classificare l’attività nella directory e nelle ricerche.",
+  services: "Organizza servizi, prezzi e visibilità del catalogo pubblico.",
   hours: "Configura una settimana di apertura chiara e coerente con la scheda pubblica.",
-  publication: "Controlla i requisiti reali e gestisci la visibilità nella directory cittadina.",
-  inquiries: "Leggi le richieste ricevute, aggiorna lo stato e conserva le note interne.",
-  modules: "Mantieni attivo il modulo principale e configura soltanto le estensioni utili.",
+  publication: "Verifica cosa manca e scegli se mostrare l’attività nella directory.",
+  inquiries: "Leggi le richieste ricevute, aggiorna lo stato e aggiungi note per il team.",
+  modules: "Controlla le funzioni disponibili e attiva solo quelle utili all’attività.",
   orders: "Gestisci gli ordini di ritiro come estensione opzionale del catalogo.",
 };
 
@@ -43,27 +43,49 @@ export function BusinessAdminShell({
   const section = getBusinessAdminSection(pathname);
   const base = businessAdminBasePath(business.city.slug, business.slug);
   const isPlatformContext = activeAccess.scopeType !== "business";
-  const breadcrumbs: AdminBreadcrumb[] = isPlatformContext
+  const contextBreadcrumbs: AdminBreadcrumb[] = isPlatformContext
     ? [
         { href: "/admin", label: "Dashboard" },
         { href: "/admin/businesses", label: "Attività" },
-        { href: base, label: business.name },
-        { label: section.label },
       ]
-    : [{ label: "Attività" }, { href: base, label: business.name }, { label: section.label }];
+    : [{ href: `/${business.city.slug}`, label: business.city.name }];
+  const breadcrumbs: AdminBreadcrumb[] = section.segment
+    ? [...contextBreadcrumbs, { href: base, label: business.name }, { label: section.label }]
+    : [...contextBreadcrumbs, { label: business.name }];
+  const sessionSummary = (
+    <dl className="mini-facts compact operator-context-list">
+      <div>
+        <dt>Attività</dt>
+        <dd>{business.name}</dd>
+      </div>
+      <div>
+        <dt>Città</dt>
+        <dd>{business.city.name}</dd>
+      </div>
+      <div>
+        <dt>Account</dt>
+        <dd>{userEmail}</dd>
+      </div>
+      <div>
+        <dt>Ambito</dt>
+        <dd>{adminScopeLabel(activeAccess.scopeType)}</dd>
+      </div>
+    </dl>
+  );
 
   return (
     <AdminShell
-      asideText={`Utente: ${userEmail}. Ambito operativo: ${adminScopeLabel(activeAccess.scopeType)}.`}
+      asideContent={sessionSummary}
       asideTitle="Sessione attiva"
+      brandContext="Gestione attività"
       brandHref={isPlatformContext ? "/admin" : base}
       breadcrumbs={breadcrumbs}
       description={sectionDescriptions[section.segment]}
-      eyebrow="Gestione attività"
+      eyebrow={`${business.name} · ${business.city.name}`}
       headerActions={
         <>
           {accessCount > 1 ? (
-            <Link className="ghost-button" href="/select-access">
+            <Link className="admin-button ghost-button" href="/select-access">
               Cambia accesso
             </Link>
           ) : null}
@@ -81,7 +103,7 @@ export function BusinessAdminShell({
         hasMultipleAccesses: accessCount > 1,
       })}
       statusLabel={adminRoleLabel(activeAccess.role)}
-      title={`${section.label} · ${business.name}`}
+      title={section.label}
     >
       {children}
     </AdminShell>

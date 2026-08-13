@@ -76,7 +76,7 @@ export default async function AdminPage() {
           <article className="metric-card">
             <span>Città attive</span>
             <strong>{activeCities.data?.total ?? "—"}</strong>
-            <Link href="/admin/cities?status=active">Gestisci città</Link>
+            <Link href="/admin/cities?status=active&active=true">Vedi città pubbliche</Link>
           </article>
           <article className="metric-card">
             <span>Attività pubblicate</span>
@@ -105,20 +105,20 @@ export default async function AdminPage() {
           <Link className="admin-quick-card" href="/admin/cities">
             <span>Città</span>
             <strong>Gestisci città</strong>
-            <p>Registry, stato e pagine cittadine.</p>
+            <p>Registro territoriale, stato e categorie cittadine.</p>
           </Link>
           <Link className="admin-quick-card" href="/admin/businesses">
             <span>Attività</span>
             <strong>Gestisci attività</strong>
-            <p>Owner, template e pubblicazione.</p>
+            <p>Gestori, tipo di attività e pubblicazione.</p>
           </Link>
           <Link className="admin-quick-card" href="/admin/access">
             <span>Permessi</span>
             <strong>Ruoli e accessi</strong>
-            <p>Grant attivi e ambiti operativi.</p>
+            <p>Autorizzazioni attive e relativi ambiti.</p>
           </Link>
           <Link className="admin-quick-card" href="/admin/audit">
-            <span>Tracciabilità</span>
+            <span>Cronologia</span>
             <strong>Registro attività</strong>
             <p>Azioni recenti e controlli.</p>
           </Link>

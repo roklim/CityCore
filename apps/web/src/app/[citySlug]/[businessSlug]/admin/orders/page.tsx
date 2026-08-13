@@ -70,6 +70,8 @@ export default async function BusinessOrdersPage({
   const hasCatalog = business.modules.some(
     (module) => module.moduleCode === "catalog" && module.active,
   );
+  const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
+  const canManageSettings = session.auth.activeAccess.permissions.includes("settings.manage");
   const settings = hasCatalog
     ? await loadBusinessAdminResponse<PlatformPickupOrderingResponse>(
         `${apiPath}/pickup-ordering`,
@@ -77,14 +79,12 @@ export default async function BusinessOrdersPage({
       )
     : null;
   const orders =
-    settings?.data?.item?.enabled === true
+    canManage && settings?.data?.item?.enabled === true
       ? await loadBusinessAdminResponse<PlatformPickupOrdersResponse>(
           `${apiPath}/pickup-orders?${queryString({ page, limit: 20 })}`,
           session.token,
         )
       : null;
-  const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
-  const canManageSettings = session.auth.activeAccess.permissions.includes("settings.manage");
   const returnTo = page > 1 ? `${path}?page=${page}` : path;
   const pickupSettings = settings?.data?.item ?? {
     enabled: false,
@@ -112,13 +112,16 @@ export default async function BusinessOrdersPage({
             <p className="section-label">Configurazione opzionale</p>
             <h2 id="pickup-settings-title">Ritiro in sede</h2>
           </div>
+          {settings?.data ? (
+            <AdminStatusBadge status={pickupSettings.enabled ? "active" : "disabled"} />
+          ) : null}
         </div>
         {!hasCatalog ? (
-          <div className="admin-state-card">
+          <div className="admin-state-card admin-state-inline">
             <strong>Prima attiva il catalogo.</strong>
             <p>Il ritiro usa i servizi contrassegnati come disponibili per gli ordini.</p>
             <Link
-              className="ghost-button"
+              className="admin-button ghost-button"
               href={businessAdminSectionPath(citySlug, businessSlug, "modules")}
             >
               Vai ai moduli
@@ -134,6 +137,27 @@ export default async function BusinessOrdersPage({
             <input name="citySlug" type="hidden" value={citySlug} />
             <input name="businessSlug" type="hidden" value={businessSlug} />
             <input name="returnTo" type="hidden" value={returnTo} />
+            <div className="admin-state-card admin-state-inline">
+              <strong>Prima di accettare ordini</strong>
+              <p>
+                Pubblica almeno un servizio con prezzo e ritiro attivo, poi configura gli orari di
+                apertura usati per generare le fasce.
+              </p>
+              <div className="business-publication-actions">
+                <Link
+                  className="admin-button ghost-button"
+                  href={businessAdminSectionPath(citySlug, businessSlug, "services")}
+                >
+                  Controlla servizi
+                </Link>
+                <Link
+                  className="admin-button ghost-button"
+                  href={businessAdminSectionPath(citySlug, businessSlug, "hours")}
+                >
+                  Controlla orari
+                </Link>
+              </div>
+            </div>
             <label className="admin-check-field">
               <input
                 defaultChecked={pickupSettings.enabled}
@@ -220,6 +244,11 @@ export default async function BusinessOrdersPage({
             title="Il ritiro ordini non è attivo."
             text="Questa estensione è separata dal percorso core dell’attività."
           />
+        ) : settings?.data?.item?.enabled && !canManage ? (
+          <div className="admin-state-card admin-state-inline">
+            <strong>Inbox ordini non disponibile per questo ruolo.</strong>
+            <p>Serve un accesso con gestione dell’attività per consultare i dati dei clienti.</p>
+          </div>
         ) : settings?.failed || orders?.failed ? (
           <AdminCollectionError
             message="Non è stato possibile caricare gli ordini di ritiro."
@@ -242,6 +271,17 @@ export default async function BusinessOrdersPage({
                     <p>
                       {order.customerName} · {order.customerEmail}
                     </p>
+                    {order.customerPhone ? (
+                      <p>
+                        Telefono: <a href={`tel:${order.customerPhone}`}>{order.customerPhone}</a>
+                      </p>
+                    ) : null}
+                    {order.notes ? (
+                      <div className="admin-state-card admin-state-inline">
+                        <strong>Nota cliente</strong>
+                        <p>{order.notes}</p>
+                      </div>
+                    ) : null}
                     <ul>
                       {order.items.map((item) => (
                         <li key={item.id}>
@@ -278,6 +318,10 @@ export default async function BusinessOrdersPage({
                           Aggiorna stato
                         </AdminSubmitButton>
                       </form>
+                    ) : canManage ? (
+                      <span className="admin-muted-label">
+                        Flusso concluso: nessuna altra azione.
+                      </span>
                     ) : null}
                   </article>
                 );
@@ -292,7 +336,19 @@ export default async function BusinessOrdersPage({
             />
           </>
         ) : (
-          <AdminEmptyState title="Nessun ordine di ritiro ricevuto." />
+          <div className="admin-state-card admin-state-inline">
+            <strong>Nessun ordine di ritiro ricevuto.</strong>
+            <p>
+              Gli ordini compariranno qui. Se il ritiro è già attivo, verifica servizi pubblicati,
+              prezzi e orari.
+            </p>
+            <Link
+              className="admin-button ghost-button"
+              href={businessAdminSectionPath(citySlug, businessSlug, "services")}
+            >
+              Controlla servizi
+            </Link>
+          </div>
         )}
       </section>
     </>

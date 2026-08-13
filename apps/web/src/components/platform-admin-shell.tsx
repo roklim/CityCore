@@ -27,19 +27,32 @@ export function PlatformAdminShell({
     activeAccess.scopeType === "city"
       ? (activeAccess.city?.name ?? "Città")
       : adminScopeLabel(activeAccess.scopeType);
+  const sessionSummary = (
+    <dl className="mini-facts compact operator-context-list">
+      <div>
+        <dt>Account</dt>
+        <dd>{session.auth.user.email}</dd>
+      </div>
+      <div>
+        <dt>Ambito</dt>
+        <dd>{context}</dd>
+      </div>
+    </dl>
+  );
 
   return (
     <AdminShell
-      asideText={`Utente: ${session.auth.user.email}. Ambito operativo: ${context}.`}
+      asideContent={sessionSummary}
       asideTitle="Sessione attiva"
+      brandContext="Amministrazione"
       brandHref="/admin"
       breadcrumbs={breadcrumbs}
       description={description}
-      eyebrow="Amministrazione"
+      eyebrow="Console CityCore"
       headerActions={
         <>
           {session.auth.accesses.length > 1 ? (
-            <Link className="ghost-button" href="/select-access">
+            <Link className="admin-button ghost-button" href="/select-access">
               Cambia accesso
             </Link>
           ) : null}

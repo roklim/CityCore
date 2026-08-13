@@ -1,4 +1,5 @@
 import { MODULE_DEFINITIONS } from "@platform/templates";
+import Link from "next/link";
 import { AdminSubmitButton } from "../../../../../components/admin-submit-button";
 import { businessAdminSectionPath } from "../../../../../lib/business-admin-navigation";
 import { getBusinessAdminContext } from "../../../../../lib/business-admin-server";
@@ -21,7 +22,13 @@ export default async function BusinessModulesPage({
   const activeCodes = new Set(
     business.modules.filter((module) => module.active).map((module) => module.moduleCode),
   );
-  const canManage = session.auth.activeAccess.permissions.includes("modules.manage");
+  const permissions = new Set(session.auth.activeAccess.permissions);
+  const canManage = permissions.has("modules.manage");
+  const canManageOrders = permissions.has("businesses.manage");
+  const hasCatalog = primaryModule === "catalog" || activeCodes.has("catalog");
+  const activeOptionalCount = MODULE_DEFINITIONS.filter(
+    (definition) => definition.code !== primaryModule && activeCodes.has(definition.code),
+  ).length;
 
   return (
     <>
@@ -41,7 +48,14 @@ export default async function BusinessModulesPage({
             <p className="section-label">Funzioni attività</p>
             <h2 id="modules-title">Modulo principale e moduli opzionali</h2>
           </div>
+          <span className="admin-result-count">
+            1 principale · {activeOptionalCount} opzionali attivi
+          </span>
         </div>
+        <p className="muted-copy">
+          Il modulo principale deriva dal template e resta sempre attivo. Abilita solo le funzioni
+          realmente usate dall’attività.
+        </p>
         <form action={updateBusinessModulesAction} className="business-management-form">
           <input name="citySlug" type="hidden" value={citySlug} />
           <input name="businessSlug" type="hidden" value={businessSlug} />
@@ -77,6 +91,22 @@ export default async function BusinessModulesPage({
             <p className="muted-copy">Il tuo ruolo può consultare i moduli ma non modificarli.</p>
           )}
         </form>
+        {hasCatalog && canManageOrders ? (
+          <div className="action-bar">
+            <div>
+              <strong>Catalogo attivo</strong>
+              <p className="muted-copy">
+                Puoi configurare l’estensione opzionale per gli ordini di ritiro.
+              </p>
+            </div>
+            <Link
+              className="admin-button ghost-button"
+              href={businessAdminSectionPath(citySlug, businessSlug, "orders")}
+            >
+              Vai agli ordini
+            </Link>
+          </div>
+        ) : null}
       </section>
     </>
   );

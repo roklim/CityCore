@@ -1,13 +1,13 @@
-import { PublicFeedback } from "../../../components/public-feedback";
+import { PublicFeedback, PublicFeedbackPage } from "../../../components/public-feedback";
 
 export default function Loading() {
   return (
-    <main className="feedback-page" id="main-content">
+    <PublicFeedbackPage>
       <PublicFeedback
         live
-        title="Caricamento dell'attività"
-        body="Stiamo recuperando le informazioni pubblicate."
+        title="Stiamo aprendo l'attività"
+        body="Carichiamo servizi, orari e contatti."
       />
-    </main>
+    </PublicFeedbackPage>
   );
 }

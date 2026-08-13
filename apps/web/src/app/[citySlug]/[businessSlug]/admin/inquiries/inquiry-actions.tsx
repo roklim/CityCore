@@ -8,12 +8,12 @@ function InquiryActionButtons({ status }: { status: PlatformBusinessInquiry["sta
   const { pending } = useFormStatus();
   return (
     <div className="business-inquiry-actions">
-      <button className="form-button" disabled={pending} type="submit">
+      <button className="admin-button form-button" disabled={pending} type="submit">
         {pending ? "Salvataggio…" : "Salva nota"}
       </button>
       {status === "new" ? (
         <button
-          className="ghost-button"
+          className="admin-button ghost-button"
           disabled={pending}
           name="status"
           type="submit"
@@ -24,13 +24,20 @@ function InquiryActionButtons({ status }: { status: PlatformBusinessInquiry["sta
       ) : null}
       {status !== "closed" ? (
         <button
-          className="ghost-button danger-button"
+          className="admin-button ghost-button danger-button"
           disabled={pending}
           name="status"
+          onClick={(event) => {
+            if (
+              !window.confirm("Chiudere questa richiesta? Potrai ancora consultarla tra le chiuse.")
+            ) {
+              event.preventDefault();
+            }
+          }}
           type="submit"
           value="closed"
         >
-          Chiudi
+          Chiudi richiesta
         </button>
       ) : null}
     </div>
@@ -57,7 +64,12 @@ export function BusinessInquiryActions({
       <label className="field">
         <span>Nota interna</span>
         <textarea defaultValue={inquiry.internalNote ?? ""} maxLength={2000} name="internalNote" />
+        <small>Visibile solo agli operatori autorizzati, mai al cliente.</small>
       </label>
+      <p className="admin-form-note">
+        Salva la nota senza cambiare stato oppure usa una delle azioni per aggiornare anche il
+        flusso della richiesta.
+      </p>
       <InquiryActionButtons status={inquiry.status} />
     </form>
   );

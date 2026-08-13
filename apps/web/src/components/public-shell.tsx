@@ -1,6 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+type PublicBreadcrumb = {
+  label: string;
+  href?: string;
+};
+
 type PublicShellProps = {
   toneLabel: string;
   title: string;
@@ -8,8 +13,42 @@ type PublicShellProps = {
   contextLabel?: string;
   contextHref?: string;
   accentNote?: string;
+  breadcrumbs?: PublicBreadcrumb[];
   children: ReactNode;
 };
+
+type PublicSiteHeaderProps = {
+  exploreHref?: string;
+  changeCityHref?: string;
+};
+
+export function PublicSiteHeader({
+  exploreHref = "/#active-cities",
+  changeCityHref = "/#citycore-city-search",
+}: PublicSiteHeaderProps) {
+  return (
+    <header className="public-header public-site-header">
+      <Link className="public-brand" href="/" aria-label="CityCore, torna alla home">
+        <span className="public-brand-wordmark">
+          CityCore<span aria-hidden="true">.</span>
+        </span>
+        <span className="public-brand-tagline">La tua città. Tutto connesso.</span>
+      </Link>
+
+      <nav className="public-nav" aria-label="Navigazione pubblica">
+        <Link className="public-nav-link" href={exploreHref}>
+          Esplora
+        </Link>
+        <Link className="public-nav-link" href={changeCityHref}>
+          Cambia città
+        </Link>
+        <Link className="public-signin-link" href="/admin/login">
+          Area operatori
+        </Link>
+      </nav>
+    </header>
+  );
+}
 
 export function PublicShell({
   toneLabel,
@@ -17,35 +56,47 @@ export function PublicShell({
   description,
   contextLabel,
   contextHref,
-  accentNote = "Scopri attività locali, confronta opzioni e passa all'azione senza perdere tempo in percorsi generici.",
+  accentNote,
+  breadcrumbs,
   children,
 }: PublicShellProps) {
+  const showContextLink = Boolean(contextLabel && contextLabel !== title);
+  const trail = breadcrumbs?.length
+    ? breadcrumbs
+    : [
+        { label: "Home", href: "/" },
+        ...(contextLabel ? [{ label: contextLabel, href: contextHref }] : []),
+        { label: title },
+      ];
+  const exploreHref = contextHref ? `${contextHref}#directory` : "/#active-cities";
+
   return (
     <div className="public-shell">
-      <header className="public-header">
-        <Link className="public-brand" href="/" aria-label="CityCore, torna alla home">
-          <span className="public-brand-wordmark">
-            CityCore<span aria-hidden="true">.</span>
-          </span>
-          <span className="public-brand-tagline">La tua città. Tutto connesso.</span>
-        </Link>
-
-        <nav className="public-nav" aria-label="Navigazione pubblica">
-          <Link className="public-nav-link" href="/">
-            Scegli una città
-          </Link>
-          <Link className="public-signin-link" href="/admin/login">
-            Area operatori
-          </Link>
-        </nav>
-      </header>
+      <PublicSiteHeader exploreHref={exploreHref} />
 
       <main className="public-main" id="main-content">
-        <section className="public-hero">
+        <nav className="public-breadcrumbs" aria-label="Percorso">
+          <ol>
+            {trail.map((item, index) => {
+              const isCurrent = index === trail.length - 1;
+              return (
+                <li key={`${item.label}-${index}`}>
+                  {!isCurrent && item.href ? (
+                    <Link href={item.href}>{item.label}</Link>
+                  ) : (
+                    <span aria-current={isCurrent ? "page" : undefined}>{item.label}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+
+        <section className="public-hero public-page-intro">
           <div className="public-hero-copy">
             <div className="public-hero-meta">
               <span className="public-kicker">{toneLabel}</span>
-              {contextLabel ? (
+              {showContextLink && contextLabel ? (
                 contextHref ? (
                   <Link className="public-meta-chip public-meta-link" href={contextHref}>
                     {contextLabel}
@@ -58,12 +109,8 @@ export function PublicShell({
 
             <h1>{title}</h1>
             <p>{description}</p>
+            {accentNote ? <p className="public-context-note">{accentNote}</p> : null}
           </div>
-
-          <aside className="public-hero-aside">
-            <p className="public-aside-label">Perché qui</p>
-            <p>{accentNote}</p>
-          </aside>
         </section>
 
         {children}

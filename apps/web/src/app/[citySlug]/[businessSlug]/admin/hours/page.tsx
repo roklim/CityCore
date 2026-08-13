@@ -56,6 +56,10 @@ export default async function BusinessHoursPage({
             <h2 id="hours-title">Settimana di apertura</h2>
           </div>
         </div>
+        <p className="muted-copy">
+          Gli orari salvati alimentano la scheda pubblica, lo stato aperto/chiuso e le eventuali
+          fasce di ritiro. I giorni senza fasce sono mostrati come chiusi.
+        </p>
         {hours.failed ? (
           <AdminCollectionError
             message="Non è stato possibile caricare gli orari."

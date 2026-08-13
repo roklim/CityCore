@@ -28,26 +28,26 @@ export default async function SelectAccessPage() {
         { href: session.auth.redirectTo || "/admin", label: "Dashboard" },
         { label: "Cambia accesso" },
       ]}
-      eyebrow="Area operatori"
-      title="Scegli la superficie da aprire"
-      description="Il tuo account dispone di più scope operativi. Seleziona il permesso con cui proseguire."
+      eyebrow="Accesso operativo"
+      title="Scegli l'area da gestire"
+      description="Il tuo account può operare in più ambiti. Scegli il ruolo e il contesto con cui vuoi continuare."
       navigationItems={[
         { href: "/", label: "Home pubblica", meta: "Scegli una città" },
         {
           href: session.auth.redirectTo || "/admin",
-          label: "Scope corrente",
+          label: "Area corrente",
           meta: adminRoleLabel(session.auth.activeAccess.role),
         },
         {
           href: "/select-access",
           label: "Cambia accesso",
-          meta: "Scegli ruolo e attività",
+          meta: "Scegli ruolo e ambito",
           current: true,
         },
       ]}
-      statusLabel="Area operatori"
+      statusLabel={adminRoleLabel(session.auth.activeAccess.role)}
       asideTitle="Sessione corrente"
-      asideText="Scegli un accesso reale: la piattaforma aprirà la destinazione coerente con ruolo e ambito operativo."
+      asideText="La scelta determina quali città o attività puoi consultare e gestire in questa sessione."
       headerActions={
         <form action={logoutAction} className="operator-session-form">
           <AdminSubmitButton className="ghost-button" pendingLabel="Uscita…">
@@ -57,15 +57,18 @@ export default async function SelectAccessPage() {
       }
     >
       <section className="section-header">
-        <p className="section-label">Multi-accesso</p>
+        <p className="section-label">Accessi disponibili</p>
         <h2>{session.auth.user.name ?? session.auth.user.email}</h2>
         <p>
-          Sono disponibili {session.auth.accesses.length} accessi attivi. Seleziona quello da usare
-          per questa sessione.
+          Hai {session.auth.accesses.length} accessi attivi. Quello attualmente in uso è già
+          selezionato.
         </p>
       </section>
 
-      <AccessSelector accesses={session.auth.accesses} />
+      <AccessSelector
+        accesses={session.auth.accesses}
+        currentAccessId={session.auth.activeAccess.id}
+      />
     </AdminShell>
   );
 }

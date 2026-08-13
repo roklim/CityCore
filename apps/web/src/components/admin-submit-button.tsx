@@ -17,12 +17,13 @@ export function AdminSubmitButton({
   return (
     <button
       aria-disabled={pending}
-      className={className}
+      aria-busy={pending}
+      className={`admin-button ${className}`}
       data-pending={pending || undefined}
       disabled={pending}
       type="submit"
     >
-      {pending ? pendingLabel : children}
+      <span aria-live="polite">{pending ? pendingLabel : children}</span>
     </button>
   );
 }

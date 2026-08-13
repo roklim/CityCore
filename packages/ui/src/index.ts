@@ -1,23 +1,23 @@
 export const platformTheme = {
   colors: {
-    canvas: "#071018",
-    canvasAlt: "#0b1622",
-    panel: "#101a26",
-    panelStrong: "#13202f",
-    panelMuted: "#18283a",
-    line: "rgba(148, 163, 184, 0.18)",
-    lineStrong: "rgba(148, 163, 184, 0.28)",
-    text: "#f5f7fb",
-    textMuted: "#9fafc3",
-    textSoft: "#7a899d",
-    accent: "#45d38b",
-    accentAlt: "#82a6ff",
-    accentWarm: "#f3c46f",
-    danger: "#ff7c7c",
+    canvas: "#f5f3ef",
+    canvasAlt: "#faf8f5",
+    panel: "#ffffff",
+    panelStrong: "#ffffff",
+    panelMuted: "#efebe5",
+    line: "#e5dfd8",
+    lineStrong: "#d7cfc6",
+    text: "#202124",
+    textMuted: "#60636a",
+    textSoft: "#6d7077",
+    accent: "#e76545",
+    accentAlt: "#d95739",
+    accentWarm: "#fce9e3",
+    danger: "#d84a4a",
   },
   radius: {
-    sm: "12px",
-    md: "20px",
+    sm: "8px",
+    md: "12px",
   },
   spacing: {
     xs: "8px",
@@ -34,7 +34,7 @@ export const platformTheme = {
     topbarHeight: "72px",
   },
   shadow: {
-    panel: "0 18px 60px rgba(3, 8, 14, 0.32)",
+    panel: "0 1px 2px rgba(32, 33, 36, 0.05)",
   },
 } as const;
 

@@ -31,6 +31,8 @@ export default async function BusinessCategoriesPage({
   );
   const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
   const canManageCity = session.auth.activeAccess.permissions.includes("cities.manage");
+  const activeCategoryCount =
+    categories.data?.availableCategories.filter((category) => category.active).length ?? 0;
 
   return (
     <>
@@ -51,16 +53,22 @@ export default async function BusinessCategoriesPage({
             <h2 id="categories-title">Categorie disponibili</h2>
           </div>
           {categories.data ? (
-            <span className="admin-result-count">{categories.data.items.length} assegnate</span>
+            <span className="admin-result-count">
+              {categories.data.items.length} assegnate · {activeCategoryCount} disponibili
+            </span>
           ) : null}
         </div>
+        <p className="muted-copy">
+          Scegli le categorie con cui l’attività sarà trovata nella directory. Una categoria deve
+          essere indicata come primaria.
+        </p>
         {categories.failed ? (
           <AdminCollectionError
             message="Non è stato possibile caricare le categorie."
             retryHref={path}
           />
-        ) : !categories.data.availableCategories.length ? (
-          <div className="admin-state-card">
+        ) : !activeCategoryCount ? (
+          <div className="admin-state-card admin-state-inline">
             <strong>Nessuna categoria disponibile.</strong>
             <p>
               Prima di pubblicare l'attività, configura almeno una categoria attiva per questa
@@ -68,7 +76,7 @@ export default async function BusinessCategoriesPage({
             </p>
             {canManageCity ? (
               <Link
-                className="ghost-button"
+                className="admin-button ghost-button"
                 href={`/admin/cities/${encodeURIComponent(citySlug)}/categories`}
               >
                 Crea le categorie della città

@@ -90,7 +90,7 @@ function business(
 }
 
 describe("admin navigation", () => {
-  it("exposes all platform sections and marks only the current route", () => {
+  it("exposes platform sections without duplicating the header access switcher", () => {
     const items = getPlatformAdminNavigation(access("platform"), "/admin/businesses", true);
 
     expect(items.map((item) => item.href)).toEqual([
@@ -100,7 +100,6 @@ describe("admin navigation", () => {
       "/admin/access",
       "/admin/audit",
       "/",
-      "/select-access",
     ]);
     expect(items.filter((item) => item.current).map((item) => item.href)).toEqual([
       "/admin/businesses",

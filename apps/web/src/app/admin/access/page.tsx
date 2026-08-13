@@ -41,11 +41,21 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
   const scope = searchParam(params, "scope");
   const active = searchParam(params, "active");
   const page = positivePage(searchParam(params, "page"));
+  const assign = searchParam(params, "assign");
   const notice = searchParam(params, "notice");
   const error = searchParam(params, "error");
   const query = { q, role, scopeType: scope, active, page, limit: 20 };
   const currentQuery = queryString({ q, role, scope, active, page: page > 1 ? page : undefined });
   const returnTo = currentQuery ? `/admin/access?${currentQuery}` : "/admin/access";
+  const assignAccessQuery = queryString({
+    q,
+    role,
+    scope,
+    active,
+    page: page > 1 ? page : undefined,
+    assign: "true",
+  });
+  const assignAccessReturnTo = `/admin/access?${assignAccessQuery}`;
   const isPlatformScope = session.auth.activeAccess.scopeType === "platform";
   const canManageAccess = session.auth.activeAccess.permissions.includes("business_users.manage");
 
@@ -63,12 +73,13 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
       session.token,
     ),
   ]);
+  const accessSetupFailed = cities.failed || businesses.failed;
 
   return (
     <PlatformAdminShell
       breadcrumbs={[{ href: "/admin", label: "Dashboard" }, { label: "Accessi" }]}
       currentPath="/admin/access"
-      description="Assegna ruoli coerenti con città e attività, quindi controlla stato e ultimo utilizzo dei grant."
+      description="Assegna ruoli coerenti con città e attività, quindi controlla separatamente lo stato dell'account e dell'accesso."
       session={session}
       title="Ruoli e accessi"
     >
@@ -99,21 +110,21 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
               <option value="">Tutti i ruoli</option>
               <option value="global_admin">Amministratore piattaforma</option>
               <option value="city_admin">Amministratore città</option>
-              <option value="local_admin">Owner attività</option>
+              <option value="local_admin">Gestore attività</option>
               <option value="staff">Staff attività</option>
             </select>
           </label>
           <label className="field">
-            <span>Scope</span>
+            <span>Ambito</span>
             <select defaultValue={scope} name="scope">
-              <option value="">Tutti gli scope</option>
+              <option value="">Tutti gli ambiti</option>
               <option value="platform">Piattaforma</option>
               <option value="city">Città</option>
               <option value="business">Attività</option>
             </select>
           </label>
           <label className="field">
-            <span>Stato</span>
+            <span>Stato accesso</span>
             <select defaultValue={active} name="active">
               <option value="">Tutti</option>
               <option value="true">Attivo</option>
@@ -121,32 +132,47 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
             </select>
           </label>
           <div className="admin-filter-actions">
-            <button className="form-button" type="submit">
+            <button className="admin-button form-button" type="submit">
               Applica filtri
             </button>
-            <Link className="ghost-button" href="/admin/access">
-              Azzera
-            </Link>
+            {q || role || scope || active ? (
+              <Link className="admin-button ghost-button" href="/admin/access">
+                Azzera
+              </Link>
+            ) : null}
           </div>
         </form>
       </section>
 
-      {canManageAccess && (isPlatformScope || cities.data?.items.length) ? (
-        <details className="admin-create-panel">
+      {canManageAccess && accessSetupFailed ? (
+        <AdminCollectionError
+          message="Non è stato possibile caricare città e attività necessarie per assegnare un accesso."
+          retryHref={returnTo}
+        />
+      ) : canManageAccess && (isPlatformScope || cities.data?.items.length) ? (
+        <details className="admin-create-panel" open={assign === "true"}>
           <summary>Assegna un accesso</summary>
           <AccessGrantForm
             businesses={businesses.data?.items ?? []}
             cities={cities.data?.items ?? []}
             isPlatformScope={isPlatformScope}
-            returnTo={returnTo}
+            returnTo={assignAccessReturnTo}
           />
         </details>
+      ) : canManageAccess ? (
+        <section className="admin-state-card" aria-labelledby="access-prerequisites-title">
+          <div>
+            <p className="section-label">Assegnazione non disponibile</p>
+            <h2 id="access-prerequisites-title">Nessuna città accessibile</h2>
+          </div>
+          <p>Non ci sono ancora città nel tuo ambito a cui assegnare un amministratore.</p>
+        </section>
       ) : null}
 
       <section className="data-card" aria-labelledby="access-table-title">
         <div className="card-heading">
           <div>
-            <p className="section-label">Grant autorizzati</p>
+            <p className="section-label">Autorizzazioni</p>
             <h2 id="access-table-title">Accessi disponibili</h2>
           </div>
           {accessGrants.data ? (
@@ -167,12 +193,12 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
                   <tr>
                     <th>Utente</th>
                     <th>Ruolo</th>
-                    <th>Scope</th>
+                    <th>Tipo di ambito</th>
                     <th>Ambito</th>
                     <th>Ultimo utilizzo</th>
                     <th>Stato account</th>
                     <th>Stato accesso</th>
-                    <th>Azione</th>
+                    <th>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -198,7 +224,7 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
                           {!canManageAccess ? (
                             <span className="admin-muted-label">Sola lettura</span>
                           ) : (
-                            <div className="admin-table-actions">
+                            <div className="table-actions admin-access-actions">
                               {isCurrent ? (
                                 <span className="admin-muted-label">Accesso corrente</span>
                               ) : (
@@ -218,11 +244,15 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
                                   </AdminSubmitButton>
                                 </form>
                               )}
-                              <details>
-                                <summary>Imposta password temporanea</summary>
+                              <details className="admin-inline-details admin-access-reset">
+                                <summary
+                                  aria-label={`Reimposta la password per ${grant.user.name ?? grant.user.email}`}
+                                >
+                                  Reimposta password
+                                </summary>
                                 <form
                                   action={resetAccessPasswordAction}
-                                  className="admin-edit-form"
+                                  className="admin-edit-form is-compact"
                                 >
                                   <input name="returnTo" type="hidden" value={returnTo} />
                                   <input name="accessGrantId" type="hidden" value={grant.id} />
@@ -236,8 +266,9 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
                                       type="password"
                                     />
                                     <small>
-                                      Minimo 12 caratteri. Il salvataggio invalida tutte le sessioni
-                                      precedenti dell&apos;utente.
+                                      {isCurrent
+                                        ? "Stai modificando il tuo account: dopo il salvataggio dovrai accedere di nuovo. Tutte le sessioni precedenti verranno invalidate."
+                                        : "Minimo 12 caratteri. Il salvataggio invalida tutte le sessioni precedenti dell'utente."}
                                     </small>
                                   </label>
                                   <AdminSubmitButton
@@ -268,7 +299,11 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
         ) : (
           <AdminEmptyState
             title="Nessun accesso trovato."
-            text="Modifica i filtri oppure assegna un nuovo ruolo."
+            text={
+              canManageAccess
+                ? "Modifica i filtri oppure assegna un nuovo ruolo."
+                : "Modifica i filtri per trovare un accesso nel tuo ambito."
+            }
           />
         )}
       </section>

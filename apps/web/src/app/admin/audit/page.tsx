@@ -51,7 +51,7 @@ export default async function AdminAuditPage({ searchParams }: AuditPageProps) {
     <PlatformAdminShell
       breadcrumbs={[{ href: "/admin", label: "Dashboard" }, { label: "Registro attività" }]}
       currentPath="/admin/audit"
-      description="Consulta le azioni sensibili del tuo scope con etichette leggibili e riferimenti tecnici secondari."
+      description="Consulta le azioni sensibili del tuo ambito con etichette leggibili e riferimenti tecnici secondari."
       session={session}
       title="Registro attività"
     >
@@ -63,36 +63,44 @@ export default async function AdminAuditPage({ searchParams }: AuditPageProps) {
         <form className="admin-filter-form admin-filter-form-wide" method="get">
           <label className="field">
             <span>Testo</span>
-            <input defaultValue={q} name="q" placeholder="Attore, azione o target" type="search" />
+            <input
+              defaultValue={q}
+              name="q"
+              placeholder="Attore, azione o elemento"
+              type="search"
+            />
           </label>
           <label className="field">
-            <span>Azione tecnica</span>
+            <span>Codice azione</span>
             <input defaultValue={action} name="action" placeholder="business.published" />
+            <small>Usa il codice mostrato sotto il nome dell&apos;azione.</small>
           </label>
           <label className="field">
-            <span>Scope</span>
+            <span>Ambito</span>
             <select defaultValue={scope} name="scope">
-              <option value="">Tutti gli scope</option>
+              <option value="">Tutti gli ambiti</option>
               <option value="platform">Piattaforma</option>
               <option value="city">Città</option>
               <option value="business">Attività</option>
             </select>
           </label>
           <label className="field">
-            <span>Dal</span>
-            <input defaultValue={from} name="from" type="date" />
+            <span>Data iniziale</span>
+            <input defaultValue={from} max={to || undefined} name="from" type="date" />
           </label>
           <label className="field">
-            <span>Al</span>
-            <input defaultValue={to} name="to" type="date" />
+            <span>Data finale</span>
+            <input defaultValue={to} min={from || undefined} name="to" type="date" />
           </label>
           <div className="admin-filter-actions">
-            <button className="form-button" type="submit">
+            <button className="admin-button form-button" type="submit">
               Applica filtri
             </button>
-            <Link className="ghost-button" href="/admin/audit">
-              Azzera
-            </Link>
+            {q || action || scope || from || to ? (
+              <Link className="admin-button ghost-button" href="/admin/audit">
+                Azzera
+              </Link>
+            ) : null}
           </div>
         </form>
       </section>
@@ -100,7 +108,7 @@ export default async function AdminAuditPage({ searchParams }: AuditPageProps) {
       <section className="data-card" aria-labelledby="audit-table-title">
         <div className="card-heading">
           <div>
-            <p className="section-label">Tracciabilità</p>
+            <p className="section-label">Cronologia</p>
             <h2 id="audit-table-title">Azioni registrate</h2>
           </div>
           {auditLogs.data ? (
@@ -121,8 +129,8 @@ export default async function AdminAuditPage({ searchParams }: AuditPageProps) {
                   <tr>
                     <th>Azione</th>
                     <th>Attore</th>
-                    <th>Scope</th>
-                    <th>Target</th>
+                    <th>Ambito</th>
+                    <th>Elemento</th>
                     <th>Data</th>
                   </tr>
                 </thead>
@@ -145,7 +153,7 @@ export default async function AdminAuditPage({ searchParams }: AuditPageProps) {
                         {log.business ? (
                           <Link
                             className="table-link"
-                            href={`/${log.business.city.slug}/${log.business.slug}/admin`}
+                            href={`/${encodeURIComponent(log.business.city.slug)}/${encodeURIComponent(log.business.slug)}/admin`}
                           >
                             {log.business.name}
                           </Link>

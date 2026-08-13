@@ -12,8 +12,14 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
   const { pending } = useFormStatus();
 
   return (
-    <button className="form-button" type="submit" disabled={pending}>
-      {pending ? pendingLabel : label}
+    <button
+      aria-busy={pending}
+      className="admin-button form-button"
+      data-pending={pending || undefined}
+      type="submit"
+      disabled={pending}
+    >
+      <span aria-live="polite">{pending ? pendingLabel : label}</span>
     </button>
   );
 }
@@ -88,9 +94,15 @@ export function AdminLoginForms({
           <ErrorBanner state={loginState} />
           <SubmitButton label="Accedi" pendingLabel="Accesso in corso..." />
           <small className="muted-copy">
-            Password dimenticata? Un amministratore autorizzato può generarne una temporanea dalla
-            sezione Accessi.
+            Password dimenticata? Chiedi a un amministratore autorizzato di impostarne una
+            temporanea dalla sezione Accessi.
           </small>
+          {bootstrapStatus === null ? (
+            <small className="muted-copy" role="status">
+              La verifica della prima configurazione non è disponibile. Se questo è il primo avvio,
+              contatta il responsabile della piattaforma.
+            </small>
+          ) : null}
         </form>
       </section>
 
@@ -158,7 +170,7 @@ export function AdminLoginForms({
             ) : null}
 
             <ErrorBanner state={bootstrapState} />
-            <SubmitButton label="Crea admin" pendingLabel="Creazione in corso..." />
+            <SubmitButton label="Crea il primo amministratore" pendingLabel="Creazione in corso…" />
           </form>
         </section>
       ) : bootstrapStatus?.required ? (

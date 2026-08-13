@@ -4,17 +4,17 @@ import type { AuthAccess } from "./platform-api";
 export function getPlatformAdminNavigation(
   access: AuthAccess,
   currentPath: string,
-  hasMultipleAccesses: boolean,
+  _hasMultipleAccesses: boolean,
 ): OperatorNavigationItem[] {
   if (access.scopeType === "business") return [];
 
   const cityLabel = access.scopeType === "city" ? access.city?.name : null;
   const items: OperatorNavigationItem[] = [
-    { href: "/admin", label: "Dashboard", meta: cityLabel ?? "Riepilogo piattaforma" },
-    { href: "/admin/cities", label: "Città", meta: cityLabel ?? "Registry e gestione" },
+    { href: "/admin", label: "Dashboard", meta: cityLabel ?? "Riepilogo generale" },
+    { href: "/admin/cities", label: "Città", meta: cityLabel ?? "Configurazione e visibilità" },
     { href: "/admin/businesses", label: "Attività", meta: "Elenco e pubblicazione" },
-    { href: "/admin/access", label: "Accessi", meta: "Ruoli e scope" },
-    { href: "/admin/audit", label: "Registro attività", meta: "Azioni e tracciabilità" },
+    { href: "/admin/access", label: "Accessi", meta: "Persone, ruoli e ambiti" },
+    { href: "/admin/audit", label: "Registro attività", meta: "Storico delle operazioni" },
     {
       href: "/",
       label: "Home pubblica",
@@ -22,14 +22,6 @@ export function getPlatformAdminNavigation(
       dividerBefore: true,
     },
   ];
-
-  if (hasMultipleAccesses) {
-    items.push({
-      href: "/select-access",
-      label: "Cambia accesso",
-      meta: "Scegli ruolo e ambito",
-    });
-  }
 
   return items.map((item) => ({ ...item, current: item.href === currentPath }));
 }

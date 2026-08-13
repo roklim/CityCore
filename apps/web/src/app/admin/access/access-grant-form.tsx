@@ -20,9 +20,15 @@ export function AccessGrantForm({
   returnTo: string;
 }) {
   const [role, setRole] = useState<AccessRole>(
-    isPlatformScope ? (cities.length ? "local_admin" : "global_admin") : "city_admin",
+    isPlatformScope
+      ? businesses.length
+        ? "local_admin"
+        : cities.length
+          ? "city_admin"
+          : "global_admin"
+      : "city_admin",
   );
-  const [citySlug, setCitySlug] = useState(cities[0]?.slug ?? "");
+  const [citySlug, setCitySlug] = useState(businesses[0]?.city.slug ?? cities[0]?.slug ?? "");
   const scopeType =
     role === "global_admin" ? "platform" : role === "city_admin" ? "city" : "business";
   const availableBusinesses = useMemo(
@@ -65,13 +71,19 @@ export function AccessGrantForm({
           {isPlatformScope ? (
             <option value="global_admin">Amministratore piattaforma</option>
           ) : null}
-          <option value="city_admin">Amministratore città</option>
-          <option value="local_admin">Owner attività</option>
-          <option value="staff">Staff attività</option>
+          <option disabled={!cities.length} value="city_admin">
+            Amministratore città
+          </option>
+          <option disabled={!businesses.length} value="local_admin">
+            Gestore attività
+          </option>
+          <option disabled={!businesses.length} value="staff">
+            Staff attività
+          </option>
         </select>
       </label>
       <div className="admin-derived-scope">
-        <span>Scope assegnato</span>
+        <span>Ambito assegnato</span>
         <strong>{adminScopeLabel(scopeType)}</strong>
       </div>
       {scopeType !== "platform" ? (
@@ -96,7 +108,9 @@ export function AccessGrantForm({
           <span>Attività</span>
           <select key={citySlug} name="businessSlug" required defaultValue="">
             <option disabled value="">
-              Seleziona attività
+              {availableBusinesses.length
+                ? "Seleziona attività"
+                : "Nessuna attività disponibile in questa città"}
             </option>
             {availableBusinesses.map((business) => (
               <option key={business.id} value={business.slug}>

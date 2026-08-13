@@ -33,6 +33,7 @@ export function BusinessCategorySelector({
       "",
   );
   const returnTo = `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin/categories`;
+  const hasValidSelection = selectedIds.size > 0 && selectedIds.has(primaryId);
 
   return (
     <form action={updateBusinessCategoriesAction} className="business-management-form">
@@ -89,7 +90,7 @@ export function BusinessCategorySelector({
         ))}
       </div>
       {inactiveAssignments.length ? (
-        <div className="admin-state-card">
+        <div className="admin-state-card admin-state-inline">
           <strong>Categorie non più attive</strong>
           <p>
             {inactiveAssignments.map((assignment) => assignment.name).join(", ")}. Non sono
@@ -97,7 +98,24 @@ export function BusinessCategorySelector({
           </p>
         </div>
       ) : null}
-      <AdminSubmitButton pendingLabel="Salvataggio…">Salva categorie</AdminSubmitButton>
+      {!selectedIds.size ? (
+        <div className="admin-state-card admin-state-inline" role="alert">
+          <strong>Seleziona almeno una categoria.</strong>
+          <p>Senza una categoria attiva la scheda non può essere pubblicata.</p>
+        </div>
+      ) : !primaryId ? (
+        <div className="admin-state-card admin-state-inline" role="alert">
+          <strong>Scegli la categoria primaria.</strong>
+          <p>La primaria rappresenta l’attività nei risultati della directory.</p>
+        </div>
+      ) : null}
+      {hasValidSelection ? (
+        <AdminSubmitButton pendingLabel="Salvataggio…">Salva categorie</AdminSubmitButton>
+      ) : (
+        <button className="admin-button form-button" disabled type="submit">
+          Salva categorie
+        </button>
+      )}
     </form>
   );
 }

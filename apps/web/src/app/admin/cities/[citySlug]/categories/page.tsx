@@ -22,7 +22,7 @@ export const metadata = { title: "Categorie città" };
 
 type CityCategoriesPageProps = {
   params: Promise<{ citySlug: string }>;
-  searchParams: Promise<{ notice?: string; error?: string }>;
+  searchParams: Promise<{ notice?: string; error?: string; create?: string }>;
 };
 
 export default async function CityCategoriesPage({
@@ -50,13 +50,17 @@ export default async function CityCategoriesPage({
   const activeCategoryCount = items.filter((item) => item.active).length;
   const cityIsPublic = Boolean(city?.active && city.status === "active");
   const canManage = session.auth.activeAccess.permissions.includes("cities.manage");
+  const showCategoryForm = feedback.create === "true" || !activeCategoryCount;
 
   return (
     <PlatformAdminShell
       breadcrumbs={[
         { href: "/admin", label: "Dashboard" },
         { href: "/admin/cities", label: "Città" },
-        { label: city?.name ?? citySlug },
+        {
+          href: `/admin/cities?q=${encodedCitySlug}`,
+          label: city?.name ?? citySlug,
+        },
         { label: "Categorie" },
       ]}
       currentPath="/admin/cities"
@@ -81,10 +85,18 @@ export default async function CityCategoriesPage({
           retryHref={path}
         />
       ) : !city ? (
-        <AdminEmptyState
-          title="Città non disponibile."
-          text="Torna all'elenco e scegli una città accessibile nel tuo ambito."
-        />
+        <section className="admin-state-card is-error" aria-labelledby="missing-city-title">
+          <div>
+            <p className="section-label">Città non disponibile</p>
+            <h2 id="missing-city-title">Non puoi configurare questa città</h2>
+          </div>
+          <p>Torna all&apos;elenco e scegli una città accessibile nel tuo ambito.</p>
+          <div className="admin-filter-actions">
+            <Link className="admin-button ghost-button" href="/admin/cities">
+              Torna alle città
+            </Link>
+          </div>
+        </section>
       ) : (
         <>
           <section className="admin-setup-flow" aria-labelledby="city-setup-title">
@@ -131,7 +143,9 @@ export default async function CityCategoriesPage({
                       ? `${activeCategoryCount} categorie attive disponibili.`
                       : "Crea almeno una categoria attiva, per esempio Ristoranti o Negozi."}
                   </p>
-                  {canManage ? <a href="#new-category">Aggiungi categoria ↓</a> : null}
+                  {canManage ? (
+                    <Link href={`${path}?create=true#new-category`}>Aggiungi categoria ↓</Link>
+                  ) : null}
                 </div>
               </article>
               <article
@@ -154,10 +168,10 @@ export default async function CityCategoriesPage({
           </section>
 
           {canManage ? (
-            <details className="admin-create-panel" id="new-category" open={!items.length}>
+            <details className="admin-create-panel" id="new-category" open={showCategoryForm}>
               <summary>Nuova categoria</summary>
               <form action={createCityCategoryAction} className="admin-edit-form">
-                <input name="returnTo" type="hidden" value={path} />
+                <input name="returnTo" type="hidden" value={`${path}?create=true`} />
                 <input name="citySlug" type="hidden" value={city.slug} />
                 <label className="field">
                   <span>Nome categoria</span>
@@ -357,7 +371,7 @@ export default async function CityCategoriesPage({
                                       <input name="citySlug" type="hidden" value={city.slug} />
                                       <input name="categoryId" type="hidden" value={category.id} />
                                       <AdminSubmitButton
-                                        className="ghost-button danger-button"
+                                        className="admin-button ghost-button danger-button"
                                         pendingLabel="Eliminazione…"
                                       >
                                         Elimina definitivamente
@@ -379,7 +393,11 @@ export default async function CityCategoriesPage({
             ) : (
               <AdminEmptyState
                 title="Nessuna categoria configurata."
-                text="Crea la prima categoria attiva per poter completare e pubblicare le attività della città."
+                text={
+                  canManage
+                    ? "Crea la prima categoria attiva per poter completare e pubblicare le attività della città."
+                    : "Non ci sono ancora categorie da consultare per questa città."
+                }
               />
             )}
           </section>

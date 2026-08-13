@@ -73,9 +73,13 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
       <input type="hidden" name="businessStatus" value={business.status} />
       <fieldset className="business-form-fieldset" disabled={isSubmitting}>
         <legend>Identità pubblica</legend>
+        <p className="admin-form-note">
+          Questi testi identificano l’attività nella directory e nella scheda pubblica. Per
+          pubblicare servono il nome e almeno un sottotitolo o una descrizione.
+        </p>
         <div className="business-profile-grid">
           <label className="field">
-            <span>Nome</span>
+            <span>Nome *</span>
             <input
               aria-describedby="business-name-help"
               aria-invalid={name.trim().length < 2}
@@ -111,6 +115,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
           <label className="field">
             <span>Titolo pubblico</span>
             <input defaultValue={business.publicTitle ?? ""} maxLength={160} name="publicTitle" />
+            <small>Facoltativo: se presente sostituisce il nome nella scheda pubblica.</small>
           </label>
           <label className="field">
             <span>Sottotitolo pubblico</span>
@@ -128,19 +133,38 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
             maxLength={2000}
             name="publicDescription"
           />
+          <small>
+            Spiega in modo concreto cosa offre l’attività; è alternativa al sottotitolo per la
+            readiness.
+          </small>
         </label>
       </fieldset>
 
       <fieldset className="business-form-fieldset" disabled={isSubmitting}>
         <legend>Contatti</legend>
+        <p className="admin-form-note">
+          Per pubblicare serve almeno un telefono, un’email o il sito. Telefono ed email offrono un
+          contatto più diretto.
+        </p>
         <div className="business-profile-grid">
           <label className="field">
             <span>Telefono pubblico</span>
-            <input defaultValue={business.publicPhone ?? ""} maxLength={60} name="publicPhone" />
+            <input
+              autoComplete="tel"
+              defaultValue={business.publicPhone ?? ""}
+              maxLength={60}
+              name="publicPhone"
+              type="tel"
+            />
           </label>
           <label className="field">
             <span>Email pubblica</span>
-            <input defaultValue={business.publicEmail ?? ""} name="publicEmail" type="email" />
+            <input
+              autoComplete="email"
+              defaultValue={business.publicEmail ?? ""}
+              name="publicEmail"
+              type="email"
+            />
           </label>
           <label className="field">
             <span>Sito web</span>
@@ -151,32 +175,63 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
 
       <fieldset className="business-form-fieldset" disabled={isSubmitting}>
         <legend>Indirizzo</legend>
+        <p className="admin-form-note">
+          Usa l’indirizzo che gli utenti devono raggiungere; lascia vuoti i campi non applicabili.
+        </p>
         <div className="business-profile-grid">
           <label className="field">
             <span>Indirizzo</span>
-            <input defaultValue={business.addressLine1 ?? ""} maxLength={160} name="addressLine1" />
+            <input
+              autoComplete="address-line1"
+              defaultValue={business.addressLine1 ?? ""}
+              maxLength={160}
+              name="addressLine1"
+            />
           </label>
           <label className="field">
             <span>Indirizzo, seconda riga</span>
-            <input defaultValue={business.addressLine2 ?? ""} maxLength={160} name="addressLine2" />
+            <input
+              autoComplete="address-line2"
+              defaultValue={business.addressLine2 ?? ""}
+              maxLength={160}
+              name="addressLine2"
+            />
           </label>
           <label className="field">
             <span>CAP</span>
-            <input defaultValue={business.postalCode ?? ""} maxLength={20} name="postalCode" />
+            <input
+              autoComplete="postal-code"
+              defaultValue={business.postalCode ?? ""}
+              maxLength={20}
+              name="postalCode"
+            />
           </label>
           <label className="field">
             <span>Località</span>
-            <input defaultValue={business.locality ?? ""} maxLength={120} name="locality" />
+            <input
+              autoComplete="address-level2"
+              defaultValue={business.locality ?? ""}
+              maxLength={120}
+              name="locality"
+            />
           </label>
           <label className="field">
             <span>Provincia</span>
-            <input defaultValue={business.province ?? ""} maxLength={120} name="province" />
+            <input
+              autoComplete="address-level1"
+              defaultValue={business.province ?? ""}
+              maxLength={120}
+              name="province"
+            />
           </label>
         </div>
       </fieldset>
 
       <fieldset className="business-form-fieldset" disabled={isSubmitting}>
         <legend>Impostazioni locali</legend>
+        <p className="admin-form-note">
+          Queste impostazioni controllano formati, prezzi e calcolo degli orari pubblici.
+        </p>
         <div className="business-profile-grid">
           <label className="field">
             <span>Timezone</span>
@@ -214,6 +269,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
 
       <fieldset className="business-form-fieldset" disabled={isSubmitting}>
         <legend>Social</legend>
+        <p className="admin-form-note">Inserisci URL completi, per esempio https://…</p>
         <div className="business-profile-grid">
           {socialFields.map((field) => (
             <label className="field" key={field}>
@@ -240,7 +296,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
         </p>
       ) : null}
       {isDirty ? <p className="business-unsaved-indicator">Modifiche non salvate</p> : null}
-      <button className="form-button" disabled={isSubmitting} type="submit">
+      <button className="admin-button form-button" disabled={isSubmitting} type="submit">
         {isSubmitting ? "Salvataggio…" : "Salva profilo"}
       </button>
     </form>
