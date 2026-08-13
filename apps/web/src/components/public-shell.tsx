@@ -19,15 +19,23 @@ type PublicShellProps = {
 
 type PublicSiteHeaderProps = {
   exploreHref?: string;
+  exploreLabel?: string;
   changeCityHref?: string;
+  className?: string;
+  showExplore?: boolean;
+  showChangeCity?: boolean;
 };
 
 export function PublicSiteHeader({
-  exploreHref = "/#active-cities",
+  exploreHref = "/#citycore-city-search",
+  exploreLabel = "Cerca una città",
   changeCityHref = "/#citycore-city-search",
+  className,
+  showExplore = true,
+  showChangeCity = false,
 }: PublicSiteHeaderProps) {
   return (
-    <header className="public-header public-site-header">
+    <header className={`public-header public-site-header${className ? ` ${className}` : ""}`}>
       <Link className="public-brand" href="/" aria-label="CityCore, torna alla home">
         <span className="public-brand-wordmark">
           CityCore<span aria-hidden="true">.</span>
@@ -36,12 +44,16 @@ export function PublicSiteHeader({
       </Link>
 
       <nav className="public-nav" aria-label="Navigazione pubblica">
-        <Link className="public-nav-link" href={exploreHref}>
-          Esplora
-        </Link>
-        <Link className="public-nav-link" href={changeCityHref}>
-          Cambia città
-        </Link>
+        {showExplore ? (
+          <Link className="public-nav-link" href={exploreHref}>
+            {exploreLabel}
+          </Link>
+        ) : null}
+        {showChangeCity ? (
+          <Link className="public-nav-link" href={changeCityHref}>
+            Cambia città
+          </Link>
+        ) : null}
         <Link className="public-signin-link" href="/admin/login">
           Area operatori
         </Link>
@@ -68,13 +80,17 @@ export function PublicShell({
         ...(contextLabel ? [{ label: contextLabel, href: contextHref }] : []),
         { label: title },
       ];
-  const exploreHref = contextHref ? `${contextHref}#directory` : "/#active-cities";
+  const exploreHref = contextHref ? `${contextHref}#directory` : "/#citycore-city-search";
 
   return (
     <div className="public-shell">
-      <PublicSiteHeader exploreHref={exploreHref} />
+      <PublicSiteHeader
+        exploreHref={exploreHref}
+        exploreLabel={contextHref ? "Esplora attività" : "Cerca una città"}
+        showChangeCity={Boolean(contextHref)}
+      />
 
-      <main className="public-main" id="main-content">
+      <main className="public-main" id="main-content" tabIndex={-1}>
         <nav className="public-breadcrumbs" aria-label="Percorso">
           <ol>
             {trail.map((item, index) => {

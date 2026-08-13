@@ -176,7 +176,7 @@ export function CityBusinessDirectory({
           role="status"
         >
           Non ci sono ancora attività pubblicate a {cityName}.{" "}
-          <Link href="/#active-cities">Scegli un'altra città</Link>.
+          <Link href="/#citycore-city-search">Scegli un'altra città</Link>.
         </p>
       )}
     </section>

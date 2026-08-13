@@ -1,7 +1,6 @@
 .contextStage {
   min-height: 100vh;
   min-height: 100svh;
-  overflow-x: hidden;
   background: var(--cc-canvas);
   color: var(--cc-text);
 }
@@ -21,15 +20,42 @@
 
 .entryShell {
   width: min(100%, 1200px);
+  display: grid;
+  gap: clamp(28px, 4vw, 44px);
+}
+
+.entryHeader:global(.public-header) {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.entryHeader :global(.public-nav) {
+  width: auto;
+  margin-left: auto;
 }
 
 .entryPanel {
   display: grid;
-  gap: 30px;
+  grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+  grid-template-areas: "primary art";
+  column-gap: clamp(42px, 6vw, 72px);
+  row-gap: clamp(32px, 5vw, 52px);
+  align-items: center;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
+}
+
+.entryPrimary {
+  grid-area: primary;
+  display: grid;
+  align-content: center;
+  gap: 26px;
+  min-width: 0;
 }
 
 .accent {
@@ -39,12 +65,12 @@
 .entryHero {
   display: grid;
   gap: 14px;
-  max-width: 720px;
-  padding-top: clamp(28px, 6vw, 72px);
+  max-width: 680px;
 }
 
 .entryTitle {
   margin: 0;
+  max-width: 12ch;
   color: var(--cc-text);
   font-family: Georgia, "Times New Roman", serif;
   font-weight: 400;
@@ -52,7 +78,7 @@
 }
 
 .entryTitle {
-  font-size: clamp(42px, 8vw, 68px);
+  font-size: clamp(48px, 5.5vw, 72px);
   line-height: 0.98;
 }
 
@@ -70,15 +96,15 @@
 }
 
 .entryFormWrap {
-  gap: 9px;
-  max-width: 720px;
+  gap: 7px;
+  max-width: 680px;
 }
 
 .searchShell {
   width: 100%;
   min-height: 58px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 6px 7px 6px 18px;
@@ -94,6 +120,11 @@
 .searchShell:focus-within {
   border-color: var(--cc-accent);
   box-shadow: var(--cc-focus-ring);
+}
+
+.searchShellInvalid,
+.searchShellInvalid:focus-within {
+  border-color: var(--cc-danger);
 }
 
 .searchIcon {
@@ -142,6 +173,11 @@
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
   transition:
     border-color var(--cc-duration-fast) var(--cc-ease),
     background var(--cc-duration-fast) var(--cc-ease),
@@ -162,18 +198,13 @@
   opacity: 0.58;
 }
 
-.entryStatus {
+.entryError {
   min-height: 18px;
   margin: 0;
-  color: var(--cc-text-secondary);
+  color: var(--cc-danger-ink);
   font-size: 13px;
+  font-weight: 700;
   line-height: 1.45;
-}
-
-.activeCities {
-  display: grid;
-  gap: 12px;
-  max-width: 720px;
 }
 
 .sectionKicker {
@@ -185,57 +216,18 @@
   text-transform: uppercase;
 }
 
-.cityPills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.cityPill {
-  min-height: 42px;
-  padding: 0 15px;
-  border: 1px solid var(--cc-border);
-  border-radius: 999px;
-  background: var(--cc-surface-soft);
-  display: inline-flex;
-  align-items: center;
-  color: var(--cc-text-secondary);
-  font-size: 13px;
-  font-weight: 700;
-  transition:
-    border-color var(--cc-duration-fast) var(--cc-ease),
-    color var(--cc-duration-fast) var(--cc-ease),
-    background var(--cc-duration-fast) var(--cc-ease),
-    transform var(--cc-duration-fast) var(--cc-ease);
-}
-
-.cityPill:hover {
-  border-color: var(--cc-accent);
-  background: var(--cc-accent-soft);
-  color: var(--cc-text);
-  transform: translateY(-1px);
-}
-
 .cityLineArt {
-  width: min(100%, 360px);
+  grid-area: art;
+  width: min(100%, 500px);
   height: auto;
-  margin: 4px auto -10px;
-  color: var(--cc-accent);
+  margin: 0;
+  justify-self: end;
 }
 
 .cityIllustration {
   width: 100%;
   height: auto;
   display: block;
-  overflow: visible;
-}
-
-.cityIllustration path {
-  stroke: currentColor;
-  stroke-width: 1.35;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.48;
 }
 
 .directorySection {
@@ -448,7 +440,6 @@
 }
 
 .searchSubmitButton:focus-visible,
-.cityPill:focus-visible,
 .directoryLink:focus-visible,
 .clearSearchButton:focus-visible,
 .resetSearchButton:focus-visible,
@@ -463,8 +454,32 @@
     padding: 16px;
   }
 
+  .entryPanel {
+    grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.82fr);
+    column-gap: 36px;
+  }
+
+  .entryTitle {
+    font-size: clamp(48px, 7vw, 62px);
+  }
+
   .directoryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .entryPanel {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "primary"
+      "art";
+    justify-items: start;
+  }
+
+  .cityLineArt {
+    width: min(100%, 460px);
+    justify-self: center;
   }
 }
 
@@ -473,34 +488,64 @@
     padding: 0;
   }
 
+  .entryShell {
+    gap: 22px;
+  }
+
+  .entryHeader {
+    margin: 0 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0 16px;
+  }
+
+  .entryHeader :global(.public-nav) {
+    width: auto;
+    margin-left: auto;
+    display: flex;
+  }
+
+  .entryHeader :global(.public-signin-link) {
+    width: auto;
+    padding-inline: 13px;
+  }
+
   .entryPanel {
     border-right: 0;
     border-left: 0;
     border-radius: 0;
-  }
-
-  .entryPanel {
-    min-height: 100svh;
     align-content: start;
-    gap: 26px;
-    padding: 24px 20px;
+    gap: 22px;
+    padding: 8px 20px 32px;
   }
 
   .entryHero {
-    padding-top: 36px;
+    gap: 12px;
   }
 
   .entryTitle {
-    font-size: clamp(42px, 14vw, 58px);
+    max-width: 11ch;
+    font-size: clamp(40px, 11.5vw, 46px);
   }
 
   .searchShell {
     min-height: 56px;
-    grid-template-columns: auto minmax(0, 1fr);
-    padding: 8px 10px 8px 16px;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 6px 6px 6px 12px;
   }
 
-  .searchSubmitButton,
+  .searchSubmitButton {
+    min-width: 68px;
+    padding-inline: 12px;
+  }
+
+  .searchInput {
+    font-size: 16px;
+  }
+
   .directorySearch .clearSearchButton {
     grid-column: 1 / -1;
     width: 100%;
@@ -508,11 +553,6 @@
 
   .directorySearch .clearSearchButton {
     border-top: 1px solid var(--cc-border);
-  }
-
-  .cityLineArt {
-    width: min(100%, 320px);
-    margin-top: auto;
   }
 
   .sectionHeader {
@@ -529,11 +569,30 @@
 }
 
 @media (max-width: 380px) {
-  .entryTitle {
-    font-size: 42px;
+  .entryHeader :global(.public-brand-tagline) {
+    display: none;
   }
 
   .entryBody {
     font-size: 15px;
+  }
+
+  .entryPanel {
+    padding-inline: 16px;
+  }
+
+  .entryHeader {
+    margin-inline: 16px;
+  }
+
+  .entryHeader :global(.public-signin-link) {
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: 11px;
+  }
+
+  .searchSubmitButton {
+    min-width: 62px;
+    padding-inline: 10px;
   }
 }

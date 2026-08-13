@@ -14,7 +14,7 @@ export function PublicFeedbackPage({ children }: { children: ReactNode }) {
   return (
     <div className="public-shell">
       <PublicSiteHeader />
-      <main className="feedback-page" id="main-content">
+      <main className="feedback-page" id="main-content" tabIndex={-1}>
         {children}
       </main>
     </div>

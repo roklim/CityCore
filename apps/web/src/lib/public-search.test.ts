@@ -7,6 +7,7 @@ import {
   groupPublicBusinessesByCategory,
   groupPublicBusinessesForDisplay,
   normalizeSearchText,
+  resolveCitySearch,
 } from "./public-search";
 
 describe("public search", () => {
@@ -23,6 +24,37 @@ describe("public search", () => {
     expect(findMatchingCitySlug("BOL", cities)).toBe("bologna");
     expect(findMatchingCitySlug("cagli", cities)).toBe("cagli");
     expect(findMatchingCitySlug("Rimini", cities)).toBeNull();
+  });
+
+  it("does not choose a city when a partial name is ambiguous", () => {
+    const cities = [
+      { slug: "san-luca", name: "San Luca" },
+      { slug: "san-pietro", name: "San Pietro" },
+    ];
+
+    expect(findMatchingCitySlug("San", cities)).toBeNull();
+    expect(findMatchingCitySlug("San Luca", cities)).toBe("san-luca");
+  });
+
+  it("does not choose a city when a normalized exact name is duplicated", () => {
+    const cities = [
+      { slug: "san-luca-nord", name: "San Luca" },
+      { slug: "san-luca-sud", name: "San Luca" },
+    ];
+
+    expect(findMatchingCitySlug("San Luca", cities)).toBeNull();
+  });
+
+  it("distinguishes empty, unavailable and ambiguous city searches", () => {
+    const cities = [
+      { slug: "san-luca", name: "San Luca" },
+      { slug: "san-pietro", name: "San Pietro" },
+    ];
+
+    expect(resolveCitySearch("", cities)).toEqual({ status: "empty" });
+    expect(resolveCitySearch("Rimini", cities)).toEqual({ status: "unavailable" });
+    expect(resolveCitySearch("San", cities)).toEqual({ status: "ambiguous" });
+    expect(resolveCitySearch("Luca", cities)).toEqual({ status: "match", slug: "san-luca" });
   });
 
   it("filters by business, locality, description and real service names", () => {

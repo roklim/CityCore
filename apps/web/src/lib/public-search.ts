@@ -59,29 +59,53 @@ export function normalizeSearchText(value: string) {
     .replace(/\s+/g, " ");
 }
 
-export function findMatchingCitySlug(
+export type CitySearchResolution =
+  | { status: "empty" }
+  | { status: "match"; slug: string }
+  | { status: "ambiguous" }
+  | { status: "unavailable" };
+
+export function resolveCitySearch(
   query: string,
   cities: readonly { slug: string; name: string }[],
-) {
+): CitySearchResolution {
   const normalizedQuery = normalizeSearchText(query);
 
-  if (!normalizedQuery) return null;
+  if (!normalizedQuery) return { status: "empty" };
 
-  const exact = cities.find(
+  const exactMatches = cities.filter(
     (city) =>
       normalizeSearchText(city.name) === normalizedQuery ||
       normalizeSearchText(city.slug) === normalizedQuery,
   );
 
-  if (exact) return exact.slug;
+  if (exactMatches.length === 1) {
+    const slug = exactMatches[0]?.slug;
+    return slug ? { status: "match", slug } : { status: "unavailable" };
+  }
+  if (exactMatches.length > 1) return { status: "ambiguous" };
 
-  return (
-    cities.find(
-      (city) =>
-        normalizeSearchText(city.name).includes(normalizedQuery) ||
-        normalizeSearchText(city.slug).includes(normalizedQuery),
-    )?.slug ?? null
+  const partialMatches = cities.filter(
+    (city) =>
+      normalizeSearchText(city.name).includes(normalizedQuery) ||
+      normalizeSearchText(city.slug).includes(normalizedQuery),
   );
+
+  if (partialMatches.length === 1) {
+    const slug = partialMatches[0]?.slug;
+    return slug ? { status: "match", slug } : { status: "unavailable" };
+  }
+  if (partialMatches.length > 1) return { status: "ambiguous" };
+
+  return { status: "unavailable" };
+}
+
+export function findMatchingCitySlug(
+  query: string,
+  cities: readonly { slug: string; name: string }[],
+) {
+  const resolution = resolveCitySearch(query, cities);
+  return resolution.status === "match" ? resolution.slug : null;
 }
 
 export function filterPublicBusinesses<TBusiness extends SearchableBusiness>(

@@ -195,7 +195,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
           <Link className="cta-button" href={`/${city.slug}#directory`}>
             Vedi altre attività a {city.name}
           </Link>
-          <Link className="text-link" href="/#active-cities">
+          <Link className="text-link" href="/#citycore-city-search">
             Cambia città
           </Link>
         </nav>
