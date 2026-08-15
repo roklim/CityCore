@@ -28,11 +28,11 @@ export const metadata = { title: "Richieste attività" };
 
 type InquiryResponse = { status: "ok"; item: PlatformBusinessInquiry };
 
-function formatDate(value: string) {
+function formatDate(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("it-IT", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "Europe/Rome",
+    timeZone,
   }).format(new Date(value));
 }
 
@@ -45,7 +45,7 @@ export default async function BusinessInquiriesPage({
 }) {
   const { citySlug, businessSlug } = await params;
   const query = await searchParams;
-  const { session } = await getBusinessAdminContext(citySlug, businessSlug);
+  const { session, business } = await getBusinessAdminContext(citySlug, businessSlug);
   const canManage = session.auth.activeAccess.permissions.includes("businesses.manage");
   const path = businessAdminSectionPath(citySlug, businessSlug, "inquiries");
   if (!canManage) {
@@ -166,7 +166,7 @@ export default async function BusinessInquiriesPage({
                         {inquiry.email}
                         {inquiry.phone ? <span>{inquiry.phone}</span> : null}
                       </td>
-                      <td>{formatDate(inquiry.createdAt)}</td>
+                      <td>{formatDate(inquiry.createdAt, business.timezone)}</td>
                       <td>
                         <AdminStatusBadge status={inquiry.status} />
                       </td>
@@ -249,7 +249,7 @@ export default async function BusinessInquiriesPage({
                 </div>
                 <div>
                   <dt>Data</dt>
-                  <dd>{formatDate(detail.data.item.createdAt)}</dd>
+                  <dd>{formatDate(detail.data.item.createdAt, business.timezone)}</dd>
                 </div>
                 <div>
                   <dt>Stato</dt>
