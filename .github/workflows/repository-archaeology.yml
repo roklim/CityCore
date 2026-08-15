@@ -22,6 +22,8 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate
       - name: Run archaeology analyzer
         run: node tools/repository-archaeology.mjs
       - name: Baseline quality
@@ -31,6 +33,7 @@ jobs:
           npm run format:check
           git diff --check
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: repository-archaeology
           path: audit-artifacts
