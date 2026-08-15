@@ -27,10 +27,20 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     env:
       DATABASE_URL_TEST: postgresql://citycore_test:citycore_test@localhost:5433/citycore_test
       DATABASE_URL: postgresql://citycore_test:citycore_test@localhost:5433/citycore_dev_placeholder
+      REDIS_URL: redis://localhost:6379
       AUTH_SECRET: ci-citycore-auth-secret-change-before-prod
       NEXT_PUBLIC_API_BASE_URL: http://localhost:4100
 
