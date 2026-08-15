@@ -54,14 +54,14 @@ jobs:
           ref: audit/repository-archaeology
           path: audit-tools
           sparse-checkout: |
-            tools/apply-repository-cleanup.mjs
+            tools/apply-repository-cleanup-pass2.mjs
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - name: Apply proven cleanup
-        run: node audit-tools/tools/apply-repository-cleanup.mjs
+      - name: Apply cleanup fixpoint pass
+        run: node audit-tools/tools/apply-repository-cleanup-pass2.mjs
       - name: Refresh lockfile
         run: npm install --package-lock-only
       - name: Install cleaned dependency graph
@@ -71,16 +71,16 @@ jobs:
           npx prettier --write \
             apps/api/src/auth.ts \
             apps/api/src/platform-core/config.ts \
-            apps/api/src/platform-core/mvp-schemas.ts \
-            apps/api/src/platform-core/pickup-ordering.ts \
-            apps/web/package.json \
-            apps/web/next.config.ts \
+            apps/api/src/platform-core/mvp-domain.ts \
+            apps/web/src/lib/admin-server.ts \
+            apps/web/src/lib/business-admin-logic.ts \
+            apps/web/src/lib/business-admin-navigation.ts \
+            apps/web/src/lib/business-admin-server.ts \
+            apps/web/src/lib/business-opening-hours.ts \
+            apps/web/src/lib/platform-api.ts \
+            apps/web/src/lib/public-form-validation.ts \
             apps/web/src/lib/public-runtime.ts \
-            apps/web/src/lib/public-marketplace.ts \
             packages/database/package.json \
-            packages/domain/src/index.ts \
-            packages/templates/package.json \
-            packages/ui/src/index.ts \
             package-lock.json
       - name: Dependency tree
         run: npm ls
@@ -134,12 +134,12 @@ jobs:
           rm -rf audit-tools
           git diff --check
           git status --short
-      - name: Commit cleaned repository branch
+      - name: Commit cleanup fixpoint pass
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "refactor: remove proven repository dead code"
+          git commit -m "refactor: tighten remaining dead repository surface"
           git push origin HEAD:cleanup/repository-archaeology
           git rev-parse HEAD
           echo '--- KNIP AFTER ---'
