@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: [
     "@platform/config",
-    "@platform/shared",
+    "@platform/domain",
     "@platform/templates",
     "@platform/ui",
   ],

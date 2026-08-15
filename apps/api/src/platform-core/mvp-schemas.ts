@@ -101,7 +101,7 @@ export const replaceOpeningWeekSchema = z.object({
     .length(7),
 });
 
-export const inquiryStatusSchema = z.enum(["new", "read", "closed"]);
+const inquiryStatusSchema = z.enum(["new", "read", "closed"]);
 export const publicInquirySchema = z.object({
   name: noHtmlText(120).min(2),
   email: z.string().trim().email().max(200),

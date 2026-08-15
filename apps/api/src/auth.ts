@@ -62,7 +62,7 @@ type AccessGrantRecord = {
   } | null;
 };
 
-export type SessionAccess = {
+type SessionAccess = {
   id: string;
   role: AccessRole;
   scopeType: ScopeType;
@@ -365,11 +365,11 @@ export function createAuthToken(userId: string, authVersion: number, activeAcces
   });
 }
 
-export function getRolePermissions(role: AccessRole) {
+function getRolePermissions(role: AccessRole) {
   return rolePermissions[role];
 }
 
-export function scopeMatches(access: SessionAccess, context: PermissionContext = {}) {
+function scopeMatches(access: SessionAccess, context: PermissionContext = {}) {
   if (!context.scopeType) {
     return true;
   }
@@ -525,7 +525,7 @@ function readBearerToken(request: FastifyRequest) {
   return token.trim();
 }
 
-export async function authenticateRequest(request: FastifyRequest) {
+async function authenticateRequest(request: FastifyRequest) {
   if (request.auth) {
     return request.auth;
   }

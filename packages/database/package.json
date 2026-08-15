@@ -2,12 +2,7 @@
   "name": "@platform/database",
   "private": true,
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts",
-    "./client": "./src/client.ts"
-  },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "prisma:format": "prisma format",

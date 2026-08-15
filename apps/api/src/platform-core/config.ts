@@ -1,19 +1,13 @@
 import { z } from "zod";
 
-export const accessRoles = ["global_admin", "city_admin", "local_admin", "staff"] as const;
-export const scopeTypes = ["platform", "city", "business"] as const;
+const accessRoles = ["global_admin", "city_admin", "local_admin", "staff"] as const;
+const scopeTypes = ["platform", "city", "business"] as const;
 export const cityStatuses = ["active", "coming_soon", "disabled"] as const;
-export const businessStatuses = ["draft", "active", "paused", "disabled"] as const;
-export const businessPlans = ["free", "pro", "premium", "enterprise"] as const;
-export const subscriptionStatuses = ["trialing", "active", "past_due", "cancelled"] as const;
-export const templateCategories = [
-  "commerce",
-  "service",
-  "hospitality",
-  "editorial",
-  "custom",
-] as const;
-export const userStatuses = ["invited", "active", "disabled"] as const;
+const businessStatuses = ["draft", "active", "paused", "disabled"] as const;
+const businessPlans = ["free", "pro", "premium", "enterprise"] as const;
+const subscriptionStatuses = ["trialing", "active", "past_due", "cancelled"] as const;
+const templateCategories = ["commerce", "service", "hospitality", "editorial", "custom"] as const;
+const userStatuses = ["invited", "active", "disabled"] as const;
 export const moduleCodes = [
   "content",
   "catalog",
@@ -24,7 +18,7 @@ export const moduleCodes = [
   "directory",
   "events",
 ] as const;
-export const templateCodes = [
+const templateCodes = [
   "local_business",
   "studio_service",
   "hospitality",

@@ -1,4 +1,4 @@
-import { buildBusinessPath, buildCityPath } from "@platform/shared";
+import { buildBusinessPath, buildCityPath } from "@platform/domain";
 import { getTemplateDefinition, MODULE_DEFINITIONS } from "@platform/templates";
 import { cache } from "react";
 import {

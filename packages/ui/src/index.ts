@@ -1,4 +1,4 @@
-export const platformTheme = {
+const platformTheme = {
   colors: {
     canvas: "#f5f3ef",
     canvasAlt: "#faf8f5",

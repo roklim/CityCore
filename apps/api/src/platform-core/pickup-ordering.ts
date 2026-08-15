@@ -9,13 +9,13 @@ export const pickupOrderStatuses = [
 
 export type PickupOrderStatus = (typeof pickupOrderStatuses)[number];
 
-export type PickupOpeningDay = {
+type PickupOpeningDay = {
   weekday: number;
   isClosed: boolean;
   intervals: Array<{ opensAt: string; closesAt: string }>;
 };
 
-export type PickupSlot = {
+type PickupSlot = {
   id: string;
   date: string;
   time: string;
@@ -128,10 +128,6 @@ export function isPickupDateAllowed(
 
 export function pickupSlotId(date: string, time: string) {
   return `${date}T${time}`;
-}
-
-export function usesPickupSlotCapacity(status: PickupOrderStatus) {
-  return status !== "cancelled" && status !== "completed";
 }
 
 export function canTransitionPickupOrderStatus(

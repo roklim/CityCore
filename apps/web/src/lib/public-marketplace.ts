@@ -3,7 +3,7 @@ import {
   MODULE_DEFINITIONS,
   getTemplateDefinition,
 } from "@platform/templates";
-import { slugify } from "@platform/shared";
+import { slugify } from "@platform/domain";
 
 type ModuleCode = (typeof MODULE_DEFINITIONS)[number]["code"];
 type TemplateCode = (typeof BUSINESS_TEMPLATE_DEFINITIONS)[number]["code"];
