@@ -9,7 +9,8 @@ if (!testUrl || !/test/i.test(testUrl) || testUrl === developmentUrl) {
   );
 }
 
-const result = spawnSync("npm.cmd", ["--workspace", "@platform/api", "run", "test:integration"], {
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const result = spawnSync(npmCommand, ["--workspace", "@platform/api", "run", "test:integration"], {
   stdio: "inherit",
   env: { ...process.env, NODE_ENV: "test", DATABASE_URL: testUrl },
   shell: process.platform === "win32",
