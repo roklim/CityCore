@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const accessRoles = ["global_admin", "city_admin", "local_admin", "staff"] as const;
 const scopeTypes = ["platform", "city", "business"] as const;
-export const cityStatuses = ["active", "coming_soon", "disabled"] as const;
+const cityStatuses = ["active", "coming_soon", "disabled"] as const;
 const businessStatuses = ["draft", "active", "paused", "disabled"] as const;
 const businessPlans = ["free", "pro", "premium", "enterprise"] as const;
 const subscriptionStatuses = ["trialing", "active", "past_due", "cancelled"] as const;

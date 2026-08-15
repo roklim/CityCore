@@ -2,7 +2,7 @@ import type { OperatorNavigationItem } from "../components/admin-shell";
 import { isBusinessPublic } from "./business-visibility";
 import type { AuthAccess, PlatformBusiness } from "./platform-api";
 
-export const businessAdminSections = [
+const businessAdminSections = [
   { segment: "", label: "Panoramica", meta: "Stato e prossime azioni" },
   { segment: "profile", label: "Profilo", meta: "Identità e contatti" },
   { segment: "categories", label: "Categorie", meta: "Visibilità nelle ricerche" },
@@ -14,7 +14,7 @@ export const businessAdminSections = [
   { segment: "orders", label: "Ordini ritiro", meta: "Ritiro e disponibilità" },
 ] as const;
 
-export type BusinessAdminSegment = (typeof businessAdminSections)[number]["segment"];
+type BusinessAdminSegment = (typeof businessAdminSections)[number]["segment"];
 
 export function businessAdminBasePath(citySlug: string, businessSlug: string) {
   return `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}/admin`;

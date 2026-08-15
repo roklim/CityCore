@@ -25,7 +25,7 @@ export type PublicPickupFieldErrors = Partial<
   Record<keyof PublicPickupFormValues | "items" | "pickup", string>
 >;
 
-export function containsHtmlTag(value: string) {
+function containsHtmlTag(value: string) {
   return htmlTagPattern.test(value);
 }
 

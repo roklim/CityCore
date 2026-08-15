@@ -21,8 +21,8 @@ const permissionCodes = [
 ] as const;
 
 export type AccessRole = "global_admin" | "city_admin" | "local_admin" | "staff";
-export type ScopeType = "platform" | "city" | "business";
-export type UserStatus = "invited" | "active" | "disabled";
+type ScopeType = "platform" | "city" | "business";
+type UserStatus = "invited" | "active" | "disabled";
 export type PlatformPermission = (typeof permissionCodes)[number];
 
 type TokenPayload = {
@@ -92,7 +92,7 @@ type SessionAccess = {
   } | null;
 };
 
-export type AuthContext = {
+type AuthContext = {
   user: {
     id: string;
     email: string;

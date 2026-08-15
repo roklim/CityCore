@@ -3,7 +3,7 @@ import type { PlatformPublishReadiness } from "./platform-api";
 export const socialFields = ["instagram", "facebook", "linkedin", "tiktok", "youtube"] as const;
 export type SocialField = (typeof socialFields)[number];
 
-export type OpeningIntervalDraft = { opensAt: string; closesAt: string };
+type OpeningIntervalDraft = { opensAt: string; closesAt: string };
 export type OpeningDayDraft = {
   weekday: number;
   isClosed: boolean;

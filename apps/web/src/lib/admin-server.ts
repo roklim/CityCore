@@ -11,7 +11,7 @@ export async function requirePlatformAdminSession() {
   return session;
 }
 
-export type AdminResponseState<TResponse> =
+type AdminResponseState<TResponse> =
   | { data: TResponse; failed: false }
   | { data: null; failed: true };
 

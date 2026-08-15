@@ -43,7 +43,7 @@ export type PublicCityBusinessCard = PublicBusinessProfile & {
   services: string[];
 };
 
-export type PublicBusinessDetail = PublicBusinessProfile & {
+type PublicBusinessDetail = PublicBusinessProfile & {
   href: string;
   moduleLabel: string;
   socialLinks: Array<{ label: string; url: string }>;

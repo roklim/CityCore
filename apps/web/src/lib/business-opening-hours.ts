@@ -35,14 +35,10 @@ export function getCurrentWeekdayInTimezone(date: Date, timezone: string) {
   return zonedParts(date, timezone)?.weekday ?? null;
 }
 
-export function getCurrentMinutesInTimezone(date: Date, timezone: string) {
-  return zonedParts(date, timezone)?.minutes ?? null;
-}
-
 export function formatOpeningInterval(opensAt: string, closesAt: string) {
   return `${opensAt}–${closesAt}`;
 }
-export function formatOpeningDay(day: PublicOpeningDay) {
+function formatOpeningDay(day: PublicOpeningDay) {
   return day.isClosed
     ? "Chiuso"
     : day.intervals.map((item) => formatOpeningInterval(item.opensAt, item.closesAt)).join(" · ");

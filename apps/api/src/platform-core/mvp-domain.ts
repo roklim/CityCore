@@ -1,15 +1,15 @@
-export type OpeningIntervalInput = {
+type OpeningIntervalInput = {
   opensAt: string;
   closesAt: string;
 };
 
-export type OpeningDayInput = {
+type OpeningDayInput = {
   weekday: number;
   isClosed: boolean;
   intervals: OpeningIntervalInput[];
 };
 
-export type PublishableBusiness = {
+type PublishableBusiness = {
   name: string;
   slug: string;
   cityStatus: "active" | "coming_soon" | "disabled";
@@ -22,7 +22,7 @@ export type PublishableBusiness = {
   activeCategoryCount: number;
 };
 
-export function timeToMinutes(value: string) {
+function timeToMinutes(value: string) {
   const match = /^(\d{2}):(\d{2})$/.exec(value);
 
   if (!match) {

@@ -25,9 +25,7 @@ export const getBusinessAdminContext = cache(async (citySlug: string, businessSl
   }
 });
 
-export type BusinessAdminResponseState<T> =
-  | { data: T; failed: false }
-  | { data: null; failed: true };
+type BusinessAdminResponseState<T> = { data: T; failed: false } | { data: null; failed: true };
 
 export async function loadBusinessAdminResponse<T>(path: string, token: string) {
   try {

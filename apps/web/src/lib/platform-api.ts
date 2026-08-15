@@ -61,7 +61,7 @@ export type AuthSessionResponse = {
   redirectTo: string;
 };
 
-export type PlatformCity = {
+type PlatformCity = {
   id: string;
   name: string;
   slug: string;
@@ -94,7 +94,7 @@ export type PlatformTemplate = {
   updatedAt: string | null;
 };
 
-export type PlatformCityRegistryEntry = {
+type PlatformCityRegistryEntry = {
   id: string;
   name: string;
   slug: string;
@@ -182,7 +182,7 @@ export type PlatformBusiness = {
   updatedAt: string;
 };
 
-export type PlatformAccessGrant = {
+type PlatformAccessGrant = {
   id: string;
   role: "global_admin" | "city_admin" | "local_admin" | "staff";
   scopeType: "platform" | "city" | "business";
@@ -218,7 +218,7 @@ export type PlatformAccessGrant = {
   } | null;
 };
 
-export type PlatformAuditLog = {
+type PlatformAuditLog = {
   id: string;
   action: string;
   targetType: string;
@@ -253,7 +253,7 @@ export type PlatformAuditLog = {
   } | null;
 };
 
-export type PlatformPaginatedResponse = {
+type PlatformPaginatedResponse = {
   page: number;
   limit: number;
   total: number;
@@ -324,7 +324,7 @@ export type PlatformCityCategory = {
   updatedAt: string;
 };
 
-export type PlatformCityCategoryTree = PlatformCityCategory & {
+type PlatformCityCategoryTree = PlatformCityCategory & {
   children: PlatformCityCategoryTree[];
 };
 
@@ -345,7 +345,7 @@ export type PlatformBusinessCategoriesResponse = {
   availableCategories: PlatformCityCategory[];
 };
 
-export type PlatformOpeningInterval = {
+type PlatformOpeningInterval = {
   id: string;
   opensAt: string;
   closesAt: string;
@@ -481,25 +481,9 @@ export type PublicBusinessCategory = {
   slug: string;
 };
 
-export type PublicCitiesResponse = {
-  status: "ok";
-  items: PublicPlatformCity[];
-  page: number;
-  limit: number;
-  total: number;
-};
-
 export type PublicCityResponse = {
   status: "ok";
   item: PublicPlatformCity;
-};
-
-export type PublicBusinessesResponse = {
-  status: "ok";
-  items: PublicPlatformBusiness[];
-  page: number;
-  limit: number;
-  total: number;
 };
 
 export type PublicBusinessResponse = {
@@ -507,7 +491,7 @@ export type PublicBusinessResponse = {
   item: PublicPlatformBusiness;
 };
 
-export type PublicBusinessService = {
+type PublicBusinessService = {
   id: string;
   name: string;
   slug: string;
@@ -524,7 +508,7 @@ export type PublicBusinessServicesResponse = {
   items: PublicBusinessService[];
 };
 
-export type PublicOpeningInterval = { opensAt: string; closesAt: string; sortOrder: number };
+type PublicOpeningInterval = { opensAt: string; closesAt: string; sortOrder: number };
 export type PublicOpeningDay = {
   weekday: number;
   isClosed: boolean;
@@ -588,7 +572,7 @@ export type PublicPickupOrderResponse = {
   item: { reference: string; pickupAt: string; totalCents: number; currency: string };
 };
 
-export type PlatformPickupOrder = {
+type PlatformPickupOrder = {
   id: string;
   reference: string;
   customerName: string;
@@ -636,12 +620,6 @@ export function createPublicBusinessInquiry(
   return fetchPlatformApi<PublicInquiryResponse>(
     `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/inquiries`,
     { method: "POST", body: payload },
-  );
-}
-
-export function getPublicPickupOrderMenu(citySlug: string, businessSlug: string) {
-  return fetchPlatformApi<PublicPickupOrderMenuResponse>(
-    `/api/v2/public/cities/${encodeURIComponent(citySlug)}/businesses/${encodeURIComponent(businessSlug)}/orders/menu`,
   );
 }
 
