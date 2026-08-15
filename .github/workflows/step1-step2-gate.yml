@@ -65,7 +65,10 @@ jobs:
         run: npm run db:test:migrate
 
       - name: Integration tests
-        run: npm run test:integration
+        run: npm --workspace @platform/api run test:integration
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
 
       - name: Typecheck
         run: npm run typecheck
