@@ -1,9 +1,8 @@
 -- Registry-backed City records inherit territorial identity from their source row.
 -- This prevents the legacy City.country default ('IT') from leaking into global activations.
--- A registry row may only back one CityCore City.
+-- A registry row may only back one CityCore City. PostgreSQL unique indexes allow multiple NULLs.
 CREATE UNIQUE INDEX "cities_registry_id_key"
-ON "cities"("registry_id")
-WHERE "registry_id" IS NOT NULL;
+ON "cities"("registry_id");
 
 CREATE OR REPLACE FUNCTION "citycore_apply_registry_city_defaults"()
 RETURNS trigger
