@@ -7,7 +7,7 @@ const replaceRequired = (file, from, to) => {
   if (!before.includes(from)) throw new Error(`Expected text not found in ${file}: ${from}`);
   write(file, before.replace(from, to));
 };
-const privateType = (file, name) => replaceRequired(file, `export type ${name} =`, `type ${name} =`);
+const privateType = (file, name) => replaceRequired(file, `export type ${name}`, `type ${name}`);
 const privateConst = (file, name) => replaceRequired(file, `export const ${name} =`, `const ${name} =`);
 const privateFunction = (file, name) => replaceRequired(file, `export function ${name}(`, `function ${name}(`);
 
