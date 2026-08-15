@@ -26,11 +26,13 @@ jobs:
         run: npm run db:generate
       - name: Run archaeology analyzer
         run: node tools/repository-archaeology.mjs
+      - name: Knip signal only
+        run: npx --yes knip > audit-artifacts/knip.txt 2>&1 || true
       - name: Baseline quality
         run: |
           npm run typecheck
           npm run lint
-          npm run format:check
+          npx prettier --check "apps/**/*.{ts,tsx,css,json,md}" "packages/**/*.{ts,tsx,json,md}" "package.json" "tsconfig.json" "tsconfig.base.json" "compose.yml" "render.yaml" "render.staging.yaml" ".github/workflows/platform-quality.yml" ".github/workflows/staging-deploy.yml" ".vscode/*.json" "docs/**/*.md"
           git diff --check
       - uses: actions/upload-artifact@v4
         if: always()
