@@ -165,29 +165,50 @@ model AccessGrant {
 }
 
 model CityRegistry {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   name               String
-  slug               String   @unique
-  provinceCode       String?  @map("province_code")
-  provinceName       String?  @map("province_name")
-  regionCode         String?  @map("region_code")
-  regionName         String?  @map("region_name")
-  country            String   @default("IT")
-  istatCode          String?  @unique @map("istat_code")
-  cadastralCode      String?  @unique @map("cadastral_code")
+  asciiName          String?   @map("ascii_name")
+  slug               String
+  externalId         String?   @map("external_id")
+  alternateNames     String?   @map("alternate_names")
+  provinceCode       String?   @map("province_code")
+  provinceName       String?   @map("province_name")
+  regionCode         String?   @map("region_code")
+  regionName         String?   @map("region_name")
+  admin1Code         String?   @map("admin1_code")
+  admin1Name         String?   @map("admin1_name")
+  admin2Code         String?   @map("admin2_code")
+  admin2Name         String?   @map("admin2_name")
+  admin3Code         String?   @map("admin3_code")
+  admin4Code         String?   @map("admin4_code")
+  country            String    @default("IT")
+  countryName        String?   @map("country_name")
+  istatCode          String?   @unique @map("istat_code")
+  cadastralCode      String?   @unique @map("cadastral_code")
+  featureClass       String?   @map("feature_class")
+  featureCode        String?   @map("feature_code")
+  population         Int?
+  timezone           String?
   source             String?
-  sourceVersion      String?  @map("source_version")
+  sourceVersion      String?   @map("source_version")
+  sourceModifiedAt   DateTime? @map("source_modified_at") @db.Date
   lat                Float?
   lng                Float?
-  activeMunicipality Boolean  @default(true) @map("active_municipality")
-  searchText         String?  @map("search_text")
+  activeMunicipality Boolean   @default(true) @map("active_municipality")
+  searchText         String?   @map("search_text")
   cities             City[]
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
+  @@unique([source, externalId], map: "city_registry_source_external_id_key")
+  @@index([slug], map: "city_registry_slug_idx")
   @@index([name], map: "city_registry_name_idx")
+  @@index([country], map: "city_registry_country_idx")
   @@index([provinceCode], map: "city_registry_province_code_idx")
   @@index([regionCode], map: "city_registry_region_code_idx")
+  @@index([admin1Code], map: "city_registry_admin1_code_idx")
+  @@index([admin2Code], map: "city_registry_admin2_code_idx")
+  @@index([population], map: "city_registry_population_idx")
   @@map("city_registry")
 }
 
@@ -512,18 +533,18 @@ model PickupOrder {
 }
 
 model PickupOrderItem {
-  id             String          @id @default(cuid())
-  orderId        String          @map("order_id")
-  serviceId      String?         @map("service_id")
-  nameSnapshot   String          @map("name_snapshot") @db.VarChar(160)
-  unitPriceCents Int             @map("unit_price_cents")
+  id             String           @id @default(cuid())
+  orderId        String           @map("order_id")
+  serviceId      String?          @map("service_id")
+  nameSnapshot   String           @map("name_snapshot") @db.VarChar(160)
+  unitPriceCents Int              @map("unit_price_cents")
   quantity       Int
-  lineTotalCents Int             @map("line_total_cents")
+  lineTotalCents Int              @map("line_total_cents")
   notes          String?
-  order          PickupOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order          PickupOrder      @relation(fields: [orderId], references: [id], onDelete: Cascade)
   service        BusinessService? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
 
   @@index([orderId], map: "pickup_order_items_order_id_idx")
   @@index([serviceId], map: "pickup_order_items_service_id_idx")
