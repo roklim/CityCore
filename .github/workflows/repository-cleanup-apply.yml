@@ -54,38 +54,27 @@ jobs:
           ref: audit/repository-archaeology
           path: audit-tools
           sparse-checkout: |
-            tools/apply-repository-cleanup-pass2.mjs
+            tools/apply-repository-cleanup-pass3.mjs
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - name: Apply cleanup fixpoint pass
-        run: node audit-tools/tools/apply-repository-cleanup-pass2.mjs
+      - name: Apply manifest integrity pass
+        run: node audit-tools/tools/apply-repository-cleanup-pass3.mjs
       - name: Refresh lockfile
         run: npm install --package-lock-only
       - name: Install cleaned dependency graph
         run: npm ci
-      - name: Format cleanup changes
+      - name: Format manifest changes
         run: |
-          npx prettier --write \
-            apps/api/src/auth.ts \
-            apps/api/src/platform-core/config.ts \
-            apps/api/src/platform-core/mvp-domain.ts \
-            apps/web/src/lib/admin-server.ts \
-            apps/web/src/lib/business-admin-logic.ts \
-            apps/web/src/lib/business-admin-navigation.ts \
-            apps/web/src/lib/business-admin-server.ts \
-            apps/web/src/lib/business-opening-hours.ts \
-            apps/web/src/lib/platform-api.ts \
-            apps/web/src/lib/public-form-validation.ts \
-            apps/web/src/lib/public-runtime.ts \
-            packages/database/package.json \
-            package-lock.json
+          npx prettier --write package.json apps/web/package.json package-lock.json
       - name: Dependency tree
         run: npm ls
       - name: Production dependency audit
         run: npm audit --omit=dev
+      - name: Full audit report
+        run: npm audit --json > /tmp/npm-audit.json || true
       - name: Generate and validate Prisma
         run: |
           npm run db:generate
@@ -134,16 +123,18 @@ jobs:
           rm -rf audit-tools
           git diff --check
           git status --short
-      - name: Commit cleanup fixpoint pass
+      - name: Commit manifest integrity pass
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "refactor: tighten remaining dead repository surface"
+          git commit -m "chore: make workspace tool dependencies explicit"
           git push origin HEAD:cleanup/repository-archaeology
           git rev-parse HEAD
           echo '--- KNIP AFTER ---'
           cat /tmp/knip-after.txt
+          echo '--- NPM AUDIT ---'
+          cat /tmp/npm-audit.json
           echo '--- DIFF VS FEATURE BASE ---'
           git diff --stat 3e8b4486170948a5ee6a5a9be9883ac7af7ae74e..HEAD
       - name: API logs on failure
