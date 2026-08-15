@@ -4,6 +4,10 @@ import { z } from "zod";
 import { getRequestAuth, requirePermission } from "../auth.js";
 import { prisma } from "../database.js";
 import { buildAccessibleBusinessFilter, buildAccessibleCityFilter } from "./access.js";
+import {
+  compareCityRegistryMatches,
+  normalizeCityRegistryQuery,
+} from "./city-registry-search.js";
 import { mapCityRegistryEntry } from "./mappers.js";
 import { parsePayload } from "./utils.js";
 
@@ -28,24 +32,6 @@ const registryLookupQuerySchema = z.object({
   country: z.string().trim().length(2).optional(),
   limit: z.coerce.number().int().positive().max(50).default(20),
 });
-
-function normalizeLookupQuery(value: string) {
-  return value
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function registryRank(entry: { name: string; asciiName: string | null }, query: string) {
-  const normalizedName = normalizeLookupQuery(entry.name);
-  const normalizedAsciiName = normalizeLookupQuery(entry.asciiName ?? "");
-  if (normalizedName === query || normalizedAsciiName === query) return 0;
-  if (normalizedName.startsWith(query) || normalizedAsciiName.startsWith(query)) return 1;
-  return 2;
-}
 
 export function registerPlatformLookupRoutes(app: FastifyInstance) {
   app.get(
@@ -184,7 +170,7 @@ export function registerPlatformLookupRoutes(app: FastifyInstance) {
         return reply.code(parsed.response.statusCode).send(parsed.response.body);
       }
 
-      const normalizedQuery = normalizeLookupQuery(parsed.data.q);
+      const normalizedQuery = normalizeCityRegistryQuery(parsed.data.q);
       const where: Prisma.CityRegistryWhereInput = {
         activeMunicipality: true,
         ...(parsed.data.country ? { country: parsed.data.country.toUpperCase() } : {}),
@@ -219,11 +205,9 @@ export function registerPlatformLookupRoutes(app: FastifyInstance) {
       });
 
       const ranked = normalizedQuery
-        ? [...entries].sort((left, right) => {
-            const rankDifference = registryRank(left, normalizedQuery) - registryRank(right, normalizedQuery);
-            if (rankDifference) return rankDifference;
-            return (right.population ?? 0) - (left.population ?? 0) || left.name.localeCompare(right.name);
-          })
+        ? [...entries].sort((left, right) =>
+            compareCityRegistryMatches(left, right, normalizedQuery),
+          )
         : entries;
 
       return reply.send({
