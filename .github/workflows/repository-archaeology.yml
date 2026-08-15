@@ -1,0 +1,119 @@
+name: Repository Archaeology
+
+on:
+  push:
+    branches:
+      - audit/repository-archaeology
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Snapshot and inventory
+        run: |
+          set -euo pipefail
+          mkdir -p audit-artifacts
+          {
+            echo '=== GIT ==='
+            git status --short
+            git branch --show-current
+            git rev-parse HEAD
+            git log -10 --oneline
+            echo
+            echo '=== TRACKED FILES ==='
+            git ls-files
+            echo
+            echo '=== PACKAGE SCRIPTS / DEPS ==='
+            node - <<'NODE'
+            const fs=require('fs');
+            const files=['package.json'];
+            for (const root of ['apps','packages']) if (fs.existsSync(root)) for (const x of fs.readdirSync(root)) { const f=`${root}/${x}/package.json`; if (fs.existsSync(f)) files.push(f); }
+            for (const f of files) {
+              const p=JSON.parse(fs.readFileSync(f,'utf8'));
+              console.log(`\n## ${f}`);
+              console.log('name=',p.name||'');
+              console.log('scripts=',JSON.stringify(p.scripts||{},null,2));
+              console.log('dependencies=',JSON.stringify(p.dependencies||{},null,2));
+              console.log('devDependencies=',JSON.stringify(p.devDependencies||{},null,2));
+              console.log('exports=',JSON.stringify(p.exports||{},null,2));
+            }
+            NODE
+            echo
+            echo '=== SOURCE FILES ==='
+            find apps packages tools -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' -o -name '*.css' \) | sort
+            echo
+            echo '=== PROCESS ENV READS ==='
+            rg -n --glob '!node_modules/**' --glob '!package-lock.json' 'process\.env\.[A-Z0-9_]+|process\.env\[["'"'][A-Z0-9_]+'"'"'\]' . || true
+            echo
+            echo '=== API / FETCH REFERENCES ==='
+            rg -n --glob 'apps/web/**' '/api/|fetch\(|apiRequest\(' apps/web || true
+            echo
+            echo '=== DYNAMIC IMPORTS / REQUIRE ==='
+            rg -n --glob '!node_modules/**' 'import\(|require\(' apps packages tools || true
+            echo
+            echo '=== SKIPPED TESTS / TODO / OLD / LEGACY / STUB ==='
+            rg -n --glob '!node_modules/**' 'test\.skip|describe\.skip|it\.skip|TODO|FIXME|legacy|obsolete|deprecated|stub|old|backup' apps packages tools .github docs || true
+          } | tee audit-artifacts/inventory.txt
+      - name: Static reachability heuristic
+        run: |
+          node - <<'NODE' | tee audit-artifacts/reachability.txt
+          const fs=require('fs'),path=require('path');
+          const roots=['apps','packages','tools'];
+          const exts=['.ts','.tsx','.js','.mjs'];
+          const files=[];
+          function walk(d){if(!fs.existsSync(d))return;for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory()){if(['node_modules','.next','dist','coverage'].includes(e.name))continue;walk(p)}else if(exts.includes(path.extname(p)))files.push(p.replaceAll('\\','/'));}}
+          roots.forEach(walk);
+          const fileSet=new Set(files);
+          const incoming=new Map(files.map(f=>[f,new Set()]));
+          function resolve(from,spec){if(!spec.startsWith('.'))return null;const base=path.posix.normalize(path.posix.join(path.posix.dirname(from),spec));const tries=[base,...exts.map(e=>base+e),...exts.map(e=>path.posix.join(base,'index'+e))];return tries.find(x=>fileSet.has(x))||null;}
+          const importRe=/(?:from\s*|import\s*\(|require\s*\()\s*['"]([^'"]+)['"]/g;
+          for(const f of files){const s=fs.readFileSync(f,'utf8');for(const m of s.matchAll(importRe)){const r=resolve(f,m[1]);if(r)incoming.get(r).add(f)}}
+          function entry(f){return /(^|\/)(page|layout|loading|error|not-found|sitemap|robots|route)\.(ts|tsx)$/.test(f)||/apps\/api\/src\/(index|app|server)\.ts$/.test(f)||f.startsWith('tools/')||/test\//.test(f)||/\.test\.[tj]sx?$/.test(f);}
+          const suspects=files.filter(f=>incoming.get(f).size===0&&!entry(f));
+          console.log('FILES_WITH_ZERO_STATIC_INCOMING_AND_NOT_CONVENTION_ENTRYPOINT');
+          for(const f of suspects) console.log(f);
+          console.log('\nCOUNT',suspects.length);
+          NODE
+      - name: Export symbol usage heuristic
+        run: |
+          node - <<'NODE' | tee audit-artifacts/exports.txt
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const dirs=['apps','packages']; const files=[];
+          function walk(d){if(!fs.existsSync(d))return;for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory()){if(['node_modules','.next','dist','coverage'].includes(e.name))continue;walk(p)}else if(/\.(ts|tsx)$/.test(p))files.push(p)}} dirs.forEach(walk);
+          const rows=[];
+          const re=/\bexport\s+(?:async\s+)?(?:function|const|class|type|interface|enum)\s+([A-Za-z_$][\w$]*)/g;
+          for(const f of files){const s=fs.readFileSync(f,'utf8');for(const m of s.matchAll(re)){const name=m[1];let out='';try{out=cp.execFileSync('rg',['-l','--glob','!node_modules/**','--glob','!'+f,`\\b${name}\\b`,'apps','packages','tools'],{encoding:'utf8',stdio:['ignore','pipe','ignore']})}catch{};if(!out.trim())rows.push(`${f}:${name}`)}}
+          console.log('EXPORTED_SYMBOLS_WITH_NO_OTHER_TEXTUAL_REFERENCE'); rows.forEach(x=>console.log(x)); console.log('\nCOUNT',rows.length);
+          NODE
+      - name: CSS selector heuristic
+        run: |
+          node - <<'NODE' | tee audit-artifacts/css.txt
+          const fs=require('fs'),path=require('path'),cp=require('child_process');
+          const css=[];function walk(d){if(!fs.existsSync(d))return;for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())walk(p);else if(p.endsWith('.css'))css.push(p)}}walk('apps/web');
+          const sels=new Map();
+          for(const f of css){const s=fs.readFileSync(f,'utf8');for(const m of s.matchAll(/\.([A-Za-z_-][A-Za-z0-9_-]*)/g)){const n=m[1];if(!sels.has(n))sels.set(n,new Set());sels.get(n).add(f)}}
+          for(const [n,files] of [...sels].sort()){let out='';try{out=cp.execFileSync('rg',['-l','--glob','!*.css',n,'apps/web'],{encoding:'utf8',stdio:['ignore','pipe','ignore']})}catch{};if(!out.trim())console.log(`${n} :: ${[...files].join(',')}`)}
+          NODE
+      - name: Baseline quality
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run format:check
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repository-archaeology
+          path: audit-artifacts
