@@ -1,0 +1,110 @@
++          slug: "lookup-alpha-business",
++        },
++        {
++          cityId: betaCity.id,
++          templateId: template.id,
++          name: "Lookup Beta Business",
++          slug: "lookup-beta-business",
++        },
++      ],
++    });
++    await prisma.cityRegistry.createMany({
++      data: [
++        {
++          name: "Lookupville Alpha",
++          slug: "lookupville",
++          country: "US",
++          source: "geonames",
++          externalId: "lookup-alpha",
++          population: 1000,
++          searchText: "lookupville alpha",
++        },
++        {
++          name: "Lookupville Beta",
++          slug: "lookupville",
++          country: "US",
++          source: "geonames",
++          externalId: "lookup-beta",
++          population: 900,
++          searchText: "lookupville beta",
++        },
++      ],
++    });
++
++    const cities = await request(
++      "GET",
++      "/api/v2/platform-core/lookups/cities?q=Lookup&limit=1",
++      undefined,
++      adminToken,
++    );
++    expect(cities.statusCode).toBe(200);
++    expect(cities.json().items).toHaveLength(1);
++    expect(cities.json().items[0]).toEqual(
++      expect.objectContaining({
++        id: expect.any(String),
++        name: expect.stringContaining("Lookup"),
++        slug: expect.any(String),
++        activeCategoryCount: expect.any(Number),
++        businessCount: expect.any(Number),
++      }),
++    );
++
++    const businesses = await request(
++      "GET",
++      "/api/v2/platform-core/lookups/businesses?q=Lookup&limit=1",
++      undefined,
++      adminToken,
++    );
++    expect(businesses.statusCode).toBe(200);
++    expect(businesses.json().items).toHaveLength(1);
++    expect(businesses.json().items[0]).toEqual(
++      expect.objectContaining({
++        id: expect.any(String),
++        name: expect.stringContaining("Lookup"),
++        slug: expect.any(String),
++        city: expect.objectContaining({ id: expect.any(String), slug: expect.any(String) }),
++      }),
++    );
++
++    const registry = await request(
++      "GET",
++      "/api/v2/platform-core/lookups/city-registry?q=Lookupville&limit=1",
++      undefined,
++      adminToken,
++    );
++    expect(registry.statusCode).toBe(200);
++    expect(registry.json().items).toHaveLength(1);
++    expect(registry.json().items[0]).toEqual(
++      expect.objectContaining({
++        id: expect.any(String),
++        name: expect.stringContaining("Lookupville"),
++        slug: "lookupville",
++        country: "US",
++      }),
++    );
++  });
++
++  it("keeps city-admin city and business lookups inside the active city scope", async () => {
++    const adminToken = await createCityAdmin();
++    const template = await prisma.businessTemplate.findFirstOrThrow({
++      where: { code: "test-local" },
++    });
++    const foreignCity = await prisma.city.create({
++      data: { name: "Foreign Scope City", slug: "foreign-scope-city", status: "active" },
++    });
++    await prisma.business.create({
++      data: {
++        cityId: foreignCity.id,
++        templateId: template.id,
++        name: "Foreign Scope Business",
++        slug: "foreign-scope-business",
++      },
++    });
++
++    const cities = await request(
++      "GET",
++      "/api/v2/platform-core/lookups/cities?q=City&limit=20",
++      undefined,
++      adminToken,
++    );
++    expect(cities.statusCode).toBe(200);
