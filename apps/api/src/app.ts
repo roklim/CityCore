@@ -162,6 +162,11 @@ export function buildApp() {
       time: new Date().toISOString(),
       env: env.NODE_ENV,
       bootedAt,
+      deployment: {
+        provider: process.env.RENDER_GIT_COMMIT ? "render" : "generic",
+        branch: process.env.RENDER_GIT_BRANCH ?? null,
+        commit: process.env.RENDER_GIT_COMMIT ?? null,
+      },
       dependencies: {
         database,
         redis,

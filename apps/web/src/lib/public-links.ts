@@ -20,9 +20,18 @@ export function normalizePhoneHref(value: string | null) {
 export function resolvePublicSiteUrl(
   configuredUrl: string | undefined,
   nodeEnv: string | undefined,
+  deploymentHost?: string,
 ) {
+  const normalizedDeploymentHost = deploymentHost?.trim();
+  const deploymentUrl = normalizedDeploymentHost
+    ? /^[a-z][a-z\d+.-]*:/i.test(normalizedDeploymentHost)
+      ? normalizedDeploymentHost
+      : `https://${normalizedDeploymentHost}`
+    : "";
   const candidate =
-    configuredUrl?.trim() || (nodeEnv === "development" ? "http://localhost:3000" : "");
+    configuredUrl?.trim() ||
+    deploymentUrl ||
+    (nodeEnv === "development" ? "http://localhost:3000" : "");
 
   if (!candidate) return null;
 

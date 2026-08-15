@@ -24,9 +24,19 @@ describe("public links", () => {
   );
 
   it("uses the configured public site URL in production", () => {
-    expect(resolvePublicSiteUrl("https://citycore.example.org", "production")?.toString()).toBe(
-      "https://citycore.example.org/",
-    );
+    expect(
+      resolvePublicSiteUrl(
+        "https://citycore.example.org",
+        "production",
+        "ignored.vercel.app",
+      )?.toString(),
+    ).toBe("https://citycore.example.org/");
+  });
+
+  it("uses the Vercel production domain when no explicit site URL is configured", () => {
+    expect(
+      resolvePublicSiteUrl(undefined, "production", "citycore-web.vercel.app")?.toString(),
+    ).toBe("https://citycore-web.vercel.app/");
   });
 
   it("falls back to localhost only in development", () => {

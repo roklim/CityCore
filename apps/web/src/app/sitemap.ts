@@ -6,7 +6,11 @@ import { getPublicSitemapData } from "../lib/public-runtime";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = resolvePublicSiteUrl(process.env.NEXT_PUBLIC_SITE_URL, process.env.NODE_ENV);
+  const siteUrl = resolvePublicSiteUrl(
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.NODE_ENV,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  );
   if (!siteUrl) return [];
 
   const rootEntry: MetadataRoute.Sitemap[number] = {

@@ -1,16 +1,18 @@
 services:
   - type: web
     name: citycore-api-staging
-    env: node
+    runtime: node
     plan: free
     rootDir: .
-    buildCommand: npm ci --include=dev && npm run build:api
+    buildCommand: npm ci --include=dev && npm run db:migrate:deploy && npm run build:api
     startCommand: npm --workspace @platform/api run start
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 24.14.1
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
@@ -20,6 +22,6 @@ services:
       - key: AUTH_BOOTSTRAP_SECRET
         sync: false
       - key: WEB_ORIGINS
-        value: https://citycore-web-staging.vercel.app,https://citycore-web.vercel.app
+        value: https://citycore-web-staging.vercel.app,https://citycore-web.vercel.app,https://citycore-web-roklims-projects.vercel.app,https://citycore-web-git-main-roklims-projects.vercel.app
       - key: TRUST_PROXY_HOPS
         value: 1

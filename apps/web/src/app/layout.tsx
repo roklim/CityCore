@@ -4,7 +4,11 @@ import { createCssVariables } from "@platform/ui";
 import { resolvePublicSiteUrl } from "../lib/public-links";
 import "./globals.css";
 
-const metadataBase = resolvePublicSiteUrl(process.env.NEXT_PUBLIC_SITE_URL, process.env.NODE_ENV);
+const metadataBase = resolvePublicSiteUrl(
+  process.env.NEXT_PUBLIC_SITE_URL,
+  process.env.NODE_ENV,
+  process.env.VERCEL_PROJECT_PRODUCTION_URL,
+);
 
 export const metadata: Metadata = {
   ...(metadataBase ? { metadataBase } : {}),
