@@ -21,6 +21,8 @@
     "db:migrate:deploy": "node tools/run-prisma.mjs migrate deploy",
     "db:generate": "node tools/run-prisma.mjs generate",
     "db:seed": "node tools/seed-demo.mjs",
+    "db:seed:global-demo": "node tools/seed-global-demo.mjs",
+    "db:verify:global-demo": "node tools/verify-global-demo.mjs",
     "db:import:geonames": "node tools/import-geonames-city-registry.mjs",
     "db:test:up": "docker compose -f compose.test.yml up -d --wait",
     "db:test:down": "docker compose -f compose.test.yml down",
