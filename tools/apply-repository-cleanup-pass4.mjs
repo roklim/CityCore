@@ -66,8 +66,9 @@ for (const className of deadClasses) {
   }
 }
 
-// Protect template-generated class families. Extract literal token fragments surrounding
-// template interpolations and refuse to remove a candidate that could be produced by one.
+// Protect template-generated class families. Only class-like fragments containing a hyphen
+// are meaningful here: generic path/text fragments such as "admin" must not block unrelated
+// selectors, while real dynamic prefixes such as "is-" remain protected.
 const dynamicFragments = new Set();
 for (const match of sourceText.matchAll(/`([^`]*\$\{[^`]+)`/g)) {
   const template = match[1];
@@ -75,7 +76,7 @@ for (const match of sourceText.matchAll(/`([^`]*\$\{[^`]+)`/g)) {
   for (const piece of literalPieces) {
     for (const token of piece.split(/\s+/).filter(Boolean)) {
       const cleaned = token.replace(/^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$/g, "");
-      if (cleaned.length >= 3) dynamicFragments.add(cleaned);
+      if (cleaned.length >= 3 && cleaned.includes("-")) dynamicFragments.add(cleaned);
     }
   }
 }
