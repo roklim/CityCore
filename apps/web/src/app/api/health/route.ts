@@ -41,9 +41,7 @@ async function checkApiDeployment() {
 
     const data = (await response.json()) as ApiIndexResponse;
     const lookupRoutesAvailable = Boolean(
-      data.routes?.cityLookups &&
-        data.routes?.businessLookups &&
-        data.routes?.cityRegistryLookups,
+      data.routes?.cityLookups && data.routes?.businessLookups && data.routes?.cityRegistryLookups,
     );
 
     return {
