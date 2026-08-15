@@ -5,7 +5,7 @@
 CityCore uses a local global city registry instead of a live third-party autocomplete.
 
 ```txt
-trusted geographic dataset
+GeoNames downloadable dataset
     -> CityRegistry
     -> global admin activation
     -> City
@@ -20,9 +20,15 @@ This separation keeps public routing, business management and access control ind
 
 The initial worldwide source is GeoNames `cities500`.
 
-It is large enough for global city discovery while remaining practical to import into the CityCore PostgreSQL database. The importer must use the downloaded dump locally: the application must not call the GeoNames web service for every autocomplete request.
+The downloaded dump is imported into the CityCore PostgreSQL database. The running application never calls the GeoNames web service for normal city or business autocomplete.
 
-The import layer must remain provider-neutral so another source can be added or used for enrichment later without changing the `City` domain model.
+Supporting GeoNames files improve labels without changing the source identity:
+
+- `admin1CodesASCII.txt`
+- `admin2Codes.txt`
+- `countryInfo.txt`
+
+The import layer remains provider-neutral so another source can be added later without changing the `City` domain model.
 
 ## Models
 
@@ -38,30 +44,29 @@ Existing Italian fields remain supported for backward compatibility:
 - province code and name
 - region code and name
 
-The global model additionally needs provider-neutral fields for:
+Global fields include:
 
-- namespaced external identifier, for example `geonames:5128581`
+- `source` plus provider `externalId` as the unique source identity
 - canonical name and ASCII name
-- ISO 3166-1 alpha-2 country code
-- country display name
-- first administrative division code and name
-- second administrative division code and name
+- useful alternate names
+- ISO 3166-1 alpha-2 country code and country display name
+- administrative division codes and names
 - latitude and longitude
 - IANA timezone
 - population
 - geographic feature class and feature code
-- source and source version
-- normalized search text including useful alternate names
+- source version and source modification date
+- normalized search text
 - active/suppressed place state
 
-`CityRegistry.slug` is an internal unique registry slug, not the public CityCore route. Imported records must therefore use a collision-safe deterministic value. For GeoNames, the importer should include the country and GeoNames id in the registry slug when needed.
+`CityRegistry.slug` is a normalized search/display helper and is intentionally **not globally unique**. Same-name places are valid registry records. The stable imported identity is the composite `(source, externalId)` key.
 
 ### `City`
 
 `City` is an enabled CityCore market:
 
 - optional `registryId`
-- public city slug
+- globally unique public city slug
 - public name
 - province/administrative-area display value
 - region/administrative-area display value
@@ -72,69 +77,103 @@ The global model additionally needs provider-neutral fields for:
 
 Only `City` records participate in public city routing and normal business/access scopes.
 
+When a `City` is created from a registry record, a database trigger applies the registry country and missing administrative-area values. This prevents the legacy Italian default from leaking into non-Italian cities.
+
 ## Public Slug Policy
 
 Registry slugs and public city slugs serve different purposes.
 
-Registry slugs only need to be stable and globally unique. Public `City.slug` values should remain human-readable.
+The activation flow first tries the readable normalized place slug. If a public City already owns that slug, activation must use a stable disambiguating suffix rather than overwrite or rename the existing City.
 
-Recommended activation policy:
-
-1. Try the normalized city name, for example `rome` or `new-york`.
-2. If that slug is already used by another City, add the most useful administrative discriminator, for example `springfield-il`.
-3. If ambiguity still remains, add the country code or another stable discriminator.
-4. Never silently change an already published City slug during registry refreshes.
+Published City slugs are never changed by a GeoNames refresh.
 
 ## Admin Flow
 
 1. Open `/admin/cities`.
 2. Search the global registry by city/place name.
 3. Inspect country and administrative area to disambiguate same-name locations.
-4. Activate the selected registry record as `coming_soon` or `active`.
+4. Activate the selected registry record as a CityCore `City`.
 5. Configure at least one active category.
-6. The resulting `City` becomes selectable for business creation according to the existing readiness rules.
+6. The resulting `City` becomes searchable in business creation.
 7. Access grants are assigned only to activated `City` or `Business` records, never directly to raw registry entries.
 
 ## Business Creation
 
-Business creation must not preload a fixed number of cities.
+Business creation does not preload a fixed number of cities.
 
-The city selector must search activated and accessible `City` records server-side. A global registry record that has not yet become a `City` is first activated through the city flow so the existing CityCore prerequisites remain explicit.
+The page receives only a small initial suggestion set. The create form searches all activated, accessible and ready City records server-side with a debounced lookup. Therefore `20` is a result-page size, not a catalogue limit.
 
-When a registry-backed City has a known IANA timezone, new businesses should inherit that timezone by default unless an administrator explicitly chooses another valid timezone.
+For registry-backed cities, the city lookup returns the GeoNames IANA timezone. The business create form submits that timezone and the API validates it with the existing IANA timezone schema. Existing business timezone behavior remains unchanged after creation.
 
 ## Access Management
 
-Access management must not preload a fixed number of cities or businesses.
+Access management does not preload a fixed number of cities or businesses.
 
-City and business scopes must be found with authenticated server-side search. The selected values still reference normal CityCore `City` and `Business` records so the existing permission model remains unchanged.
+The page receives small initial suggestion sets. City and business selectors then search authenticated server-side lookup endpoints. Business search is scoped server-side to the selected City.
+
+The selected values continue to reference normal CityCore `City` and `Business` records, so the existing permission model is unchanged.
 
 ## Import Flow
 
-The development seed may contain only a small sample. Production-like environments import the worldwide registry with an operational tool under `tools/`.
+Apply the database migrations before importing the dataset:
 
-The importer must:
+```bash
+npm run db:migrate:deploy
+npm run db:generate
+```
 
-- read GeoNames tab-delimited UTF-8 data
-- support dry-run and bounded test imports
-- use namespaced external ids so imports are idempotent
-- upsert in batches rather than one row at a time
-- preserve existing Italian registry-specific fields
-- populate country/admin names from the GeoNames supporting files when available
-- store IANA timezone and population
-- include canonical, ASCII and useful alternate names in normalized `searchText`
-- record source and source version
-- avoid creating `City` rows automatically during bulk import
+Download and unzip the GeoNames files into a temporary local directory, then verify a bounded sample without writing anything:
 
-A future synchronization job may consume GeoNames modification/deletion files, but initial rollout uses a full deterministic import.
+```bash
+npm run db:import:geonames -- \
+  --file .tmp/geonames/cities500.txt \
+  --admin1 .tmp/geonames/admin1CodesASCII.txt \
+  --admin2 .tmp/geonames/admin2Codes.txt \
+  --country-info .tmp/geonames/countryInfo.txt \
+  --source-version 2026-08-15 \
+  --limit 1000 \
+  --dry-run
+```
+
+Run the full idempotent import by removing `--limit` and `--dry-run`:
+
+```bash
+npm run db:import:geonames -- \
+  --file .tmp/geonames/cities500.txt \
+  --admin1 .tmp/geonames/admin1CodesASCII.txt \
+  --admin2 .tmp/geonames/admin2Codes.txt \
+  --country-info .tmp/geonames/countryInfo.txt \
+  --source-version 2026-08-15
+```
+
+The importer:
+
+- streams the tab-delimited UTF-8 file instead of loading it entirely in memory
+- imports populated-place (`P`) records
+- supports dry-run and bounded test imports
+- upserts in configurable batches
+- is idempotent through `(source, externalId)`
+- preserves existing Italian registry-specific fields
+- populates administrative and country labels when enrichment files are supplied
+- stores IANA timezone, population and source modification date
+- includes canonical, ASCII and useful alternate names in normalized `searchText`
+- never creates public `City` records during bulk import
 
 ## Search Strategy
 
-The registry can contain hundreds of thousands of records, so UI selectors must never download the whole catalogue.
+The registry can contain hundreds of thousands of rows, so UI selectors never download the full catalogue.
 
-Search is server-side and returns a small page, normally 10-20 results. Results should favor exact/prefix matches and useful populated places, while still allowing country and administrative-area disambiguation.
+Authenticated lookup endpoints return at most 50 entries and normal UI requests use 20. Registry results prioritize exact and prefix matches, then population. PostgreSQL prefix indexes support the autocomplete path without requiring an optional database extension.
 
-For PostgreSQL, a trigram/full-text style index can be added when the dataset is imported so substring search remains responsive at global scale.
+Lookup routes:
+
+```txt
+GET /api/v2/platform-core/lookups/city-registry?q=rome&limit=20
+GET /api/v2/platform-core/lookups/cities?q=rome&ready=true&limit=20
+GET /api/v2/platform-core/lookups/businesses?citySlug=rome&q=studio&limit=20
+```
+
+The existing paginated registry endpoint remains available for the administrative registry table and linked/unlinked filtering.
 
 ## Public Routing
 
@@ -156,7 +195,25 @@ Businesses remain city-first:
 /new-york/example-business
 ```
 
-Importing a place into `CityRegistry` alone must never create a public route or sitemap entry.
+Importing a place into `CityRegistry` alone never creates a public route or sitemap entry.
+
+## Verification
+
+Canonical repository checks remain:
+
+```bash
+npm run db:validate
+npm run db:migrate:deploy
+npm run db:migrate:status
+npm run db:generate
+npm run lint
+npm run format:check
+npm run typecheck
+npm run build:web
+npm run build:api
+```
+
+Registry-specific unit tests cover accent normalization, exact/prefix ranking and population tie-breaking.
 
 ## Source and Attribution
 
