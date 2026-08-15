@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdminSubmitButton } from "../../../components/admin-submit-button";
 import { adminScopeLabel } from "../../../lib/admin-labels";
 import type { AdminBusinessLookupItem, AdminCityLookupItem } from "../../../lib/admin-lookups";
@@ -42,17 +42,38 @@ export function AccessGrantForm({
   const [businessOptions, setBusinessOptions] = useState(businesses);
   const [citySearchPending, setCitySearchPending] = useState(false);
   const [businessSearchPending, setBusinessSearchPending] = useState(false);
-  const [lookupError, setLookupError] = useState(false);
+  const [citySearchError, setCitySearchError] = useState(false);
+  const [businessSearchError, setBusinessSearchError] = useState(false);
+  const citySearchSequence = useRef(0);
+  const businessSearchSequence = useRef(0);
+  const invalidateCitySearch = () => {
+    citySearchSequence.current += 1;
+  };
+  const invalidateBusinessSearch = () => {
+    businessSearchSequence.current += 1;
+  };
   const scopeType =
     role === "global_admin" ? "platform" : role === "city_admin" ? "city" : "business";
 
   useEffect(() => {
-    if (scopeType === "platform") return;
+    const requestId = ++citySearchSequence.current;
+
+    if (scopeType === "platform") {
+      setCitySearchPending(false);
+      setCitySearchError(false);
+      return;
+    }
+
+    setCitySearchError(false);
+
     const timer = window.setTimeout(() => {
+      if (citySearchSequence.current !== requestId) return;
+
       setCitySearchPending(true);
-      setLookupError(false);
       void searchAdminCitiesAction(cityQuery, false)
         .then((items) => {
+          if (citySearchSequence.current !== requestId) return;
+
           setCityOptions((current) => {
             const selected = current.find((item) => item.slug === citySlug);
             if (selected && !items.some((item) => item.slug === selected.slug)) {
@@ -61,31 +82,69 @@ export function AccessGrantForm({
             return items;
           });
         })
-        .catch(() => setLookupError(true))
-        .finally(() => setCitySearchPending(false));
+        .catch(() => {
+          if (citySearchSequence.current === requestId) {
+            setCitySearchError(true);
+          }
+        })
+        .finally(() => {
+          if (citySearchSequence.current === requestId) {
+            setCitySearchPending(false);
+          }
+        });
     }, 250);
-    return () => window.clearTimeout(timer);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (citySearchSequence.current === requestId) {
+        citySearchSequence.current += 1;
+      }
+    };
   }, [cityQuery, citySlug, scopeType]);
 
   useEffect(() => {
+    const requestId = ++businessSearchSequence.current;
+
     if (scopeType !== "business" || !citySlug) {
+      setBusinessSearchPending(false);
+      setBusinessSearchError(false);
       setBusinessSlug("");
       return;
     }
+
+    setBusinessSearchError(false);
+
     const timer = window.setTimeout(() => {
+      if (businessSearchSequence.current !== requestId) return;
+
       setBusinessSearchPending(true);
-      setLookupError(false);
       void searchAdminBusinessesAction(businessQuery, citySlug)
         .then((items) => {
+          if (businessSearchSequence.current !== requestId) return;
+
           setBusinessOptions(items);
           setBusinessSlug((current) =>
             current && items.some((item) => item.slug === current) ? current : "",
           );
         })
-        .catch(() => setLookupError(true))
-        .finally(() => setBusinessSearchPending(false));
+        .catch(() => {
+          if (businessSearchSequence.current === requestId) {
+            setBusinessSearchError(true);
+          }
+        })
+        .finally(() => {
+          if (businessSearchSequence.current === requestId) {
+            setBusinessSearchPending(false);
+          }
+        });
     }, 250);
-    return () => window.clearTimeout(timer);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (businessSearchSequence.current === requestId) {
+        businessSearchSequence.current += 1;
+      }
+    };
   }, [businessQuery, citySlug, scopeType]);
 
   return (
@@ -118,7 +177,11 @@ export function AccessGrantForm({
         <select
           name="role"
           value={role}
-          onChange={(event) => setRole(event.target.value as AccessRole)}
+          onChange={(event) => {
+            invalidateCitySearch();
+            invalidateBusinessSearch();
+            setRole(event.target.value as AccessRole);
+          }}
         >
           {isPlatformScope ? (
             <option value="global_admin">Amministratore piattaforma</option>
@@ -143,7 +206,10 @@ export function AccessGrantForm({
           <label className="field admin-field-wide">
             <span>Cerca città</span>
             <input
-              onChange={(event) => setCityQuery(event.target.value)}
+              onChange={(event) => {
+                invalidateCitySearch();
+                setCityQuery(event.target.value);
+              }}
               placeholder="Cerca in tutte le città accessibili"
               type="search"
               value={cityQuery}
@@ -159,6 +225,8 @@ export function AccessGrantForm({
               required
               value={citySlug}
               onChange={(event) => {
+                invalidateCitySearch();
+                invalidateBusinessSearch();
                 setCitySlug(event.target.value);
                 setBusinessSlug("");
                 setBusinessQuery("");
@@ -182,7 +250,10 @@ export function AccessGrantForm({
             <span>Cerca attività</span>
             <input
               disabled={!citySlug}
-              onChange={(event) => setBusinessQuery(event.target.value)}
+              onChange={(event) => {
+                invalidateBusinessSearch();
+                setBusinessQuery(event.target.value);
+              }}
               placeholder="Cerca tra tutte le attività della città"
               type="search"
               value={businessQuery}
@@ -215,7 +286,7 @@ export function AccessGrantForm({
           </label>
         </>
       ) : null}
-      {lookupError ? (
+      {citySearchError || businessSearchError ? (
         <p className="surface-error" role="alert">
           Ricerca non disponibile. Riprova.
         </p>
