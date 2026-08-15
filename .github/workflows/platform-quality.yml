@@ -67,6 +67,17 @@ jobs:
       - name: Generate Prisma client
         run: npm run db:generate
 
+      - name: Seed global demo registry
+        run: npm run db:seed:global-demo
+
+      - name: Verify global demo seed is idempotent
+        run: npm run db:seed:global-demo
+
+      - name: Verify global demo registry
+        run: npm run db:verify:global-demo
+        env:
+          EXPECT_NO_GEONAMES_IMPORT: "true"
+
       - name: Unit tests
         run: npm test
 
