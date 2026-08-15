@@ -1,4 +1,4 @@
-name: Repository Archaeology
+name: Repository Final Audit
 
 on:
   push:
@@ -9,33 +9,68 @@ permissions:
   contents: read
 
 jobs:
-  inventory:
+  final-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout cleaned repository
+        uses: actions/checkout@v4
         with:
+          ref: cleanup/repository-archaeology
           fetch-depth: 0
+      - name: Checkout final audit tooling
+        uses: actions/checkout@v4
+        with:
+          ref: audit/repository-archaeology
+          path: audit-tools
+          sparse-checkout: |
+            tools/final-repository-audit.mjs
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - name: Install
+      - name: Install exact dependency tree
         run: npm ci
       - name: Generate Prisma client
         run: npm run db:generate
-      - name: Run archaeology analyzer
-        run: node tools/repository-archaeology.mjs
-      - name: Knip signal only
-        run: npx --yes knip > audit-artifacts/knip.txt 2>&1 || true
-      - name: Baseline quality
+      - name: Final CSS env config asset audit
+        run: node audit-tools/tools/final-repository-audit.mjs
+      - name: Knip final signal
+        run: npx --yes knip > audit-artifacts/knip-final.txt 2>&1 || true
+      - name: Dependency provenance
+        run: |
+          {
+            echo '=== esbuild ==='
+            npm explain esbuild || true
+            echo '=== @emnapi/runtime ==='
+            npm explain @emnapi/runtime || true
+            echo '=== @img/sharp-wasm32 ==='
+            npm explain @img/sharp-wasm32 || true
+          } | tee audit-artifacts/dependency-provenance.txt
+      - name: Audit fix dry run
+        run: npm audit fix --dry-run --json > audit-artifacts/audit-fix-dry-run.json 2>&1 || true
+      - name: Full dependency audit
+        run: npm audit --json > audit-artifacts/npm-audit.json 2>&1 || true
+      - name: Baseline quality on cleaned branch
         run: |
           npm run typecheck
           npm run lint
-          npx prettier --check "apps/**/*.{ts,tsx,css,json,md}" "packages/**/*.{ts,tsx,json,md}" "package.json" "tsconfig.json" "tsconfig.base.json" "compose.yml" "render.yaml" "render.staging.yaml" ".github/workflows/platform-quality.yml" ".github/workflows/staging-deploy.yml" ".vscode/*.json" "docs/**/*.md"
+          npm run format:check
           git diff --check
+      - name: Show final reports
+        if: always()
+        run: |
+          echo '--- FINAL AUDIT ---'
+          cat audit-artifacts/final-audit.txt 2>/dev/null || true
+          echo '--- KNIP ---'
+          cat audit-artifacts/knip-final.txt 2>/dev/null || true
+          echo '--- DEPENDENCY PROVENANCE ---'
+          cat audit-artifacts/dependency-provenance.txt 2>/dev/null || true
+          echo '--- AUDIT FIX DRY RUN ---'
+          cat audit-artifacts/audit-fix-dry-run.json 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: repository-archaeology
+          name: repository-final-audit
           path: audit-artifacts
