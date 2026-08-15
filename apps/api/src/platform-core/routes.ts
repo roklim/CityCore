@@ -67,9 +67,7 @@ function fitCitySlug(rawValue: string, stableSeed = rawValue) {
   }
 
   const digest = createHash("sha256").update(stableSeed).digest("hex").slice(0, 12);
-  const prefix = normalized
-    .slice(0, CITY_SLUG_MAX_LENGTH - digest.length - 1)
-    .replace(/-+$/g, "");
+  const prefix = normalized.slice(0, CITY_SLUG_MAX_LENGTH - digest.length - 1).replace(/-+$/g, "");
   return `${prefix}-${digest}`;
 }
 

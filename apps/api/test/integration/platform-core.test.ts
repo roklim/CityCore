@@ -339,9 +339,12 @@ describe("platform core integration", () => {
       adminToken,
     );
     expect(cities.statusCode).toBe(200);
-    expect(cities.json().items.map((item: { slug: string }) => item.slug).sort()).toEqual([
-      "test-city",
-    ]);
+    expect(
+      cities
+        .json()
+        .items.map((item: { slug: string }) => item.slug)
+        .sort(),
+    ).toEqual(["test-city"]);
 
     const businesses = await request(
       "GET",
@@ -351,7 +354,10 @@ describe("platform core integration", () => {
     );
     expect(businesses.statusCode).toBe(200);
     expect(
-      businesses.json().items.map((item: { slug: string }) => item.slug).sort(),
+      businesses
+        .json()
+        .items.map((item: { slug: string }) => item.slug)
+        .sort(),
     ).toEqual(["other-business", "test-business"]);
 
     const manipulatedCity = await request(
