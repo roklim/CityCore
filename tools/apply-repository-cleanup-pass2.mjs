@@ -43,14 +43,20 @@ for (const name of [
   "PlatformPaginatedResponse",
   "PlatformCityCategoryTree",
   "PlatformOpeningInterval",
-  "PublicCitiesResponse",
-  "PublicBusinessesResponse",
   "PublicBusinessService",
   "PublicOpeningInterval",
   "PlatformPickupOrder",
 ]) privateType("apps/web/src/lib/platform-api.ts", name);
 privateType("apps/web/src/lib/public-runtime.ts", "PublicBusinessDetail");
 privateFunction("apps/web/src/lib/public-form-validation.ts", "containsHtmlTag");
+
+// Pagination response wrappers became fully orphaned once their dead consumers were removed.
+for (const block of [
+  `export type PublicCitiesResponse = {\n  status: "ok";\n  items: PublicPlatformCity[];\n  page: number;\n  limit: number;\n  total: number;\n};\n\n`,
+  `export type PublicBusinessesResponse = {\n  status: "ok";\n  items: PublicPlatformBusiness[];\n  page: number;\n  limit: number;\n  total: number;\n};\n\n`,
+]) {
+  replaceRequired("apps/web/src/lib/platform-api.ts", block, "");
+}
 
 // Internal formatting helper; its public wrapper remains exported and tested.
 privateFunction("apps/web/src/lib/business-opening-hours.ts", "formatOpeningDay");
