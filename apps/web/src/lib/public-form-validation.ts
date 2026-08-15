@@ -40,7 +40,8 @@ export function validatePublicInquiryValues(
   if (containsHtmlTag(values.name)) errors.name = "Il nome non può contenere HTML.";
   else if (name.length < 2 || name.length > 120) errors.name = "Inserisci un nome valido.";
 
-  if (!emailPattern.test(values.email.trim())) errors.email = "Inserisci un indirizzo email valido.";
+  if (!emailPattern.test(values.email.trim()))
+    errors.email = "Inserisci un indirizzo email valido.";
 
   if (phone && containsHtmlTag(values.phone)) errors.phone = "Il telefono non può contenere HTML.";
   else if (phone.length > 60) errors.phone = "Inserisci un telefono valido.";
@@ -69,7 +70,8 @@ export function validatePublicPickupValues(
   if (containsHtmlTag(values.name)) errors.name = "Il nome non può contenere HTML.";
   else if (name.length < 2 || name.length > 120) errors.name = "Inserisci un nome valido.";
 
-  if (!emailPattern.test(values.email.trim())) errors.email = "Inserisci un indirizzo email valido.";
+  if (!emailPattern.test(values.email.trim()))
+    errors.email = "Inserisci un indirizzo email valido.";
 
   if (phone && containsHtmlTag(values.phone)) errors.phone = "Il telefono non può contenere HTML.";
   else if (phone.length > 60) errors.phone = "Inserisci un telefono valido.";

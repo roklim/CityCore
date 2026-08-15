@@ -143,4 +143,35 @@ describe("business opening hours", () => {
       }),
     ).toBe("09:00–13:00 · Solo su appuntamento");
   });
+  it("changes from closed to open and back at the configured boundaries", () => {
+    const hours = monday();
+    expect(
+      getBusinessOpeningStatus(hours, "Europe/Rome", new Date("2026-08-03T06:59:00Z")).state,
+    ).toBe("closed");
+    expect(
+      getBusinessOpeningStatus(hours, "Europe/Rome", new Date("2026-08-03T07:00:00Z")).state,
+    ).toBe("open");
+    expect(
+      getBusinessOpeningStatus(hours, "Europe/Rome", new Date("2026-08-03T11:00:00Z")).state,
+    ).toBe("closed");
+  });
+  it("uses the business timezone instead of the runtime timezone", () => {
+    expect(
+      getBusinessOpeningStatus(monday(), "America/New_York", new Date("2026-08-03T13:30:00Z"))
+        .state,
+    ).toBe("open");
+  });
+  it("uses Intl timezone rules across a New York DST transition", () => {
+    const sunday = [
+      {
+        weekday: 6,
+        isClosed: false,
+        note: null,
+        intervals: [{ opensAt: "03:00", closesAt: "04:00", sortOrder: 0 }],
+      },
+    ];
+    expect(
+      getBusinessOpeningStatus(sunday, "America/New_York", new Date("2026-03-08T07:30:00Z")).state,
+    ).toBe("open");
+  });
 });

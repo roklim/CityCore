@@ -86,7 +86,9 @@ export function CityBusinessDirectory({
     if (current.query === query.trim()) return;
 
     const timer = window.setTimeout(() => {
-      const next = updatePublicDirectorySearchParams(new URLSearchParams(searchParamsKey), { query });
+      const next = updatePublicDirectorySearchParams(new URLSearchParams(searchParamsKey), {
+        query,
+      });
       router.replace(directoryHref(pathname, next), { scroll: false });
     }, 300);
 

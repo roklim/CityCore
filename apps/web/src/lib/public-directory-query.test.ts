@@ -7,7 +7,9 @@ import {
 
 describe("public directory query params", () => {
   it("reads search and category from the URL", () => {
-    expect(readPublicDirectoryFilters(new URLSearchParams("q=pizza&category=ristorazione"))).toEqual({
+    expect(
+      readPublicDirectoryFilters(new URLSearchParams("q=pizza&category=ristorazione")),
+    ).toEqual({
       query: "pizza",
       category: "ristorazione",
     });

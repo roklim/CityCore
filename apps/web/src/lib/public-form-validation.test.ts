@@ -46,12 +46,11 @@ describe("public form validation", () => {
   });
 
   it("rejects HTML in pickup name, phone and notes with field-specific errors", () => {
-    expect(validatePublicPickupValues({ ...validPickup, name: "<i>Mario</i>" }, 1, "19:00").name).toBe(
-      "Il nome non può contenere HTML.",
-    );
     expect(
-      validatePublicPickupValues({ ...validPickup, phone: "<span>333</span>" }, 1, "19:00")
-        .phone,
+      validatePublicPickupValues({ ...validPickup, name: "<i>Mario</i>" }, 1, "19:00").name,
+    ).toBe("Il nome non può contenere HTML.");
+    expect(
+      validatePublicPickupValues({ ...validPickup, phone: "<span>333</span>" }, 1, "19:00").phone,
     ).toBe("Il telefono non può contenere HTML.");
     expect(
       validatePublicPickupValues({ ...validPickup, notes: "<b>Senza cipolla</b>" }, 1, "19:00")
