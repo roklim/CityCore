@@ -66,6 +66,22 @@ jobs:
         run: npm install --package-lock-only
       - name: Install cleaned dependency graph
         run: npm ci
+      - name: Format cleanup changes
+        run: |
+          npx prettier --write \
+            apps/api/src/auth.ts \
+            apps/api/src/platform-core/config.ts \
+            apps/api/src/platform-core/mvp-schemas.ts \
+            apps/api/src/platform-core/pickup-ordering.ts \
+            apps/web/package.json \
+            apps/web/next.config.ts \
+            apps/web/src/lib/public-runtime.ts \
+            apps/web/src/lib/public-marketplace.ts \
+            packages/database/package.json \
+            packages/domain/src/index.ts \
+            packages/templates/package.json \
+            packages/ui/src/index.ts \
+            package-lock.json
       - name: Dependency tree
         run: npm ls
       - name: Production dependency audit
