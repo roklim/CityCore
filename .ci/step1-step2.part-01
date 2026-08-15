@@ -1,0 +1,110 @@
++
+ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
+@@ -15,31 +15,58 @@
+         return reply.code(400).send({ status: "error", error: "City slug cannot be empty" });
+       }
+ 
+-      if (parsed.data.registryId) {
+-        const registry = await prisma.cityRegistry.findUnique({
+-          where: {
+-            id: parsed.data.registryId,
+-          },
+-          select: {
+-            id: true,
+-          },
++      const registry = parsed.data.registryId
++        ? await prisma.cityRegistry.findUnique({
++            where: {
++              id: parsed.data.registryId,
++            },
++            select: {
++              id: true,
++              admin1Name: true,
++              admin2Name: true,
++              regionName: true,
++              provinceName: true,
++              admin1Code: true,
++              admin2Code: true,
++              regionCode: true,
++              provinceCode: true,
++              country: true,
++              countryName: true,
++              source: true,
++              externalId: true,
++              istatCode: true,
++              cadastralCode: true,
++              cities: {
++                take: 1,
++                select: {
++                  id: true,
++                },
++              },
++            },
++          })
++        : null;
++
++      if (parsed.data.registryId && !registry) {
++        return reply.code(404).send({
++          status: "error",
++          error: "City registry entry not found",
+         });
++      }
+ 
+-        if (!registry) {
+-          return reply.code(404).send({
+-            status: "error",
+-            error: "City registry entry not found",
+-          });
+-        }
++      if (registry?.cities.length) {
++        return reply.code(409).send({
++          status: "error",
++          error: "This city registry entry is already activated.",
++        });
+       }
+ 
+-      try {
+-        const city = await prisma.$transaction(async (tx) => {
++      const createCityWithSlug = (citySlug: string) =>
++        prisma.$transaction(async (tx) => {
+           const createdCity = await tx.city.create({
+             data: {
+               registryId: parsed.data.registryId ?? null,
+               name: parsed.data.name,
+-              slug: normalizedCitySlug,
++              slug: citySlug,
+               province: parsed.data.province ?? null,
+               region: parsed.data.region ?? null,
+               country: parsed.data.country ?? "IT",
+@@ -78,19 +105,82 @@
+           return createdCity;
+         });
+ 
+-        return reply.code(201).send({
+-          status: "ok",
+-          item: mapCity(city),
+-        });
+-      } catch (error) {
+-        if (isPrismaError(error, "P2002")) {
++      if (!registry) {
++        try {
++          const city = await createCityWithSlug(normalizedCitySlug);
++          return reply.code(201).send({
++            status: "ok",
++            item: mapCity(city),
++          });
++        } catch (error) {
++          if (isPrismaError(error, "P2002")) {
++            return reply.code(409).send({
++              status: "error",
++              error: "A city with the same slug or registry reference already exists.",
++            });
++          }
++
++          throw error;
++        }
++      }
++
++      const slugCandidates = buildRegistryCitySlugCandidates(normalizedCitySlug, registry);
++
++      for (const citySlug of slugCandidates) {
