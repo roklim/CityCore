@@ -168,6 +168,8 @@ The seed:
 
 `tools/verify-global-demo.mjs` checks the seeded rows, accent-aware lookup behavior, representative timezones and duplicate resolution. CI runs the seed twice before verification to prove idempotence.
 
+The quality gate verifies a clean database with `24 created` on the first seed, `0 created / 24 updated` on the second seed, unchanged `City` row count and `GeoNames rows=0`.
+
 ## Optional Full GeoNames Import
 
 Apply the database migrations before any optional full import:
