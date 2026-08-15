@@ -1,0 +1,92 @@
+name: Deploy Hardening Smoke
+
+on:
+  push:
+    branches:
+      - feature/deploy-hardening
+
+jobs:
+  deploy-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: citycore
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d citycore"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/citycore?schema=public
+      REDIS_URL: redis://localhost:6379
+      AUTH_SECRET: deploy-hardening-ci-secret-value
+      WEB_ORIGINS: https://citycore-web.vercel.app,https://citycore-web-roklims-projects.vercel.app,https://citycore-web-git-main-roklims-projects.vercel.app
+      TRUST_PROXY_HOPS: 1
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:4100
+      VERCEL_PROJECT_PRODUCTION_URL: citycore-web.vercel.app
+      PORT: 4100
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: npm
+      - name: Exact Render build path
+        run: |
+          npm ci --include=dev
+          npm run db:migrate:deploy
+          npm run build:api
+      - name: Web production build on Node 24
+        run: npm run build:web
+      - name: Start API with Render metadata
+        env:
+          RENDER_GIT_COMMIT: ${{ github.sha }}
+          RENDER_GIT_BRANCH: feature/deploy-hardening
+        run: |
+          npm --workspace @platform/api run start > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+          for attempt in {1..30}; do
+            if curl --silent --fail http://127.0.0.1:4100/health > /tmp/api-health.json; then break; fi
+            sleep 1
+          done
+          cat /tmp/api-health.json
+          node -e 'const h=require("/tmp/api-health.json"); if(h.status!=="ok"||h.dependencies.database.status!=="ok"||h.dependencies.redis.status!=="ok"||h.dependencies.auth.status!=="ok"||h.deployment.provider!=="render"||h.deployment.commit!==process.env.GITHUB_SHA) process.exit(1)'
+      - name: Start web and verify Vercel-facing health
+        env:
+          PORT: 3000
+        run: |
+          npm --workspace @platform/web run start > /tmp/web.log 2>&1 &
+          echo $! > /tmp/web.pid
+          for attempt in {1..30}; do
+            if curl --silent --fail http://127.0.0.1:3000/api/health > /tmp/web-health.json; then break; fi
+            sleep 1
+          done
+          cat /tmp/web-health.json
+          node -e 'const h=require("/tmp/web-health.json"); if(h.status!=="ok"||h.dependencies.api.status!=="ok"||h.dependencies.api.deployment.provider!=="render"||h.dependencies.api.deployment.commit!==process.env.GITHUB_SHA) process.exit(1)'
+          curl --silent --fail http://127.0.0.1:3000/robots.txt | tee /tmp/robots.txt
+          grep -F 'Sitemap: https://citycore-web.vercel.app/sitemap.xml' /tmp/robots.txt
+      - name: Stop processes
+        if: always()
+        run: |
+          if [ -f /tmp/web.pid ]; then kill "$(cat /tmp/web.pid)" 2>/dev/null || true; fi
+          if [ -f /tmp/api.pid ]; then kill "$(cat /tmp/api.pid)" 2>/dev/null || true; fi
+          cat /tmp/api.log 2>/dev/null || true
+          cat /tmp/web.log 2>/dev/null || true
