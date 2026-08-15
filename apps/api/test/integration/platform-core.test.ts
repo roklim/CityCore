@@ -24,6 +24,26 @@ async function createCityAdmin() {
   return createAuthToken(admin.id, admin.authVersion, grant.id);
 }
 
+async function createGlobalAdmin() {
+  const admin = await prisma.user.create({
+    data: { email: "lookup-global-admin@example.test", status: "active" },
+  });
+  const grant = await prisma.accessGrant.create({
+    data: { userId: admin.id, role: "global_admin", scopeType: "platform" },
+  });
+  return createAuthToken(admin.id, admin.authVersion, grant.id);
+}
+
+async function createBusinessScopedUser(role: "local_admin" | "staff", email: string) {
+  const user = await prisma.user.create({
+    data: { email, status: "active" },
+  });
+  const grant = await prisma.accessGrant.create({
+    data: { userId: user.id, role, scopeType: "business", cityId, businessId },
+  });
+  return createAuthToken(user.id, user.authVersion, grant.id);
+}
+
 async function request(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   url: string,
@@ -44,7 +64,7 @@ beforeAll(async () => app.ready());
 afterAll(async () => app.close());
 beforeEach(async () => {
   await prisma.$executeRawUnsafe(
-    "TRUNCATE TABLE pickup_order_items, pickup_orders, business_ordering_settings, business_inquiries, business_opening_intervals, business_opening_days, business_services, business_category_assignments, city_categories, access_grants, businesses, business_templates, cities, users CASCADE",
+    "TRUNCATE TABLE pickup_order_items, pickup_orders, business_ordering_settings, business_inquiries, business_opening_intervals, business_opening_days, business_services, business_category_assignments, city_categories, access_grants, businesses, business_templates, cities, city_registry, users CASCADE",
   );
   const template = await prisma.businessTemplate.create({
     data: { code: "test-local", name: "Test", category: "service", primaryModule: "catalog" },
@@ -90,6 +110,333 @@ beforeEach(async () => {
 });
 
 describe("platform core integration", () => {
+  it("activates registry-backed cities with deterministic public slug disambiguation", async () => {
+    const adminToken = await createGlobalAdmin();
+    const illinois = await prisma.cityRegistry.create({
+      data: {
+        name: "Springfield",
+        slug: "springfield",
+        country: "US",
+        countryName: "United States",
+        admin1Name: "Illinois",
+        source: "geonames",
+        externalId: "4250542",
+      },
+    });
+    const massachusetts = await prisma.cityRegistry.create({
+      data: {
+        name: "Springfield",
+        slug: "springfield",
+        country: "US",
+        countryName: "United States",
+        admin1Name: "Massachusetts",
+        source: "geonames",
+        externalId: "4951788",
+      },
+    });
+
+    const first = await request(
+      "POST",
+      "/api/v2/platform-core/cities",
+      { name: "Springfield", slug: "springfield", country: "US", registryId: illinois.id },
+      adminToken,
+    );
+    expect(first.statusCode).toBe(201);
+    expect(first.json().item.slug).toBe("springfield");
+
+    const second = await request(
+      "POST",
+      "/api/v2/platform-core/cities",
+      {
+        name: "Springfield",
+        slug: "springfield",
+        country: "US",
+        registryId: massachusetts.id,
+      },
+      adminToken,
+    );
+    expect(second.statusCode).toBe(201);
+    expect(second.json().item.slug).toBe("springfield-massachusetts");
+    expect(second.json().item.slug).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    expect(second.json().item.slug.length).toBeLessThanOrEqual(120);
+
+    const retry = await request(
+      "POST",
+      "/api/v2/platform-core/cities",
+      {
+        name: "Springfield",
+        slug: "springfield",
+        country: "US",
+        registryId: massachusetts.id,
+      },
+      adminToken,
+    );
+    expect(retry.statusCode).toBe(409);
+    expect(retry.json().error).toBe("This city registry entry is already activated.");
+    expect(await prisma.city.count({ where: { registryId: massachusetts.id } })).toBe(1);
+    expect(
+      await prisma.auditLog.count({
+        where: {
+          action: "platform.city.created",
+          targetType: "city",
+          targetId: second.json().item.id,
+        },
+      }),
+    ).toBe(1);
+    expect(await prisma.auditLog.count({ where: { action: "platform.city.created" } })).toBe(2);
+  });
+
+  it("keeps manual city creation and duplicate-slug behavior unchanged", async () => {
+    const adminToken = await createGlobalAdmin();
+    const created = await request(
+      "POST",
+      "/api/v2/platform-core/cities",
+      { name: "Fresh Manual City" },
+      adminToken,
+    );
+    expect(created.statusCode).toBe(201);
+    expect(created.json().item.slug).toBe("fresh-manual-city");
+    expect(
+      (await prisma.city.findUniqueOrThrow({ where: { id: created.json().item.id } })).registryId,
+    ).toBeNull();
+
+    const duplicate = await request(
+      "POST",
+      "/api/v2/platform-core/cities",
+      { name: "Another Manual City", slug: "fresh-manual-city" },
+      adminToken,
+    );
+    expect(duplicate.statusCode).toBe(409);
+    expect(duplicate.json().error).toBe(
+      "A city with the same slug or registry reference already exists.",
+    );
+  });
+
+  it("lets global admins query authenticated lookups with q and reduced limits", async () => {
+    const adminToken = await createGlobalAdmin();
+    const template = await prisma.businessTemplate.findFirstOrThrow({
+      where: { code: "test-local" },
+    });
+    const alphaCity = await prisma.city.create({
+      data: { name: "Lookup Alpha", slug: "lookup-alpha", status: "active" },
+    });
+    const betaCity = await prisma.city.create({
+      data: { name: "Lookup Beta", slug: "lookup-beta", status: "active" },
+    });
+    await prisma.business.createMany({
+      data: [
+        {
+          cityId: alphaCity.id,
+          templateId: template.id,
+          name: "Lookup Alpha Business",
+          slug: "lookup-alpha-business",
+        },
+        {
+          cityId: betaCity.id,
+          templateId: template.id,
+          name: "Lookup Beta Business",
+          slug: "lookup-beta-business",
+        },
+      ],
+    });
+    await prisma.cityRegistry.createMany({
+      data: [
+        {
+          name: "Lookupville Alpha",
+          slug: "lookupville",
+          country: "US",
+          source: "geonames",
+          externalId: "lookup-alpha",
+          population: 1000,
+          searchText: "lookupville alpha",
+        },
+        {
+          name: "Lookupville Beta",
+          slug: "lookupville",
+          country: "US",
+          source: "geonames",
+          externalId: "lookup-beta",
+          population: 900,
+          searchText: "lookupville beta",
+        },
+      ],
+    });
+
+    const cities = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/cities?q=Lookup&limit=1",
+      undefined,
+      adminToken,
+    );
+    expect(cities.statusCode).toBe(200);
+    expect(cities.json().items).toHaveLength(1);
+    expect(cities.json().items[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        name: expect.stringContaining("Lookup"),
+        slug: expect.any(String),
+        activeCategoryCount: expect.any(Number),
+        businessCount: expect.any(Number),
+      }),
+    );
+
+    const businesses = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/businesses?q=Lookup&limit=1",
+      undefined,
+      adminToken,
+    );
+    expect(businesses.statusCode).toBe(200);
+    expect(businesses.json().items).toHaveLength(1);
+    expect(businesses.json().items[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        name: expect.stringContaining("Lookup"),
+        slug: expect.any(String),
+        city: expect.objectContaining({ id: expect.any(String), slug: expect.any(String) }),
+      }),
+    );
+
+    const registry = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/city-registry?q=Lookupville&limit=1",
+      undefined,
+      adminToken,
+    );
+    expect(registry.statusCode).toBe(200);
+    expect(registry.json().items).toHaveLength(1);
+    expect(registry.json().items[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        name: expect.stringContaining("Lookupville"),
+        slug: "lookupville",
+        country: "US",
+      }),
+    );
+  });
+
+  it("keeps city-admin city and business lookups inside the active city scope", async () => {
+    const adminToken = await createCityAdmin();
+    const template = await prisma.businessTemplate.findFirstOrThrow({
+      where: { code: "test-local" },
+    });
+    const foreignCity = await prisma.city.create({
+      data: { name: "Foreign Scope City", slug: "foreign-scope-city", status: "active" },
+    });
+    await prisma.business.create({
+      data: {
+        cityId: foreignCity.id,
+        templateId: template.id,
+        name: "Foreign Scope Business",
+        slug: "foreign-scope-business",
+      },
+    });
+
+    const cities = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/cities?q=City&limit=20",
+      undefined,
+      adminToken,
+    );
+    expect(cities.statusCode).toBe(200);
+    expect(cities.json().items.map((item: { slug: string }) => item.slug).sort()).toEqual([
+      "test-city",
+    ]);
+
+    const businesses = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/businesses?limit=20",
+      undefined,
+      adminToken,
+    );
+    expect(businesses.statusCode).toBe(200);
+    expect(
+      businesses.json().items.map((item: { slug: string }) => item.slug).sort(),
+    ).toEqual(["other-business", "test-business"]);
+
+    const manipulatedCity = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/businesses?citySlug=foreign-scope-city&q=Foreign&limit=20",
+      undefined,
+      adminToken,
+    );
+    expect(manipulatedCity.statusCode).toBe(200);
+    expect(manipulatedCity.json().items).toEqual([]);
+
+    const manipulatedQuery = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/businesses?q=Foreign%20Scope&limit=20",
+      undefined,
+      adminToken,
+    );
+    expect(manipulatedQuery.statusCode).toBe(200);
+    expect(manipulatedQuery.json().items).toEqual([]);
+
+    const registry = await request(
+      "GET",
+      "/api/v2/platform-core/lookups/city-registry?q=Rome&limit=5",
+      undefined,
+      adminToken,
+    );
+    expect(registry.statusCode).toBe(403);
+  });
+
+  it("applies business scope to local-admin and staff lookups without widening permissions", async () => {
+    const staffToken = await createBusinessScopedUser("staff", "lookup-staff@example.test");
+    const template = await prisma.businessTemplate.findFirstOrThrow({
+      where: { code: "test-local" },
+    });
+    const foreignCity = await prisma.city.create({
+      data: { name: "Lookup Foreign", slug: "lookup-foreign", status: "active" },
+    });
+    await prisma.business.create({
+      data: {
+        cityId: foreignCity.id,
+        templateId: template.id,
+        name: "Lookup Foreign Business",
+        slug: "lookup-foreign-business",
+      },
+    });
+
+    for (const auth of [token, staffToken]) {
+      const cityLookup = await request(
+        "GET",
+        "/api/v2/platform-core/lookups/cities?q=Test&limit=5",
+        undefined,
+        auth,
+      );
+      expect(cityLookup.statusCode).toBe(403);
+
+      const businessLookup = await request(
+        "GET",
+        "/api/v2/platform-core/lookups/businesses?limit=10",
+        undefined,
+        auth,
+      );
+      expect(businessLookup.statusCode).toBe(200);
+      expect(businessLookup.json().items.map((item: { slug: string }) => item.slug)).toEqual([
+        "test-business",
+      ]);
+
+      const crossCity = await request(
+        "GET",
+        "/api/v2/platform-core/lookups/businesses?citySlug=lookup-foreign&q=Lookup&limit=10",
+        undefined,
+        auth,
+      );
+      expect(crossCity.statusCode).toBe(200);
+      expect(crossCity.json().items).toEqual([]);
+
+      const registryLookup = await request(
+        "GET",
+        "/api/v2/platform-core/lookups/city-registry?q=Rome&limit=5",
+        undefined,
+        auth,
+      );
+      expect(registryLookup.statusCode).toBe(403);
+    }
+  });
+
   it("creates category trees and preserves city scope", async () => {
     const unauthorized = await request(
       "POST",

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import {
@@ -56,6 +57,106 @@ import {
   parsePayload,
   slugify,
 } from "./utils.js";
+
+const CITY_SLUG_MAX_LENGTH = 120;
+
+function fitCitySlug(rawValue: string, stableSeed = rawValue) {
+  const normalized = slugify(rawValue);
+  if (normalized.length <= CITY_SLUG_MAX_LENGTH) {
+    return normalized;
+  }
+
+  const digest = createHash("sha256").update(stableSeed).digest("hex").slice(0, 12);
+  const prefix = normalized
+    .slice(0, CITY_SLUG_MAX_LENGTH - digest.length - 1)
+    .replace(/-+$/g, "");
+  return `${prefix}-${digest}`;
+}
+
+function buildRegistryCitySlugCandidates(
+  baseSlug: string,
+  registry: {
+    id: string;
+    admin1Name: string | null;
+    admin2Name: string | null;
+    regionName: string | null;
+    provinceName: string | null;
+    admin1Code: string | null;
+    admin2Code: string | null;
+    regionCode: string | null;
+    provinceCode: string | null;
+    country: string;
+    countryName: string | null;
+    source: string | null;
+    externalId: string | null;
+    istatCode: string | null;
+    cadastralCode: string | null;
+  },
+) {
+  const areaCandidates = [
+    registry.admin1Name,
+    registry.admin2Name,
+    registry.regionName,
+    registry.provinceName,
+    registry.admin1Code,
+    registry.admin2Code,
+    registry.regionCode,
+    registry.provinceCode,
+  ].filter((value): value is string => Boolean(value?.trim()));
+  const primaryArea = areaCandidates[0] ?? null;
+  const country = registry.country || registry.countryName || null;
+  const stableIdentity =
+    registry.source && registry.externalId
+      ? `${registry.source}-${registry.externalId}`
+      : registry.istatCode
+        ? `istat-${registry.istatCode}`
+        : registry.cadastralCode
+          ? `cadastral-${registry.cadastralCode}`
+          : `registry-${registry.id}`;
+
+  const rawCandidates = [baseSlug];
+  if (primaryArea) rawCandidates.push(`${baseSlug}-${primaryArea}`);
+  if (country) rawCandidates.push(`${baseSlug}-${country}`);
+  if (primaryArea && country) rawCandidates.push(`${baseSlug}-${primaryArea}-${country}`);
+
+  for (const area of areaCandidates.slice(1)) {
+    rawCandidates.push(`${baseSlug}-${area}`);
+    if (country) rawCandidates.push(`${baseSlug}-${area}-${country}`);
+  }
+
+  rawCandidates.push(`${baseSlug}-${stableIdentity}`);
+  rawCandidates.push(
+    `${baseSlug}-${createHash("sha256")
+      .update(`${registry.id}:${stableIdentity}`)
+      .digest("hex")
+      .slice(0, 12)}`,
+  );
+
+  return [
+    ...new Set(
+      rawCandidates
+        .map((candidate) => fitCitySlug(candidate, `${registry.id}:${candidate}`))
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function isPrismaUniqueConstraintOn(error: unknown, targetName: string) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+    return false;
+  }
+
+  const target = error.meta?.target;
+  const targetValues = Array.isArray(target) ? target : target == null ? [] : [target];
+  const normalizedTargetName = targetName.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  return targetValues.some((value) =>
+    String(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "")
+      .includes(normalizedTargetName),
+  );
+}
 
 export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
   registerPublicPlatformRoutes(app);
@@ -294,31 +395,58 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
         return reply.code(400).send({ status: "error", error: "City slug cannot be empty" });
       }
 
-      if (parsed.data.registryId) {
-        const registry = await prisma.cityRegistry.findUnique({
-          where: {
-            id: parsed.data.registryId,
-          },
-          select: {
-            id: true,
-          },
-        });
+      const registry = parsed.data.registryId
+        ? await prisma.cityRegistry.findUnique({
+            where: {
+              id: parsed.data.registryId,
+            },
+            select: {
+              id: true,
+              admin1Name: true,
+              admin2Name: true,
+              regionName: true,
+              provinceName: true,
+              admin1Code: true,
+              admin2Code: true,
+              regionCode: true,
+              provinceCode: true,
+              country: true,
+              countryName: true,
+              source: true,
+              externalId: true,
+              istatCode: true,
+              cadastralCode: true,
+              cities: {
+                take: 1,
+                select: {
+                  id: true,
+                },
+              },
+            },
+          })
+        : null;
 
-        if (!registry) {
-          return reply.code(404).send({
-            status: "error",
-            error: "City registry entry not found",
-          });
-        }
+      if (parsed.data.registryId && !registry) {
+        return reply.code(404).send({
+          status: "error",
+          error: "City registry entry not found",
+        });
       }
 
-      try {
-        const city = await prisma.$transaction(async (tx) => {
+      if (registry?.cities.length) {
+        return reply.code(409).send({
+          status: "error",
+          error: "This city registry entry is already activated.",
+        });
+      }
+
+      const createCityWithSlug = (citySlug: string) =>
+        prisma.$transaction(async (tx) => {
           const createdCity = await tx.city.create({
             data: {
               registryId: parsed.data.registryId ?? null,
               name: parsed.data.name,
-              slug: normalizedCitySlug,
+              slug: citySlug,
               province: parsed.data.province ?? null,
               region: parsed.data.region ?? null,
               country: parsed.data.country ?? "IT",
@@ -339,6 +467,11 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
             },
           });
 
+          if (registry && createdCity.slug !== citySlug) {
+            await tx.city.delete({ where: { id: createdCity.id } });
+            return null;
+          }
+
           await tx.auditLog.create({
             data: {
               actorUserId: auth.user.id,
@@ -357,20 +490,94 @@ export function registerPlatformCoreRouteGroup(app: FastifyInstance) {
           return createdCity;
         });
 
-        return reply.code(201).send({
-          status: "ok",
-          item: mapCity(city),
-        });
-      } catch (error) {
-        if (isPrismaError(error, "P2002")) {
+      if (!registry) {
+        try {
+          const city = await createCityWithSlug(normalizedCitySlug);
+          if (!city) {
+            return reply.code(409).send({
+              status: "error",
+              error: "A city with the same slug or registry reference already exists.",
+            });
+          }
+
+          return reply.code(201).send({
+            status: "ok",
+            item: mapCity(city),
+          });
+        } catch (error) {
+          if (isPrismaError(error, "P2002")) {
+            return reply.code(409).send({
+              status: "error",
+              error: "A city with the same slug or registry reference already exists.",
+            });
+          }
+
+          throw error;
+        }
+      }
+
+      const slugCandidates = buildRegistryCitySlugCandidates(normalizedCitySlug, registry);
+
+      for (const citySlug of slugCandidates) {
+        try {
+          const city = await createCityWithSlug(citySlug);
+          if (!city) {
+            continue;
+          }
+
+          return reply.code(201).send({
+            status: "ok",
+            item: mapCity(city),
+          });
+        } catch (error) {
+          if (!isPrismaError(error, "P2002")) {
+            throw error;
+          }
+
+          if (isPrismaUniqueConstraintOn(error, "registryId")) {
+            return reply.code(409).send({
+              status: "error",
+              error: "This city registry entry is already activated.",
+            });
+          }
+
+          if (isPrismaUniqueConstraintOn(error, "slug")) {
+            continue;
+          }
+
+          const [linkedCity, slugOwner] = await Promise.all([
+            prisma.city.findUnique({
+              where: { registryId: registry.id },
+              select: { id: true },
+            }),
+            prisma.city.findUnique({
+              where: { slug: citySlug },
+              select: { id: true },
+            }),
+          ]);
+
+          if (linkedCity) {
+            return reply.code(409).send({
+              status: "error",
+              error: "This city registry entry is already activated.",
+            });
+          }
+
+          if (slugOwner) {
+            continue;
+          }
+
           return reply.code(409).send({
             status: "error",
             error: "A city with the same slug or registry reference already exists.",
           });
         }
-
-        throw error;
       }
+
+      return reply.code(409).send({
+        status: "error",
+        error: "Unable to allocate a unique public slug for this city registry entry.",
+      });
     },
   );
 
