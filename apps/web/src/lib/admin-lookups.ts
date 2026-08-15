@@ -7,11 +7,11 @@ export type AdminCityLookupItem = {
   country: string;
   status: "active" | "coming_soon" | "disabled";
   active: boolean;
-  timezone: string | null;
-  registryExternalId: string | null;
-  countryName: string | null;
-  admin1Name: string | null;
-  admin2Name: string | null;
+  timezone?: string | null;
+  registryExternalId?: string | null;
+  countryName?: string | null;
+  admin1Name?: string | null;
+  admin2Name?: string | null;
   activeCategoryCount: number;
   businessCount: number;
 };
