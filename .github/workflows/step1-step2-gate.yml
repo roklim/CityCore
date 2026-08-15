@@ -64,6 +64,11 @@ jobs:
       - name: Apply test migrations
         run: npm run db:test:migrate
 
+      - name: Generate Prisma client
+        run: npm run db:generate
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
+
       - name: Integration tests
         run: npm --workspace @platform/api run test:integration
         env:
