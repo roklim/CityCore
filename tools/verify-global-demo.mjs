@@ -75,7 +75,10 @@ async function verifySearch(query, expectedName) {
 }
 
 async function main() {
-  assert(GLOBAL_DEMO_CITIES.length >= 20 && GLOBAL_DEMO_CITIES.length <= 30, "Demo dataset must contain 20-30 places.");
+  assert(
+    GLOBAL_DEMO_CITIES.length >= 20 && GLOBAL_DEMO_CITIES.length <= 30,
+    "Demo dataset must contain 20-30 places.",
+  );
 
   const ids = new Set();
   for (const spec of GLOBAL_DEMO_CITIES) {
@@ -89,11 +92,17 @@ async function main() {
     assert(record.activeMunicipality, `${spec.name} must be active in the registry.`);
   }
 
-  assert(ids.size === GLOBAL_DEMO_CITIES.length, "Demo dataset resolved to duplicate registry rows.");
+  assert(
+    ids.size === GLOBAL_DEMO_CITIES.length,
+    "Demo dataset resolved to duplicate registry rows.",
+  );
 
   for (const [name, timezone] of expectedTimezones) {
     const spec = GLOBAL_DEMO_CITIES.find((item) => item.name === name);
-    assert(spec?.timezone === timezone, `${name} must expose ${timezone} for business inheritance.`);
+    assert(
+      spec?.timezone === timezone,
+      `${name} must expose ${timezone} for business inheritance.`,
+    );
   }
 
   for (const [query, expectedName] of searchCases) {
@@ -102,7 +111,10 @@ async function main() {
 
   const geonamesCount = await prisma.cityRegistry.count({ where: { source: "geonames" } });
   if (process.env.EXPECT_NO_GEONAMES_IMPORT === "true") {
-    assert(geonamesCount === 0, `Expected no GeoNames bulk import, found ${geonamesCount} GeoNames rows.`);
+    assert(
+      geonamesCount === 0,
+      `Expected no GeoNames bulk import, found ${geonamesCount} GeoNames rows.`,
+    );
   }
 
   console.log(
