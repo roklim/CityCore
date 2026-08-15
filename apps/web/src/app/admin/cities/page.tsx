@@ -131,7 +131,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
             <input name="registryPage" type="hidden" value={registryPage} />
           ) : null}
           <label className="field">
-            <span>Nome, slug, provincia o regione</span>
+            <span>Nome, slug, area o regione</span>
             <input defaultValue={q} name="q" placeholder="Es. Cagli" type="search" />
           </label>
           <label className="field">
@@ -166,24 +166,28 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
 
       {canCreateCity ? (
         <details className="admin-create-panel" open={create === "true"}>
-          <summary>Nuova città</summary>
+          <summary>Nuova città manuale</summary>
           <form action={createCityAction} className="admin-edit-form">
             <input name="returnTo" type="hidden" value={createCityReturnTo} />
             <label className="field">
               <span>Nome</span>
-              <input name="name" required minLength={2} />
+              <input minLength={2} name="name" required />
             </label>
             <label className="field">
               <span>Slug (facoltativo)</span>
               <input name="slug" />
             </label>
             <label className="field">
-              <span>Provincia</span>
+              <span>Provincia / area</span>
               <input name="province" />
             </label>
             <label className="field">
-              <span>Regione</span>
+              <span>Regione / area amministrativa</span>
               <input name="region" />
+            </label>
+            <label className="field">
+              <span>Paese ISO (facoltativo)</span>
+              <input maxLength={2} name="country" placeholder="IT" />
             </label>
             <label className="field">
               <span>Stato</span>
@@ -224,7 +228,8 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                 <thead>
                   <tr>
                     <th>Nome</th>
-                    <th>Provincia</th>
+                    <th>Paese</th>
+                    <th>Provincia / area</th>
                     <th>Regione</th>
                     <th>Stato</th>
                     <th>Categorie</th>
@@ -239,6 +244,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                         <strong>{city.name}</strong>
                         <span>{city.slug}</span>
                       </td>
+                      <td>{city.country}</td>
                       <td>{city.province ?? "—"}</td>
                       <td>{city.region ?? "—"}</td>
                       <td>
@@ -303,7 +309,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                                   <input defaultValue={city.slug} name="slug" required />
                                 </label>
                                 <label className="field">
-                                  <span>Provincia</span>
+                                  <span>Provincia / area</span>
                                   <input defaultValue={city.province ?? ""} name="province" />
                                 </label>
                                 <label className="field">
@@ -363,11 +369,11 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
         <section className="data-card" aria-labelledby="registry-title">
           <div className="card-heading">
             <div>
-              <p className="section-label">Registro territoriale</p>
-              <h2 id="registry-title">Comuni da aggiungere</h2>
+              <p className="section-label">Registro territoriale globale</p>
+              <h2 id="registry-title">Località da aggiungere</h2>
             </div>
             {registry.data ? (
-              <span className="admin-result-count">{registry.data.total} comuni</span>
+              <span className="admin-result-count">{registry.data.total} località</span>
             ) : null}
           </div>
           <form className="admin-filter-form is-compact" method="get">
@@ -376,29 +382,29 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
             {active ? <input name="active" type="hidden" value={active} /> : null}
             {page > 1 ? <input name="page" type="hidden" value={page} /> : null}
             <label className="field">
-              <span>Comune</span>
+              <span>Città o località</span>
               <input
                 defaultValue={registryQ}
                 name="registryQ"
-                placeholder="Cerca nel registry"
+                placeholder="Es. New York, Tokyo, Roma"
                 type="search"
               />
             </label>
             <label className="field">
               <span>Attivazione</span>
               <select defaultValue={linked} name="linked">
-                <option value="">Tutti</option>
-                <option value="true">Già attivati</option>
+                <option value="">Tutte</option>
+                <option value="true">Già attivate</option>
                 <option value="false">Da attivare</option>
               </select>
             </label>
             <div className="admin-filter-actions">
               <button className="admin-button ghost-button" type="submit">
-                Filtra comuni
+                Filtra località
               </button>
               {registryQ || linked ? (
                 <Link className="admin-button ghost-button" href={clearRegistryHref}>
-                  Azzera filtri comuni
+                  Azzera filtri registry
                 </Link>
               ) : null}
             </div>
@@ -413,18 +419,21 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
               <div
                 className="table-wrap"
                 role="region"
-                aria-label="Comuni disponibili"
+                aria-label="Località disponibili nel registro globale"
                 tabIndex={0}
               >
                 <table className="data-table">
-                  <caption className="visually-hidden">Comuni del registro territoriale</caption>
+                  <caption className="visually-hidden">
+                    Località del registro territoriale globale
+                  </caption>
                   <thead>
                     <tr>
-                      <th>Comune</th>
-                      <th>Provincia</th>
+                      <th>Località</th>
+                      <th>Paese</th>
+                      <th>Provincia / area</th>
                       <th>Regione</th>
-                      <th>Stato</th>
-                      <th>Già attivato?</th>
+                      <th>Stato fonte</th>
+                      <th>Già attivata?</th>
                       <th>Azione</th>
                     </tr>
                   </thead>
@@ -435,6 +444,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                           <strong>{entry.name}</strong>
                           <span>{entry.slug}</span>
                         </td>
+                        <td>{entry.country}</td>
                         <td>{entry.provinceName ?? entry.provinceCode ?? "—"}</td>
                         <td>{entry.regionName ?? entry.regionCode ?? "—"}</td>
                         <td>
@@ -457,10 +467,11 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                               <input name="registryId" type="hidden" value={entry.id} />
                               <input name="name" type="hidden" value={entry.name} />
                               <input name="slug" type="hidden" value={entry.slug} />
+                              <input name="country" type="hidden" value={entry.country} />
                               <input
                                 name="province"
                                 type="hidden"
-                                value={entry.provinceCode ?? ""}
+                                value={entry.provinceName ?? entry.provinceCode ?? ""}
                               />
                               <input name="region" type="hidden" value={entry.regionName ?? ""} />
                               <AdminSubmitButton
@@ -487,7 +498,7 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
               />
             </>
           ) : (
-            <AdminEmptyState title="Nessun comune corrisponde ai filtri." />
+            <AdminEmptyState title="Nessuna località corrisponde ai filtri." />
           )}
         </section>
       ) : null}

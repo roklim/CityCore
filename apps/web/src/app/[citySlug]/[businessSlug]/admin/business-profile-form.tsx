@@ -95,7 +95,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
             </small>
           </label>
           <label className="field">
-            <span>Slug</span>
+            <span>Slug *</span>
             <input
               aria-describedby="business-slug-help"
               aria-invalid={!slug.trim()}
@@ -234,7 +234,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
         </p>
         <div className="business-profile-grid">
           <label className="field">
-            <span>Timezone</span>
+            <span>Timezone *</span>
             <select defaultValue={business.timezone} name="timezone" required>
               {includeCurrent(supportedTimezones, business.timezone).map((value) => (
                 <option key={value} value={value}>
@@ -245,7 +245,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
             <small>Determina orari, stato aperto/chiuso e fasce di ritiro.</small>
           </label>
           <label className="field">
-            <span>Valuta</span>
+            <span>Valuta *</span>
             <select defaultValue={business.currency} name="currency" required>
               {includeCurrent(supportedCurrencies, business.currency).map((value) => (
                 <option key={value} value={value}>
@@ -255,7 +255,7 @@ export function BusinessProfileForm({ business }: { business: PlatformBusiness }
             </select>
           </label>
           <label className="field">
-            <span>Lingua e formato</span>
+            <span>Lingua e formato *</span>
             <select defaultValue={business.locale} name="locale" required>
               {includeCurrent(supportedLocales, business.locale).map((value) => (
                 <option key={value} value={value}>

@@ -8,19 +8,13 @@ import {
   PlatformApiError,
   type PublicPickupMenuItem,
 } from "../../lib/platform-api";
+import {
+  validatePublicPickupValues,
+  type PublicPickupFieldErrors,
+  type PublicPickupFormValues,
+} from "../../lib/public-form-validation";
 
-type FormValues = {
-  name: string;
-  email: string;
-  phone: string;
-  notes: string;
-  privacyAccepted: boolean;
-  company: string;
-};
-
-type FieldErrors = Partial<Record<keyof FormValues | "items" | "pickup", string>>;
-
-const initialValues: FormValues = {
+const initialValues: PublicPickupFormValues = {
   name: "",
   email: "",
   phone: "",
@@ -53,22 +47,6 @@ function formatPrice(cents: number, currency: string) {
     currency,
     minimumFractionDigits: 2,
   }).format(cents / 100);
-}
-
-function validate(values: FormValues, itemCount: number, pickupTime: string): FieldErrors {
-  const errors: FieldErrors = {};
-  if (itemCount < 1) errors.items = "Aggiungi almeno una voce del menu all'ordine.";
-  if (!pickupTime) errors.pickup = "Scegli un orario di ritiro disponibile.";
-  if (values.name.trim().length < 2 || values.name.trim().length > 120)
-    errors.name = "Inserisci un nome valido.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(values.email))
-    errors.email = "Inserisci un indirizzo email valido.";
-  if (values.phone && (values.phone.trim().length > 60 || /<[^>]*>/u.test(values.phone)))
-    errors.phone = "Inserisci un telefono valido.";
-  if (values.notes.trim().length > 1_000)
-    errors.notes = "Le note possono contenere al massimo 1000 caratteri.";
-  if (!values.privacyAccepted) errors.privacyAccepted = "Il consenso privacy è obbligatorio.";
-  return errors;
 }
 
 function messageFor(error: unknown) {
@@ -107,7 +85,7 @@ export function PublicPickupOrderForm({
     "loading",
   );
   const [availabilityRetry, setAvailabilityRetry] = useState(0);
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [errors, setErrors] = useState<PublicPickupFieldErrors>({});
   const [state, setState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [feedback, setFeedback] = useState("");
   const firstError = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement | null>(
@@ -151,7 +129,10 @@ export function PublicPickupOrderForm({
     return () => controller.abort();
   }, [availabilityRetry, businessSlug, citySlug, pickupDate]);
 
-  function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
+  function update<K extends keyof PublicPickupFormValues>(
+    key: K,
+    value: PublicPickupFormValues[K],
+  ) {
     setValues((current) => ({ ...current, [key]: value }));
     setErrors((current) => {
       if (!current[key]) return current;
@@ -186,7 +167,7 @@ export function PublicPickupOrderForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submittingRef.current) return;
-    const nextErrors = validate(values, selectedItems.length, pickupTime);
+    const nextErrors = validatePublicPickupValues(values, selectedItems.length, pickupTime);
     if (!minimumReached)
       nextErrors.items = `L'ordine minimo è ${formatPrice(minimumOrderCents, currency)}.`;
     firstError.current = null;

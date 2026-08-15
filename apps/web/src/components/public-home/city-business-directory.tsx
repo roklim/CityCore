@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCityBusinessCard } from "../../lib/public-runtime";
 import {
   filterPublicBusinessesBySection,
   getPublicBusinessCategories,
   groupPublicBusinessesByCategory,
 } from "../../lib/public-search";
+import {
+  readPublicDirectoryFilters,
+  updatePublicDirectorySearchParams,
+  type PublicDirectoryFilters,
+} from "../../lib/public-directory-query";
 import styles from "./context-gateway.module.css";
 
 function BusinessCard({ business }: { business: PublicCityBusinessCard }) {
@@ -34,6 +40,11 @@ function BusinessCard({ business }: { business: PublicCityBusinessCard }) {
   );
 }
 
+function directoryHref(pathname: string, searchParams: URLSearchParams) {
+  const queryString = searchParams.toString();
+  return queryString ? `${pathname}?${queryString}` : pathname;
+}
+
 export function CityBusinessDirectory({
   businesses,
   cityName,
@@ -43,16 +54,58 @@ export function CityBusinessDirectory({
   cityName: string;
   degraded: boolean;
 }) {
-  const [query, setQuery] = useState("");
-  const [activeSection, setActiveSection] = useState("all");
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
   const sections = useMemo(() => groupPublicBusinessesByCategory(businesses), [businesses]);
+  const urlFilters = useMemo(
+    () => readPublicDirectoryFilters(new URLSearchParams(searchParamsKey)),
+    [searchParamsKey],
+  );
+  const normalizeCategory = (category: string) =>
+    category === "all" || sections.some((section) => section.id === category) ? category : "all";
+  const [query, setQuery] = useState(urlFilters.query);
+  const [activeSection, setActiveSection] = useState(normalizeCategory(urlFilters.category));
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const visibleBusinesses = useMemo(
     () => filterPublicBusinessesBySection(businesses, query, activeSection),
     [activeSection, businesses, query],
   );
   const hasQuery = query.trim().length > 0;
   const hasCategorySections = sections.length > 0;
+
+  useEffect(() => {
+    const filters = readPublicDirectoryFilters(new URLSearchParams(searchParamsKey));
+    setQuery(filters.query);
+    setActiveSection(normalizeCategory(filters.category));
+  }, [searchParamsKey, sections]);
+
+  useEffect(() => {
+    const current = readPublicDirectoryFilters(new URLSearchParams(searchParamsKey));
+    if (current.query === query.trim()) return;
+
+    const timer = window.setTimeout(() => {
+      const next = updatePublicDirectorySearchParams(new URLSearchParams(searchParamsKey), {
+        query,
+      });
+      router.replace(directoryHref(pathname, next), { scroll: false });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [pathname, query, router, searchParamsKey]);
+
+  function updateUrl(changes: Partial<PublicDirectoryFilters>, mode: "push" | "replace") {
+    const next = updatePublicDirectorySearchParams(new URLSearchParams(searchParamsKey), changes);
+    const href = directoryHref(pathname, next);
+    if (mode === "push") router.push(href, { scroll: false });
+    else router.replace(href, { scroll: false });
+  }
+
+  function selectCategory(category: string) {
+    setActiveSection(category);
+    updateUrl({ query, category }, "push");
+  }
 
   return (
     <section
@@ -103,6 +156,7 @@ export function CityBusinessDirectory({
             className={`${styles.clearSearchButton} public-directory-clear`}
             onClick={() => {
               setQuery("");
+              updateUrl({ query: "", category: activeSection }, "replace");
               searchInputRef.current?.focus();
             }}
             type="button"
@@ -123,7 +177,7 @@ export function CityBusinessDirectory({
             className={`${
               activeSection === "all" ? styles.directoryFilterActive : styles.directoryFilter
             } public-directory-filter${activeSection === "all" ? " is-active" : ""}`}
-            onClick={() => setActiveSection("all")}
+            onClick={() => selectCategory("all")}
             type="button"
           >
             Tutte le attività <span>{businesses.length}</span>
@@ -135,7 +189,7 @@ export function CityBusinessDirectory({
                 activeSection === section.id ? styles.directoryFilterActive : styles.directoryFilter
               } public-directory-filter${activeSection === section.id ? " is-active" : ""}`}
               key={section.id}
-              onClick={() => setActiveSection(section.id)}
+              onClick={() => selectCategory(section.id)}
               type="button"
             >
               {section.label} <span>{section.businesses.length}</span>
@@ -162,6 +216,7 @@ export function CityBusinessDirectory({
             onClick={() => {
               setQuery("");
               setActiveSection("all");
+              updateUrl({ query: "", category: "all" }, "push");
               searchInputRef.current?.focus();
             }}
             type="button"

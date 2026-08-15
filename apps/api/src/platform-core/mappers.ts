@@ -57,16 +57,31 @@ export function mapCity(city: {
 export function mapCityRegistryEntry(entry: {
   id: string;
   name: string;
+  asciiName: string | null;
   slug: string;
+  externalId: string | null;
+  alternateNames: string | null;
   provinceCode: string | null;
   provinceName: string | null;
   regionCode: string | null;
   regionName: string | null;
+  admin1Code: string | null;
+  admin1Name: string | null;
+  admin2Code: string | null;
+  admin2Name: string | null;
+  admin3Code: string | null;
+  admin4Code: string | null;
   country: string;
+  countryName: string | null;
   istatCode: string | null;
   cadastralCode: string | null;
+  featureClass: string | null;
+  featureCode: string | null;
+  population: number | null;
+  timezone: string | null;
   source: string | null;
   sourceVersion: string | null;
+  sourceModifiedAt: Date | null;
   lat: number | null;
   lng: number | null;
   activeMunicipality: boolean;
@@ -84,16 +99,31 @@ export function mapCityRegistryEntry(entry: {
   return {
     id: entry.id,
     name: entry.name,
+    asciiName: entry.asciiName,
     slug: entry.slug,
+    externalId: entry.externalId,
+    alternateNames: entry.alternateNames,
     provinceCode: entry.provinceCode,
     provinceName: entry.provinceName,
     regionCode: entry.regionCode,
     regionName: entry.regionName,
+    admin1Code: entry.admin1Code,
+    admin1Name: entry.admin1Name,
+    admin2Code: entry.admin2Code,
+    admin2Name: entry.admin2Name,
+    admin3Code: entry.admin3Code,
+    admin4Code: entry.admin4Code,
     country: entry.country,
+    countryName: entry.countryName,
     istatCode: entry.istatCode,
     cadastralCode: entry.cadastralCode,
+    featureClass: entry.featureClass,
+    featureCode: entry.featureCode,
+    population: entry.population,
+    timezone: entry.timezone,
     source: entry.source,
     sourceVersion: entry.sourceVersion,
+    sourceModifiedAt: entry.sourceModifiedAt,
     lat: entry.lat,
     lng: entry.lng,
     activeMunicipality: entry.activeMunicipality,

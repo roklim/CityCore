@@ -74,6 +74,7 @@ export async function createCityAction(formData: FormData) {
         slug: optional(formData, "slug"),
         province: optional(formData, "province"),
         region: optional(formData, "region"),
+        country: optional(formData, "country")?.toUpperCase(),
         status: text(formData, "status") || "coming_soon",
         active: formData.get("active") === "on",
       },
@@ -102,6 +103,7 @@ export async function activateRegistryCityAction(formData: FormData) {
         slug: text(formData, "slug"),
         province: optional(formData, "province"),
         region: optional(formData, "region"),
+        country: optional(formData, "country")?.toUpperCase(),
         status: "coming_soon",
         active: true,
       },
@@ -112,7 +114,7 @@ export async function activateRegistryCityAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/cities");
   redirect(
-    `/admin/cities/${encodeURIComponent(response.item.slug)}/categories?notice=${encodeURIComponent("Comune aggiunto. Attiva la città e crea la prima categoria.")}`,
+    `/admin/cities/${encodeURIComponent(response.item.slug)}/categories?notice=${encodeURIComponent("Città aggiunta. Attivala e crea la prima categoria.")}`,
   );
 }
 
@@ -168,6 +170,7 @@ export async function createBusinessAction(formData: FormData) {
           slug: optional(formData, "slug"),
           publicEmail: optional(formData, "publicEmail"),
           publicPhone: optional(formData, "publicPhone"),
+          timezone: optional(formData, "timezone"),
           ownerEmail: assignOwner ? ownerEmail : undefined,
           ownerName: assignOwner ? optional(formData, "ownerName") : undefined,
           ownerPhone: assignOwner ? optional(formData, "ownerPhone") : undefined,

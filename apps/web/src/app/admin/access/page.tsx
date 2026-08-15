@@ -6,17 +6,17 @@ import { AdminSubmitButton } from "../../../components/admin-submit-button";
 import { PlatformAdminShell } from "../../../components/platform-admin-shell";
 import { adminRoleLabel, adminScopeLabel } from "../../../lib/admin-labels";
 import {
+  type AdminBusinessLookupResponse,
+  type AdminCityLookupResponse,
+} from "../../../lib/admin-lookups";
+import {
   positivePage,
   queryString,
   searchParam,
   type AdminSearchParams,
 } from "../../../lib/admin-query";
 import { loadAdminResponse, requirePlatformAdminSession } from "../../../lib/admin-server";
-import {
-  type PlatformAccessGrantsResponse,
-  type PlatformBusinessesResponse,
-  type PlatformCitiesResponse,
-} from "../../../lib/platform-api";
+import { type PlatformAccessGrantsResponse } from "../../../lib/platform-api";
 import { resetAccessPasswordAction, toggleAccessGrantAction } from "../platform-actions";
 import { AccessGrantForm } from "./access-grant-form";
 
@@ -64,12 +64,12 @@ export default async function AdminAccessPage({ searchParams }: AccessPageProps)
       `/api/v2/platform-core/access-grants?${queryString(query)}`,
       session.token,
     ),
-    loadAdminResponse<PlatformCitiesResponse>(
-      "/api/v2/platform-core/cities?page=1&limit=50",
+    loadAdminResponse<AdminCityLookupResponse>(
+      "/api/v2/platform-core/lookups/cities?limit=20",
       session.token,
     ),
-    loadAdminResponse<PlatformBusinessesResponse>(
-      "/api/v2/platform-core/businesses?page=1&limit=50",
+    loadAdminResponse<AdminBusinessLookupResponse>(
+      "/api/v2/platform-core/lookups/businesses?limit=20",
       session.token,
     ),
   ]);

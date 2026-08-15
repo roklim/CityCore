@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { BusinessOpeningStatus } from "../../../components/public-business/business-opening-status";
 import { PublicInquiryForm } from "../../../components/public-business/public-inquiry-form";
 import { PublicPickupOrderForm } from "../../../components/public-business/public-pickup-order-form";
 import { PublicShell } from "../../../components/public-shell";
@@ -236,11 +237,12 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
               ))}
             </div>
           ) : null}
-          {openingStatus ? (
-            <p className="public-business-opening-status" role="status">
-              <strong>{openingStatus.label}</strong>
-              {openingStatus.detail ? <span> · {openingStatus.detail}</span> : null}
-            </p>
+          {openingHoursResult?.status === "fulfilled" && openingStatus ? (
+            <BusinessOpeningStatus
+              days={openingDays}
+              initialStatus={openingStatus}
+              timezone={openingHoursResult.value.timezone}
+            />
           ) : null}
           <nav className="cta-row public-business-quick-actions" aria-label="Azioni principali">
             <a

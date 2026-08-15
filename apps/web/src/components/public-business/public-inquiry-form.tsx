@@ -3,18 +3,13 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { createPublicBusinessInquiry, PlatformApiError } from "../../lib/platform-api";
+import {
+  validatePublicInquiryValues,
+  type PublicInquiryFieldErrors,
+  type PublicInquiryFormValues,
+} from "../../lib/public-form-validation";
 
-type FormValues = {
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-  privacyAccepted: boolean;
-  company: string;
-};
-type FieldErrors = Partial<Record<keyof FormValues, string>>;
-
-const initialValues: FormValues = {
+const initialValues: PublicInquiryFormValues = {
   name: "",
   email: "",
   phone: "",
@@ -22,20 +17,6 @@ const initialValues: FormValues = {
   privacyAccepted: false,
   company: "",
 };
-
-function validate(values: FormValues): FieldErrors {
-  const errors: FieldErrors = {};
-  if (values.name.trim().length < 2 || values.name.trim().length > 120)
-    errors.name = "Inserisci un nome valido.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(values.email))
-    errors.email = "Inserisci un indirizzo email valido.";
-  if (values.phone && (values.phone.trim().length > 60 || /<[^>]*>/u.test(values.phone)))
-    errors.phone = "Inserisci un telefono valido.";
-  if (values.message.trim().length < 10 || values.message.trim().length > 4000)
-    errors.message = "Il messaggio deve contenere da 10 a 4000 caratteri.";
-  if (!values.privacyAccepted) errors.privacyAccepted = "Il consenso privacy è obbligatorio.";
-  return errors;
-}
 
 function messageFor(error: unknown) {
   if (error instanceof PlatformApiError) {
@@ -55,7 +36,7 @@ export function PublicInquiryForm({
   businessSlug: string;
 }) {
   const [values, setValues] = useState(initialValues);
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [errors, setErrors] = useState<PublicInquiryFieldErrors>({});
   const [state, setState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [feedback, setFeedback] = useState("");
   const firstError = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -68,7 +49,10 @@ export function PublicInquiryForm({
     firstError.current?.focus();
   }, [errors]);
 
-  function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
+  function update<K extends keyof PublicInquiryFormValues>(
+    key: K,
+    value: PublicInquiryFormValues[K],
+  ) {
     setValues((current) => ({ ...current, [key]: value }));
     setErrors((current) => {
       if (!current[key]) return current;
@@ -85,7 +69,7 @@ export function PublicInquiryForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submittingRef.current) return;
-    const nextErrors = validate(values);
+    const nextErrors = validatePublicInquiryValues(values);
     firstError.current = null;
     shouldFocusErrorsRef.current = Object.keys(nextErrors).length > 0;
     setErrors(nextErrors);

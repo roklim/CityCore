@@ -103,6 +103,7 @@ describe("MVP domain", () => {
     expect(publicInquirySchema.safeParse({ ...valid, privacyAccepted: false }).success).toBe(false);
     expect(publicInquirySchema.safeParse({ ...valid, company: "bot" }).success).toBe(true);
     expect(publicInquirySchema.safeParse({ ...valid, name: "<b>Mario</b>" }).success).toBe(false);
+    expect(publicInquirySchema.safeParse({ ...valid, phone: "<b>333</b>" }).success).toBe(false);
     expect(
       publicInquirySchema.safeParse({ ...valid, message: "<b>test</b> con HTML" }).success,
     ).toBe(false);

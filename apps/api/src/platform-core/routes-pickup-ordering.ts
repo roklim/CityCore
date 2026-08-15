@@ -32,7 +32,7 @@ const noHtmlText = (max: number) =>
     .refine((value) => !/<[^>]*>/u.test(value), "HTML is not accepted.");
 
 const availabilityQuerySchema = z.object({ date: z.string().regex(datePattern) });
-const publicOrderSchema = z
+export const publicOrderSchema = z
   .object({
     name: noHtmlText(120).min(2),
     email: z.string().trim().email().max(200),
