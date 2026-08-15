@@ -358,6 +358,13 @@
   display: block;
 }
 
+@media (min-width: 901px) {
+  .cityLineArt {
+    align-self: start;
+    margin-top: clamp(92px, 7vw, 100px);
+  }
+}
+
 .directorySection {
   display: grid;
 }
