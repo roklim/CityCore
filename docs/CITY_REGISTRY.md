@@ -5,7 +5,7 @@
 CityCore uses a local global city registry instead of a live third-party autocomplete.
 
 ```txt
-GeoNames downloadable dataset
+trusted geographic data
     -> CityRegistry
     -> global admin activation
     -> City
@@ -16,11 +16,49 @@ GeoNames downloadable dataset
 
 This separation keeps public routing, business management and access control independent from provider uptime, request quotas and per-search costs. It also prevents CityCore from generating public pages for hundreds of thousands of empty locations.
 
-## Primary Dataset
+**CityCore is globally capable without requiring the entire global registry to be loaded during development or demo environments.**
 
-The initial worldwide source is GeoNames `cities500`.
+## Environment Modes
 
-The downloaded dump is imported into the CityCore PostgreSQL database. The running application never calls the GeoNames web service for normal city or business autocomplete.
+### Demo / development
+
+Demo, thesis and normal development environments use a compact international registry seeded by:
+
+```bash
+npm run db:seed:global-demo
+npm run db:verify:global-demo
+```
+
+The seed contains 24 representative places across Europe, North America, South America, Asia, the Middle East, Oceania and Africa. It is deliberately small, idempotent and does not create public `City` records.
+
+The existing Cagli product demo remains the only City created by the normal application demo seed unless an administrator activates more registry entries explicitly.
+
+The compact demo registry is sufficient to exercise:
+
+- international country and administrative-area labels
+- IANA timezone propagation
+- accent-insensitive search such as `sao` and `são` for São Paulo
+- server-side city and business autocomplete
+- access management beyond fixed preload limits
+- city activation before business creation
+
+No GeoNames bulk dump is required for this mode.
+
+### Future worldwide production
+
+A production environment that needs broad worldwide discovery can optionally import GeoNames `cities500` with:
+
+```bash
+npm run db:import:geonames
+```
+
+The importer remains in the repository but is never run automatically by application startup, the normal demo seed or CI.
+
+## Worldwide Dataset Option
+
+The supported worldwide source is GeoNames `cities500`.
+
+When a full global catalogue is needed, the downloaded dump can be imported into the CityCore PostgreSQL database. The running application never calls the GeoNames web service for normal city or business autocomplete.
 
 Supporting GeoNames files improve labels without changing the source identity:
 
@@ -83,14 +121,14 @@ When a `City` is created from a registry record, a database trigger applies the 
 
 Registry slugs and public city slugs serve different purposes.
 
-The activation flow first tries the readable normalized place slug. If a public City already owns that slug, activation must use a stable disambiguating suffix rather than overwrite or rename the existing City.
+The activation flow first tries the readable normalized place slug. If a public City already owns that slug, activation uses a stable disambiguating suffix rather than overwrite or rename the existing City.
 
 Published City slugs are never changed by a GeoNames refresh.
 
 ## Admin Flow
 
 1. Open `/admin/cities`.
-2. Search the global registry by city/place name.
+2. Search the available registry by city/place name.
 3. Inspect country and administrative area to disambiguate same-name locations.
 4. Activate the selected registry record as a CityCore `City`.
 5. Configure at least one active category.
@@ -103,7 +141,7 @@ Business creation does not preload a fixed number of cities.
 
 The page receives only a small initial suggestion set. The create form searches all activated, accessible and ready City records server-side with a debounced lookup. Therefore `20` is a result-page size, not a catalogue limit.
 
-For registry-backed cities, the city lookup returns the GeoNames IANA timezone. The business create form submits that timezone and the API validates it with the existing IANA timezone schema. Existing business timezone behavior remains unchanged after creation.
+For registry-backed cities, the city lookup returns the registry IANA timezone. The business create form submits that timezone and the API validates it with the existing IANA timezone schema. Existing business timezone behavior remains unchanged after creation.
 
 ## Access Management
 
@@ -113,9 +151,26 @@ The page receives small initial suggestion sets. City and business selectors the
 
 The selected values continue to reference normal CityCore `City` and `Business` records, so the existing permission model is unchanged.
 
-## Import Flow
+## Compact Demo Seed
 
-Apply the database migrations before importing the dataset:
+The compact dataset lives in `tools/global-demo-cities.mjs` and is written by `tools/seed-global-demo.mjs`.
+
+The seed:
+
+- contains only 24 international registry records
+- uses `demo-global` as the source for newly created demo records
+- is safe to run repeatedly
+- reuses an existing matching registry row when present
+- enriches Cagli without clearing existing ISTAT, cadastral, province or region data
+- stores only valid IANA timezones
+- never creates, publishes or removes `City` rows
+- does not call GeoNames or any other external API
+
+`tools/verify-global-demo.mjs` checks the seeded rows, accent-aware lookup behavior, representative timezones and duplicate resolution. CI runs the seed twice before verification to prove idempotence.
+
+## Optional Full GeoNames Import
+
+Apply the database migrations before any optional full import:
 
 ```bash
 npm run db:migrate:deploy
@@ -135,7 +190,7 @@ npm run db:import:geonames -- \
   --dry-run
 ```
 
-Run the full idempotent import by removing `--limit` and `--dry-run`:
+Run the full idempotent import only when a target environment explicitly needs the worldwide catalogue:
 
 ```bash
 npm run db:import:geonames -- \
@@ -161,9 +216,9 @@ The importer:
 
 ## Search Strategy
 
-The registry can contain hundreds of thousands of rows, so UI selectors never download the full catalogue.
+The registry can contain a few demo rows or hundreds of thousands of production rows without changing the UI contract.
 
-Authenticated lookup endpoints return at most 50 entries and normal UI requests use 20. Registry results prioritize exact and prefix matches, then population. PostgreSQL prefix indexes support the autocomplete path without requiring an optional database extension.
+UI selectors never download the full catalogue. Authenticated lookup endpoints return at most 50 entries and normal UI requests use 20. Registry results prioritize exact and prefix matches, then population. PostgreSQL prefix indexes support the autocomplete path without requiring an optional database extension.
 
 Lookup routes:
 
@@ -195,7 +250,7 @@ Businesses remain city-first:
 /new-york/example-business
 ```
 
-Importing a place into `CityRegistry` alone never creates a public route or sitemap entry.
+Adding a place to `CityRegistry` alone never creates a public route or sitemap entry.
 
 ## Verification
 
@@ -206,6 +261,10 @@ npm run db:validate
 npm run db:migrate:deploy
 npm run db:migrate:status
 npm run db:generate
+npm run db:seed:global-demo
+npm run db:seed:global-demo
+EXPECT_NO_GEONAMES_IMPORT=true npm run db:verify:global-demo
+npm test
 npm run lint
 npm run format:check
 npm run typecheck
@@ -213,15 +272,17 @@ npm run build:web
 npm run build:api
 ```
 
-Registry-specific unit tests cover accent normalization, exact/prefix ranking and population tie-breaking.
+Registry-specific unit tests cover accent normalization, exact/prefix ranking and population tie-breaking. The global demo verifier additionally covers `new`, `tok`, `sao`, `são`, `lon`, `cagli` and representative business timezones for Europe/Rome, America/New_York, Asia/Tokyo and Australia/Sydney.
 
 ## Source and Attribution
 
-Primary geographic source:
+The compact demo records are maintained directly by CityCore for development and demonstration.
+
+For optional worldwide production imports, the supported source is:
 
 - GeoNames geographical database: https://www.geonames.org/
 - GeoNames downloadable dump: https://download.geonames.org/export/dump/
 
-GeoNames data is distributed under Creative Commons Attribution 4.0. CityCore must retain appropriate attribution wherever the dataset is distributed or used in a production product.
+GeoNames data is distributed under Creative Commons Attribution 4.0. CityCore must retain appropriate attribution wherever GeoNames data is distributed or used in a production product.
 
 Italian official identifiers such as ISTAT and cadastral codes remain optional national enrichment fields and are not replaced by the global provider-neutral identifiers.
