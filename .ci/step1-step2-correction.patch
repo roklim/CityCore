@@ -1,0 +1,39 @@
+--- a/apps/api/src/platform-core/routes.ts
++++ b/apps/api/src/platform-core/routes.ts
+@@ -468,6 +468,11 @@
+               },
+             },
+           });
++
++          if (registry && createdCity.slug !== citySlug) {
++            await tx.city.delete({ where: { id: createdCity.id } });
++            return null;
++          }
+ 
+           await tx.auditLog.create({
+             data: {
+@@ -496,6 +501,13 @@
+       if (!registry) {
+         try {
+           const city = await createCityWithSlug(normalizedCitySlug);
++          if (!city) {
++            return reply.code(409).send({
++              status: "error",
++              error: "A city with the same slug or registry reference already exists.",
++            });
++          }
++
+           return reply.code(201).send({
+             status: "ok",
+             item: mapCity(city),
+@@ -519,6 +531,10 @@
+       for (const citySlug of slugCandidates) {
+         try {
+           const city = await createCityWithSlug(citySlug);
++          if (!city) {
++            continue;
++          }
++
+           return reply.code(201).send({
+             status: "ok",
+             item: mapCity(city),
