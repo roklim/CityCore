@@ -3,6 +3,7 @@ import { AdminCollectionError, AdminEmptyState } from "../../../components/admin
 import { AdminPagination } from "../../../components/admin-pagination";
 import { AdminStatusBadge } from "../../../components/admin-status-badge";
 import { PlatformAdminShell } from "../../../components/platform-admin-shell";
+import { type AdminCityLookupResponse } from "../../../lib/admin-lookups";
 import { isBusinessPublic } from "../../../lib/business-visibility";
 import {
   positivePage,
@@ -13,7 +14,6 @@ import {
 import { loadAdminResponse, requirePlatformAdminSession } from "../../../lib/admin-server";
 import {
   type PlatformBusinessesResponse,
-  type PlatformCitiesResponse,
   type PlatformTemplatesResponse,
 } from "../../../lib/platform-api";
 import { BusinessCreateForm } from "./business-create-form";
@@ -52,23 +52,20 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
   });
   const createBusinessReturnTo = `/admin/businesses?${createBusinessQuery}`;
   const canCreateBusiness = session.auth.activeAccess.permissions.includes("businesses.manage");
+  const initialCityLookup = `/api/v2/platform-core/lookups/cities?ready=true&limit=20${
+    city ? `&q=${encodeURIComponent(city)}` : ""
+  }`;
 
   const [businesses, cities, templates] = await Promise.all([
     loadAdminResponse<PlatformBusinessesResponse>(
       `/api/v2/platform-core/businesses?${queryString(query)}`,
       session.token,
     ),
-    loadAdminResponse<PlatformCitiesResponse>(
-      "/api/v2/platform-core/cities?page=1&limit=50",
-      session.token,
-    ),
+    loadAdminResponse<AdminCityLookupResponse>(initialCityLookup, session.token),
     loadAdminResponse<PlatformTemplatesResponse>("/api/v2/platform-core/templates", session.token),
   ]);
   const activeTemplates = templates.data?.items.filter((item) => item.active) ?? [];
-  const activeCities =
-    cities.data?.items.filter((item) => item.active && item.status === "active") ?? [];
-  const readyCities = activeCities.filter((item) => item.activeCategoryCount > 0);
-  const citiesWithoutCategories = activeCities.filter((item) => item.activeCategoryCount === 0);
+  const readyCities = cities.data?.items ?? [];
   const defaultCity = readyCities.some((item) => item.slug === city) ? city : "";
   const setupResourcesFailed = cities.failed || templates.failed;
 
@@ -182,29 +179,13 @@ export default async function AdminBusinessesPage({ searchParams }: BusinessesPa
             <h2 id="business-prerequisites-title">Completa i prerequisiti</h2>
           </div>
           <p>
-            {!activeCities.length
-              ? "Non ci sono città pubbliche. Attiva una città per proseguire."
-              : !activeTemplates.length
-                ? "Non ci sono tipi di attività attivi disponibili."
-                : "Le città attive non hanno ancora categorie disponibili."}
+            {!activeTemplates.length
+              ? "Non ci sono tipi di attività attivi disponibili."
+              : "Non ci sono città pubbliche con almeno una categoria attiva nel tuo ambito."}
           </p>
-          {citiesWithoutCategories.length ? (
-            <div className="admin-filter-actions">
-              {citiesWithoutCategories.map((item) => (
-                <Link
-                  className="admin-button ghost-button"
-                  href={`/admin/cities/${encodeURIComponent(item.slug)}/categories`}
-                  key={item.id}
-                >
-                  Crea categorie per {item.name}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Link className="admin-button ghost-button" href="/admin/cities">
-              Vai alle città
-            </Link>
-          )}
+          <Link className="admin-button ghost-button" href="/admin/cities">
+            Vai alle città
+          </Link>
         </section>
       ) : null}
 
