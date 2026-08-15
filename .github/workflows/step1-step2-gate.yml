@@ -1,0 +1,87 @@
+name: STEP 1 STEP 2 Gate
+
+on:
+  push:
+    branches:
+      - feature/registry-slug-lookups-step1-step2
+
+permissions:
+  contents: write
+
+jobs:
+  integration:
+    name: Apply patch, test, persist
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: citycore_test
+          POSTGRES_USER: citycore_test
+          POSTGRES_PASSWORD: citycore_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U citycore_test -d citycore_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL_TEST: postgresql://citycore_test:citycore_test@localhost:5433/citycore_test
+      DATABASE_URL: postgresql://citycore_test:citycore_test@localhost:5433/citycore_dev_placeholder
+      AUTH_SECRET: ci-citycore-auth-secret-change-before-prod
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4100
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild patch
+        run: cat .ci/step1-step2.part-* > /tmp/step1-step2.patch
+
+      - name: Check patch applies cleanly
+        run: git apply --check /tmp/step1-step2.patch
+
+      - name: Apply STEP 1 and STEP 2
+        run: git apply /tmp/step1-step2.patch
+
+      - name: Diff whitespace check
+        run: git diff --check
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply test migrations
+        run: npm run db:test:migrate
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Persist validated source changes
+        shell: bash
+        run: |
+          rm -f .ci/step1-step2.part-*
+          rmdir .ci 2>/dev/null || true
+          rm -f .github/workflows/step1-step2-gate.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(api): disambiguate registry city slugs and cover lookups"
+          git push origin HEAD:${GITHUB_REF_NAME}
