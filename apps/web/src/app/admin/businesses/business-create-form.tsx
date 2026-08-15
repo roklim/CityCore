@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdminSubmitButton } from "../../../components/admin-submit-button";
 import type { AdminCityLookupItem } from "../../../lib/admin-lookups";
 import type { PlatformTemplate } from "../../../lib/platform-api";
@@ -30,15 +30,26 @@ export function BusinessCreateForm({
   const [citySlug, setCitySlug] = useState(defaultCity || cities[0]?.slug || "");
   const [citySearchPending, setCitySearchPending] = useState(false);
   const [citySearchError, setCitySearchError] = useState(false);
+  const citySearchSequence = useRef(0);
+  const invalidateCitySearch = () => {
+    citySearchSequence.current += 1;
+  };
   const selectedTemplate = templates.find((item) => item.code === templateCode);
   const selectedCity = cityOptions.find((item) => item.slug === citySlug) ?? null;
 
   useEffect(() => {
+    const requestId = ++citySearchSequence.current;
+
+    setCitySearchError(false);
+
     const timer = window.setTimeout(() => {
+      if (citySearchSequence.current !== requestId) return;
+
       setCitySearchPending(true);
-      setCitySearchError(false);
       void searchAdminCitiesAction(cityQuery, true)
         .then((items) => {
+          if (citySearchSequence.current !== requestId) return;
+
           setCityOptions((current) => {
             const selected = current.find((item) => item.slug === citySlug);
             if (selected && !items.some((item) => item.slug === selected.slug)) {
@@ -47,11 +58,24 @@ export function BusinessCreateForm({
             return items;
           });
         })
-        .catch(() => setCitySearchError(true))
-        .finally(() => setCitySearchPending(false));
+        .catch(() => {
+          if (citySearchSequence.current === requestId) {
+            setCitySearchError(true);
+          }
+        })
+        .finally(() => {
+          if (citySearchSequence.current === requestId) {
+            setCitySearchPending(false);
+          }
+        });
     }, 250);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (citySearchSequence.current === requestId) {
+        citySearchSequence.current += 1;
+      }
+    };
   }, [cityQuery, citySlug]);
 
   return (
@@ -70,7 +94,10 @@ export function BusinessCreateForm({
         <span>Cerca città</span>
         <input
           aria-describedby="business-city-search-hint"
-          onChange={(event) => setCityQuery(event.target.value)}
+          onChange={(event) => {
+            invalidateCitySearch();
+            setCityQuery(event.target.value);
+          }}
           placeholder="Es. New York, Tokyo, Roma"
           type="search"
           value={cityQuery}
@@ -89,7 +116,10 @@ export function BusinessCreateForm({
           name="citySlug"
           required
           value={citySlug}
-          onChange={(event) => setCitySlug(event.target.value)}
+          onChange={(event) => {
+            invalidateCitySearch();
+            setCitySlug(event.target.value);
+          }}
         >
           <option disabled value="">
             {cityOptions.length ? "Seleziona città" : "Nessuna città trovata"}
