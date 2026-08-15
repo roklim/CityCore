@@ -109,8 +109,8 @@ export function AccessGrantForm({
           type="password"
         />
         <small>
-          Minimo 12 caratteri. Attiva un nuovo account; se l&apos;email esiste già, la sua
-          password non viene modificata.
+          Minimo 12 caratteri. Attiva un nuovo account; se l&apos;email esiste già, la sua password
+          non viene modificata.
         </small>
       </label>
       <label className="field">
@@ -148,7 +148,9 @@ export function AccessGrantForm({
               type="search"
               value={cityQuery}
             />
-            <small>{citySearchPending ? "Ricerca città…" : "Massimo 20 suggerimenti per ricerca."}</small>
+            <small>
+              {citySearchPending ? "Ricerca città…" : "Massimo 20 suggerimenti per ricerca."}
+            </small>
           </label>
           <label className="field">
             <span>Città</span>

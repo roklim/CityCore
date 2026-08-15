@@ -4,10 +4,7 @@ import { z } from "zod";
 import { getRequestAuth, requirePermission } from "../auth.js";
 import { prisma } from "../database.js";
 import { buildAccessibleBusinessFilter, buildAccessibleCityFilter } from "./access.js";
-import {
-  compareCityRegistryMatches,
-  normalizeCityRegistryQuery,
-} from "./city-registry-search.js";
+import { compareCityRegistryMatches, normalizeCityRegistryQuery } from "./city-registry-search.js";
 import { mapCityRegistryEntry } from "./mappers.js";
 import { parsePayload } from "./utils.js";
 

@@ -85,10 +85,17 @@ function parseArgs(argv) {
   }
 
   if (!options.file) throw new Error("--file is required");
-  if (!Number.isInteger(options.batchSize) || options.batchSize < 1 || options.batchSize > MAX_BATCH_SIZE) {
+  if (
+    !Number.isInteger(options.batchSize) ||
+    options.batchSize < 1 ||
+    options.batchSize > MAX_BATCH_SIZE
+  ) {
     throw new Error(`--batch-size must be an integer between 1 and ${MAX_BATCH_SIZE}`);
   }
-  if (options.limit !== Number.POSITIVE_INFINITY && (!Number.isInteger(options.limit) || options.limit < 1)) {
+  if (
+    options.limit !== Number.POSITIVE_INFINITY &&
+    (!Number.isInteger(options.limit) || options.limit < 1)
+  ) {
     throw new Error("--limit must be a positive integer");
   }
 
@@ -130,7 +137,10 @@ async function loadTabMap(path, mapper) {
   const map = new Map();
   if (!path) return map;
 
-  const input = createInterface({ input: createReadStream(resolve(path), { encoding: "utf8" }), crlfDelay: Infinity });
+  const input = createInterface({
+    input: createReadStream(resolve(path), { encoding: "utf8" }),
+    crlfDelay: Infinity,
+  });
   for await (const rawLine of input) {
     const line = rawLine.trim();
     if (!line || line.startsWith("#")) continue;
@@ -197,7 +207,8 @@ function parseGeoNamesRow(line, enrichments, sourceVersion) {
   const province = enrichments.admin2.get(provinceKey) ?? null;
   const alternateNames = compactAlternateNames(alternateNamesRaw);
   const populationNumber = Number(populationRaw);
-  const population = Number.isSafeInteger(populationNumber) && populationNumber >= 0 ? populationNumber : null;
+  const population =
+    Number.isSafeInteger(populationNumber) && populationNumber >= 0 ? populationNumber : null;
   const lat = Number(latitude);
   const lng = Number(longitude);
   const countryName = enrichments.countries.get(country) ?? null;
@@ -356,7 +367,9 @@ async function main() {
     loadCountries(options.countryInfo),
   ]);
   const enrichments = { admin1, admin2, countries };
-  console.log(`Loaded enrichment maps: admin1=${admin1.size}, admin2=${admin2.size}, countries=${countries.size}`);
+  console.log(
+    `Loaded enrichment maps: admin1=${admin1.size}, admin2=${admin2.size}, countries=${countries.size}`,
+  );
 
   const prisma = options.dryRun ? null : new PrismaClient();
   let parsed = 0;
@@ -388,7 +401,8 @@ async function main() {
         if (prisma) await upsertBatch(prisma, batch);
         written += batch.length;
         batch = [];
-        if (written % 10_000 === 0) console.log(`Processed ${written.toLocaleString("en-US")} places...`);
+        if (written % 10_000 === 0)
+          console.log(`Processed ${written.toLocaleString("en-US")} places...`);
       }
     }
 

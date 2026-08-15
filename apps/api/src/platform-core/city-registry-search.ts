@@ -15,7 +15,10 @@ export function cityRegistryMatchRank(
   const normalizedName = normalizeCityRegistryQuery(entry.name);
   const normalizedAsciiName = normalizeCityRegistryQuery(entry.asciiName ?? "");
   if (normalizedName === normalizedQuery || normalizedAsciiName === normalizedQuery) return 0;
-  if (normalizedName.startsWith(normalizedQuery) || normalizedAsciiName.startsWith(normalizedQuery)) {
+  if (
+    normalizedName.startsWith(normalizedQuery) ||
+    normalizedAsciiName.startsWith(normalizedQuery)
+  ) {
     return 1;
   }
   return 2;

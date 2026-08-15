@@ -423,7 +423,9 @@ export default async function AdminCitiesPage({ searchParams }: CitiesPageProps)
                 tabIndex={0}
               >
                 <table className="data-table">
-                  <caption className="visually-hidden">Località del registro territoriale globale</caption>
+                  <caption className="visually-hidden">
+                    Località del registro territoriale globale
+                  </caption>
                   <thead>
                     <tr>
                       <th>Località</th>
