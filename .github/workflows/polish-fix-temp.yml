@@ -93,13 +93,6 @@ jobs:
               'expect(publicInquirySchema.safeParse({ ...valid, name: "<b>Mario</b>" }).success).toBe(false);\n',
               'expect(publicInquirySchema.safeParse({ ...valid, name: "<b>Mario</b>" }).success).toBe(false);\n    expect(publicInquirySchema.safeParse({ ...valid, phone: "<b>333</b>" }).success).toBe(false);\n'
           )
-
-          workflow = '.github/workflows/platform-quality.yml'
-          replace(
-              workflow,
-              '      - name: Unit tests\n        run: npm test\n\n      - name: Lint\n',
-              '      - name: API unit tests\n        run: npm test\n\n      - name: Web unit tests\n        run: npm --workspace @platform/web run test\n\n      - name: Lint\n'
-          )
           PY
 
       - name: Format changed files
@@ -118,7 +111,6 @@ jobs:
           apps/web/src/lib/public-directory-query.test.ts
           apps/web/src/components/public-home/city-business-directory.tsx
           apps/web/src/components/public-business/business-opening-status.tsx
-          .github/workflows/platform-quality.yml
 
       - name: Commit fixes
         run: |
