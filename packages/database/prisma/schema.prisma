@@ -245,6 +245,7 @@ model City {
   createdAt            DateTime         @default(now()) @map("created_at")
   updatedAt            DateTime         @updatedAt @map("updated_at")
 
+  @@unique([registryId], map: "cities_registry_id_key")
   @@index([status, active], map: "cities_status_active_idx")
   @@index([sortOrder], map: "cities_sort_order_idx")
   @@index([publishedAt], map: "cities_published_at_idx")
@@ -296,7 +297,7 @@ model PlatformModule {
   publicEnabled Boolean    @default(true) @map("public_enabled")
   adminEnabled  Boolean    @default(true) @map("admin_enabled")
   sortOrder     Int        @default(0) @map("sort_order")
-  settingsJson  Json?      @map("settings_json")
+  settingsJson Json?      @map("settings_json")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
