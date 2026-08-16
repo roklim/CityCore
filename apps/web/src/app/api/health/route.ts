@@ -57,13 +57,13 @@ async function checkApiDeployment() {
     const healthData = (await healthResponse.json()) as BackendHealthResponse;
     const lookupRoutesAvailable = Boolean(
       indexData.routes?.cityLookups &&
-        indexData.routes?.businessLookups &&
-        indexData.routes?.cityRegistryLookups,
+      indexData.routes?.businessLookups &&
+      indexData.routes?.cityRegistryLookups,
     );
     const dependenciesHealthy = Boolean(
       healthData.dependencies?.database?.status === "ok" &&
-        healthData.dependencies?.redis?.status === "ok" &&
-        healthData.dependencies?.auth?.status === "ok",
+      healthData.dependencies?.redis?.status === "ok" &&
+      healthData.dependencies?.auth?.status === "ok",
     );
     const healthy =
       indexResponse.ok &&
