@@ -37,15 +37,11 @@
 }
 
 .premium-dashboard-focus.needs-attention {
-  background:
-    radial-gradient(circle at 82% 22%, rgba(232, 106, 74, 0.3), transparent 31%),
-    #1f201f;
+  background: radial-gradient(circle at 82% 22%, rgba(232, 106, 74, 0.3), transparent 31%), #1f201f;
 }
 
 .premium-dashboard-focus.is-clear {
-  background:
-    radial-gradient(circle at 82% 22%, rgba(79, 154, 114, 0.2), transparent 31%),
-    #1f201f;
+  background: radial-gradient(circle at 82% 22%, rgba(79, 154, 114, 0.2), transparent 31%), #1f201f;
 }
 
 .premium-dashboard-focus .section-label {

@@ -191,7 +191,7 @@ export default async function BusinessDashboard({ params, searchParams }: Busine
           </div>
 
           <div className="premium-business-health-signal" data-ready={isReady || undefined}>
-            <span aria-hidden="true">{isReady ? "✓" : missingCount ?? "—"}</span>
+            <span aria-hidden="true">{isReady ? "✓" : (missingCount ?? "—")}</span>
             <div>
               <strong>
                 {isReady
@@ -244,7 +244,9 @@ export default async function BusinessDashboard({ params, searchParams }: Busine
         <dl className="premium-business-facts" aria-label="Indicatori operativi dell'attività">
           <div>
             <dt>Visibilità</dt>
-            <dd>{isPublic ? "Online" : business.status === "active" ? "In attesa città" : "Offline"}</dd>
+            <dd>
+              {isPublic ? "Online" : business.status === "active" ? "In attesa città" : "Offline"}
+            </dd>
           </div>
           <div>
             <dt>Servizi</dt>

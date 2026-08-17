@@ -134,7 +134,9 @@ export default async function AdminPage() {
       ) : null}
 
       <section className="premium-dashboard-overview" aria-labelledby="platform-focus-title">
-        <article className={`premium-dashboard-focus${hasDrafts ? " needs-attention" : " is-clear"}`}>
+        <article
+          className={`premium-dashboard-focus${hasDrafts ? " needs-attention" : " is-clear"}`}
+        >
           <div className="premium-dashboard-focus-copy">
             <p className="section-label">Priorità operativa</p>
             <h2 id="platform-focus-title">
@@ -161,7 +163,10 @@ export default async function AdminPage() {
           </div>
         </article>
 
-        <dl className="premium-dashboard-metrics" aria-label="Indicatori principali della piattaforma">
+        <dl
+          className="premium-dashboard-metrics"
+          aria-label="Indicatori principali della piattaforma"
+        >
           {metrics.map((metric) => (
             <div key={metric.label}>
               <dt>{metric.label}</dt>
