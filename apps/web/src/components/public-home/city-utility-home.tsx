@@ -11,7 +11,8 @@ import styles from "./city-showcase.module.css";
 
 export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData }) {
   const { city, degraded, live } = surface;
-  const activityLabel = city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
+  const activityLabel =
+    city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
   const heroDescription =
     city.publicHeroDescription ??
     "Attività, servizi e luoghi utili raccolti in uno spazio semplice da esplorare.";
@@ -66,7 +67,10 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
         </nav>
       }
       heroAside={
-        <div className={styles.heroVisual} aria-label="Racconto visivo dimostrativo della città">
+        <div
+          className={styles.heroVisual}
+          aria-label="Racconto visivo dimostrativo della città"
+        >
           <div
             className={styles.heroPrimary}
             role="img"
@@ -160,7 +164,9 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
                       className={styles.featuredVisual}
                       role="img"
                       aria-label={`${demoVisualLabel} per ${business.name}`}
-                      style={{ backgroundImage: `url("${getDemoBusinessVisual(business, index)}")` }}
+                      style={{
+                        backgroundImage: `url("${getDemoBusinessVisual(business, index)}")`,
+                      }}
                     >
                       <span className={styles.demoBadge}>{demoVisualLabel}</span>
                     </div>
