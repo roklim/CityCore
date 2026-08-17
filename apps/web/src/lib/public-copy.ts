@@ -7,6 +7,18 @@ function capitalizeSentence(value: string) {
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
 
+function getBusinessNameAliases(businessName: string) {
+  const normalizedName = normalizePublicCopy(businessName);
+  const aliases = new Set([normalizedName]);
+
+  for (const separator of [" · ", " | ", " — "]) {
+    const [primaryName] = normalizedName.split(separator);
+    if (primaryName?.trim()) aliases.add(primaryName.trim());
+  }
+
+  return Array.from(aliases).sort((left, right) => right.length - left.length);
+}
+
 export function getContextualBusinessSummary(
   summary: string,
   businessName: string,
@@ -15,12 +27,12 @@ export function getContextualBusinessSummary(
   const value = normalizePublicCopy(summary);
   if (!value) return value;
 
-  const prefixes = [
-    `Scopri ${businessName} a ${cityName}:`,
-    `Scopri ${businessName}:`,
-    `${businessName} a ${cityName}:`,
-    `${businessName}:`,
-  ];
+  const prefixes = getBusinessNameAliases(businessName).flatMap((name) => [
+    `Scopri ${name} a ${cityName}:`,
+    `Scopri ${name}:`,
+    `${name} a ${cityName}:`,
+    `${name}:`,
+  ]);
 
   const normalizedValue = value.toLocaleLowerCase("it-IT");
   const matchingPrefix = prefixes.find((prefix) =>
