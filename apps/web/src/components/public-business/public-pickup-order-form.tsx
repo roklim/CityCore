@@ -13,6 +13,7 @@ import {
   type PublicPickupFieldErrors,
   type PublicPickupFormValues,
 } from "../../lib/public-form-validation";
+import orderStyles from "./public-pickup-order.module.css";
 
 const initialValues: PublicPickupFormValues = {
   name: "",
@@ -216,8 +217,12 @@ export function PublicPickupOrderForm({
   }
 
   return (
-    <section className="public-pickup-order" id="order" aria-labelledby="pickup-order-title">
-      <div className="section-header public-form-header public-order-heading">
+    <section
+      className={`public-pickup-order ${orderStyles.orderRoot}`}
+      id="order"
+      aria-labelledby="pickup-order-title"
+    >
+      <div className={`section-header public-form-header ${orderStyles.heading}`}>
         <div>
           <p className="section-label">{demoMode ? "Menu dimostrativo" : "Ordina online"}</p>
           <h2 id="pickup-order-title">Componi il tuo ordine</h2>
@@ -229,7 +234,7 @@ export function PublicPickupOrderForm({
       </div>
 
       {demoMode ? (
-        <p className="public-order-demo-note">
+        <p className={orderStyles.demoNote}>
           Demo CityCore: prodotti, prezzi e disponibilità di questo menu sono dimostrativi e servono
           a simulare il flusso completo di ordinazione.
         </p>
@@ -246,15 +251,15 @@ export function PublicPickupOrderForm({
           aria-describedby={errors.items ? "order-items-error" : undefined}
         >
           <legend>1. Scegli dal menu</legend>
-          <div className="public-order-menu-grid">
+          <div className={orderStyles.menuGrid}>
             {items.map((item, index) => {
               const quantity = cart[item.id] ?? 0;
               return (
                 <article
-                  className={`public-order-menu-item${quantity ? " is-selected" : ""}`}
+                  className={`public-order-menu-item ${orderStyles.menuItem}${quantity ? ` ${orderStyles.selected}` : ""}`}
                   key={item.id}
                 >
-                  <div className="public-order-menu-copy">
+                  <div className={orderStyles.menuCopy}>
                     <h3>{item.name}</h3>
                     {item.shortDescription ? <p>{item.shortDescription}</p> : null}
                     <strong>{formatPrice(item.priceCents, currency)}</strong>
@@ -301,13 +306,13 @@ export function PublicPickupOrderForm({
         </fieldset>
 
         {!hasItems ? (
-          <div className="public-order-empty" aria-live="polite">
+          <div className={orderStyles.empty} aria-live="polite">
             <strong>Inizia dal menu</strong>
             <span>Aggiungi almeno un prodotto per scegliere ritiro e recapiti.</span>
           </div>
         ) : (
           <>
-            <div className="public-order-cart-summary" aria-live="polite">
+            <div className={orderStyles.cartSummary} aria-live="polite">
               <div>
                 <span>
                   {itemCount} {itemCount === 1 ? "prodotto" : "prodotti"}
@@ -320,7 +325,9 @@ export function PublicPickupOrderForm({
               <button
                 type="button"
                 className="cta-button"
-                onClick={() => pickupStepRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                onClick={() =>
+                  pickupStepRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
               >
                 Scegli il ritiro
               </button>
@@ -506,7 +513,7 @@ export function PublicPickupOrderForm({
               autoComplete="off"
               aria-hidden="true"
             />
-            <div className="public-form-actions public-order-submit-row">
+            <div className={`public-form-actions ${orderStyles.submitRow}`}>
               <p className="public-order-total" id="order-total">
                 Totale <strong>{formatPrice(totalCents, currency)}</strong>
                 {minimumOrderCents
