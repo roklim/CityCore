@@ -26,6 +26,17 @@ type BusinessDashboardProps = {
   searchParams: Promise<{ notice?: string; error?: string }>;
 };
 
+const commandMarks = {
+  profile: "PR",
+  categories: "CA",
+  services: "SE",
+  hours: "OR",
+  publication: "PU",
+  inquiries: "RI",
+  modules: "MO",
+  orders: "OD",
+} as const;
+
 export default async function BusinessDashboard({ params, searchParams }: BusinessDashboardProps) {
   const { citySlug, businessSlug } = await params;
   const feedback = await searchParams;
@@ -79,6 +90,26 @@ export default async function BusinessDashboard({ params, searchParams }: Busine
     business.template.primaryModule;
   const inquirySummary =
     newInquiries?.data && readInquiries?.data ? `${openInquiryCount} aperte` : "Apri l’inbox";
+  const missingCount = readiness.data?.item.missingRequirements.length ?? null;
+  const isReady = readiness.data?.item.canPublish ?? false;
+  const readinessLabel = readiness.data ? readinessSummary(readiness.data.item) : "Non disponibile";
+  const nextStepTitle = nextAction
+    ? nextAction.label
+    : isPublic
+      ? "Attività online"
+      : business.status === "active"
+        ? "Attendi la pubblicazione della città"
+        : "Pubblica l'attività";
+  const nextStepDescription = nextAction
+    ? canCompleteNextAction
+      ? "CityCore ha individuato il primo requisito da completare. Salva i dati e torna qui per continuare."
+      : "Il requisito richiede un ruolo con permessi di gestione. Puoi consultare i dati e segnalarlo all'amministratore."
+    : isPublic
+      ? "La scheda è pubblica e può ricevere richieste dagli utenti."
+      : business.status === "active"
+        ? "La scheda è pronta, ma sarà visibile solo quando la città sarà pubblica."
+        : "La checklist è completa: controlla il riepilogo e pubblica la scheda.";
+
   const quickActions = [
     {
       segment: "profile" as const,
@@ -149,115 +180,120 @@ export default async function BusinessDashboard({ params, searchParams }: Busine
         />
       ) : null}
 
-      <section aria-labelledby="business-overview-title">
-        <div className="section-header">
-          <p className="section-label">Stato corrente</p>
-          <h2 id="business-overview-title">Panoramica operativa</h2>
-        </div>
-        <div className="stats-grid business-dashboard-stats">
-          <article className="metric-card">
-            <span>Stato</span>
+      <section className="premium-business-health" aria-labelledby="business-health-title">
+        <div className="premium-business-health-main">
+          <div className="premium-business-health-heading">
+            <div>
+              <p className="section-label">Business health</p>
+              <h2 id="business-health-title">{readinessLabel}</h2>
+            </div>
             <AdminStatusBadge status={business.status} />
-            <p>
-              {isPublic
-                ? "Visibile nella directory"
-                : business.status === "active"
-                  ? "Città non pubblica"
-                  : "Non pubblicata"}
-            </p>
-          </article>
-          <article className="metric-card">
-            <span>Readiness</span>
-            <strong>{readiness.data ? readinessSummary(readiness.data.item) : "—"}</strong>
-            <p>{readiness.data?.item.missingRequirements.length ?? 0} requisiti mancanti</p>
-          </article>
-          <article className="metric-card">
-            <span>Servizi</span>
-            <strong>{services.data?.items.length ?? "—"}</strong>
-            <p>Voci configurate</p>
-          </article>
-          <article className="metric-card">
-            <span>Richieste aperte</span>
-            <strong>
+          </div>
+
+          <div className="premium-business-health-signal" data-ready={isReady || undefined}>
+            <span aria-hidden="true">{isReady ? "✓" : (missingCount ?? "—")}</span>
+            <div>
+              <strong>
+                {isReady
+                  ? "Configurazione pronta"
+                  : missingCount === null
+                    ? "Stato non disponibile"
+                    : `${missingCount} ${missingCount === 1 ? "requisito mancante" : "requisiti mancanti"}`}
+              </strong>
+              <p>
+                {isPublic
+                  ? "La scheda è visibile nella directory cittadina."
+                  : isReady
+                    ? "La configurazione è completa e può passare alla pubblicazione."
+                    : "Completa il requisito prioritario per avvicinare la scheda alla pubblicazione."}
+              </p>
+            </div>
+          </div>
+
+          <div className="premium-business-next-step">
+            <div>
+              <span>Prossima azione</span>
+              <strong>{nextStepTitle}</strong>
+              <p>{nextStepDescription}</p>
+            </div>
+            {nextAction?.href && canCompleteNextAction ? (
+              <Link className="admin-button form-button" href={nextAction.href}>
+                {nextAction.label} →
+              </Link>
+            ) : nextAction ? (
+              <span className="admin-muted-label">
+                {canCompleteNextAction
+                  ? nextAction.label
+                  : "Serve un amministratore con permessi di gestione"}
+              </span>
+            ) : (
+              <Link
+                className="admin-button form-button"
+                href={
+                  isPublic
+                    ? `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`
+                    : publicationPath
+                }
+              >
+                {isPublic ? "Apri pagina pubblica" : "Vai alla pubblicazione"} →
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <dl className="premium-business-facts" aria-label="Indicatori operativi dell'attività">
+          <div>
+            <dt>Visibilità</dt>
+            <dd>
+              {isPublic ? "Online" : business.status === "active" ? "In attesa città" : "Offline"}
+            </dd>
+          </div>
+          <div>
+            <dt>Servizi</dt>
+            <dd>{services.data?.items.length ?? "—"}</dd>
+          </div>
+          <div>
+            <dt>Richieste aperte</dt>
+            <dd>
               {canManageBusiness && newInquiries?.data && readInquiries?.data
                 ? openInquiryCount
                 : "—"}
-            </strong>
-            <p>{canManageBusiness ? "Nuove o lette" : "Non disponibile per questo ruolo"}</p>
-          </article>
-          <article className="metric-card">
-            <span>Modulo principale</span>
-            <strong>{primaryModuleLabel}</strong>
-            <p>{business.template.name}</p>
-          </article>
-        </div>
+            </dd>
+          </div>
+          <div>
+            <dt>Modulo primario</dt>
+            <dd>{primaryModuleLabel}</dd>
+          </div>
+        </dl>
       </section>
 
-      {readiness.data ? (
-        <section className="admin-state-card" aria-labelledby="next-step-title">
+      <section className="premium-dashboard-section" aria-labelledby="business-workspace-title">
+        <div className="section-header premium-dashboard-heading">
           <div>
-            <p className="section-label">Prossimo passaggio</p>
-            <h2 id="next-step-title">
-              {nextAction
-                ? nextAction.label
-                : isPublic
-                  ? "Attività online"
-                  : business.status === "active"
-                    ? "Attendi la pubblicazione della città"
-                    : "Pubblica l'attività"}
-            </h2>
+            <p className="section-label">Workspace</p>
+            <h2 id="business-workspace-title">Gestisci {business.name}</h2>
           </div>
-          <p>
-            {nextAction
-              ? canCompleteNextAction
-                ? "CityCore ha individuato il primo requisito da completare. Salva i dati e torna qui per continuare."
-                : "Il requisito richiede un ruolo con permessi di gestione. Puoi consultare i dati e segnalarlo all’amministratore."
-              : isPublic
-                ? "La scheda è pubblica e può ricevere richieste dagli utenti."
-                : business.status === "active"
-                  ? "La scheda è pronta, ma sarà visibile solo quando la città sarà pubblica."
-                  : "La checklist è completa: controlla il riepilogo e pubblica la scheda."}
-          </p>
-          {nextAction?.href && canCompleteNextAction ? (
-            <Link className="admin-button form-button" href={nextAction.href}>
-              {nextAction.label} →
-            </Link>
-          ) : nextAction ? (
-            <span className="admin-muted-label">
-              {canCompleteNextAction
-                ? nextAction.label
-                : "Serve un amministratore con permessi di gestione"}
-            </span>
-          ) : (
-            <Link
-              className="admin-button form-button"
-              href={
-                isPublic
-                  ? `/${encodeURIComponent(citySlug)}/${encodeURIComponent(businessSlug)}`
-                  : publicationPath
-              }
-            >
-              {isPublic ? "Apri pagina pubblica" : "Vai alla pubblicazione"} →
-            </Link>
-          )}
-        </section>
-      ) : null}
-
-      <section aria-labelledby="business-quick-title">
-        <div className="section-header">
-          <p className="section-label">Aree di lavoro</p>
-          <h2 id="business-quick-title">Scegli dove continuare</h2>
+          <p>Apri direttamente l'area che serve, senza perdere il contesto dell'attività.</p>
         </div>
-        <div className="admin-quick-grid business-quick-grid">
+
+        <div className="premium-command-grid premium-business-command-grid">
           {quickActions.map(({ segment, label, description }) => (
             <Link
-              className="admin-quick-card"
+              className="premium-command-card"
               href={businessAdminSectionPath(citySlug, businessSlug, segment)}
               key={segment}
             >
-              <span>{business.name}</span>
-              <strong>{label}</strong>
-              <p>{description}</p>
+              <span className="premium-command-mark" aria-hidden="true">
+                {commandMarks[segment]}
+              </span>
+              <span className="premium-command-copy">
+                <small>{business.name}</small>
+                <strong>{label}</strong>
+                <span>{description}</span>
+              </span>
+              <span className="premium-command-arrow" aria-hidden="true">
+                →
+              </span>
             </Link>
           ))}
         </div>

@@ -3,6 +3,12 @@ import type { CSSProperties, ReactNode } from "react";
 import { createCssVariables } from "@platform/ui";
 import { resolvePublicSiteUrl } from "../lib/public-links";
 import "./globals.css";
+import "./premium.css";
+import "./public-showcase.css";
+import "./operator-workspace.css";
+import "./dashboard-premium.css";
+import "./resource-manager-premium.css";
+import "./business-editor-premium.css";
 
 const metadataBase = resolvePublicSiteUrl(
   process.env.NEXT_PUBLIC_SITE_URL,

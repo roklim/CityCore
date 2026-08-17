@@ -16,13 +16,13 @@ function SubmitButton() {
   return (
     <button
       aria-busy={pending}
-      className="admin-button form-button"
+      className="admin-button form-button selector-submit"
       data-pending={pending || undefined}
       type="submit"
       disabled={pending}
     >
       <span aria-live="polite">
-        {pending ? "Apertura in corso…" : "Continua con l'accesso selezionato"}
+        {pending ? "Apertura workspace…" : "Apri il workspace selezionato"}
       </span>
     </button>
   );
@@ -34,10 +34,26 @@ function describeAccess(access: AuthAccess) {
   }
 
   if (access.scopeType === "city") {
-    return `Ambito città: ${access.city?.name ?? "città non disponibile"}.`;
+    return `Amministra ${access.city?.name ?? "la città assegnata"} e le attività del suo ambito.`;
   }
 
-  return `Ambito attività: ${access.business?.name ?? "attività non disponibile"}.`;
+  return `Lavora su ${access.business?.name ?? "l'attività assegnata"} nel relativo spazio operativo.`;
+}
+
+function accessContext(access: AuthAccess) {
+  if (access.scopeType === "platform") return "CityCore network";
+  if (access.scopeType === "city") return access.city?.name ?? "Città";
+  return access.business?.name ?? "Attività";
+}
+
+function accessMark(access: AuthAccess) {
+  if (access.scopeType === "platform") return "CC";
+  return accessContext(access)
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }
 
 function ErrorBanner({ state }: { state: AdminAuthActionState }) {
@@ -76,7 +92,7 @@ export function AccessSelector({
           return (
             <label
               aria-current={isCurrent ? "true" : undefined}
-              className="selector-item"
+              className={`selector-item${isCurrent ? " is-current" : ""}`}
               key={access.id}
             >
               <input
@@ -87,23 +103,34 @@ export function AccessSelector({
                 type="radio"
                 value={access.id}
               />
+              <span className="selector-mark" aria-hidden="true">
+                {accessMark(access)}
+              </span>
               <div className="selector-copy">
+                <span className="selector-context">{accessContext(access)}</span>
                 <strong>{adminRoleLabel(access.role)}</strong>
                 <p id={descriptionId}>{describeAccess(access)}</p>
                 <div className="pill-row">
-                  {isCurrent ? <span className="pill">Accesso in uso</span> : null}
+                  {isCurrent ? <span className="pill">In uso</span> : null}
                   <span className="pill">{adminScopeLabel(access.scopeType)}</span>
-                  {access.city ? <span className="pill">{access.city.name}</span> : null}
-                  {access.business ? <span className="pill">{access.business.name}</span> : null}
+                  {access.city && access.scopeType === "business" ? (
+                    <span className="pill">{access.city.name}</span>
+                  ) : null}
                 </div>
               </div>
+              <span className="selector-check" aria-hidden="true">
+                ✓
+              </span>
             </label>
           );
         })}
       </div>
 
       <ErrorBanner state={state} />
-      <SubmitButton />
+      <div className="selector-footer">
+        <p>La selezione cambia il contesto operativo, non i permessi assegnati al tuo account.</p>
+        <SubmitButton />
+      </div>
     </form>
   );
 }

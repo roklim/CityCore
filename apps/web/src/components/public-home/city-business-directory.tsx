@@ -16,25 +16,48 @@ import {
 } from "../../lib/public-directory-query";
 import styles from "./context-gateway.module.css";
 
+function initials(value: string) {
+  return value
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
 function BusinessCard({ business }: { business: PublicCityBusinessCard }) {
   const categories = getPublicBusinessCategories(business);
+  const categoryLabel =
+    categories.map((category) => category.label).join(" · ") || business.categoryLabel;
+
   return (
     <article className={`${styles.directoryCard} public-business-card`}>
-      <p className={`${styles.sectionKicker} public-business-card-category`}>
-        {categories.map((category) => category.label).join(" · ") || business.categoryLabel}
-      </p>
+      <div className="public-business-card-head">
+        <span className="public-business-card-monogram" aria-hidden="true">
+          {initials(business.name)}
+        </span>
+        <div>
+          <p className={`${styles.sectionKicker} public-business-card-category`}>{categoryLabel}</p>
+          {business.area ? (
+            <p className={`${styles.directoryMeta} public-business-card-meta`}>{business.area}</p>
+          ) : null}
+        </div>
+      </div>
       <h3 className="public-business-card-title">{business.name}</h3>
-      {business.area ? (
-        <p className={`${styles.directoryMeta} public-business-card-meta`}>{business.area}</p>
-      ) : null}
       <p className="public-business-card-description">{business.summary}</p>
       {business.services.length ? (
-        <p className={`${styles.directoryServices} public-business-card-services`}>
-          <strong>Servizi:</strong> {business.services.slice(0, 3).join(" · ")}
-        </p>
+        <ul className="public-business-card-service-list" aria-label="Servizi in evidenza">
+          {business.services.slice(0, 3).map((service) => (
+            <li key={service}>{service}</li>
+          ))}
+        </ul>
       ) : null}
-      <Link className={`${styles.directoryLink} public-business-card-link`} href={business.href}>
-        <span>Scopri {business.name}</span> <span aria-hidden="true">→</span>
+      <Link
+        aria-label={`Apri la scheda di ${business.name}`}
+        className={`${styles.directoryLink} public-business-card-link`}
+        href={business.href}
+      >
+        <span>Apri la scheda</span> <span aria-hidden="true">→</span>
       </Link>
     </article>
   );
@@ -115,8 +138,8 @@ export function CityBusinessDirectory({
     >
       <div className={`${styles.sectionHeader} public-directory-header`}>
         <div>
-          <p className={styles.sectionKicker}>Attività locali</p>
-          <h2 id="city-directory-title">Trova quello che cerchi</h2>
+          <p className={styles.sectionKicker}>Directory locale</p>
+          <h2 id="city-directory-title">Scopri cosa c'è in città</h2>
         </div>
         <span
           className={`${styles.directoryCount} public-directory-count`}
@@ -135,68 +158,72 @@ export function CityBusinessDirectory({
         </p>
       ) : null}
 
-      <div className={`${styles.searchShell} ${styles.directorySearch} public-directory-search`}>
-        <label className={styles.srOnly} htmlFor="city-business-search">
-          Cerca tra le attività a {cityName}
-        </label>
-        <span className={styles.searchIcon} aria-hidden="true" />
-        <input
-          className={styles.searchInput}
-          aria-controls="city-business-results"
-          aria-describedby="city-directory-count"
-          id="city-business-search"
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Cerca per nome, servizio o zona"
-          ref={searchInputRef}
-          type="search"
-          value={query}
-        />
-        {hasQuery ? (
-          <button
-            className={`${styles.clearSearchButton} public-directory-clear`}
-            onClick={() => {
-              setQuery("");
-              updateUrl({ query: "", category: activeSection }, "replace");
-              searchInputRef.current?.focus();
-            }}
-            type="button"
-          >
-            Cancella
-          </button>
-        ) : null}
-      </div>
-
-      {hasCategorySections ? (
-        <div
-          className={`${styles.directoryFilters} public-directory-filters`}
-          aria-label="Filtra per categoria"
-          role="group"
-        >
-          <button
-            aria-pressed={activeSection === "all"}
-            className={`${
-              activeSection === "all" ? styles.directoryFilterActive : styles.directoryFilter
-            } public-directory-filter${activeSection === "all" ? " is-active" : ""}`}
-            onClick={() => selectCategory("all")}
-            type="button"
-          >
-            Tutte le attività <span>{businesses.length}</span>
-          </button>
-          {sections.map((section) => (
+      <div className="public-directory-commandbar">
+        <div className={`${styles.searchShell} ${styles.directorySearch} public-directory-search`}>
+          <label className={styles.srOnly} htmlFor="city-business-search">
+            Cerca tra le attività a {cityName}
+          </label>
+          <span className={styles.searchIcon} aria-hidden="true" />
+          <input
+            className={styles.searchInput}
+            aria-controls="city-business-results"
+            aria-describedby="city-directory-count"
+            id="city-business-search"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Cerca per nome, servizio o zona"
+            ref={searchInputRef}
+            type="search"
+            value={query}
+          />
+          {hasQuery ? (
             <button
-              aria-pressed={activeSection === section.id}
-              className={`${
-                activeSection === section.id ? styles.directoryFilterActive : styles.directoryFilter
-              } public-directory-filter${activeSection === section.id ? " is-active" : ""}`}
-              key={section.id}
-              onClick={() => selectCategory(section.id)}
+              className={`${styles.clearSearchButton} public-directory-clear`}
+              onClick={() => {
+                setQuery("");
+                updateUrl({ query: "", category: activeSection }, "replace");
+                searchInputRef.current?.focus();
+              }}
               type="button"
             >
-              {section.label} <span>{section.businesses.length}</span>
+              Cancella
             </button>
-          ))}
+          ) : null}
         </div>
-      ) : null}
+
+        {hasCategorySections ? (
+          <div
+            className={`${styles.directoryFilters} public-directory-filters`}
+            aria-label="Filtra per categoria"
+            role="group"
+          >
+            <button
+              aria-pressed={activeSection === "all"}
+              className={`${
+                activeSection === "all" ? styles.directoryFilterActive : styles.directoryFilter
+              } public-directory-filter${activeSection === "all" ? " is-active" : ""}`}
+              onClick={() => selectCategory("all")}
+              type="button"
+            >
+              Tutte <span>{businesses.length}</span>
+            </button>
+            {sections.map((section) => (
+              <button
+                aria-pressed={activeSection === section.id}
+                className={`${
+                  activeSection === section.id
+                    ? styles.directoryFilterActive
+                    : styles.directoryFilter
+                } public-directory-filter${activeSection === section.id ? " is-active" : ""}`}
+                key={section.id}
+                onClick={() => selectCategory(section.id)}
+                type="button"
+              >
+                {section.label} <span>{section.businesses.length}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       {visibleBusinesses.length ? (
         <div className={`${styles.directoryGrid} public-directory-grid`} id="city-business-results">
