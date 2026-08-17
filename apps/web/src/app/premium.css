@@ -27,10 +27,11 @@
   --cc-duration-fast: 160ms;
   --cc-duration-medium: 240ms;
   --cc-ease: cubic-bezier(0.2, 0.75, 0.2, 1);
-  --cc-font-sans: "Segoe UI Variable", "SF Pro Text", "SF Pro Display", -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --cc-font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino,
-    Georgia, serif;
+  --cc-font-sans:
+    "Segoe UI Variable", "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Helvetica, Arial, sans-serif;
+  --cc-font-display:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
   --cc-font-mono: "SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono", monospace;
   --font-geist-sans: var(--cc-font-sans);
   --font-geist-mono: var(--cc-font-mono);
@@ -46,7 +47,10 @@ body {
     var(--cc-canvas);
   color: var(--cc-text);
   font-family: var(--cc-font-sans);
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
