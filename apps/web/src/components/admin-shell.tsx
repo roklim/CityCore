@@ -60,17 +60,22 @@ export function AdminShell({
   );
 
   return (
-    <div className="app-shell">
+    <div className="app-shell operator-workspace">
       <header className="app-topbar">
-        <Link className="operator-brand" href={brandHref} aria-label="CityCore, area operatori">
-          <span className="operator-brand-wordmark">
-            CityCore
-            <span className="operator-brand-accent" aria-hidden="true">
-              .
+        <div className="operator-brand-cluster">
+          <Link className="operator-brand" href={brandHref} aria-label="CityCore, area operatori">
+            <span className="operator-brand-wordmark">
+              CityCore
+              <span className="operator-brand-accent" aria-hidden="true">
+                .
+              </span>
             </span>
+            <span className="operator-brand-context">{brandContext}</span>
+          </Link>
+          <span className="operator-topbar-section" aria-hidden="true">
+            {currentNavigationItem?.label ?? title}
           </span>
-          <span className="operator-brand-context">{brandContext}</span>
-        </Link>
+        </div>
 
         <div className="topbar-meta">
           <span className="meta-chip operator-role-chip">
@@ -99,7 +104,7 @@ export function AdminShell({
       <div className="shell-layout">
         <aside className="shell-rail" aria-label="Navigazione area operatori">
           <section className="rail-block shell-navigation-panel">
-            <p className="rail-label">Navigazione</p>
+            <p className="rail-label">Workspace</p>
             {renderNavigation("Sezioni area operatori")}
           </section>
 
