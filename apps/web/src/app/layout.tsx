@@ -6,6 +6,7 @@ import "./globals.css";
 import "./premium.css";
 import "./public-showcase.css";
 import "./operator-workspace.css";
+import "./dashboard-premium.css";
 
 const metadataBase = resolvePublicSiteUrl(
   process.env.NEXT_PUBLIC_SITE_URL,
