@@ -108,7 +108,7 @@ export function PublicInquiryForm({
       aria-labelledby="public-inquiry-title"
       aria-describedby="public-inquiry-description"
       className="public-inquiry-form public-contact-form"
-      id="contact"
+      id="inquiry-form"
       onSubmit={submit}
       noValidate
     >

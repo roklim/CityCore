@@ -92,7 +92,7 @@ export function GlobalEntryHome({
 
             <div className="public-home-art" aria-hidden="true">
               <div className="public-home-art-caption">
-                <span>CityCore network</span>
+                <span>Rete CityCore</span>
                 <strong>{cities.length || "—"}</strong>
                 <small>
                   {degraded

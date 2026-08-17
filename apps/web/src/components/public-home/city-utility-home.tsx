@@ -13,7 +13,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
 
   return (
     <PublicShell
-      toneLabel={live ? "CityCore city guide" : "Anteprima directory"}
+      toneLabel={live ? "Guida cittadina CityCore" : "Anteprima directory"}
       title={city.name}
       description={heroDescription}
       contextLabel={city.name}
