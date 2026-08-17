@@ -19,7 +19,7 @@ export function getPublicBusinessPrimaryAction({
   website: string | null;
 }): PublicBusinessPrimaryAction {
   if (inquiryAvailable) {
-    return { label: "Invia una richiesta", heading: "Invia una richiesta", href: "#contact" };
+    return { label: "Invia una richiesta", heading: "Invia una richiesta", href: "#inquiry-form" };
   }
 
   if (pickupOrderAvailable) {
