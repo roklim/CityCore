@@ -5,7 +5,7 @@ services:
     plan: free
     branch: main
     rootDir: .
-    buildCommand: npm ci --include=dev && npm run db:migrate:deploy && node tools/polish-thesis-demo.mjs && npm run build:api
+    buildCommand: npm ci --include=dev && npm run db:migrate:deploy && npm run build:api
     startCommand: npm --workspace @platform/api run start
     healthCheckPath: /health
     autoDeployTrigger: commit
