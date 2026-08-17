@@ -10,15 +10,15 @@ describe("getPublicBusinessPrimaryAction", () => {
     website: "https://example.org",
   };
 
-  it("keeps inquiry primary when optional pickup ordering is usable", () => {
+  it("prioritizes a usable pickup order over informational actions", () => {
     expect(getPublicBusinessPrimaryAction({ ...contacts, pickupOrderAvailable: true })).toEqual({
-      label: "Invia una richiesta",
-      heading: "Invia una richiesta",
-      href: "#inquiry-form",
+      label: "Ordina ora",
+      heading: "Ordina e ritira",
+      href: "#order",
     });
   });
 
-  it("uses the inquiry when ordering is unavailable too", () => {
+  it("uses inquiry when ordering is unavailable", () => {
     expect(getPublicBusinessPrimaryAction({ ...contacts, pickupOrderAvailable: false })).toEqual({
       label: "Invia una richiesta",
       heading: "Invia una richiesta",
@@ -35,7 +35,7 @@ describe("getPublicBusinessPrimaryAction", () => {
         emailHref: null,
         website: null,
       }),
-    ).toEqual({ label: "Ordina e ritira", heading: "Ordina per il ritiro", href: "#order" });
+    ).toEqual({ label: "Ordina ora", heading: "Ordina e ritira", href: "#order" });
     expect(
       getPublicBusinessPrimaryAction({
         pickupOrderAvailable: false,
