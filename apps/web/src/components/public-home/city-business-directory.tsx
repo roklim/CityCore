@@ -14,6 +14,11 @@ import {
   updatePublicDirectorySearchParams,
   type PublicDirectoryFilters,
 } from "../../lib/public-directory-query";
+import {
+  demoVisualLabel,
+  getDemoBusinessVisual,
+} from "./city-demo-visuals";
+import showcaseStyles from "./city-showcase.module.css";
 import styles from "./context-gateway.module.css";
 
 function initials(value: string) {
@@ -25,40 +30,53 @@ function initials(value: string) {
     .join("");
 }
 
-function BusinessCard({ business }: { business: PublicCityBusinessCard }) {
+function BusinessCard({ business, index }: { business: PublicCityBusinessCard; index: number }) {
   const categories = getPublicBusinessCategories(business);
   const categoryLabel =
     categories.map((category) => category.label).join(" · ") || business.categoryLabel;
 
   return (
     <article className={`${styles.directoryCard} public-business-card`}>
-      <div className="public-business-card-head">
-        <span className="public-business-card-monogram" aria-hidden="true">
-          {initials(business.name)}
-        </span>
-        <div>
-          <p className={`${styles.sectionKicker} public-business-card-category`}>{categoryLabel}</p>
-          {business.area ? (
-            <p className={`${styles.directoryMeta} public-business-card-meta`}>{business.area}</p>
-          ) : null}
-        </div>
-      </div>
-      <h3 className="public-business-card-title">{business.name}</h3>
-      <p className="public-business-card-description">{business.summary}</p>
-      {business.services.length ? (
-        <ul className="public-business-card-service-list" aria-label="Servizi in evidenza">
-          {business.services.slice(0, 3).map((service) => (
-            <li key={service}>{service}</li>
-          ))}
-        </ul>
-      ) : null}
-      <Link
-        aria-label={`Apri la scheda di ${business.name}`}
-        className={`${styles.directoryLink} public-business-card-link`}
-        href={business.href}
+      <div
+        className={showcaseStyles.directoryVisual}
+        role="img"
+        aria-label={`${demoVisualLabel} per ${business.name}`}
+        style={{ backgroundImage: `url("${getDemoBusinessVisual(business, index)}")` }}
       >
-        <span>Apri la scheda</span> <span aria-hidden="true">→</span>
-      </Link>
+        <span className={showcaseStyles.demoBadge}>{demoVisualLabel}</span>
+      </div>
+
+      <div className={showcaseStyles.directoryCardBody}>
+        <div className="public-business-card-head">
+          <span className="public-business-card-monogram" aria-hidden="true">
+            {initials(business.name)}
+          </span>
+          <div>
+            <p className={`${styles.sectionKicker} public-business-card-category`}>
+              {categoryLabel}
+            </p>
+            {business.locality ? (
+              <span className={showcaseStyles.directoryLocation}>{business.locality}</span>
+            ) : null}
+          </div>
+        </div>
+        <h3 className="public-business-card-title">{business.name}</h3>
+        <p className="public-business-card-description">{business.summary}</p>
+        {business.services.length ? (
+          <ul className="public-business-card-service-list" aria-label="Servizi in evidenza">
+            {business.services.slice(0, 3).map((service) => (
+              <li key={service}>{service}</li>
+            ))}
+          </ul>
+        ) : null}
+        <Link
+          aria-label={`Apri la scheda di ${business.name}`}
+          className={`${styles.directoryLink} public-business-card-link`}
+          href={business.href}
+        >
+          <span>Apri la scheda</span> <span aria-hidden="true">→</span>
+        </Link>
+      </div>
     </article>
   );
 }
@@ -138,8 +156,8 @@ export function CityBusinessDirectory({
     >
       <div className={`${styles.sectionHeader} public-directory-header`}>
         <div>
-          <p className={styles.sectionKicker}>Directory locale</p>
-          <h2 id="city-directory-title">Scopri cosa c'è in città</h2>
+          <p className={styles.sectionKicker}>Trova quello che ti serve</p>
+          <h2 id="city-directory-title">Attività e servizi</h2>
         </div>
         <span
           className={`${styles.directoryCount} public-directory-count`}
@@ -147,7 +165,7 @@ export function CityBusinessDirectory({
           aria-live="polite"
         >
           {visibleBusinesses.length}{" "}
-          {visibleBusinesses.length === 1 ? "attività trovata" : "attività trovate"}
+          {visibleBusinesses.length === 1 ? "risultato" : "risultati"}
         </span>
       </div>
 
@@ -170,7 +188,7 @@ export function CityBusinessDirectory({
             aria-describedby="city-directory-count"
             id="city-business-search"
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Cerca per nome, servizio o zona"
+            placeholder="Cerca per nome, servizio o categoria"
             ref={searchInputRef}
             type="search"
             value={query}
@@ -227,8 +245,8 @@ export function CityBusinessDirectory({
 
       {visibleBusinesses.length ? (
         <div className={`${styles.directoryGrid} public-directory-grid`} id="city-business-results">
-          {visibleBusinesses.map((business) => (
-            <BusinessCard business={business} key={business.slug} />
+          {visibleBusinesses.map((business, index) => (
+            <BusinessCard business={business} index={index} key={business.slug} />
           ))}
         </div>
       ) : hasQuery || activeSection !== "all" ? (
@@ -257,7 +275,7 @@ export function CityBusinessDirectory({
           id="city-business-results"
           role="status"
         >
-          Non ci sono ancora attività pubblicate a {cityName}.{" "}
+          Non ci sono ancora attività pubblicate.{" "}
           <Link href="/#citycore-city-search">Scegli un'altra città</Link>.
         </p>
       )}
