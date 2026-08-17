@@ -33,8 +33,8 @@ export function BusinessVisualGallery({
           <span>{categoryLabel}</span>
           <strong>{name}</strong>
           <small>
-            Visual di supporto alla demo. Foto, contatti e contenuti reali potranno essere pubblicati
-            direttamente dall'attività.
+            Visual di supporto alla demo. Foto, contatti e contenuti reali potranno essere
+            pubblicati direttamente dall'attività.
           </small>
         </div>
       </div>
