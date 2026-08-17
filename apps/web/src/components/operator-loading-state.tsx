@@ -1,8 +1,4 @@
-export function OperatorLoadingState({
-  label = "Area operatori",
-}: {
-  label?: string;
-}) {
+export function OperatorLoadingState({ label = "Area operatori" }: { label?: string }) {
   return (
     <div className="operator-state-stage" aria-busy="true" aria-live="polite">
       <header className="operator-state-topbar">

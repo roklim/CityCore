@@ -45,8 +45,8 @@ export default async function AdminLoginPage() {
             <p className="section-label">CityCore control center</p>
             <h1 id="operator-auth-story-title">La città, sotto controllo.</h1>
             <p>
-              Gestisci territori, attività e operatività da uno spazio unico, costruito per mantenere
-              chiari ruoli e prossimi passi.
+              Gestisci territori, attività e operatività da uno spazio unico, costruito per
+              mantenere chiari ruoli e prossimi passi.
             </p>
           </div>
           <dl className="operator-auth-facts">
