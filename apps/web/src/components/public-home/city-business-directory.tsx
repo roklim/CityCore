@@ -27,7 +27,13 @@ function initials(value: string) {
     .join("");
 }
 
-function BusinessCard({ business, index }: { business: PublicCityBusinessCard; index: number }) {
+function BusinessCard({
+  business,
+  index,
+}: {
+  business: PublicCityBusinessCard;
+  index: number;
+}) {
   const categories = getPublicBusinessCategories(business);
   const categoryLabel =
     categories.map((category) => category.label).join(" · ") || business.categoryLabel;
@@ -99,9 +105,13 @@ export function CityBusinessDirectory({
     [searchParamsKey],
   );
   const normalizeCategory = (category: string) =>
-    category === "all" || sections.some((section) => section.id === category) ? category : "all";
+    category === "all" || sections.some((section) => section.id === category)
+      ? category
+      : "all";
   const [query, setQuery] = useState(urlFilters.query);
-  const [activeSection, setActiveSection] = useState(normalizeCategory(urlFilters.category));
+  const [activeSection, setActiveSection] = useState(
+    normalizeCategory(urlFilters.category),
+  );
   const searchInputRef = useRef<HTMLInputElement>(null);
   const visibleBusinesses = useMemo(
     () => filterPublicBusinessesBySection(businesses, query, activeSection),
@@ -130,7 +140,10 @@ export function CityBusinessDirectory({
     return () => window.clearTimeout(timer);
   }, [pathname, query, router, searchParamsKey]);
 
-  function updateUrl(changes: Partial<PublicDirectoryFilters>, mode: "push" | "replace") {
+  function updateUrl(
+    changes: Partial<PublicDirectoryFilters>,
+    mode: "push" | "replace",
+  ) {
     const next = updatePublicDirectorySearchParams(new URLSearchParams(searchParamsKey), changes);
     const href = directoryHref(pathname, next);
     if (mode === "push") router.push(href, { scroll: false });
@@ -171,7 +184,9 @@ export function CityBusinessDirectory({
       ) : null}
 
       <div className="public-directory-commandbar">
-        <div className={`${styles.searchShell} ${styles.directorySearch} public-directory-search`}>
+        <div
+          className={`${styles.searchShell} ${styles.directorySearch} public-directory-search`}
+        >
           <label className={styles.srOnly} htmlFor="city-business-search">
             Cerca tra le attività a {cityName}
           </label>
@@ -238,7 +253,10 @@ export function CityBusinessDirectory({
       </div>
 
       {visibleBusinesses.length ? (
-        <div className={`${styles.directoryGrid} public-directory-grid`} id="city-business-results">
+        <div
+          className={`${styles.directoryGrid} public-directory-grid`}
+          id="city-business-results"
+        >
           {visibleBusinesses.map((business, index) => (
             <BusinessCard business={business} index={index} key={business.slug} />
           ))}
