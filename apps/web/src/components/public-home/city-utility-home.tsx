@@ -14,7 +14,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
   const activityLabel = city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
   const heroDescription =
     city.publicHeroDescription ??
-    "Scopri attività, servizi e luoghi utili da una pagina pensata per orientarti subito.";
+    "Attività, servizi e luoghi utili raccolti in uno spazio semplice da esplorare.";
   const heroTitle = city.publicHeroTitle?.trim() || `Scopri ${city.name}, a modo tuo.`;
   const locationLabel = [city.region, city.country].filter(Boolean).join(" · ");
   const cityVisuals = getDemoCityVisuals(city.slug);
@@ -25,21 +25,21 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
       label: "Muoversi e scoprire",
       title: "Centro e quartieri",
       description:
-        "Parti dalla rete locale: attività, servizi e punti di riferimento raccolti in un unico spazio.",
+        "Attività, servizi e punti di riferimento per iniziare a orientarsi senza perdersi in elenchi infiniti.",
       visual: cityVisuals[1],
     },
     {
       label: "Vivere il territorio",
       title: "Natura e tempo libero",
       description:
-        "Una lettura più visiva della città, pensata per affiancare la directory senza trasformarla in un elenco freddo.",
+        "Uno sguardo al territorio e alle occasioni per viverlo, prima di entrare nelle singole schede locali.",
       visual: cityVisuals[2],
     },
     {
       label: "Esperienze locali",
       title: "Sapori e attività",
       description:
-        "Dalla ristorazione ai servizi di prossimità: le schede pubblicate restano il punto di accesso alle informazioni reali.",
+        "Ristorazione e servizi di prossimità raccolti in schede chiare, con informazioni utili e contatti diretti.",
       visual: featuredBusinesses[0]
         ? getDemoBusinessVisual(featuredBusinesses[0])
         : cityVisuals[0],
@@ -51,9 +51,8 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
       toneLabel={live ? locationLabel || "Guida locale" : "Anteprima directory"}
       title={heroTitle}
       description={heroDescription}
-      contextLabel="Directory"
       contextHref={`/${city.slug}`}
-      accentNote={live ? `${city.businessCount} ${activityLabel} nella directory` : undefined}
+      accentNote={live ? `${city.businessCount} ${activityLabel}` : undefined}
       breadcrumbs={[{ label: "Home", href: "/" }, { label: city.name }]}
       heroClassName="public-city-hero"
       heroActions={
@@ -77,7 +76,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
             <span className={styles.demoBadge}>{demoVisualLabel}</span>
             <div className={styles.heroCaption}>
               <strong>{locationLabel || "Territorio locale"}</strong>
-              <span>Visual editoriale di supporto: non rappresenta necessariamente un luogo specifico.</span>
+              <span>Visual editoriale di supporto, non riferito a un luogo specifico.</span>
             </div>
           </div>
           <div className={styles.heroSecondaryStack}>
@@ -106,12 +105,11 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
           <div className={styles.sectionHeading}>
             <div>
               <p>Esplora il territorio</p>
-              <h2 id="city-editorial-title">Più di una semplice directory</h2>
+              <h2 id="city-editorial-title">Tre modi per iniziare</h2>
             </div>
             <p>
-              La pagina città introduce il contesto e poi porta alle informazioni operative. Le
-              immagini sono volutamente dimostrative; attività, categorie e dati della directory
-              restano invece quelli pubblicati sulla piattaforma.
+              Centro, territorio e attività locali in una panoramica visiva. Le immagini sono
+              dimostrative; le informazioni delle attività arrivano invece dalle schede pubblicate.
             </p>
           </div>
 
@@ -144,8 +142,8 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
                 <h2 id="city-featured-title">Attività da cui iniziare</h2>
               </div>
               <p>
-                Una selezione compatta delle schede già pubblicate. Nessuna distanza inventata:
-                mostriamo solo informazioni disponibili e rimandiamo alla scheda completa.
+                Apri una scheda per vedere le informazioni, i servizi e i contatti realmente
+                disponibili per ogni attività.
               </p>
             </div>
 
