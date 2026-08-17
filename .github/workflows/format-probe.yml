@@ -1,0 +1,28 @@
+name: Format Probe
+
+on:
+  push:
+    branches:
+      - agent/improve-city-home
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Print formatted files
+        run: |
+          npx prettier --write apps/web/src/components/public-home/city-business-directory.tsx apps/web/src/components/public-home/city-utility-home.tsx
+          echo "===CITY_DIRECTORY_START==="
+          base64 -w0 apps/web/src/components/public-home/city-business-directory.tsx
+          echo
+          echo "===CITY_DIRECTORY_END==="
+          echo "===CITY_HOME_START==="
+          base64 -w0 apps/web/src/components/public-home/city-utility-home.tsx
+          echo
+          echo "===CITY_HOME_END==="
