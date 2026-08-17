@@ -1,4 +1,10 @@
-import type { PublicCityBusinessCard } from "../../lib/public-runtime";
+type DemoBusinessVisualSource = {
+  slug: string;
+  name: string;
+  categoryLabel: string;
+  categories: readonly { name: string }[];
+  services?: readonly string[];
+};
 
 const CITY_DEMO_VISUALS = [
   "https://images.unsplash.com/photo-1733057064260-2158ad18c8e1?auto=format&fit=crop&w=1600&q=82",
@@ -26,12 +32,12 @@ export function getDemoCityVisuals(citySlug: string) {
   );
 }
 
-export function getDemoBusinessVisual(business: PublicCityBusinessCard, index = 0) {
+export function getDemoBusinessVisual(business: DemoBusinessVisualSource, index = 0) {
   const searchable = [
     business.name,
     business.categoryLabel,
     ...business.categories.map((category) => category.name),
-    ...business.services,
+    ...(business.services ?? []),
   ]
     .join(" ")
     .toLocaleLowerCase("it-IT");
