@@ -368,8 +368,7 @@ label.business-check-option {
   border: 1px solid rgba(24, 24, 24, 0.08);
   border-radius: 18px;
   background:
-    radial-gradient(circle at 91% 22%, rgba(232, 106, 74, 0.12), transparent 27%),
-    #f4f2ed;
+    radial-gradient(circle at 91% 22%, rgba(232, 106, 74, 0.12), transparent 27%), #f4f2ed;
 }
 
 .business-readiness-summary::after {
@@ -390,9 +389,7 @@ label.business-check-option {
 }
 
 .business-readiness-summary.is-ready {
-  background:
-    radial-gradient(circle at 91% 22%, rgba(38, 122, 87, 0.13), transparent 27%),
-    #f4f5f0;
+  background: radial-gradient(circle at 91% 22%, rgba(38, 122, 87, 0.13), transparent 27%), #f4f5f0;
 }
 
 .business-readiness-summary.is-ready::after {
