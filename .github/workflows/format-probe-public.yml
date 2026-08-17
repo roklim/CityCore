@@ -15,15 +15,21 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Print formatted diff
+      - name: Print formatted files
         run: |
           npx prettier --write \
             'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' \
             apps/web/src/components/public-business/business-visual-gallery.tsx \
             apps/web/src/components/public-home/city-business-directory.tsx \
             apps/web/src/components/public-home/global-entry-home.tsx
-          git diff -- \
+          for file in \
             'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' \
             apps/web/src/components/public-business/business-visual-gallery.tsx \
             apps/web/src/components/public-home/city-business-directory.tsx \
             apps/web/src/components/public-home/global-entry-home.tsx
+          do
+            echo "===FILE_START:${file}==="
+            base64 -w0 "$file"
+            echo
+            echo "===FILE_END:${file}==="
+          done
