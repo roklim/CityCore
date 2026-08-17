@@ -1,0 +1,240 @@
+.orderRoot {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  gap: clamp(20px, 3vw, 30px);
+  padding: clamp(24px, 4vw, 38px);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 58px rgba(24, 24, 24, 0.055);
+}
+
+.heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.75fr);
+  gap: 24px;
+  align-items: end;
+}
+
+.heading > div {
+  display: grid;
+  gap: 7px;
+}
+
+.heading h2 {
+  margin: 0;
+  font-family: var(--cc-font-display);
+  font-size: clamp(34px, 5vw, 54px);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.heading > p {
+  margin: 0;
+  color: var(--cc-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.demoNote {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--cc-border);
+  border-radius: 14px;
+  background: var(--cc-accent-soft);
+  color: var(--cc-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.orderRoot :global(.public-pickup-order-form) {
+  gap: 22px;
+}
+
+.orderRoot :global(.public-pickup-order-form fieldset) {
+  padding: clamp(18px, 3vw, 24px);
+  border-radius: 22px;
+  background: rgba(250, 248, 245, 0.62);
+}
+
+.orderRoot :global(.public-pickup-order-form legend) {
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.menuGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.menuItem {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  min-height: 116px;
+  align-items: center;
+  margin: 0;
+  padding: 18px !important;
+  border: 1px solid var(--cc-border) !important;
+  border-radius: 18px;
+  background: #fff;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.menuItem:hover {
+  border-color: var(--cc-border-strong) !important;
+  box-shadow: 0 10px 28px rgba(24, 24, 24, 0.06);
+  transform: translateY(-1px);
+}
+
+.selected {
+  border-color: var(--cc-accent) !important;
+  background: linear-gradient(180deg, #fff 0%, var(--cc-accent-soft) 160%);
+}
+
+.menuCopy {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.menuCopy h3,
+.menuCopy p,
+.menuCopy strong {
+  margin: 0;
+}
+
+.menuCopy h3 {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.menuCopy p {
+  color: var(--cc-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.menuCopy strong {
+  margin-top: 3px;
+  color: var(--cc-text);
+  font-size: 13px;
+}
+
+.empty {
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px;
+  border: 1px dashed var(--cc-border-strong);
+  border-radius: 18px;
+  color: var(--cc-text-secondary);
+  text-align: center;
+}
+
+.empty strong {
+  color: var(--cc-text);
+  font-size: 13px;
+}
+
+.empty span {
+  font-size: 11px;
+}
+
+.cartSummary {
+  position: sticky;
+  bottom: 18px;
+  z-index: 18;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 14px 13px 18px;
+  border: 1px solid var(--cc-border-strong);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 50px rgba(24, 24, 24, 0.14);
+  backdrop-filter: blur(16px);
+}
+
+.cartSummary > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  align-items: baseline;
+}
+
+.cartSummary span,
+.cartSummary small {
+  color: var(--cc-text-secondary);
+  font-size: 10px;
+}
+
+.cartSummary strong {
+  color: var(--cc-text);
+  font-size: 18px;
+}
+
+.submitRow {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+.submitRow :global(.public-order-total) {
+  margin: 0;
+}
+
+@media (max-width: 820px) {
+  .heading {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .menuGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .orderRoot {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .heading h2 {
+    font-size: 36px;
+  }
+
+  .menuItem {
+    min-height: 0;
+    padding: 15px !important;
+  }
+
+  .cartSummary {
+    bottom: 10px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cartSummary > div {
+    justify-content: space-between;
+  }
+
+  .cartSummary :global(.cta-button),
+  .submitRow :global(.cta-button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .submitRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

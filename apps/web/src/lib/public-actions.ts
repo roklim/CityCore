@@ -18,12 +18,12 @@ export function getPublicBusinessPrimaryAction({
   emailHref: string | null;
   website: string | null;
 }): PublicBusinessPrimaryAction {
-  if (inquiryAvailable) {
-    return { label: "Invia una richiesta", heading: "Invia una richiesta", href: "#inquiry-form" };
+  if (pickupOrderAvailable) {
+    return { label: "Ordina ora", heading: "Ordina e ritira", href: "#order" };
   }
 
-  if (pickupOrderAvailable) {
-    return { label: "Ordina e ritira", heading: "Ordina per il ritiro", href: "#order" };
+  if (inquiryAvailable) {
+    return { label: "Invia una richiesta", heading: "Invia una richiesta", href: "#inquiry-form" };
   }
 
   if (phoneHref) {
