@@ -13,6 +13,18 @@ describe("getContextualBusinessSummary", () => {
     ).toBe("Consulta informazioni, servizi e contatti.");
   });
 
+  it("supports decorated display names when the summary uses the shorter brand", () => {
+    expect(
+      getContextualBusinessSummary(
+        "Scopri Mucho Gusto a Cagli: consulta le informazioni dell'attività, i servizi disponibili e i contatti aggiornati direttamente dalla scheda CityCore.",
+        "Mucho Gusto · Pizzeria",
+        "Cagli",
+      ),
+    ).toBe(
+      "Consulta le informazioni dell'attività, i servizi disponibili e i contatti aggiornati direttamente dalla scheda CityCore.",
+    );
+  });
+
   it("keeps authored copy when it does not repeat the context", () => {
     expect(
       getContextualBusinessSummary(
