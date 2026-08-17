@@ -67,6 +67,7 @@ export function PublicPickupOrderForm({
   timezone,
   minimumOrderCents,
   items,
+  demoMode = false,
 }: {
   citySlug: string;
   businessSlug: string;
@@ -74,6 +75,7 @@ export function PublicPickupOrderForm({
   timezone: string;
   minimumOrderCents: number;
   items: PublicPickupMenuItem[];
+  demoMode?: boolean;
 }) {
   const initialDate = useMemo(() => dateInTimezone(timezone), [timezone]);
   const [values, setValues] = useState(initialValues);
@@ -91,6 +93,7 @@ export function PublicPickupOrderForm({
   const firstError = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement | null>(
     null,
   );
+  const pickupStepRef = useRef<HTMLFieldSetElement | null>(null);
   const submittingRef = useRef(false);
   const shouldFocusErrorsRef = useRef(false);
 
@@ -103,11 +106,13 @@ export function PublicPickupOrderForm({
   const selectedItems = items
     .map((item) => ({ ...item, quantity: cart[item.id] ?? 0 }))
     .filter((item) => item.quantity > 0);
+  const itemCount = selectedItems.reduce((total, item) => total + item.quantity, 0);
   const totalCents = selectedItems.reduce(
     (total, item) => total + item.priceCents * item.quantity,
     0,
   );
   const minimumReached = totalCents >= minimumOrderCents;
+  const hasItems = selectedItems.length > 0;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -211,16 +216,24 @@ export function PublicPickupOrderForm({
   }
 
   return (
-    <section
-      className="public-pickup-order public-secondary-service"
-      id="order"
-      aria-labelledby="pickup-order-title"
-    >
-      <div className="section-header public-form-header">
-        <p className="section-label">Servizio opzionale</p>
-        <h2 id="pickup-order-title">Ordina per il ritiro</h2>
-        <p>Scegli dal menu e indica quando vuoi passare a ritirare.</p>
+    <section className="public-pickup-order" id="order" aria-labelledby="pickup-order-title">
+      <div className="section-header public-form-header public-order-heading">
+        <div>
+          <p className="section-label">{demoMode ? "Menu dimostrativo" : "Ordina online"}</p>
+          <h2 id="pickup-order-title">Componi il tuo ordine</h2>
+        </div>
+        <p>
+          Aggiungi ciò che vuoi, scegli l'orario di ritiro e invia l'ordine. La conferma finale
+          arriva dal locale.
+        </p>
       </div>
+
+      {demoMode ? (
+        <p className="public-order-demo-note">
+          Demo CityCore: prodotti, prezzi e disponibilità di questo menu sono dimostrativi e servono
+          a simulare il flusso completo di ordinazione.
+        </p>
+      ) : null}
 
       <form
         aria-busy={state === "submitting"}
@@ -232,243 +245,288 @@ export function PublicPickupOrderForm({
           className="public-order-menu"
           aria-describedby={errors.items ? "order-items-error" : undefined}
         >
-          <legend>1. Scegli cosa ordinare</legend>
-          {items.map((item, index) => {
-            const quantity = cart[item.id] ?? 0;
-            return (
-              <article className="public-order-menu-item" key={item.id}>
-                <div>
-                  <h3>{item.name}</h3>
-                  {item.shortDescription ? <p>{item.shortDescription}</p> : null}
-                  <strong>{formatPrice(item.priceCents, currency)}</strong>
-                </div>
-                <div
-                  className="public-quantity-control"
-                  aria-label={`Quantità ${item.name}`}
-                  role="group"
+          <legend>1. Scegli dal menu</legend>
+          <div className="public-order-menu-grid">
+            {items.map((item, index) => {
+              const quantity = cart[item.id] ?? 0;
+              return (
+                <article
+                  className={`public-order-menu-item${quantity ? " is-selected" : ""}`}
+                  key={item.id}
                 >
-                  <button
-                    type="button"
-                    onClick={() => changeQuantity(item, -1)}
-                    disabled={quantity === 0 || state === "submitting"}
-                    aria-label={`Rimuovi un'unità di ${item.name}`}
+                  <div className="public-order-menu-copy">
+                    <h3>{item.name}</h3>
+                    {item.shortDescription ? <p>{item.shortDescription}</p> : null}
+                    <strong>{formatPrice(item.priceCents, currency)}</strong>
+                  </div>
+                  <div
+                    className="public-quantity-control"
+                    aria-label={`Quantità ${item.name}`}
+                    role="group"
                   >
-                    −
-                  </button>
-                  <output aria-live="polite">{quantity}</output>
-                  <button
-                    ref={
-                      errors.items && index === 0
-                        ? (element) => {
-                            if (element && !firstError.current) firstError.current = element;
-                          }
-                        : undefined
-                    }
-                    type="button"
-                    onClick={() => changeQuantity(item, 1)}
-                    disabled={quantity === 20 || state === "submitting"}
-                    aria-label={`Aggiungi un'unità di ${item.name}`}
-                  >
-                    +
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+                    <button
+                      type="button"
+                      onClick={() => changeQuantity(item, -1)}
+                      disabled={quantity === 0 || state === "submitting"}
+                      aria-label={`Rimuovi un'unità di ${item.name}`}
+                    >
+                      −
+                    </button>
+                    <output aria-live="polite">{quantity}</output>
+                    <button
+                      ref={
+                        errors.items && index === 0
+                          ? (element) => {
+                              if (element && !firstError.current) firstError.current = element;
+                            }
+                          : undefined
+                      }
+                      type="button"
+                      onClick={() => changeQuantity(item, 1)}
+                      disabled={quantity === 20 || state === "submitting"}
+                      aria-label={`Aggiungi un'unità di ${item.name}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
           {errors.items ? (
             <p className="public-form-error" id="order-items-error">
               {errors.items}
             </p>
           ) : null}
-          <p className="public-order-total" id="order-total">
-            Totale <strong>{formatPrice(totalCents, currency)}</strong>
-            {minimumOrderCents ? ` · Minimo ${formatPrice(minimumOrderCents, currency)}` : ""}
-          </p>
         </fieldset>
 
-        <fieldset
-          className="public-order-pickup"
-          aria-describedby={errors.pickup ? "pickup-error" : undefined}
-        >
-          <legend>2. Scegli data e orario</legend>
-          <label className="public-form-field">
-            Data
-            <input
-              ref={
-                errors.pickup
-                  ? (element) => {
-                      if (element && !firstError.current) firstError.current = element;
-                    }
-                  : undefined
-              }
-              type="date"
-              name="pickupDate"
-              required
-              value={pickupDate}
-              min={initialDate}
-              max={maxPickupDate(initialDate)}
-              onChange={(event) => {
-                setPickupDate(event.target.value);
-                setErrors((current) => {
-                  if (!current.pickup) return current;
-                  const next = { ...current };
-                  delete next.pickup;
-                  return next;
-                });
-                setState("idle");
-                setFeedback("");
-              }}
-              disabled={state === "submitting"}
-            />
-          </label>
-          <div
-            className="public-slot-list"
-            aria-busy={availabilityState === "loading"}
-            aria-live="polite"
-          >
-            {availabilityState === "loading" ? <p>Caricamento orari disponibili…</p> : null}
-            {availabilityState === "error" ? (
-              <div className="public-availability-error">
-                <p className="public-form-error">Non è stato possibile caricare gli orari.</p>
-                <button
-                  className="public-retry-button"
-                  onClick={() => setAvailabilityRetry((current) => current + 1)}
-                  type="button"
-                >
-                  Riprova a caricare
-                </button>
-              </div>
-            ) : null}
-            {availabilityState === "ready" && !slots.length ? (
-              <p>Nessun orario di ritiro disponibile per questa data.</p>
-            ) : null}
-            {slots.map((slot) => (
-              <button
-                className={pickupTime === slot.time ? "is-active" : undefined}
-                key={slot.id}
-                type="button"
-                disabled={!slot.available || state === "submitting"}
-                aria-label={`${slot.time}${slot.available ? "" : ", non disponibile"}`}
-                aria-pressed={pickupTime === slot.time}
-                onClick={() => {
-                  setPickupTime(slot.time);
-                  setErrors((current) => {
-                    if (!current.pickup) return current;
-                    const next = { ...current };
-                    delete next.pickup;
-                    return next;
-                  });
-                  setState("idle");
-                  setFeedback("");
-                }}
-              >
-                {slot.time}
-                {!slot.available ? " · non disponibile" : ""}
-              </button>
-            ))}
+        {!hasItems ? (
+          <div className="public-order-empty" aria-live="polite">
+            <strong>Inizia dal menu</strong>
+            <span>Aggiungi almeno un prodotto per scegliere ritiro e recapiti.</span>
           </div>
-          {errors.pickup ? (
-            <p className="public-form-error" id="pickup-error">
-              {errors.pickup}
-            </p>
-          ) : null}
-        </fieldset>
+        ) : (
+          <>
+            <div className="public-order-cart-summary" aria-live="polite">
+              <div>
+                <span>
+                  {itemCount} {itemCount === 1 ? "prodotto" : "prodotti"}
+                </span>
+                <strong>{formatPrice(totalCents, currency)}</strong>
+                {minimumOrderCents ? (
+                  <small>Minimo {formatPrice(minimumOrderCents, currency)}</small>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="cta-button"
+                onClick={() => pickupStepRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              >
+                Scegli il ritiro
+              </button>
+            </div>
 
-        <fieldset className="public-order-contact">
-          <legend>3. Inserisci i tuoi dati</legend>
-          <div className="public-form-grid">
-            {(["name", "email", "phone"] as const).map((field) => (
-              <label className="public-form-field" key={field}>
-                {field === "name" ? "Nome" : field === "email" ? "Email" : "Telefono (facoltativo)"}
+            <fieldset
+              ref={pickupStepRef}
+              className="public-order-pickup"
+              aria-describedby={errors.pickup ? "pickup-error" : undefined}
+            >
+              <legend>2. Scegli data e orario</legend>
+              <label className="public-form-field">
+                Data
                 <input
                   ref={
-                    errors[field]
+                    errors.pickup
                       ? (element) => {
                           if (element && !firstError.current) firstError.current = element;
                         }
                       : undefined
                   }
-                  type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
-                  autoComplete={field === "name" ? "name" : field === "email" ? "email" : "tel"}
-                  maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
-                  name={field}
-                  required={field !== "phone"}
-                  value={values[field]}
-                  onChange={(event) => update(field, event.target.value)}
-                  aria-invalid={Boolean(errors[field])}
-                  aria-describedby={errors[field] ? `${field}-order-error` : undefined}
+                  type="date"
+                  name="pickupDate"
+                  required
+                  value={pickupDate}
+                  min={initialDate}
+                  max={maxPickupDate(initialDate)}
+                  onChange={(event) => {
+                    setPickupDate(event.target.value);
+                    setErrors((current) => {
+                      if (!current.pickup) return current;
+                      const next = { ...current };
+                      delete next.pickup;
+                      return next;
+                    });
+                    setState("idle");
+                    setFeedback("");
+                  }}
+                  disabled={state === "submitting"}
                 />
-                {errors[field] ? (
-                  <span className="public-form-error" id={`${field}-order-error`}>
-                    {errors[field]}
+              </label>
+              <div
+                className="public-slot-list"
+                aria-busy={availabilityState === "loading"}
+                aria-live="polite"
+              >
+                {availabilityState === "loading" ? <p>Caricamento orari disponibili…</p> : null}
+                {availabilityState === "error" ? (
+                  <div className="public-availability-error">
+                    <p className="public-form-error">Non è stato possibile caricare gli orari.</p>
+                    <button
+                      className="public-retry-button"
+                      onClick={() => setAvailabilityRetry((current) => current + 1)}
+                      type="button"
+                    >
+                      Riprova a caricare
+                    </button>
+                  </div>
+                ) : null}
+                {availabilityState === "ready" && !slots.length ? (
+                  <p>Nessun orario di ritiro disponibile per questa data.</p>
+                ) : null}
+                {slots.map((slot) => (
+                  <button
+                    className={pickupTime === slot.time ? "is-active" : undefined}
+                    key={slot.id}
+                    type="button"
+                    disabled={!slot.available || state === "submitting"}
+                    aria-label={`${slot.time}${slot.available ? "" : ", non disponibile"}`}
+                    aria-pressed={pickupTime === slot.time}
+                    onClick={() => {
+                      setPickupTime(slot.time);
+                      setErrors((current) => {
+                        if (!current.pickup) return current;
+                        const next = { ...current };
+                        delete next.pickup;
+                        return next;
+                      });
+                      setState("idle");
+                      setFeedback("");
+                    }}
+                  >
+                    {slot.time}
+                    {!slot.available ? " · non disponibile" : ""}
+                  </button>
+                ))}
+              </div>
+              {errors.pickup ? (
+                <p className="public-form-error" id="pickup-error">
+                  {errors.pickup}
+                </p>
+              ) : null}
+            </fieldset>
+
+            <fieldset className="public-order-contact">
+              <legend>3. Inserisci i tuoi dati</legend>
+              <div className="public-form-grid">
+                {(["name", "email", "phone"] as const).map((field) => (
+                  <label className="public-form-field" key={field}>
+                    {field === "name"
+                      ? "Nome"
+                      : field === "email"
+                        ? "Email"
+                        : "Telefono (facoltativo)"}
+                    <input
+                      ref={
+                        errors[field]
+                          ? (element) => {
+                              if (element && !firstError.current) firstError.current = element;
+                            }
+                          : undefined
+                      }
+                      type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                      autoComplete={
+                        field === "name" ? "name" : field === "email" ? "email" : "tel"
+                      }
+                      maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
+                      name={field}
+                      required={field !== "phone"}
+                      value={values[field]}
+                      onChange={(event) => update(field, event.target.value)}
+                      aria-invalid={Boolean(errors[field])}
+                      aria-describedby={errors[field] ? `${field}-order-error` : undefined}
+                    />
+                    {errors[field] ? (
+                      <span className="public-form-error" id={`${field}-order-error`}>
+                        {errors[field]}
+                      </span>
+                    ) : null}
+                  </label>
+                ))}
+              </div>
+
+              <label className="public-form-field public-form-field-wide">
+                Note per l'ordine (facoltative)
+                <textarea
+                  maxLength={1000}
+                  name="notes"
+                  value={values.notes}
+                  onChange={(event) => update("notes", event.target.value)}
+                  aria-invalid={Boolean(errors.notes)}
+                  aria-describedby={errors.notes ? "order-notes-error" : undefined}
+                />
+                {errors.notes ? (
+                  <span className="public-form-error" id="order-notes-error">
+                    {errors.notes}
                   </span>
                 ) : null}
               </label>
-            ))}
-          </div>
 
-          <label className="public-form-field public-form-field-wide">
-            Note per l'ordine (facoltative)
-            <textarea
-              maxLength={1000}
-              name="notes"
-              value={values.notes}
-              onChange={(event) => update("notes", event.target.value)}
-              aria-invalid={Boolean(errors.notes)}
-              aria-describedby={errors.notes ? "order-notes-error" : undefined}
-            />
-            {errors.notes ? (
-              <span className="public-form-error" id="order-notes-error">
-                {errors.notes}
-              </span>
-            ) : null}
-          </label>
+              <label className="public-privacy">
+                <input
+                  ref={
+                    errors.privacyAccepted
+                      ? (element) => {
+                          if (element && !firstError.current) firstError.current = element;
+                        }
+                      : undefined
+                  }
+                  type="checkbox"
+                  name="privacyAccepted"
+                  required
+                  checked={values.privacyAccepted}
+                  onChange={(event) => update("privacyAccepted", event.target.checked)}
+                  aria-invalid={Boolean(errors.privacyAccepted)}
+                  aria-describedby={errors.privacyAccepted ? "order-privacy-error" : undefined}
+                />{" "}
+                Acconsento al trattamento dei dati per gestire questo ordine.
+              </label>
+              {errors.privacyAccepted ? (
+                <span className="public-form-error" id="order-privacy-error">
+                  {errors.privacyAccepted}
+                </span>
+              ) : null}
+            </fieldset>
 
-          <label className="public-privacy">
             <input
-              ref={
-                errors.privacyAccepted
-                  ? (element) => {
-                      if (element && !firstError.current) firstError.current = element;
-                    }
-                  : undefined
-              }
-              type="checkbox"
-              name="privacyAccepted"
-              required
-              checked={values.privacyAccepted}
-              onChange={(event) => update("privacyAccepted", event.target.checked)}
-              aria-invalid={Boolean(errors.privacyAccepted)}
-              aria-describedby={errors.privacyAccepted ? "order-privacy-error" : undefined}
-            />{" "}
-            Acconsento al trattamento dei dati per gestire questo ordine.
-          </label>
-          {errors.privacyAccepted ? (
-            <span className="public-form-error" id="order-privacy-error">
-              {errors.privacyAccepted}
-            </span>
-          ) : null}
-        </fieldset>
+              className="public-honeypot"
+              name="company"
+              value={values.company}
+              onChange={(event) => update("company", event.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+            <div className="public-form-actions public-order-submit-row">
+              <p className="public-order-total" id="order-total">
+                Totale <strong>{formatPrice(totalCents, currency)}</strong>
+                {minimumOrderCents
+                  ? ` · Minimo ${formatPrice(minimumOrderCents, currency)}`
+                  : ""}
+              </p>
+              <button
+                className="cta-button"
+                type="submit"
+                aria-describedby="order-total"
+                disabled={
+                  state === "submitting" || availabilityState !== "ready" || !minimumReached
+                }
+              >
+                {state === "submitting" ? "Invio ordine in corso…" : "Invia ordine"}
+              </button>
+            </div>
+          </>
+        )}
 
-        <input
-          className="public-honeypot"
-          name="company"
-          value={values.company}
-          onChange={(event) => update("company", event.target.value)}
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden="true"
-        />
-        <div className="public-form-actions">
-          <button
-            className="cta-button"
-            type="submit"
-            aria-describedby="order-total"
-            disabled={state === "submitting" || availabilityState !== "ready" || !minimumReached}
-          >
-            {state === "submitting" ? "Invio ordine in corso…" : "Conferma ordine e ritiro"}
-          </button>
-        </div>
         {feedback ? (
           <p
             aria-live="polite"
