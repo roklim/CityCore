@@ -25,6 +25,7 @@ import {
 } from "../../../lib/business-opening-hours";
 import { normalizeExternalUrl, normalizePhoneHref } from "../../../lib/public-links";
 import { getPublicBusinessPrimaryAction } from "../../../lib/public-actions";
+import { getContextualBusinessSummary } from "../../../lib/public-copy";
 
 type BusinessPageProps = {
   params: Promise<{ citySlug: string; businessSlug: string }>;
@@ -81,6 +82,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
   if (!surface) notFound();
 
   const { business, city, degraded } = surface;
+  const publicSummary = getContextualBusinessSummary(business.summary, business.name, city.name);
   const [servicesResult, openingHoursResult, pickupOrderMenuResult] = degraded
     ? [null, null, null]
     : await Promise.allSettled([
@@ -197,6 +199,32 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
           currency: business.currency,
           minimumFractionDigits: 2,
         }).format(priceCents / 100);
+  const pageNavigation = [
+    {
+      href: "#overview",
+      label: "Panoramica",
+      description: "Stato e informazioni essenziali",
+    },
+    ...(hasContactDetails
+      ? [{ href: "#contact", label: "Contatti", description: "Recapiti pubblicati" }]
+      : []),
+    ...(servicesResult?.status === "rejected" || services.length
+      ? [{ href: "#services", label: "Servizi", description: "Offerta disponibile" }]
+      : []),
+    {
+      href: "#opening-hours",
+      label: "Orari",
+      description: "Giorni e disponibilità",
+    },
+    ...(pickupOrderMenu
+      ? [{ href: "#order", label: "Ritiro", description: "Ordina e passa a ritirare" }]
+      : []),
+    {
+      href: "#inquiry-form",
+      label: "Richiesta",
+      description: "Invia un messaggio",
+    },
+  ];
 
   if (degraded) {
     return (
@@ -215,7 +243,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
       >
         <nav className="cta-row" aria-label="Come continuare">
           <Link className="cta-button" href={`/${city.slug}#directory`}>
-            Vedi altre attività a {city.name}
+            Vedi altre attività
           </Link>
           <Link className="text-link" href="/#citycore-city-search">
             Cambia città
@@ -229,8 +257,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
     <PublicShell
       toneLabel={categoryLabel}
       title={business.name}
-      description={business.summary}
-      contextLabel={city.name}
+      description={publicSummary}
       contextHref={`/${city.slug}`}
       breadcrumbs={[
         { label: "Home", href: "/" },
@@ -271,229 +298,269 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
         />
       ) : null}
 
-      <div className="public-stack public-business-page">
-        <section
-          className={`public-business-overview${services.length ? "" : ` ${businessShowcase.overviewTwoColumns}`}`}
-          aria-label="Informazioni principali"
-        >
-          <div className="public-business-fact">
-            <span>Disponibilità</span>
-            {openingHoursResult?.status === "fulfilled" && openingStatus ? (
-              <BusinessOpeningStatus
-                days={openingDays}
-                initialStatus={openingStatus}
-                timezone={openingHoursResult.value.timezone}
-              />
-            ) : (
-              <strong>Contatta l'attività</strong>
-            )}
-          </div>
-          {services.length ? (
-            <div className="public-business-fact">
-              <span>Servizi</span>
-              <strong>
-                {services.length} {services.length === 1 ? "servizio" : "servizi"}
-              </strong>
+      <div className={businessShowcase.contentLayout}>
+        <aside className={businessShowcase.sidebar} aria-label="Navigazione della scheda">
+          <div className={businessShowcase.sidebarCard}>
+            <div className={businessShowcase.sidebarHeading}>
+              <span>Esplora</span>
+              <strong>In questa pagina</strong>
             </div>
-          ) : null}
-          <div className="public-business-fact">
-            <span>Località</span>
-            <strong>{locationSummary}</strong>
-          </div>
-          {business.categories.length > 1 ? (
-            <div className="pill-row public-business-categories" aria-label="Categorie attività">
-              {business.categories.slice(1).map((category) => (
-                <span className="pill" key={category.id}>
-                  {category.name}
-                </span>
+            <nav className={businessShowcase.sectionNav} aria-label="Sezioni disponibili">
+              {pageNavigation.map((item) => (
+                <a className={businessShowcase.sectionNavLink} href={item.href} key={item.href}>
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </a>
               ))}
+            </nav>
+            <div className={businessShowcase.sidebarFooter}>
+              <span>Serve altro?</span>
+              <a href="#inquiry-form">Invia una richiesta →</a>
             </div>
-          ) : null}
-        </section>
+          </div>
+        </aside>
 
-        {!hasContactDetails ? (
-          <section className={businessShowcase.requestIntro} aria-label="Richiedi informazioni">
-            <div>
-              <span>Contatto diretto</span>
-              <strong>Hai bisogno di informazioni?</strong>
-              <p>
-                Questa attività non ha ancora pubblicato recapiti diretti. Puoi comunque inviare una
-                richiesta dalla scheda CityCore.
-              </p>
+        <div className={businessShowcase.contentStack}>
+          <section
+            className={`${businessShowcase.sectionPanel} public-business-overview${services.length ? "" : ` ${businessShowcase.overviewTwoColumns}`}`}
+            id="overview"
+            aria-label="Informazioni principali"
+          >
+            <div className="public-business-fact">
+              <span>Disponibilità</span>
+              {openingHoursResult?.status === "fulfilled" && openingStatus ? (
+                <BusinessOpeningStatus
+                  days={openingDays}
+                  initialStatus={openingStatus}
+                  timezone={openingHoursResult.value.timezone}
+                />
+              ) : (
+                <strong>Contatta l'attività</strong>
+              )}
             </div>
-            <a className="cta-button" href="#inquiry-form">
-              Invia una richiesta
-            </a>
-          </section>
-        ) : null}
-
-        {hasContactDetails ? (
-          <section className="public-business-section public-contact-details" id="contact">
-            <div className="section-header public-business-section-heading">
-              <div>
-                <p className="section-label">Contatti</p>
-                <h2>Parla con {business.name}</h2>
+            {services.length ? (
+              <div className="public-business-fact">
+                <span>Servizi</span>
+                <strong>
+                  {services.length} {services.length === 1 ? "servizio" : "servizi"}
+                </strong>
               </div>
-              <p>Usa uno dei canali effettivamente pubblicati dall'attività.</p>
+            ) : null}
+            <div className="public-business-fact">
+              <span>Località</span>
+              <strong>{locationSummary}</strong>
             </div>
-            <div className="public-contact-grid">
-              {phoneHref ? (
-                <a className="public-contact-card" href={phoneHref}>
-                  <span>Telefono</span>
-                  <strong>{business.contactPhone}</strong>
-                  <small>Chiama ora →</small>
-                </a>
-              ) : null}
-              {emailHref ? (
-                <a className="public-contact-card" href={emailHref}>
-                  <span>Email</span>
-                  <strong>{business.publicEmail}</strong>
-                  <small>Scrivi un'email →</small>
-                </a>
-              ) : null}
-              {website ? (
-                <a
-                  className="public-contact-card"
-                  href={website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span>Sito web</span>
-                  <strong>Visita il sito</strong>
-                  <small>Apri in una nuova scheda →</small>
-                </a>
-              ) : null}
-              {displayLocationLine ? (
-                <div className="public-contact-card is-location">
-                  <span>Indirizzo</span>
-                  <address>{displayLocationLine}</address>
-                  <small>{city.name}</small>
-                </div>
-              ) : null}
-            </div>
-            {business.socialLinks.length ? (
-              <div className="public-social-links" aria-label="Canali social">
-                <strong>Segui l'attività</strong>
-                {business.socialLinks.map((social) => (
-                  <a
-                    key={social.label}
-                    className="text-link"
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Apri ${social.label}`}
-                  >
-                    {social.label}
-                  </a>
+            {business.categories.length > 1 ? (
+              <div className="pill-row public-business-categories" aria-label="Categorie attività">
+                {business.categories.slice(1).map((category) => (
+                  <span className="pill" key={category.id}>
+                    {category.name}
+                  </span>
                 ))}
               </div>
             ) : null}
           </section>
-        ) : null}
 
-        {servicesResult?.status === "rejected" ? (
-          <section className="public-business-section public-services-section" id="services">
-            <div className="section-header public-business-section-heading">
+          {!hasContactDetails ? (
+            <section className={businessShowcase.requestIntro} aria-label="Richiedi informazioni">
               <div>
-                <p className="section-label">Servizi</p>
-                <h2>Servizi disponibili</h2>
+                <span>Contatto diretto</span>
+                <strong>Hai bisogno di informazioni?</strong>
+                <p>
+                  Non sono ancora stati pubblicati recapiti diretti. Puoi comunque inviare una
+                  richiesta dalla scheda.
+                </p>
               </div>
-            </div>
-            <p>I servizi non sono momentaneamente disponibili.</p>
-          </section>
-        ) : services.length ? (
-          <section className="public-business-section public-services-section" id="services">
-            <div className="section-header public-business-section-heading">
-              <div>
-                <p className="section-label">Servizi</p>
-                <h2>Servizi disponibili</h2>
+              <a className="cta-button" href="#inquiry-form">
+                Invia una richiesta
+              </a>
+            </section>
+          ) : null}
+
+          {hasContactDetails ? (
+            <section
+              className={`${businessShowcase.sectionPanel} public-business-section public-contact-details`}
+              id="contact"
+            >
+              <div className="section-header public-business-section-heading">
+                <div>
+                  <p className="section-label">Contatti</p>
+                  <h2>Contatti e recapiti</h2>
+                </div>
+                <p>Usa uno dei canali effettivamente pubblicati.</p>
               </div>
-              <span className="public-section-count">
-                {services.length} {services.length === 1 ? "voce" : "voci"}
-              </span>
-            </div>
-            <ul className="public-service-list">
-              {services.map((service) => {
-                const facts = [
-                  service.priceLabel ?? formatServicePrice(service.priceCents),
-                  formatServiceDuration(service.durationMinutes),
-                ].filter(Boolean);
-
-                return (
-                  <li className="public-service-row" key={service.id}>
-                    <div className="public-service-copy">
-                      <h3>{service.name}</h3>
-                      {service.shortDescription &&
-                      service.shortDescription !== service.description ? (
-                        <p>{service.shortDescription}</p>
-                      ) : null}
-                      {service.description ? <p>{service.description}</p> : null}
-                    </div>
-                    {facts.length ? (
-                      <p className="public-service-facts">{facts.join(" · ")}</p>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ) : null}
-
-        <section className="public-business-section public-hours-section" id="opening-hours">
-          <div className="section-header public-business-section-heading">
-            <div>
-              <p className="section-label">Disponibilità</p>
-              <h2>Orari di apertura</h2>
-            </div>
-            {openingHoursResult?.status === "fulfilled" && openingStatus ? (
-              <BusinessOpeningStatus
-                days={openingDays}
-                initialStatus={openingStatus}
-                timezone={openingHoursResult.value.timezone}
-              />
-            ) : null}
-          </div>
-          {openingHoursResult?.status === "rejected" ? (
-            <p>Gli orari non sono momentaneamente disponibili.</p>
-          ) : openingDays.length ? (
-            <dl className="public-hours-list">
-              {openingDays
-                .slice()
-                .sort((a, b) => a.weekday - b.weekday)
-                .map((day) => {
-                  const isToday = day.weekday === currentWeekday;
-                  return (
-                    <div
-                      key={day.weekday}
-                      aria-current={isToday ? "date" : undefined}
-                      className={`public-hours-row${isToday ? " public-opening-day-current" : ""}`}
+              <div className="public-contact-grid">
+                {phoneHref ? (
+                  <a className="public-contact-card" href={phoneHref}>
+                    <span>Telefono</span>
+                    <strong>{business.contactPhone}</strong>
+                    <small>Chiama ora →</small>
+                  </a>
+                ) : null}
+                {emailHref ? (
+                  <a className="public-contact-card" href={emailHref}>
+                    <span>Email</span>
+                    <strong>{business.publicEmail}</strong>
+                    <small>Scrivi un'email →</small>
+                  </a>
+                ) : null}
+                {website ? (
+                  <a
+                    className="public-contact-card"
+                    href={website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span>Sito web</span>
+                    <strong>Visita il sito</strong>
+                    <small>Apri in una nuova scheda →</small>
+                  </a>
+                ) : null}
+                {displayLocationLine ? (
+                  <div className="public-contact-card is-location">
+                    <span>Indirizzo</span>
+                    <address>{displayLocationLine}</address>
+                    <small>Indirizzo pubblicato</small>
+                  </div>
+                ) : null}
+              </div>
+              {business.socialLinks.length ? (
+                <div className="public-social-links" aria-label="Canali social">
+                  <strong>Segui l'attività</strong>
+                  {business.socialLinks.map((social) => (
+                    <a
+                      key={social.label}
+                      className="text-link"
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Apri ${social.label}`}
                     >
-                      <dt>
-                        {weekdays[day.weekday]}
-                        {isToday ? <span> · Oggi</span> : null}
-                      </dt>
-                      <dd>{formatOpeningDayWithNote(day)}</dd>
-                    </div>
+                      {social.label}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {servicesResult?.status === "rejected" ? (
+            <section
+              className={`${businessShowcase.sectionPanel} public-business-section public-services-section`}
+              id="services"
+            >
+              <div className="section-header public-business-section-heading">
+                <div>
+                  <p className="section-label">Servizi</p>
+                  <h2>Servizi disponibili</h2>
+                </div>
+              </div>
+              <p>I servizi non sono momentaneamente disponibili.</p>
+            </section>
+          ) : services.length ? (
+            <section
+              className={`${businessShowcase.sectionPanel} public-business-section public-services-section`}
+              id="services"
+            >
+              <div className="section-header public-business-section-heading">
+                <div>
+                  <p className="section-label">Servizi</p>
+                  <h2>Servizi disponibili</h2>
+                </div>
+                <span className="public-section-count">
+                  {services.length} {services.length === 1 ? "voce" : "voci"}
+                </span>
+              </div>
+              <ul className="public-service-list">
+                {services.map((service) => {
+                  const facts = [
+                    service.priceLabel ?? formatServicePrice(service.priceCents),
+                    formatServiceDuration(service.durationMinutes),
+                  ].filter(Boolean);
+
+                  return (
+                    <li className="public-service-row" key={service.id}>
+                      <div className="public-service-copy">
+                        <h3>{service.name}</h3>
+                        {service.shortDescription &&
+                        service.shortDescription !== service.description ? (
+                          <p>{service.shortDescription}</p>
+                        ) : null}
+                        {service.description ? <p>{service.description}</p> : null}
+                      </div>
+                      {facts.length ? (
+                        <p className="public-service-facts">{facts.join(" · ")}</p>
+                      ) : null}
+                    </li>
                   );
                 })}
-            </dl>
-          ) : (
-            <p>Gli orari non sono ancora disponibili.</p>
-          )}
-        </section>
+              </ul>
+            </section>
+          ) : null}
 
-        {pickupOrderMenu ? (
-          <PublicPickupOrderForm
-            citySlug={city.slug}
-            businessSlug={business.slug}
-            currency={pickupOrderMenu.currency}
-            timezone={pickupOrderMenu.timezone}
-            minimumOrderCents={pickupOrderMenu.minimumOrderCents}
-            items={pickupOrderMenu.items}
-          />
-        ) : null}
+          <section
+            className={`${businessShowcase.sectionPanel} public-business-section public-hours-section`}
+            id="opening-hours"
+          >
+            <div className="section-header public-business-section-heading">
+              <div>
+                <p className="section-label">Disponibilità</p>
+                <h2>Orari di apertura</h2>
+              </div>
+              {openingHoursResult?.status === "fulfilled" && openingStatus ? (
+                <BusinessOpeningStatus
+                  days={openingDays}
+                  initialStatus={openingStatus}
+                  timezone={openingHoursResult.value.timezone}
+                />
+              ) : null}
+            </div>
+            {openingHoursResult?.status === "rejected" ? (
+              <p>Gli orari non sono momentaneamente disponibili.</p>
+            ) : openingDays.length ? (
+              <dl className="public-hours-list">
+                {openingDays
+                  .slice()
+                  .sort((a, b) => a.weekday - b.weekday)
+                  .map((day) => {
+                    const isToday = day.weekday === currentWeekday;
+                    return (
+                      <div
+                        key={day.weekday}
+                        aria-current={isToday ? "date" : undefined}
+                        className={`public-hours-row${isToday ? " public-opening-day-current" : ""}`}
+                      >
+                        <dt>
+                          {weekdays[day.weekday]}
+                          {isToday ? <span> · Oggi</span> : null}
+                        </dt>
+                        <dd>{formatOpeningDayWithNote(day)}</dd>
+                      </div>
+                    );
+                  })}
+              </dl>
+            ) : (
+              <p>Gli orari non sono ancora disponibili.</p>
+            )}
+          </section>
 
-        <PublicInquiryForm citySlug={city.slug} businessSlug={business.slug} />
+          {pickupOrderMenu ? (
+            <div className={businessShowcase.formPanel}>
+              <PublicPickupOrderForm
+                citySlug={city.slug}
+                businessSlug={business.slug}
+                currency={pickupOrderMenu.currency}
+                timezone={pickupOrderMenu.timezone}
+                minimumOrderCents={pickupOrderMenu.minimumOrderCents}
+                items={pickupOrderMenu.items}
+              />
+            </div>
+          ) : null}
+
+          <div className={businessShowcase.formPanel}>
+            <PublicInquiryForm citySlug={city.slug} businessSlug={business.slug} />
+          </div>
+        </div>
       </div>
     </PublicShell>
   );
