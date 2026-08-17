@@ -7,9 +7,6 @@ on:
       - feature/**
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   quality:
     name: Quality Gate
@@ -48,8 +45,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -91,19 +86,6 @@ jobs:
 
       - name: Lint
         run: npm run lint
-
-      - name: Apply exact Prettier formatting
-        run: npx prettier --write apps/web/src/components/public-business/business-info-drawer.tsx apps/web/src/components/public-business/public-pickup-order-form.tsx
-
-      - name: Commit exact formatting
-        run: |
-          if ! git diff --quiet -- apps/web/src/components/public-business/business-info-drawer.tsx apps/web/src/components/public-business/public-pickup-order-form.tsx; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add apps/web/src/components/public-business/business-info-drawer.tsx apps/web/src/components/public-business/public-pickup-order-form.tsx
-            git commit -m "style: apply exact prettier formatting"
-            git push origin HEAD:${{ github.head_ref }}
-          fi
 
       - name: Format check
         run: npm run format:check
