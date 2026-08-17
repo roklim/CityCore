@@ -94,7 +94,13 @@ export function GlobalEntryHome({
               <div className="public-home-art-caption">
                 <span>CityCore network</span>
                 <strong>{cities.length || "—"}</strong>
-                <small>{cities.length === 1 ? "città disponibile" : "città disponibili"}</small>
+                <small>
+                  {degraded
+                    ? "contenuti in anteprima"
+                    : cities.length === 1
+                      ? "città disponibile"
+                      : "città disponibili"}
+                </small>
               </div>
               <CityLineArt />
             </div>
