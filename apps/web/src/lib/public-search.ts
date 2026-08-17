@@ -30,6 +30,8 @@ const categoryLabels: Record<string, string> = {
 
 const categoryOrder = ["commerce", "service", "hospitality", "editorial", "custom"];
 
+export const minimumPublicSearchSuggestionQueryLength = 2;
+
 export function getPublicBusinessCategoryLabel(category: string | null) {
   if (!category) return null;
   return categoryLabels[category] ?? null;
@@ -76,7 +78,6 @@ export type CitySearchSuggestions<TCity> = {
 };
 
 const defaultCitySuggestionLimit = 5;
-const minimumCitySuggestionQueryLength = 2;
 
 function citySuggestionRank(query: string, city: { slug: string; name: string }) {
   const normalizedName = normalizeCitySearchText(city.name);
@@ -103,7 +104,7 @@ export function getCitySearchSuggestions<TCity extends { slug: string; name: str
 ): CitySearchSuggestions<TCity> {
   const normalizedQuery = normalizeCitySearchText(query);
 
-  if (normalizedQuery.length < minimumCitySuggestionQueryLength) {
+  if (normalizedQuery.length < minimumPublicSearchSuggestionQueryLength) {
     return { items: [], total: 0, truncated: false };
   }
 
