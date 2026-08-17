@@ -1,0 +1,29 @@
+name: Format Probe Public
+
+on:
+  push:
+    branches:
+      - agent/unify-public-experience
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Print formatted diff
+        run: |
+          npx prettier --write \
+            'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' \
+            apps/web/src/components/public-business/business-visual-gallery.tsx \
+            apps/web/src/components/public-home/city-business-directory.tsx \
+            apps/web/src/components/public-home/global-entry-home.tsx
+          git diff -- \
+            'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' \
+            apps/web/src/components/public-business/business-visual-gallery.tsx \
+            apps/web/src/components/public-home/city-business-directory.tsx \
+            apps/web/src/components/public-home/global-entry-home.tsx
