@@ -15,21 +15,20 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Print formatted files
+      - name: Format public files
         run: |
           npx prettier --write \
             'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' \
             apps/web/src/components/public-business/business-visual-gallery.tsx \
             apps/web/src/components/public-home/city-business-directory.tsx \
             apps/web/src/components/public-home/global-entry-home.tsx
-          for file in \
-            'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' \
-            apps/web/src/components/public-business/business-visual-gallery.tsx \
-            apps/web/src/components/public-home/city-business-directory.tsx \
+      - uses: actions/upload-artifact@v4
+        with:
+          name: formatted-public-files
+          path: |
+            apps/web/src/app/[citySlug]/[businessSlug]/page.tsx
+            apps/web/src/components/public-business/business-visual-gallery.tsx
+            apps/web/src/components/public-home/city-business-directory.tsx
             apps/web/src/components/public-home/global-entry-home.tsx
-          do
-            echo "===FILE_START:${file}==="
-            base64 -w0 "$file"
-            echo
-            echo "===FILE_END:${file}==="
-          done
+          if-no-files-found: error
+          retention-days: 1
