@@ -14,7 +14,7 @@ describe("getPublicBusinessPrimaryAction", () => {
     expect(getPublicBusinessPrimaryAction({ ...contacts, pickupOrderAvailable: true })).toEqual({
       label: "Invia una richiesta",
       heading: "Invia una richiesta",
-      href: "#contact",
+      href: "#inquiry-form",
     });
   });
 
@@ -22,7 +22,7 @@ describe("getPublicBusinessPrimaryAction", () => {
     expect(getPublicBusinessPrimaryAction({ ...contacts, pickupOrderAvailable: false })).toEqual({
       label: "Invia una richiesta",
       heading: "Invia una richiesta",
-      href: "#contact",
+      href: "#inquiry-form",
     });
   });
 
