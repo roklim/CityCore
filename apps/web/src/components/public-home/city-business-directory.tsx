@@ -121,15 +121,16 @@ export function CityBusinessDirectory({
   const normalizedQuery = normalizeSearchText(query);
   const hasQuery = normalizedQuery.length > 0;
   const hasCategorySections = sections.length > 0;
-  const hasSuggestionQuery =
-    normalizedQuery.length >= minimumPublicSearchSuggestionQueryLength;
+  const hasSuggestionQuery = normalizedQuery.length >= minimumPublicSearchSuggestionQueryLength;
   const directorySuggestions = useMemo<DirectorySuggestion[]>(() => {
     if (!hasSuggestionQuery) return [];
 
-    const businessSuggestions: DirectorySuggestion[] = visibleBusinesses.slice(0, 4).map((business) => ({
-      kind: "business",
-      business,
-    }));
+    const businessSuggestions: DirectorySuggestion[] = visibleBusinesses
+      .slice(0, 4)
+      .map((business) => ({
+        kind: "business",
+        business,
+      }));
     const categorySuggestions: DirectorySuggestion[] = sections
       .filter((section) => normalizeSearchText(section.label).includes(normalizedQuery))
       .slice(0, 2)
@@ -147,9 +148,7 @@ export function CityBusinessDirectory({
   const activeSuggestion =
     activeSuggestionIndex >= 0 ? directorySuggestions[activeSuggestionIndex] : undefined;
   const activeSuggestionId =
-    listboxVisible && activeSuggestion
-      ? `${listboxId}-option-${activeSuggestionIndex}`
-      : undefined;
+    listboxVisible && activeSuggestion ? `${listboxId}-option-${activeSuggestionIndex}` : undefined;
 
   useEffect(() => {
     const filters = readPublicDirectoryFilters(new URLSearchParams(searchParamsKey));
@@ -205,6 +204,7 @@ export function CityBusinessDirectory({
       cancelAnimationFrame(blurFrameRef.current);
       blurFrameRef.current = null;
     }
+    pointerSelectingRef.current = false;
 
     closeSuggestions();
     if (suggestion.kind === "business") {
@@ -283,7 +283,9 @@ export function CityBusinessDirectory({
         <div
           className={`${styles.searchComposer}${suggestionsVisible ? ` ${styles.searchComposerOpen}` : ""}`}
         >
-          <div className={`${styles.searchShell} ${styles.directorySearch} public-directory-search`}>
+          <div
+            className={`${styles.searchShell} ${styles.directorySearch} public-directory-search`}
+          >
             <label className={styles.srOnly} htmlFor="city-business-search">
               Cerca tra le attività a {cityName}
             </label>
@@ -308,8 +310,7 @@ export function CityBusinessDirectory({
                 const nextQuery = event.target.value;
                 setQuery(nextQuery);
                 setSuggestionsOpen(
-                  normalizeSearchText(nextQuery).length >=
-                    minimumPublicSearchSuggestionQueryLength,
+                  normalizeSearchText(nextQuery).length >= minimumPublicSearchSuggestionQueryLength,
                 );
               }}
               onFocus={() => {
@@ -361,7 +362,7 @@ export function CityBusinessDirectory({
                         ? getPublicBusinessCategories(suggestion.business)
                             .map((category) => category.label)
                             .join(" · ") || suggestion.business.categoryLabel
-                        : `Categoria · ${suggestion.count} ${suggestion.count === 1 ? "attività" : "attività"}`;
+                        : `Categoria · ${suggestion.count} ${suggestion.count === 1 ? "risultato" : "risultati"}`;
 
                     return (
                       <li
