@@ -103,7 +103,10 @@ export function GlobalEntryHome({
                 ) : null}
               </div>
 
-              <div className={showcase.heroVisual} aria-label="Racconto visivo dimostrativo CityCore">
+              <div
+                className={showcase.heroVisual}
+                aria-label="Racconto visivo dimostrativo CityCore"
+              >
                 <div
                   className={showcase.heroPrimary}
                   role="img"
