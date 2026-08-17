@@ -2,60 +2,194 @@ import Link from "next/link";
 import type { PublicCitySurfaceData } from "../../lib/public-runtime";
 import { PublicShell } from "../public-shell";
 import { CityBusinessDirectory } from "./city-business-directory";
+import { demoVisualLabel, getDemoBusinessVisual, getDemoCityVisuals } from "./city-demo-visuals";
+import styles from "./city-showcase.module.css";
 
 export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData }) {
   const { city, degraded, live } = surface;
   const activityLabel = city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
   const heroDescription =
-    city.publicHeroDescription ?? "Consulta le attività pubblicate e scegli come contattarle.";
+    city.publicHeroDescription ??
+    "Attività, servizi e luoghi utili raccolti in uno spazio semplice da esplorare.";
+  const heroTitle = city.publicHeroTitle?.trim() || `Scopri ${city.name}, a modo tuo.`;
   const locationLabel = [city.region, city.country].filter(Boolean).join(" · ");
-  const initial = city.name.trim().charAt(0).toUpperCase();
+  const cityVisuals = getDemoCityVisuals(city.slug);
+  const featuredBusinesses = city.businesses.slice(0, 3);
+
+  const editorialCards = [
+    {
+      label: "Muoversi e scoprire",
+      title: "Centro e quartieri",
+      description:
+        "Attività, servizi e punti di riferimento per iniziare a orientarsi senza perdersi in elenchi infiniti.",
+      visual: cityVisuals[1],
+    },
+    {
+      label: "Vivere il territorio",
+      title: "Natura e tempo libero",
+      description:
+        "Uno sguardo al territorio e alle occasioni per viverlo, prima di entrare nelle singole schede locali.",
+      visual: cityVisuals[2],
+    },
+    {
+      label: "Esperienze locali",
+      title: "Sapori e attività",
+      description:
+        "Ristorazione e servizi di prossimità raccolti in schede chiare, con informazioni utili e contatti diretti.",
+      visual: featuredBusinesses[0] ? getDemoBusinessVisual(featuredBusinesses[0]) : cityVisuals[0],
+    },
+  ];
 
   return (
     <PublicShell
-      toneLabel={live ? "Guida cittadina CityCore" : "Anteprima directory"}
-      title={city.name}
+      toneLabel={live ? locationLabel || "Guida locale" : "Anteprima directory"}
+      title={heroTitle}
       description={heroDescription}
-      contextLabel={city.name}
       contextHref={`/${city.slug}`}
       accentNote={live ? `${city.businessCount} ${activityLabel}` : undefined}
       breadcrumbs={[{ label: "Home", href: "/" }, { label: city.name }]}
       heroClassName="public-city-hero"
       heroActions={
-        <nav className="cta-row" aria-label={`Esplora ${city.name}`}>
+        <nav className="cta-row" aria-label="Azioni principali della città">
           <Link className="cta-button" href={`/${city.slug}#directory`}>
             Esplora le attività
           </Link>
           <Link className="text-link" href="/#citycore-city-search">
-            Scegli un'altra città
+            Cambia città
           </Link>
         </nav>
       }
       heroAside={
-        <div className="public-city-identity" aria-label={`Directory di ${city.name}`}>
-          <div className="public-city-identity-orbit" aria-hidden="true" />
-          <span className="public-city-monogram" aria-hidden="true">
-            {initial}
-          </span>
-          <div className="public-city-identity-copy">
-            <span>Directory locale</span>
-            <strong>{city.name}</strong>
-            {locationLabel ? <small>{locationLabel}</small> : null}
+        <div className={styles.heroVisual} aria-label="Racconto visivo dimostrativo della città">
+          <div
+            className={styles.heroPrimary}
+            role="img"
+            aria-label="Immagine dimostrativa di un borgo italiano e del suo territorio"
+            style={{ backgroundImage: `url("${cityVisuals[0]}")` }}
+          >
+            <span className={styles.demoBadge}>{demoVisualLabel}</span>
+            <div className={styles.heroCaption}>
+              <strong>{locationLabel || "Territorio locale"}</strong>
+              <span>Visual editoriale di supporto, non riferito a un luogo specifico.</span>
+            </div>
           </div>
-          <div className="public-city-identity-count">
-            <strong>{city.businessCount}</strong>
-            <span>{activityLabel}</span>
+          <div className={styles.heroSecondaryStack}>
+            <div
+              className={styles.heroSecondary}
+              role="img"
+              aria-label="Immagine dimostrativa di una strada del centro"
+              style={{ backgroundImage: `url("${cityVisuals[1]}")` }}
+            >
+              <span className={styles.demoBadge}>{demoVisualLabel}</span>
+            </div>
+            <div
+              className={styles.heroSecondary}
+              role="img"
+              aria-label="Immagine dimostrativa di un paesaggio urbano e naturale"
+              style={{ backgroundImage: `url("${cityVisuals[2]}")` }}
+            >
+              <span className={styles.demoBadge}>{demoVisualLabel}</span>
+            </div>
           </div>
         </div>
       }
     >
-      <section className="public-city-continuation" aria-label={`Attività a ${city.name}`}>
-        <CityBusinessDirectory
-          businesses={city.businesses}
-          cityName={city.name}
-          degraded={degraded}
-        />
-      </section>
+      <div className={styles.cityContent}>
+        <section aria-labelledby="city-editorial-title">
+          <div className={styles.sectionHeading}>
+            <div>
+              <p>Esplora il territorio</p>
+              <h2 id="city-editorial-title">Tre modi per iniziare</h2>
+            </div>
+            <p>
+              Centro, territorio e attività locali in una panoramica visiva. Le immagini sono
+              dimostrative; le informazioni delle attività arrivano invece dalle schede pubblicate.
+            </p>
+          </div>
+
+          <div className={styles.editorialGrid}>
+            {editorialCards.map((card) => (
+              <article className={styles.editorialCard} key={card.title}>
+                <div
+                  className={styles.editorialVisual}
+                  role="img"
+                  aria-label={`${demoVisualLabel}: ${card.title}`}
+                  style={{ backgroundImage: `url("${card.visual}")` }}
+                >
+                  <span className={styles.demoBadge}>{demoVisualLabel}</span>
+                </div>
+                <div className={styles.editorialCopy}>
+                  <span>{card.label}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {featuredBusinesses.length ? (
+          <section aria-labelledby="city-featured-title">
+            <div className={styles.sectionHeading}>
+              <div>
+                <p>In evidenza</p>
+                <h2 id="city-featured-title">Attività da cui iniziare</h2>
+              </div>
+              <p>
+                Apri una scheda per vedere le informazioni, i servizi e i contatti realmente
+                disponibili per ogni attività.
+              </p>
+            </div>
+
+            <div className={styles.featuredGrid}>
+              {featuredBusinesses.map((business, index) => {
+                const categoryLabel =
+                  business.categories.map((category) => category.name).join(" · ") ||
+                  business.categoryLabel ||
+                  "Attività locale";
+
+                return (
+                  <article className={styles.featuredCard} key={business.slug}>
+                    <div
+                      className={styles.featuredVisual}
+                      role="img"
+                      aria-label={`${demoVisualLabel} per ${business.name}`}
+                      style={{
+                        backgroundImage: `url("${getDemoBusinessVisual(business, index)}")`,
+                      }}
+                    >
+                      <span className={styles.demoBadge}>{demoVisualLabel}</span>
+                    </div>
+                    <div className={styles.featuredCopy}>
+                      <span className={styles.featuredEyebrow}>{categoryLabel}</span>
+                      <h3>{business.name}</h3>
+                      <p>{business.summary}</p>
+                      {business.services.length ? (
+                        <ul className={styles.featuredServices} aria-label="Servizi in evidenza">
+                          {business.services.slice(0, 3).map((service) => (
+                            <li key={service}>{service}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      <Link className={styles.featuredLink} href={business.href}>
+                        Apri la scheda <span aria-hidden="true">→</span>
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="public-city-continuation" aria-label="Directory delle attività">
+          <CityBusinessDirectory
+            businesses={city.businesses}
+            cityName={city.name}
+            degraded={degraded}
+          />
+        </section>
+      </div>
     </PublicShell>
   );
 }

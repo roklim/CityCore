@@ -1,0 +1,372 @@
+.heroVisual {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(120px, 0.65fr);
+  gap: 12px;
+  min-height: 360px;
+}
+
+.heroPrimary,
+.heroSecondary,
+.editorialVisual,
+.featuredVisual,
+.directoryVisual {
+  position: relative;
+  overflow: hidden;
+  background-position: center;
+  background-size: cover;
+}
+
+.heroPrimary {
+  min-height: 360px;
+  border-radius: 26px;
+}
+
+.heroSecondaryStack {
+  display: grid;
+  gap: 12px;
+}
+
+.heroSecondary {
+  min-height: 174px;
+  border-radius: 20px;
+}
+
+.heroPrimary::after,
+.heroSecondary::after,
+.editorialVisual::after,
+.featuredVisual::after,
+.directoryVisual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.02), rgba(18, 18, 18, 0.5));
+  pointer-events: none;
+}
+
+.demoBadge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.54);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.heroCaption {
+  position: absolute;
+  inset: auto 18px 18px;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  color: #fff;
+}
+
+.heroCaption strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(22px, 2.6vw, 32px);
+  font-weight: 400;
+}
+
+.heroCaption span {
+  max-width: 34ch;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cityContent {
+  display: grid;
+  gap: clamp(44px, 6vw, 76px);
+}
+
+.sectionHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.62fr);
+  gap: 28px;
+  align-items: end;
+  margin-bottom: 22px;
+}
+
+.sectionHeading > div {
+  display: grid;
+  gap: 8px;
+}
+
+.sectionHeading p,
+.sectionHeading h2 {
+  margin: 0;
+}
+
+.sectionHeading > div > p:first-child {
+  color: var(--cc-text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sectionHeading h2 {
+  max-width: 15ch;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.sectionHeading > p {
+  color: var(--cc-text-secondary);
+  line-height: 1.65;
+}
+
+.editorialGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.editorialCard {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--cc-border);
+  border-radius: 22px;
+  background: var(--cc-surface);
+}
+
+.editorialVisual {
+  min-height: 220px;
+}
+
+.editorialCopy {
+  display: grid;
+  gap: 8px;
+  padding: 18px 18px 20px;
+}
+
+.editorialCopy span {
+  color: var(--cc-text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.editorialCopy h3,
+.editorialCopy p {
+  margin: 0;
+}
+
+.editorialCopy h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.editorialCopy p {
+  color: var(--cc-text-secondary);
+  line-height: 1.55;
+}
+
+.featuredGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.featuredCard {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--cc-border);
+  border-radius: 24px;
+  background: var(--cc-surface);
+  transition:
+    border-color var(--cc-duration-fast) var(--cc-ease),
+    box-shadow var(--cc-duration-fast) var(--cc-ease),
+    transform var(--cc-duration-fast) var(--cc-ease);
+}
+
+.featuredCard:hover,
+.featuredCard:focus-within {
+  border-color: var(--cc-accent);
+  box-shadow: var(--cc-shadow-lg);
+  transform: translateY(-3px);
+}
+
+.featuredVisual {
+  min-height: 240px;
+}
+
+.featuredCopy {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+}
+
+.featuredEyebrow {
+  color: var(--cc-text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.featuredCopy h3,
+.featuredCopy p {
+  margin: 0;
+}
+
+.featuredCopy h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.featuredCopy p {
+  color: var(--cc-text-secondary);
+  line-height: 1.55;
+}
+
+.featuredServices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.featuredServices li {
+  padding: 5px 9px;
+  border: 1px solid var(--cc-border);
+  border-radius: 999px;
+  background: var(--cc-surface-soft);
+  color: var(--cc-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.featuredLink {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--cc-text);
+  font-weight: 800;
+}
+
+.featuredLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.directoryVisual {
+  min-height: 164px;
+  margin: -1px -1px 4px;
+  border-radius: 18px 18px 12px 12px;
+}
+
+.directoryVisual .demoBadge {
+  top: 10px;
+  left: 10px;
+  min-height: 26px;
+  font-size: 9px;
+}
+
+.directoryCardBody {
+  display: grid;
+  gap: 10px;
+}
+
+.directoryLocation {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  color: var(--cc-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.directoryLocation::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cc-accent);
+}
+
+@media (max-width: 900px) {
+  .heroVisual {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .heroPrimary {
+    min-height: 320px;
+  }
+
+  .heroSecondaryStack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .heroSecondary {
+    min-height: 150px;
+  }
+
+  .sectionHeading {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .editorialGrid,
+  .featuredGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .heroPrimary {
+    min-height: 290px;
+  }
+
+  .heroSecondaryStack,
+  .editorialGrid,
+  .featuredGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroSecondary {
+    min-height: 140px;
+  }
+
+  .editorialVisual,
+  .featuredVisual {
+    min-height: 210px;
+  }
+
+  .sectionHeading h2 {
+    max-width: none;
+  }
+
+  .cityContent {
+    gap: 48px;
+  }
+}
