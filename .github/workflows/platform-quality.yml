@@ -90,6 +90,12 @@ jobs:
       - name: Format check
         run: npm run format:check
 
+      - name: Show exact Prettier diff
+        if: failure()
+        run: |
+          npx prettier --write apps/web/src/components/public-business/business-info-drawer.tsx apps/web/src/components/public-business/public-pickup-order-form.tsx
+          git diff -- apps/web/src/components/public-business/business-info-drawer.tsx apps/web/src/components/public-business/public-pickup-order-form.tsx
+
       - name: Typecheck
         run: npm run typecheck
 
