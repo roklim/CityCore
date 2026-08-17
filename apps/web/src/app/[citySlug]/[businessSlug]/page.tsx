@@ -38,6 +38,15 @@ const schemaWeekdays = [
   "https://schema.org/Sunday",
 ] as const;
 
+function initials(value: string) {
+  return value
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
 export async function generateMetadata({ params }: BusinessPageProps): Promise<Metadata> {
   const { citySlug, businessSlug } = await params;
   const surface = await getPublicBusinessMetadataData(citySlug, businessSlug);
@@ -117,6 +126,8 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
     locality: business.locality,
     province: business.province,
   });
+  const locationSummary = business.locality ?? business.province ?? city.name;
+  const categoryLabel = business.categories[0]?.name ?? business.categoryLabel;
   const structuredStreetAddress = [business.addressLine, business.addressLine2]
     .filter((value): value is string => Boolean(value))
     .join(", ");
@@ -206,7 +217,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
 
   return (
     <PublicShell
-      toneLabel={business.categories[0]?.name ?? business.categoryLabel}
+      toneLabel={categoryLabel}
       title={business.name}
       description={business.summary}
       contextLabel={city.name}
@@ -216,6 +227,35 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
         { label: city.name, href: `/${city.slug}` },
         { label: business.name },
       ]}
+      heroClassName="public-business-hero"
+      heroActions={
+        <nav className="cta-row public-business-hero-actions" aria-label="Azioni principali">
+          <a
+            className="cta-button"
+            href={primaryAction.href}
+            target={primaryAction.external ? "_blank" : undefined}
+            rel={primaryAction.external ? "noopener noreferrer" : undefined}
+          >
+            {primaryAction.label}
+          </a>
+          <Link className="text-link" href={services.length ? "#services" : "#contact"}>
+            {services.length ? "Vedi i servizi" : "Contatti e indirizzo"}
+          </Link>
+        </nav>
+      }
+      heroAside={
+        <div className="public-business-identity" aria-label={`Identità di ${business.name}`}>
+          <div className="public-business-identity-glow" aria-hidden="true" />
+          <span className="public-business-monogram" aria-hidden="true">
+            {initials(business.name)}
+          </span>
+          <div className="public-business-identity-copy">
+            <span>{categoryLabel}</span>
+            <strong>{locationSummary}</strong>
+            <small>CityCore · {city.name}</small>
+          </div>
+        </div>
+      }
     >
       {structuredData ? (
         <script
@@ -228,6 +268,30 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
 
       <div className="public-stack public-business-page">
         <section className="public-business-overview" aria-label="Informazioni principali">
+          <div className="public-business-fact">
+            <span>Disponibilità</span>
+            {openingHoursResult?.status === "fulfilled" && openingStatus ? (
+              <BusinessOpeningStatus
+                days={openingDays}
+                initialStatus={openingStatus}
+                timezone={openingHoursResult.value.timezone}
+              />
+            ) : (
+              <strong>Contatta l'attività</strong>
+            )}
+          </div>
+          <div className="public-business-fact">
+            <span>Servizi</span>
+            <strong>
+              {services.length
+                ? `${services.length} ${services.length === 1 ? "servizio" : "servizi"}`
+                : "Su richiesta"}
+            </strong>
+          </div>
+          <div className="public-business-fact">
+            <span>Località</span>
+            <strong>{locationSummary}</strong>
+          </div>
           {business.categories.length > 1 ? (
             <div className="pill-row public-business-categories" aria-label="Categorie attività">
               {business.categories.slice(1).map((category) => (
@@ -237,54 +301,57 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
               ))}
             </div>
           ) : null}
-          {openingHoursResult?.status === "fulfilled" && openingStatus ? (
-            <BusinessOpeningStatus
-              days={openingDays}
-              initialStatus={openingStatus}
-              timezone={openingHoursResult.value.timezone}
-            />
-          ) : null}
-          <nav className="cta-row public-business-quick-actions" aria-label="Azioni principali">
-            <a
-              className="cta-button"
-              href={primaryAction.href}
-              target={primaryAction.external ? "_blank" : undefined}
-              rel={primaryAction.external ? "noopener noreferrer" : undefined}
-            >
-              {primaryAction.label}
-            </a>
-          </nav>
         </section>
 
-        <section className="public-business-section public-contact-details">
-          <div className="section-header">
-            <p className="section-label">Contatti</p>
-            <h2>Contatti e indirizzo</h2>
+        <section className="public-business-section public-contact-details" id="contact">
+          <div className="section-header public-business-section-heading">
+            <div>
+              <p className="section-label">Contatti</p>
+              <h2>Parla con {business.name}</h2>
+            </div>
+            <p>Usa il canale più comodo oppure raggiungi direttamente l'attività.</p>
           </div>
-          <div className="public-contact-list">
+          <div className="public-contact-grid">
             {phoneHref ? (
-              <a className="text-link" href={phoneHref}>
-                {business.contactPhone}
+              <a className="public-contact-card" href={phoneHref}>
+                <span>Telefono</span>
+                <strong>{business.contactPhone}</strong>
+                <small>Chiama ora →</small>
               </a>
             ) : null}
             {emailHref ? (
-              <a className="text-link" href={emailHref}>
-                {business.publicEmail}
+              <a className="public-contact-card" href={emailHref}>
+                <span>Email</span>
+                <strong>{business.publicEmail}</strong>
+                <small>Scrivi un'email →</small>
               </a>
             ) : null}
             {website ? (
-              <a className="text-link" href={website} target="_blank" rel="noopener noreferrer">
-                Apri il sito web
+              <a
+                className="public-contact-card"
+                href={website}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>Sito web</span>
+                <strong>Visita il sito</strong>
+                <small>Apri in una nuova scheda →</small>
               </a>
             ) : null}
-            {locationLine ? <address>{locationLine}</address> : null}
+            {locationLine ? (
+              <div className="public-contact-card is-location">
+                <span>Indirizzo</span>
+                <address>{locationLine}</address>
+                <small>{city.name}</small>
+              </div>
+            ) : null}
           </div>
           {!phoneHref && !emailHref && !website && !locationLine ? (
             <p>Usa il modulo di richiesta per contattare questa attività.</p>
           ) : null}
           {business.socialLinks.length ? (
             <div className="public-social-links" aria-label="Canali social">
-              <strong>Social</strong>
+              <strong>Segui l'attività</strong>
               {business.socialLinks.map((social) => (
                 <a
                   key={social.label}
@@ -302,9 +369,16 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
         </section>
 
         <section className="public-business-section public-services-section" id="services">
-          <div className="section-header">
-            <p className="section-label">Servizi</p>
-            <h2>Servizi disponibili</h2>
+          <div className="section-header public-business-section-heading">
+            <div>
+              <p className="section-label">Servizi</p>
+              <h2>Servizi disponibili</h2>
+            </div>
+            {services.length ? (
+              <span className="public-section-count">
+                {services.length} {services.length === 1 ? "voce" : "voci"}
+              </span>
+            ) : null}
           </div>
           {servicesResult?.status === "rejected" ? (
             <p>I servizi non sono momentaneamente disponibili.</p>
@@ -339,9 +413,18 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
         </section>
 
         <section className="public-business-section public-hours-section" id="opening-hours">
-          <div className="section-header">
-            <p className="section-label">Disponibilità</p>
-            <h2>Orari di apertura</h2>
+          <div className="section-header public-business-section-heading">
+            <div>
+              <p className="section-label">Disponibilità</p>
+              <h2>Orari di apertura</h2>
+            </div>
+            {openingHoursResult?.status === "fulfilled" && openingStatus ? (
+              <BusinessOpeningStatus
+                days={openingDays}
+                initialStatus={openingStatus}
+                timezone={openingHoursResult.value.timezone}
+              />
+            ) : null}
           </div>
           {openingHoursResult?.status === "rejected" ? (
             <p>Gli orari non sono momentaneamente disponibili.</p>
