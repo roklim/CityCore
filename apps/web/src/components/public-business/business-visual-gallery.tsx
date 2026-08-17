@@ -31,10 +31,10 @@ export function BusinessVisualGallery({
         <span className={styles.demoBadge}>{demoVisualLabel}</span>
         <div className={styles.caption}>
           <span>{categoryLabel}</span>
-          <strong>{name}</strong>
+          <strong>Atmosfera e dettagli</strong>
           <small>
-            Visual di supporto alla demo. Foto, contatti e contenuti reali potranno essere
-            pubblicati direttamente dall'attività.
+            Visual di supporto alla demo. Foto e contenuti reali potranno essere pubblicati
+            direttamente dall'attività.
           </small>
         </div>
       </div>
