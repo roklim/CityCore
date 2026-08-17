@@ -1,6 +1,12 @@
 "use client";
 
-import { type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import businessShowcase from "./business-showcase.module.css";
 
@@ -75,6 +81,8 @@ export function BusinessInfoDrawer({ children }: { children: ReactNode }) {
         className={businessShowcase.infoDrawer}
         id="business-info-dialog"
         aria-labelledby="business-info-title"
+        aria-describedby="business-info-description"
+        aria-modal="true"
         onClose={handleClose}
         onClick={handleBackdropClick}
       >
@@ -83,7 +91,9 @@ export function BusinessInfoDrawer({ children }: { children: ReactNode }) {
             <div>
               <span>Dettagli</span>
               <h2 id="business-info-title">Info locale</h2>
-              <p>Orari, contatti, servizi e informazioni utili, quando ti servono.</p>
+              <p id="business-info-description">
+                Orari, contatti, servizi e informazioni utili, quando ti servono.
+              </p>
             </div>
             <button
               className={businessShowcase.drawerClose}
