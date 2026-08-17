@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import {
   getCitySearchSuggestions,
+  minimumPublicSearchSuggestionQueryLength,
   normalizeCitySearchText,
   resolveCitySearch,
 } from "../../lib/public-search";
@@ -88,15 +89,8 @@ export function CityEntryForm({ cities }: { cities: CityOption[] }) {
     () => getCitySearchSuggestions(inputValue, cities),
     [cities, inputValue],
   );
-  const duplicateNameCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const city of cities) {
-      const key = normalizeCitySearchText(city.name);
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    return counts;
-  }, [cities]);
-  const hasSuggestionQuery = normalizeCitySearchText(inputValue).length >= 2;
+  const hasSuggestionQuery =
+    normalizeCitySearchText(inputValue).length >= minimumPublicSearchSuggestionQueryLength;
   const suggestionsVisible = suggestionsOpen && hasSuggestionQuery && !isPending;
   const listboxVisible = suggestionsVisible && suggestions.items.length > 0;
   const activeSuggestion =
@@ -187,11 +181,10 @@ export function CityEntryForm({ cities }: { cities: CityOption[] }) {
 
   const selectSuggestion = (city: CityOption) => {
     cancelPendingBlur();
-    searchInputRef.current?.focus();
     setInputValue(city.name);
     setSelectedSlug(city.slug);
     setStatusMessage(null);
-    closeSuggestions();
+    goToCity(city.slug, city.name);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -247,7 +240,10 @@ export function CityEntryForm({ cities }: { cities: CityOption[] }) {
     setSelectedSlug(null);
     setStatusMessage(null);
     setActiveSuggestionIndex(-1);
-    setSuggestionsOpen(!isComposingRef.current && normalizeCitySearchText(nextValue).length >= 2);
+    setSuggestionsOpen(
+      !isComposingRef.current &&
+        normalizeCitySearchText(nextValue).length >= minimumPublicSearchSuggestionQueryLength,
+    );
   };
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -332,7 +328,10 @@ export function CityEntryForm({ cities }: { cities: CityOption[] }) {
                 isComposingRef.current = false;
                 const nextValue = event.currentTarget.value;
                 setInputValue(nextValue);
-                setSuggestionsOpen(normalizeCitySearchText(nextValue).length >= 2);
+                setSuggestionsOpen(
+                  normalizeCitySearchText(nextValue).length >=
+                    minimumPublicSearchSuggestionQueryLength,
+                );
               }}
               onCompositionStart={() => {
                 isComposingRef.current = true;
@@ -343,7 +342,8 @@ export function CityEntryForm({ cities }: { cities: CityOption[] }) {
                 if (
                   !isPending &&
                   !isComposingRef.current &&
-                  normalizeCitySearchText(inputValue).length >= 2
+                  normalizeCitySearchText(inputValue).length >=
+                    minimumPublicSearchSuggestionQueryLength
                 ) {
                   setSuggestionsOpen(true);
                 }
@@ -379,11 +379,7 @@ export function CityEntryForm({ cities }: { cities: CityOption[] }) {
                   {suggestions.items.map((city, index) => {
                     const optionId = `${listboxId}-option-${index}`;
                     const isActive = index === activeSuggestionIndex;
-                    const hasDuplicateName =
-                      (duplicateNameCounts.get(normalizeCitySearchText(city.name)) ?? 0) > 1;
-                    const qualifier = hasDuplicateName
-                      ? city.qualifier?.trim() || city.slug.replaceAll("-", " ")
-                      : null;
+                    const qualifier = city.qualifier?.trim() || null;
 
                     return (
                       <li
