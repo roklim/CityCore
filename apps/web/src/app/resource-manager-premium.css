@@ -1,0 +1,432 @@
+/* STEP 5 — Premium resource managers ------------------------------------ */
+
+.shell-main > .admin-state-card {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.45fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  padding: 17px 20px;
+  border: 1px solid rgba(24, 24, 24, 0.075);
+  border-left: 3px solid rgba(232, 106, 74, 0.62);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.54);
+  box-shadow: none;
+}
+
+.shell-main > .admin-state-card > div {
+  display: grid;
+  gap: 4px;
+}
+
+.shell-main > .admin-state-card h2 {
+  margin: 0;
+  font-family: var(--cc-font-sans);
+  font-size: 15px;
+  font-weight: 770;
+  letter-spacing: -0.025em;
+}
+
+.shell-main > .admin-state-card > p {
+  max-width: 76ch;
+  margin: 0;
+  color: var(--cc-text-muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.shell-main > .admin-state-card.is-error {
+  border-left-color: var(--cc-warning);
+  background: rgba(255, 250, 239, 0.76);
+}
+
+.shell-main > .admin-toolbar {
+  display: grid;
+  gap: 15px;
+  padding: 18px;
+  border: 1px solid rgba(24, 24, 24, 0.085);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
+
+.shell-main > .admin-toolbar .section-header {
+  align-items: end;
+}
+
+.shell-main > .admin-toolbar .section-header h2 {
+  font-family: var(--cc-font-sans);
+  font-size: 18px;
+  font-weight: 760;
+  letter-spacing: -0.03em;
+}
+
+.admin-filter-form,
+.admin-filter-form.admin-filter-form-wide,
+.admin-filter-form.is-compact {
+  gap: 9px;
+}
+
+.admin-filter-form .field {
+  gap: 5px;
+}
+
+.admin-filter-form .field > span,
+.admin-edit-form .field > span,
+.auth-form .field > span {
+  color: var(--cc-text-muted);
+  font-size: 8px;
+  font-weight: 820;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.admin-filter-form input,
+.admin-filter-form select {
+  min-height: 40px;
+  padding: 0 11px;
+  border-color: rgba(24, 24, 24, 0.13);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+}
+
+.admin-filter-form input:hover,
+.admin-filter-form select:hover {
+  border-color: rgba(24, 24, 24, 0.22);
+}
+
+.admin-filter-actions {
+  gap: 7px;
+  align-self: end;
+}
+
+.admin-filter-actions .admin-button {
+  min-height: 40px;
+  padding-inline: 13px;
+  font-size: 10px;
+}
+
+.admin-create-panel {
+  overflow: clip;
+  border: 1px solid rgba(24, 24, 24, 0.085);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
+
+.admin-create-panel > summary {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 17px;
+  color: var(--cc-text);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 780;
+  list-style: none;
+}
+
+.admin-create-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-create-panel > summary::after {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--cc-border);
+  border-radius: 8px;
+  background: var(--cc-surface-soft);
+  color: var(--cc-text-secondary);
+  content: "+";
+  font-size: 14px;
+  line-height: 1;
+}
+
+.admin-create-panel[open] > summary {
+  border-bottom: 1px solid var(--cc-border);
+}
+
+.admin-create-panel[open] > summary::after {
+  content: "−";
+}
+
+.admin-create-panel > form,
+.admin-create-panel > .admin-edit-form,
+.admin-create-panel > :not(summary) {
+  margin: 0;
+}
+
+.admin-create-panel .admin-edit-form,
+.admin-create-panel .admin-create-form,
+.admin-create-panel .auth-form {
+  padding: 18px;
+}
+
+.shell-main > .data-card {
+  display: grid;
+  gap: 14px;
+  padding: 6px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.shell-main > .data-card > .card-heading {
+  min-height: 46px;
+  align-items: end;
+  padding-inline: 2px;
+}
+
+.shell-main > .data-card > .card-heading h2 {
+  font-family: var(--cc-font-sans);
+  font-size: 20px;
+  font-weight: 760;
+  letter-spacing: -0.035em;
+}
+
+.admin-result-count {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid var(--cc-border);
+  border-radius: 999px;
+  background: var(--cc-surface-soft);
+  color: var(--cc-text-muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid rgba(24, 24, 24, 0.09);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 1px 2px rgba(24, 24, 24, 0.025);
+}
+
+.data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table thead {
+  background: #f4f2ed;
+}
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(24, 24, 24, 0.09);
+  background: #f4f2ed;
+  color: var(--cc-text-muted);
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(24, 24, 24, 0.065);
+  color: var(--cc-text-secondary);
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table tbody tr {
+  transition: background var(--cc-duration-fast) var(--cc-ease);
+}
+
+.data-table tbody tr:hover {
+  background: rgba(246, 244, 239, 0.72);
+}
+
+.data-table td > strong {
+  display: block;
+  color: var(--cc-text);
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: -0.012em;
+}
+
+.data-table td > span:not(.pill):not(.status-badge):not(.admin-muted-label) {
+  display: block;
+  margin-top: 2px;
+  color: var(--cc-text-muted);
+  font-size: 8px;
+}
+
+.table-actions {
+  gap: 5px;
+  align-items: center;
+}
+
+.table-link,
+.table-action-button,
+.admin-inline-details > summary {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--cc-text-secondary);
+  font-size: 8px;
+  font-weight: 760;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color var(--cc-duration-fast) var(--cc-ease),
+    background var(--cc-duration-fast) var(--cc-ease),
+    color var(--cc-duration-fast) var(--cc-ease);
+}
+
+.table-link:hover,
+.table-action-button:hover,
+.admin-inline-details > summary:hover {
+  border-color: var(--cc-border);
+  background: var(--cc-surface-soft);
+  color: var(--cc-text);
+}
+
+.table-actions > form {
+  margin: 0;
+}
+
+.admin-inline-details {
+  position: relative;
+}
+
+.admin-inline-details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-inline-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-inline-details[open] > summary {
+  border-color: rgba(232, 106, 74, 0.22);
+  background: var(--cc-accent-soft);
+  color: var(--cc-accent-ink);
+}
+
+.admin-inline-details .admin-edit-form.is-compact {
+  margin-top: 7px;
+  padding: 12px;
+  border: 1px solid var(--cc-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--cc-shadow-lg);
+}
+
+.admin-pagination {
+  min-height: 42px;
+  gap: 9px;
+  padding: 2px;
+}
+
+.admin-pagination a,
+.admin-pagination span {
+  font-size: 9px;
+}
+
+.admin-pagination a {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--cc-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.admin-access-actions {
+  align-items: flex-start;
+}
+
+.admin-access-reset[open] {
+  min-width: 250px;
+}
+
+.surface-success,
+.surface-error {
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+@media (max-width: 980px) {
+  .shell-main > .admin-state-card {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .shell-main > .admin-toolbar {
+    padding: 15px;
+  }
+
+  .admin-filter-actions {
+    width: 100%;
+  }
+
+  .admin-filter-actions .admin-button {
+    flex: 1 1 auto;
+  }
+
+  .admin-create-panel > summary {
+    min-height: 50px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding-inline: 10px;
+  }
+
+  .table-actions {
+    min-width: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shell-main > .admin-state-card,
+  .shell-main > .admin-toolbar {
+    border-radius: 12px;
+  }
+
+  .shell-main > .admin-state-card {
+    padding: 14px 15px;
+  }
+
+  .table-wrap {
+    margin-inline: -2px;
+    border-radius: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table tbody tr,
+  .table-link,
+  .table-action-button,
+  .admin-inline-details > summary {
+    transition: none;
+  }
+}
