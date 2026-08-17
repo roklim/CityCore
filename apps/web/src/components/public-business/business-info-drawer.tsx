@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  type MouseEvent,
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import businessShowcase from "./business-showcase.module.css";
 

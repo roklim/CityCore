@@ -443,9 +443,7 @@ export function PublicPickupOrderForm({
                           : undefined
                       }
                       type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
-                      autoComplete={
-                        field === "name" ? "name" : field === "email" ? "email" : "tel"
-                      }
+                      autoComplete={field === "name" ? "name" : field === "email" ? "email" : "tel"}
                       maxLength={field === "name" ? 120 : field === "email" ? 200 : 60}
                       name={field}
                       required={field !== "phone"}
@@ -518,9 +516,7 @@ export function PublicPickupOrderForm({
             <div className={`public-form-actions ${orderStyles.submitRow}`}>
               <p className="public-order-total" id="order-total">
                 Totale <strong>{formatPrice(totalCents, currency)}</strong>
-                {minimumOrderCents
-                  ? ` · Minimo ${formatPrice(minimumOrderCents, currency)}`
-                  : ""}
+                {minimumOrderCents ? ` · Minimo ${formatPrice(minimumOrderCents, currency)}` : ""}
               </p>
               <button
                 className="cta-button"
