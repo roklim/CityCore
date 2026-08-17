@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PublicCitySurfaceData } from "../../lib/public-runtime";
+import { getContextualBusinessSummary } from "../../lib/public-copy";
 import { PublicShell } from "../public-shell";
 import { CityBusinessDirectory } from "./city-business-directory";
 import { demoVisualLabel, getDemoBusinessVisual, getDemoCityVisuals } from "./city-demo-visuals";
@@ -14,7 +15,11 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
   const heroTitle = city.publicHeroTitle?.trim() || `Scopri ${city.name}, a modo tuo.`;
   const locationLabel = [city.region, city.country].filter(Boolean).join(" · ");
   const cityVisuals = getDemoCityVisuals(city.slug);
-  const featuredBusinesses = city.businesses.slice(0, 3);
+  const displayBusinesses = city.businesses.map((business) => ({
+    ...business,
+    summary: getContextualBusinessSummary(business.summary, business.name, city.name),
+  }));
+  const featuredBusinesses = displayBusinesses.slice(0, 3);
 
   const editorialCards = [
     {
@@ -136,8 +141,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
                 <h2 id="city-featured-title">Attività da cui iniziare</h2>
               </div>
               <p>
-                Apri una scheda per vedere le informazioni, i servizi e i contatti realmente
-                disponibili per ogni attività.
+                Apri una scheda per vedere informazioni, servizi e contatti realmente disponibili.
               </p>
             </div>
 
@@ -184,7 +188,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
 
         <section className="public-city-continuation" aria-label="Directory delle attività">
           <CityBusinessDirectory
-            businesses={city.businesses}
+            businesses={displayBusinesses}
             cityName={city.name}
             degraded={degraded}
           />
