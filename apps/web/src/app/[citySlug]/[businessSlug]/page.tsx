@@ -127,11 +127,7 @@ export default async function BusinessPage({ params }: BusinessPageProps) {
   const hasStreetAddress = Boolean(structuredStreetAddress || business.postalCode?.trim());
   const displayLocationLine = hasStreetAddress ? locationLine : null;
   const hasContactDetails = Boolean(
-    phoneHref ||
-      emailHref ||
-      website ||
-      displayLocationLine ||
-      business.socialLinks.length,
+    phoneHref || emailHref || website || displayLocationLine || business.socialLinks.length,
   );
   const secondaryAction = services.length
     ? { href: "#services", label: "Vedi i servizi" }
