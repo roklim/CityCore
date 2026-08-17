@@ -4,6 +4,7 @@ import { createCssVariables } from "@platform/ui";
 import { resolvePublicSiteUrl } from "../lib/public-links";
 import "./globals.css";
 import "./premium.css";
+import "./public-showcase.css";
 
 const metadataBase = resolvePublicSiteUrl(
   process.env.NEXT_PUBLIC_SITE_URL,
