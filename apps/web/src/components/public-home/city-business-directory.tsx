@@ -14,10 +14,7 @@ import {
   updatePublicDirectorySearchParams,
   type PublicDirectoryFilters,
 } from "../../lib/public-directory-query";
-import {
-  demoVisualLabel,
-  getDemoBusinessVisual,
-} from "./city-demo-visuals";
+import { demoVisualLabel, getDemoBusinessVisual } from "./city-demo-visuals";
 import showcaseStyles from "./city-showcase.module.css";
 import styles from "./context-gateway.module.css";
 
@@ -55,9 +52,6 @@ function BusinessCard({ business, index }: { business: PublicCityBusinessCard; i
             <p className={`${styles.sectionKicker} public-business-card-category`}>
               {categoryLabel}
             </p>
-            {business.locality ? (
-              <span className={showcaseStyles.directoryLocation}>{business.locality}</span>
-            ) : null}
           </div>
         </div>
         <h3 className="public-business-card-title">{business.name}</h3>
