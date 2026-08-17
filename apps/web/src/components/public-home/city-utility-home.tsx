@@ -2,17 +2,12 @@ import Link from "next/link";
 import type { PublicCitySurfaceData } from "../../lib/public-runtime";
 import { PublicShell } from "../public-shell";
 import { CityBusinessDirectory } from "./city-business-directory";
-import {
-  demoVisualLabel,
-  getDemoBusinessVisual,
-  getDemoCityVisuals,
-} from "./city-demo-visuals";
+import { demoVisualLabel, getDemoBusinessVisual, getDemoCityVisuals } from "./city-demo-visuals";
 import styles from "./city-showcase.module.css";
 
 export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData }) {
   const { city, degraded, live } = surface;
-  const activityLabel =
-    city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
+  const activityLabel = city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
   const heroDescription =
     city.publicHeroDescription ??
     "Attività, servizi e luoghi utili raccolti in uno spazio semplice da esplorare.";
@@ -41,9 +36,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
       title: "Sapori e attività",
       description:
         "Ristorazione e servizi di prossimità raccolti in schede chiare, con informazioni utili e contatti diretti.",
-      visual: featuredBusinesses[0]
-        ? getDemoBusinessVisual(featuredBusinesses[0])
-        : cityVisuals[0],
+      visual: featuredBusinesses[0] ? getDemoBusinessVisual(featuredBusinesses[0]) : cityVisuals[0],
     },
   ];
 
@@ -67,10 +60,7 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
         </nav>
       }
       heroAside={
-        <div
-          className={styles.heroVisual}
-          aria-label="Racconto visivo dimostrativo della città"
-        >
+        <div className={styles.heroVisual} aria-label="Racconto visivo dimostrativo della città">
           <div
             className={styles.heroPrimary}
             role="img"
