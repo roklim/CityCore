@@ -14,6 +14,9 @@ type PublicShellProps = {
   contextHref?: string;
   accentNote?: string;
   breadcrumbs?: PublicBreadcrumb[];
+  heroAside?: ReactNode;
+  heroActions?: ReactNode;
+  heroClassName?: string;
   children: ReactNode;
 };
 
@@ -70,6 +73,9 @@ export function PublicShell({
   contextHref,
   accentNote,
   breadcrumbs,
+  heroAside,
+  heroActions,
+  heroClassName,
   children,
 }: PublicShellProps) {
   const showContextLink = Boolean(contextLabel && contextLabel !== title);
@@ -81,6 +87,14 @@ export function PublicShell({
         { label: title },
       ];
   const exploreHref = contextHref ? `${contextHref}#directory` : "/#citycore-city-search";
+  const heroClasses = [
+    "public-hero",
+    "public-page-intro",
+    heroAside ? "has-visual" : "",
+    heroClassName ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="public-shell">
@@ -108,24 +122,28 @@ export function PublicShell({
           </ol>
         </nav>
 
-        <section className="public-hero public-page-intro">
-          <div className="public-hero-copy">
-            <div className="public-hero-meta">
-              <span className="public-kicker">{toneLabel}</span>
-              {showContextLink && contextLabel ? (
-                contextHref ? (
-                  <Link className="public-meta-chip public-meta-link" href={contextHref}>
-                    {contextLabel}
-                  </Link>
-                ) : (
-                  <span className="public-meta-chip">{contextLabel}</span>
-                )
-              ) : null}
-            </div>
+        <section className={heroClasses}>
+          <div className="public-hero-content">
+            <div className="public-hero-copy">
+              <div className="public-hero-meta">
+                <span className="public-kicker">{toneLabel}</span>
+                {showContextLink && contextLabel ? (
+                  contextHref ? (
+                    <Link className="public-meta-chip public-meta-link" href={contextHref}>
+                      {contextLabel}
+                    </Link>
+                  ) : (
+                    <span className="public-meta-chip">{contextLabel}</span>
+                  )
+                ) : null}
+              </div>
 
-            <h1>{title}</h1>
-            <p>{description}</p>
-            {accentNote ? <p className="public-context-note">{accentNote}</p> : null}
+              <h1>{title}</h1>
+              <p>{description}</p>
+              {accentNote ? <p className="public-context-note">{accentNote}</p> : null}
+              {heroActions ? <div className="public-hero-actions">{heroActions}</div> : null}
+            </div>
+            {heroAside ? <div className="public-hero-aside">{heroAside}</div> : null}
           </div>
         </section>
 
