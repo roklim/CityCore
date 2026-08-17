@@ -15,20 +15,14 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Format public files
+      - name: Format dynamic page
         run: |
-          npx prettier --write \
-            'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' \
-            apps/web/src/components/public-business/business-visual-gallery.tsx \
-            apps/web/src/components/public-home/city-business-directory.tsx \
-            apps/web/src/components/public-home/global-entry-home.tsx
+          npx prettier --write 'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx'
+          mkdir -p formatted
+          cp 'apps/web/src/app/[citySlug]/[businessSlug]/page.tsx' formatted/page.tsx
       - uses: actions/upload-artifact@v4
         with:
-          name: formatted-public-files
-          path: |
-            apps/web/src/app/[citySlug]/[businessSlug]/page.tsx
-            apps/web/src/components/public-business/business-visual-gallery.tsx
-            apps/web/src/components/public-home/city-business-directory.tsx
-            apps/web/src/components/public-home/global-entry-home.tsx
+          name: formatted-business-page
+          path: formatted/page.tsx
           if-no-files-found: error
           retention-days: 1
