@@ -256,7 +256,9 @@ export function PublicPickupOrderForm({
               const quantity = cart[item.id] ?? 0;
               return (
                 <article
-                  className={`public-order-menu-item ${orderStyles.menuItem}${quantity ? ` ${orderStyles.selected}` : ""}`}
+                  className={`public-order-menu-item ${orderStyles.menuItem}${
+                    quantity ? ` ${orderStyles.selected}` : ""
+                  }`}
                   key={item.id}
                 >
                   <div className={orderStyles.menuCopy}>
