@@ -1,5 +1,67 @@
 /* STEP 2 — Premium public showcase --------------------------------------- */
 
+.public-site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px 32px;
+  margin-top: clamp(48px, 7vw, 88px);
+  padding-top: 24px;
+  border-top: 1px solid var(--cc-border);
+  color: var(--cc-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.public-site-footer p {
+  max-width: 70ch;
+  margin: 0;
+}
+
+.public-site-footer strong {
+  color: var(--cc-text);
+}
+
+.public-site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.public-site-footer a,
+.public-legal-content a {
+  color: var(--cc-accent-ink);
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.public-site-footer a:focus-visible,
+.public-legal-content a:focus-visible {
+  border-radius: 4px;
+  outline: 3px solid var(--cc-accent-hover);
+  outline-offset: 3px;
+}
+
+.public-legal-content {
+  width: min(100%, 860px);
+}
+
+.public-legal-content ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-inline-start: 22px;
+  color: var(--cc-text-secondary);
+}
+
+.public-legal-content .public-business-section > p {
+  max-width: 76ch;
+  margin: 0;
+}
+
 .public-page-intro.has-visual .public-hero-content {
   display: grid;
   grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);

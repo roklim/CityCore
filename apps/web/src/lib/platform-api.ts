@@ -645,6 +645,7 @@ type FetchOptions = {
   token?: string;
   body?: Record<string, unknown>;
   cache?: RequestCache;
+  timeoutMs?: number;
 };
 
 function getApiBaseUrl() {
@@ -659,17 +660,28 @@ function getApiBaseUrl() {
 
 export async function fetchPlatformApi<TResponse>(
   path: string,
-  { method = "GET", token, body, cache = "no-store" }: FetchOptions = {},
+  { method = "GET", token, body, cache = "no-store", timeoutMs = 20_000 }: FetchOptions = {},
 ) {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    method,
-    cache,
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      method,
+      cache,
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    if (error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name)) {
+      throw new Error(`Platform API request timed out after ${timeoutMs}ms.`, { cause: error });
+    }
+
+    throw error;
+  }
 
   const contentType = response.headers.get("content-type") ?? "";
   const responseBody = contentType.includes("application/json")

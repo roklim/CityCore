@@ -14,6 +14,7 @@ import {
   PlatformApiError,
 } from "./platform-api";
 import { normalizeExternalUrl } from "./public-links";
+import { shouldUseEditorialFallback } from "./public-runtime-policy";
 import {
   getBusinessProfile,
   getCityProfile,
@@ -408,6 +409,7 @@ export async function getPublicCityMetadataData(
     };
   } catch (error) {
     if (error instanceof PlatformApiError && error.status === 404) return null;
+    if (!shouldUseEditorialFallback()) throw error;
 
     const fallbackCity = getFallbackCityProfile(canonicalSlug);
     return fallbackCity
@@ -441,6 +443,7 @@ export async function getPublicBusinessMetadataData(
     return { business, citySlug: runtimeBusiness.city.slug, degraded: false };
   } catch (error) {
     if (error instanceof PlatformApiError && error.status === 404) return null;
+    if (!shouldUseEditorialFallback()) throw error;
 
     const fallbackBusiness = getFallbackBusinessProfile(canonicalCity, canonicalBusiness);
     return fallbackBusiness
@@ -483,7 +486,9 @@ export async function getHomepageSurfaceData(): Promise<HomepageSurfaceData> {
       featuredCities,
       degraded: false,
     };
-  } catch {
+  } catch (error) {
+    if (!shouldUseEditorialFallback()) throw error;
+
     return {
       featuredCities: chooseHomepageCityCards([], fallbackCities, true),
       degraded: true,
@@ -545,6 +550,7 @@ export async function getPublicCitySurfaceData(
     if (error instanceof PlatformApiError && error.status === 404) {
       return null;
     }
+    if (!shouldUseEditorialFallback()) throw error;
 
     const fallbackCity = getFallbackCityProfile(canonicalSlug);
 
@@ -630,6 +636,7 @@ export async function getPublicBusinessSurfaceData(
     if (error instanceof PlatformApiError && error.status === 404) {
       return null;
     }
+    if (!shouldUseEditorialFallback()) throw error;
 
     const fallbackCity = getFallbackCityProfile(canonicalCity);
     const fallbackBusiness = getFallbackBusinessProfile(canonicalCity, canonicalBusiness);

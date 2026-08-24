@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { HomepageCityCard } from "../../lib/public-runtime";
-import { PublicSiteHeader } from "../public-shell";
+import { PublicSiteFooter, PublicSiteHeader } from "../public-shell";
 import { CityEntryForm } from "./city-entry-form";
 import { demoVisualLabel, getDemoCityVisuals } from "./city-demo-visuals";
 import styles from "./context-gateway.module.css";
@@ -230,6 +230,7 @@ export function GlobalEntryHome({
               </p>
             </section>
           </main>
+          <PublicSiteFooter />
         </div>
       </div>
     </div>

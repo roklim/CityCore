@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { GlobalEntryHome } from "../components/public-home/global-entry-home";
 import { getHomepageSurfaceData } from "../lib/public-runtime";
 
+export const dynamic = "force-dynamic";
+
 const homeDescription =
   "Scegli una città e trova attività locali, servizi, orari e contatti pubblicati su CityCore.";
 

@@ -495,7 +495,8 @@ export function PublicPickupOrderForm({
                   aria-invalid={Boolean(errors.privacyAccepted)}
                   aria-describedby={errors.privacyAccepted ? "order-privacy-error" : undefined}
                 />{" "}
-                Acconsento al trattamento dei dati per gestire questo ordine.
+                Confermo di aver letto Privacy demo e Termini nel footer e di usare il modulo solo
+                per una prova controllata. Questo invio non è un acquisto né un pagamento online.
               </label>
               {errors.privacyAccepted ? (
                 <span className="public-form-error" id="order-privacy-error">

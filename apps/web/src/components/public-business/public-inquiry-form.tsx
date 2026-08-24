@@ -191,8 +191,8 @@ export function PublicInquiryForm({
           aria-invalid={Boolean(errors.privacyAccepted)}
           aria-describedby={errors.privacyAccepted ? "inquiry-privacy-error" : undefined}
         />{" "}
-        Acconsento al trattamento dei dati forniti esclusivamente per ricevere risposta a questa
-        richiesta.
+        Confermo di aver letto la Privacy demo nel footer, di usare il modulo solo per una prova
+        controllata e di non inserire dati personali reali.
       </label>
       {errors.privacyAccepted ? (
         <span className="public-form-error" id="inquiry-privacy-error">

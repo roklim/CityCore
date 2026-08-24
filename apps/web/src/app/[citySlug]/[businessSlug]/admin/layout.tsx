@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { BusinessAdminShell } from "../../../../components/business-admin-shell";
 import { getBusinessAdminContext } from "../../../../lib/business-admin-server";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function BusinessAdminLayout({
   children,

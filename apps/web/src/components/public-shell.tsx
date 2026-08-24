@@ -65,6 +65,21 @@ export function PublicSiteHeader({
   );
 }
 
+export function PublicSiteFooter() {
+  return (
+    <footer className="public-site-footer">
+      <p>
+        <strong>Ambiente dimostrativo.</strong> CityCore è un prototipo sviluppato per una tesi: non
+        è un servizio nazionale in produzione. Evita di inserire dati personali reali.
+      </p>
+      <nav aria-label="Informazioni legali e nota demo">
+        <Link href="/privacy">Privacy demo</Link>
+        <Link href="/termini">Termini e nota demo</Link>
+      </nav>
+    </footer>
+  );
+}
+
 export function PublicShell({
   toneLabel,
   title,
@@ -149,6 +164,7 @@ export function PublicShell({
 
         {children}
       </main>
+      <PublicSiteFooter />
     </div>
   );
 }

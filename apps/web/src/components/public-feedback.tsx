@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { PublicSiteHeader } from "./public-shell";
+import { PublicSiteFooter, PublicSiteHeader } from "./public-shell";
 
 type PublicFeedbackProps = {
   title: string;
@@ -17,6 +17,7 @@ export function PublicFeedbackPage({ children }: { children: ReactNode }) {
       <main className="feedback-page" id="main-content" tabIndex={-1}>
         {children}
       </main>
+      <PublicSiteFooter />
     </div>
   );
 }

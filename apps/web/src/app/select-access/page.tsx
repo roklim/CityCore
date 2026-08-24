@@ -8,6 +8,7 @@ import { AccessSelector } from "./access-selector";
 
 export const metadata = {
   title: "Scelta accesso operatori",
+  robots: { index: false, follow: false },
 };
 
 export default async function SelectAccessPage() {
