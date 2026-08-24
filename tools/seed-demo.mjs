@@ -50,6 +50,7 @@ const cityCategorySpecs = [
 
 const cagliBusinessSpecs = [
   {
+    ownerKey: "one",
     slug: "forno-civico",
     name: "Forno Civico",
     templateCode: "local_business",
@@ -108,6 +109,7 @@ const cagliBusinessSpecs = [
     },
   },
   {
+    ownerKey: "two",
     slug: "studio-aurora",
     name: "Studio Aurora",
     templateCode: "studio_service",
@@ -151,6 +153,7 @@ const cagliBusinessSpecs = [
     },
   },
   {
+    ownerKey: "one",
     slug: "casa-del-borgo",
     name: "Casa del Borgo",
     templateCode: "hospitality",
@@ -182,6 +185,7 @@ const cagliBusinessSpecs = [
     },
   },
   {
+    ownerKey: "two",
     slug: "agenda-cagli",
     name: "Agenda Cagli",
     templateCode: "events_listings",
@@ -213,6 +217,7 @@ const cagliBusinessSpecs = [
     },
   },
   {
+    ownerKey: "one",
     slug: "officina-del-ponte",
     name: "Officina del Ponte",
     templateCode: "local_business",
@@ -251,6 +256,88 @@ const cagliBusinessSpecs = [
       ],
       saturday: [{ opensAt: "08:30", closesAt: "12:30" }],
       sunday: [],
+    },
+  },
+  {
+    ownerKey: "two",
+    slug: "mucho-gusto",
+    name: "Mucho Gusto",
+    templateCode: "local_business",
+    cityCategorySlug: "ristorazione",
+    moduleCodes: ["catalog", "forms_inbox"],
+    publicTitle: "Mucho Gusto · Pizzeria",
+    publicSubtitle: "Pizzeria locale a Cagli, con menu dimostrativo e ritiro programmato.",
+    publicDescription:
+      "Mucho Gusto è il caso pilota della tesi: una scheda dimostrativa con menu, orari, contatti e ordine con ritiro.",
+    publicEmail: null,
+    publicPhone: "+39 0721 000106",
+    website: null,
+    addressLine1: "Via del Centro 18",
+    locality: "Cagli",
+    province: "PU",
+    ordering: {
+      enabled: true,
+      pickupLeadMinutes: 30,
+      slotMinutes: 15,
+      slotCapacity: 4,
+      minimumOrderCents: 0,
+    },
+    services: [
+      {
+        slug: "pizza-margherita-demo",
+        name: "Margherita",
+        shortDescription: "Menu demo · Pomodoro, fiordilatte e basilico.",
+        description: "Prodotto dimostrativo usato per verificare il flusso di ordine con ritiro.",
+        priceCents: 750,
+        priceLabel: "€ 7,50",
+        pickupEnabled: true,
+        sortOrder: 10,
+      },
+      {
+        slug: "pizza-diavola-demo",
+        name: "Diavola",
+        shortDescription: "Menu demo · Pomodoro, fiordilatte e salame piccante.",
+        description: "Prodotto dimostrativo usato per verificare il flusso di ordine con ritiro.",
+        priceCents: 900,
+        priceLabel: "€ 9,00",
+        pickupEnabled: true,
+        sortOrder: 20,
+      },
+      {
+        slug: "pizza-vegetariana-demo",
+        name: "Vegetariana",
+        shortDescription: "Menu demo · Fiordilatte e verdure di stagione.",
+        description: "Prodotto dimostrativo usato per verificare il flusso di ordine con ritiro.",
+        priceCents: 900,
+        priceLabel: "€ 9,00",
+        pickupEnabled: true,
+        sortOrder: 30,
+      },
+      {
+        slug: "pizza-capricciosa-demo",
+        name: "Capricciosa",
+        shortDescription: "Menu demo · Una proposta classica per la simulazione.",
+        description: "Prodotto dimostrativo usato per verificare il flusso di ordine con ritiro.",
+        priceCents: 1000,
+        priceLabel: "€ 10,00",
+        pickupEnabled: true,
+        sortOrder: 40,
+      },
+      {
+        slug: "pizza-speciale-demo",
+        name: "Speciale della casa",
+        shortDescription: "Menu demo · Ricetta dimostrativa della casa.",
+        description: "Prodotto dimostrativo usato per verificare il flusso di ordine con ritiro.",
+        priceCents: 1150,
+        priceLabel: "€ 11,50",
+        pickupEnabled: true,
+        sortOrder: 50,
+      },
+    ],
+    openingHours: {
+      weekdays: [{ opensAt: "18:00", closesAt: "23:00" }],
+      saturday: [{ opensAt: "18:00", closesAt: "23:30" }],
+      sunday: [{ opensAt: "18:00", closesAt: "22:30" }],
     },
   },
 ];
@@ -413,6 +500,11 @@ async function ensureBusiness({ city, templates, categories, owner, spec }) {
         businessId: business.id,
       },
     });
+  } else if (!accessGrant.active) {
+    await prisma.accessGrant.update({
+      where: { id: accessGrant.id },
+      data: { active: true, scopeType: "business", cityId: city.id },
+    });
   }
 
   return business;
@@ -473,14 +565,15 @@ async function main() {
       )
     ).map((category) => [category.slug, category]),
   );
+  const owners = { one: ownerOne, two: ownerTwo };
 
   await Promise.all(
-    cagliBusinessSpecs.map((spec, index) =>
+    cagliBusinessSpecs.map((spec) =>
       ensureBusiness({
         city,
         templates,
         categories,
-        owner: index % 2 === 0 ? ownerOne : ownerTwo,
+        owner: owners[spec.ownerKey],
         spec,
       }),
     ),
