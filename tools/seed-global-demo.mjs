@@ -1,8 +1,10 @@
 import { config as loadEnv } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { GLOBAL_DEMO_CITIES, GLOBAL_DEMO_SOURCE } from "./global-demo-cities.mjs";
+import { assertDemoSeedAllowed } from "./legacy-demo-migration-guard.mjs";
 
 loadEnv({ path: "apps/api/.env" });
+assertDemoSeedAllowed("db:seed:global-demo");
 
 const prisma = new PrismaClient();
 

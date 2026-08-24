@@ -1,8 +1,10 @@
 import { randomBytes, scryptSync } from "node:crypto";
 import { config as loadEnv } from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import { assertDemoSeedAllowed } from "./legacy-demo-migration-guard.mjs";
 
 loadEnv({ path: "apps/api/.env" });
+assertDemoSeedAllowed("db:seed");
 
 const prisma = new PrismaClient();
 const password = process.env.DEMO_SEED_PASSWORD?.trim();

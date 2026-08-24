@@ -1,0 +1,6 @@
+# Keep repository text deterministic across Windows, macOS, and Linux.
+* text=auto eol=lf
+
+# Native Windows command scripts require CRLF when executed directly.
+*.bat text eol=crlf
+*.cmd text eol=crlf

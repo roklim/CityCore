@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=20.9.0",
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0",
     "npm": ">=10"
   },
   "scripts": {
@@ -23,6 +23,7 @@
     "db:seed": "node tools/seed-demo.mjs",
     "db:seed:global-demo": "node tools/seed-global-demo.mjs",
     "db:verify:global-demo": "node tools/verify-global-demo.mjs",
+    "db:audit:legacy-demo": "node tools/audit-legacy-demo-data.mjs",
     "db:import:geonames": "node tools/import-geonames-city-registry.mjs",
     "db:test:up": "docker compose -f compose.test.yml up -d --wait",
     "db:test:down": "docker compose -f compose.test.yml down",
@@ -35,7 +36,8 @@
     "build:web": "npm --workspace @platform/web run build",
     "build:api": "npm --workspace @platform/api run build",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm --workspace @platform/api run test",
+    "test": "npm run test:migration-guard && npm --workspace @platform/api run test",
+    "test:migration-guard": "node --test tools/legacy-demo-migration-guard.test.mjs",
     "test:integration": "node tools/run-integration-tests.mjs",
     "test:coverage": "npm --workspace @platform/api run test:coverage",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" \"tools/**/*.mjs\"",

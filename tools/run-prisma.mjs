@@ -1,18 +1,73 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import {
+  LEGACY_DEMO_MIGRATION_ACKNOWLEDGEMENT,
+  LEGACY_DEMO_MIGRATION_GUARD_SQL,
+  legacyDemoMigrationGuardDecision,
+} from "./legacy-demo-migration-guard.mjs";
 
 const prismaSchema = "packages/database/prisma/schema.prisma";
 const localDatabaseUrl = "postgresql://postgres:postgres@localhost:5432/citycore?schema=public";
 const command = process.execPath;
 const prismaCliEntry = resolve(process.cwd(), "node_modules/prisma/build/index.js");
-const prismaArgs = [prismaCliEntry, ...process.argv.slice(2), "--schema", prismaSchema];
+const requestedArgs = process.argv.slice(2);
+const prismaArgs = [prismaCliEntry, ...requestedArgs, "--schema", prismaSchema];
+const commandEnvironment = {
+  ...process.env,
+  DATABASE_URL: process.env.DATABASE_URL || localDatabaseUrl,
+};
+const guardDecision = legacyDemoMigrationGuardDecision(requestedArgs, commandEnvironment);
+
+if (guardDecision.shouldRun) {
+  process.stdout.write(
+    "[run-prisma] Running production preflight for shared legacy demo-data migrations.\n",
+  );
+
+  const guardResult = spawnSync(
+    command,
+    [prismaCliEntry, "db", "execute", "--stdin", "--schema", prismaSchema],
+    {
+      cwd: process.cwd(),
+      env: commandEnvironment,
+      input: LEGACY_DEMO_MIGRATION_GUARD_SQL,
+      shell: false,
+      stdio: "pipe",
+      encoding: "utf8",
+    },
+  );
+
+  if (guardResult.error) {
+    process.stderr.write(
+      `[run-prisma] Legacy demo-data migration preflight could not start: ${guardResult.error.message}\n`,
+    );
+    process.exit(1);
+  }
+
+  if (guardResult.status !== 0) {
+    if (guardResult.stdout) process.stderr.write(guardResult.stdout);
+    if (guardResult.stderr) process.stderr.write(guardResult.stderr);
+    process.stderr.write(
+      [
+        "",
+        "[run-prisma] Production migration stopped before Prisma changed application data.",
+        "[run-prisma] Review docs/LEGACY_DEMO_DATA_MIGRATIONS.md and audit the target database.",
+        "[run-prisma] Do not bypass the guard until the cagli/mucho-gusto ownership decision is recorded.",
+        "",
+      ].join("\n"),
+    );
+    process.exit(1);
+  }
+
+  process.stdout.write("[run-prisma] Legacy demo-data migration preflight passed.\n");
+} else if (guardDecision.acknowledged) {
+  process.stderr.write(
+    `[run-prisma] WARNING: production legacy demo-data guard explicitly acknowledged with ${LEGACY_DEMO_MIGRATION_ACKNOWLEDGEMENT}.\n`,
+  );
+}
 
 const result = spawnSync(command, prismaArgs, {
   cwd: process.cwd(),
-  env: {
-    ...process.env,
-    DATABASE_URL: process.env.DATABASE_URL || localDatabaseUrl,
-  },
+  env: commandEnvironment,
   shell: false,
   stdio: "pipe",
   encoding: "utf8",
