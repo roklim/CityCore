@@ -486,6 +486,29 @@ export type PublicCityResponse = {
   item: PublicPlatformCity;
 };
 
+export type PublicCityEvent = {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  description: string | null;
+  status: "published";
+  venueName: string;
+  addressLine1: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  timezone: string;
+  organizer: { name: string; businessSlug: string | null };
+};
+
+export type PublicCityEventsResponse = {
+  status: "ok";
+  items: PublicCityEvent[];
+  page: number;
+  limit: number;
+  total: number;
+};
+
 export type PublicBusinessResponse = {
   status: "ok";
   item: PublicPlatformBusiness;

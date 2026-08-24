@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createPublicBusinessSearchIndex,
   filterPublicBusinesses,
   filterPublicBusinessesBySection,
   findMatchingCitySlug,
@@ -9,6 +10,7 @@ import {
   groupPublicBusinessesForDisplay,
   normalizeSearchText,
   resolveCitySearch,
+  searchPublicBusinesses,
 } from "./public-search";
 
 describe("public search", () => {
@@ -450,5 +452,75 @@ describe("public search", () => {
     expect(filterPublicBusinessesBySection(businesses, "margherita", "pizza")).toEqual([
       businesses[0],
     ]);
+  });
+
+  it("keeps indexed trigram search equivalent to the linear baseline", () => {
+    const businesses = [
+      {
+        name: "Forno Civico",
+        summary: "Impasti del giorno",
+        category: "commerce",
+        categoryLabel: "Attività locali",
+        categories: [{ id: "cat-pizza", name: "Pizzerìa", slug: "pizza" }],
+        area: "Centro storico",
+        searchTerms: ["Margherita", "Pizza vegetariana"],
+      },
+      {
+        name: "Studio Aurora",
+        summary: "Servizi professionali",
+        category: "service",
+        categoryLabel: "Servizi",
+        categories: [{ id: "cat-studio", name: "Professionisti", slug: "professionisti" }],
+        area: "Porta Massara",
+        searchTerms: ["Primo incontro"],
+      },
+      {
+        name: "Casa del Borgo",
+        summary: "Ospitalità nel centro",
+        category: "hospitality",
+        categoryLabel: "Ospitalità",
+        categories: [],
+        area: "Cagli",
+        searchTerms: ["Richiesta soggiorno"],
+      },
+    ];
+    const index = createPublicBusinessSearchIndex(businesses);
+
+    for (const query of ["", "p", "pi", "pizza", "PIZZERIA", "aurora", "porta mass", "zz"])
+      expect(searchPublicBusinesses(index, query)).toEqual(
+        filterPublicBusinessesBySection(businesses, query, "all"),
+      );
+
+    for (const sectionId of ["pizza", "professionisti", "hospitality", "missing"])
+      expect(searchPublicBusinesses(index, "", sectionId)).toEqual(
+        filterPublicBusinessesBySection(businesses, "", sectionId),
+      );
+
+    expect(searchPublicBusinesses(index, "margherita", "pizza")).toEqual([businesses[0]]);
+    expect(searchPublicBusinesses(index, "margherita", "professionisti")).toEqual([]);
+  });
+
+  it("does not create cross-field matches and reports deterministic index statistics", () => {
+    const businesses = [
+      {
+        name: "Alfa",
+        summary: "Beta",
+        category: "service",
+        categoryLabel: "Servizi",
+        categories: [{ id: "cat-service", name: "Servizi", slug: "servizi" }],
+        area: "Centro",
+        searchTerms: ["Gamma"],
+      },
+    ];
+    const index = createPublicBusinessSearchIndex(businesses);
+
+    expect(searchPublicBusinesses(index, "alfa beta")).toEqual([]);
+    expect(index.stats).toMatchObject({
+      itemCount: 1,
+      normalizedFieldCount: 6,
+      postingCount: expect.any(Number),
+      trigramCount: expect.any(Number),
+    });
+    expect(index.stats.postingCount).toBeGreaterThanOrEqual(index.stats.trigramCount);
   });
 });

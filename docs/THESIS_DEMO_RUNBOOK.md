@@ -4,7 +4,8 @@
 
 La demo presenta CityCore come MVP city-first verificato su Cagli. Non dimostra un rollout
 nazionale già operativo: dimostra il modello `Platform -> City -> Business`, l'isolamento degli
-accessi e il flusso completo dalla pubblicazione alla richiesta del visitatore.
+accessi, l'agenda pubblica minima e il flusso completo dalla pubblicazione alla richiesta del
+visitatore. L'elaborato richiesto è il libretto scritto; questo runbook non presuppone slide.
 
 ## Perimetro da dichiarare
 
@@ -17,12 +18,15 @@ global admin
 -> owner completa profilo, categorie, servizi e orari
 -> pubblica
 -> visitatore trova il Business
+-> consulta gli eventi pubblicati della City
 -> invia una richiesta
 -> owner gestisce la richiesta in inbox
 ```
 
-Il pickup ordering di Mucho Gusto è un'estensione dimostrativa. Booking, hospitality, eventi,
-listing, billing, domini personalizzati e rollout nazionale restano evoluzioni successive.
+Il pickup ordering di Mucho Gusto è un'estensione dimostrativa. Gli eventi sono limitati a record
+sintetici persistiti e consultazione pubblica read-only: CRUD admin, ricorrenze, ticketing e
+prenotazioni restano evoluzioni successive, insieme a booking, hospitality verticale, listing,
+billing, domini personalizzati e rollout nazionale.
 
 ## Piano operativo delle due giornate
 
@@ -35,10 +39,12 @@ si introducono nuovi moduli o refactor laterali.
    sotto.
 2. Eseguire il quality gate completo, inclusi i test d'integrazione sul database isolato.
 3. Creare soltanto dati sintetici e provare senza scorciatoie il percorso global admin, owner,
-   pubblicazione, visitatore, inquiry e inbox.
+   pubblicazione, visitatore, agenda eventi, inquiry e inbox.
 4. Verificare ruoli e isolamento aprendo un secondo owner che non deve vedere il business altrui.
-5. Correggere esclusivamente difetti bloccanti o incongruenze visibili nella sequenza di tesi.
-6. Annotare commit, configurazione e credenziali demo in un supporto privato esterno al repository.
+5. Eseguire `npm run benchmark:search`, conservando nel libretto solo metodo, limiti e risultati
+   della revisione congelata.
+6. Correggere esclusivamente difetti bloccanti o incongruenze visibili nella sequenza di tesi.
+7. Annotare commit, configurazione e credenziali demo in un supporto privato esterno al repository.
 
 Uscita del giorno 1: percorso obbligatorio ripetibile due volte, test verdi e nessun difetto
 bloccante aperto.
@@ -51,13 +57,14 @@ bloccante aperto.
    login, Privacy e Termini.
 3. Ripetere la sequenza in viewport desktop e mobile, usando esclusivamente dati fittizi.
 4. Registrare un video di riserva e acquisire screenshot delle tappe fondamentali.
-5. Fare almeno due prove cronometrate della discussione, includendo limiti e roadmap nazionale.
+5. Fare almeno due prove cronometrate della discussione senza slide, includendo indice di ricerca,
+   limiti e roadmap nazionale.
 6. Congelare il commit della tesi: dopo il freeze si accettano soltanto correzioni che impediscono
    la demo o la build.
 
-Uscita del giorno 2: staging verificato, backup offline disponibile, commit annotato nelle slide e
-decisione `go` per la tesi. Se uno di questi elementi manca, usare la demo locale preparata invece
-di improvvisare modifiche all'ultimo momento.
+Uscita del giorno 2: staging verificato, backup offline disponibile, revisione annotata nel registro
+privato di consegna e decisione `go` per la tesi. Se uno di questi elementi manca, usare la demo
+locale preparata invece di improvvisare modifiche all'ultimo momento.
 
 ## Preparazione pulita
 
@@ -92,7 +99,12 @@ Il seed prepara gli account seguenti con la password fornita dall'ambiente:
 - `owner-one@citycore.demo`
 - `owner-two@citycore.demo`
 
-Le credenziali non devono essere pubblicate nel repository, nelle slide o durante una registrazione.
+Il seed crea inoltre tre eventi sintetici di Cagli con date fisse nel giugno 2030. Servono a mostrare
+ordinamento, intervallo temporale, luogo e collegamento opzionale all'organizzatore; non sono eventi
+reali né un feed aggiornato automaticamente.
+
+Le credenziali non devono essere pubblicate nel repository, nel libretto o durante una
+registrazione.
 
 ## Avvio
 
@@ -109,15 +121,17 @@ Superfici da verificare prima della discussione:
 - `http://localhost:3000/api/health`
 - `http://localhost:4000/health`
 
-## Sequenza consigliata per la presentazione
+## Sequenza consigliata per la dimostrazione orale
 
 1. Aprire la home e spiegare la navigazione city-first.
-2. Entrare in Cagli e mostrare ricerca e filtri della directory.
-3. Aprire Mucho Gusto, distinguendo chiaramente immagini e menu dimostrativi.
-4. Inviare un'inquiry usando esclusivamente dati fittizi.
-5. Accedere come owner e mostrare profilo, readiness, pubblicazione e inbox.
-6. Accedere come global admin e mostrare City, Business e access grant.
-7. Chiudere con test automatici, limiti noti e roadmap nazionale.
+2. Entrare in Cagli e mostrare ricerca e filtri della directory; chiarire che l'indice a trigrammi
+   opera in memoria sui Business già caricati, non nel database.
+3. Mostrare l'agenda cronologica e dichiarare che è una vista pubblica read-only su dati demo.
+4. Aprire Mucho Gusto, distinguendo chiaramente immagini e menu dimostrativi.
+5. Inviare un'inquiry usando esclusivamente dati fittizi.
+6. Accedere come owner e mostrare profilo, readiness, pubblicazione e inbox.
+7. Accedere come global admin e mostrare City, Business e access grant.
+8. Chiudere con test automatici, benchmark riproducibile, limiti noti e roadmap nazionale.
 
 Non modificare migrazioni, ambiente o dati durante la presentazione. Preparare il database e
 riscaldare web/API almeno dieci minuti prima.
@@ -133,6 +147,7 @@ npm run lint
 npm run format:check
 npm run typecheck
 npm run build
+npm run benchmark:search
 ```
 
 I test d'integrazione devono usare `DATABASE_URL_TEST`, separato da `DATABASE_URL` e contenente
@@ -140,9 +155,11 @@ la parola `test`. Il runner rifiuta il database di sviluppo.
 
 ## Checklist finale
 
-- working tree noto e commit annotato nelle slide;
+- working tree noto e revisione annotata nel registro privato di consegna;
 - health web e API verdi;
 - demo provata sia in viewport desktop sia mobile;
+- agenda di Cagli ordinata e chiaramente identificata come dataset sintetico;
+- benchmark rieseguito sulla stessa revisione citata nel libretto;
 - nessun dato personale reale inserito;
 - pagine Privacy e Termini raggiungibili;
 - account e password demo conservati fuori dal repository;

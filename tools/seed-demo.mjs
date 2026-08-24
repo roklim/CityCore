@@ -342,6 +342,45 @@ const cagliBusinessSpecs = [
   },
 ];
 
+const cagliEventSpecs = [
+  {
+    slug: "mercato-dei-produttori-locali",
+    title: "Mercato dei produttori locali",
+    summary: "Una mattinata dimostrativa dedicata a prodotti, attività e realtà del territorio.",
+    description:
+      "Evento demo persistito per verificare ordinamento temporale, luogo e collegamento all'organizzatore.",
+    venueName: "Piazza Matteotti",
+    addressLine1: "Piazza Matteotti, Cagli",
+    startsAt: "2030-06-01T07:00:00.000Z",
+    endsAt: "2030-06-01T10:00:00.000Z",
+    organizerBusinessSlug: "agenda-cagli",
+  },
+  {
+    slug: "laboratorio-impasti-del-borgo",
+    title: "Laboratorio: impasti del borgo",
+    summary: "Incontro dimostrativo su preparazioni, ingredienti e tradizioni locali.",
+    description:
+      "Evento demo collegato a un'attività per mostrare che l'organizzatore resta un Business del core.",
+    venueName: "Forno Civico",
+    addressLine1: "Via del Borgo 12, Cagli",
+    startsAt: "2030-06-08T16:00:00.000Z",
+    endsAt: "2030-06-08T18:00:00.000Z",
+    organizerBusinessSlug: "forno-civico",
+  },
+  {
+    slug: "rassegna-servizi-e-territorio",
+    title: "Rassegna servizi e territorio",
+    summary: "Presentazione dimostrativa di professionisti, strutture e servizi della città.",
+    description:
+      "Terzo elemento del dataset per verificare paginazione e ordinamento cronologico degli eventi.",
+    venueName: "Teatro comunale",
+    addressLine1: "Via del Teatro, Cagli",
+    startsAt: "2030-06-15T18:00:00.000Z",
+    endsAt: "2030-06-15T20:30:00.000Z",
+    organizerBusinessSlug: "agenda-cagli",
+  },
+];
+
 function hashPassword(value) {
   const salt = randomBytes(16);
   return `scrypt$${salt.toString("base64url")}$${scryptSync(value, salt, 64).toString("base64url")}`;
@@ -416,6 +455,36 @@ async function ensureOrderingSettings(businessId, settings) {
     update: settings,
     create: { businessId, ...settings },
   });
+}
+
+async function ensureCityEvents(city, businesses, publishedAt) {
+  for (const spec of cagliEventSpecs) {
+    const organizerBusiness = businesses.get(spec.organizerBusinessSlug);
+    if (!organizerBusiness) {
+      throw new Error(`Missing event organizer business ${spec.organizerBusinessSlug}.`);
+    }
+    const data = {
+      organizerBusinessId: organizerBusiness.id,
+      organizerName: organizerBusiness.name,
+      title: spec.title,
+      summary: spec.summary,
+      description: spec.description,
+      venueName: spec.venueName,
+      addressLine1: spec.addressLine1,
+      startsAt: new Date(spec.startsAt),
+      endsAt: new Date(spec.endsAt),
+      timezone: "Europe/Rome",
+      status: "published",
+      active: true,
+      publishedAt,
+    };
+
+    await prisma.cityEvent.upsert({
+      where: { cityId_slug: { cityId: city.id, slug: spec.slug } },
+      update: data,
+      create: { cityId: city.id, slug: spec.slug, ...data },
+    });
+  }
 }
 
 async function ensureBusiness({ city, templates, categories, owner, spec }) {
@@ -567,17 +636,22 @@ async function main() {
   );
   const owners = { one: ownerOne, two: ownerTwo };
 
-  await Promise.all(
-    cagliBusinessSpecs.map((spec) =>
-      ensureBusiness({
-        city,
-        templates,
-        categories,
-        owner: owners[spec.ownerKey],
-        spec,
-      }),
-    ),
+  const businesses = new Map(
+    (
+      await Promise.all(
+        cagliBusinessSpecs.map((spec) =>
+          ensureBusiness({
+            city,
+            templates,
+            categories,
+            owner: owners[spec.ownerKey],
+            spec,
+          }),
+        ),
+      )
+    ).map((business) => [business.slug, business]),
   );
+  await ensureCityEvents(city, businesses, publishedAt);
 
   const globalGrant = await prisma.accessGrant.findFirst({
     where: { userId: admin.id, role: "global_admin", scopeType: "platform" },

@@ -280,6 +280,50 @@ export function mapPublicCity(city: {
   };
 }
 
+export function mapPublicEvent(event: {
+  id: string;
+  cityId: string;
+  title: string;
+  slug: string;
+  summary: string;
+  description: string | null;
+  organizerName: string;
+  venueName: string;
+  addressLine1: string | null;
+  startsAt: Date;
+  endsAt: Date | null;
+  timezone: string;
+  status: "draft" | "in_review" | "published" | "archived";
+  organizerBusiness: {
+    cityId: string;
+    name: string;
+    slug: string;
+    status: BusinessStatus;
+  } | null;
+}) {
+  return {
+    id: event.id,
+    title: event.title,
+    slug: event.slug,
+    summary: event.summary,
+    description: event.description,
+    status: event.status,
+    venueName: event.venueName,
+    addressLine1: event.addressLine1,
+    startsAt: event.startsAt.toISOString(),
+    endsAt: event.endsAt?.toISOString() ?? null,
+    timezone: event.timezone,
+    organizer: {
+      name: event.organizerName,
+      businessSlug:
+        event.organizerBusiness?.status === "active" &&
+        event.organizerBusiness.cityId === event.cityId
+          ? event.organizerBusiness.slug
+          : null,
+    },
+  };
+}
+
 export function mapPublicBusiness(business: {
   id: string;
   name: string;

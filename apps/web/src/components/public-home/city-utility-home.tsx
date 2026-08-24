@@ -4,10 +4,11 @@ import { getContextualBusinessSummary } from "../../lib/public-copy";
 import { PublicShell } from "../public-shell";
 import { CityBusinessDirectory } from "./city-business-directory";
 import { demoVisualLabel, getDemoBusinessVisual, getDemoCityVisuals } from "./city-demo-visuals";
+import { CityEventsSection } from "./city-events-section";
 import styles from "./city-showcase.module.css";
 
 export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData }) {
-  const { city, degraded, live } = surface;
+  const { city, degraded, eventsTotal, eventsUnavailable, live } = surface;
   const activityLabel = city.businessCount === 1 ? "attività pubblicata" : "attività pubblicate";
   const heroDescription =
     city.publicHeroDescription ??
@@ -59,6 +60,11 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
           <Link className="cta-button" href={`/${city.slug}#directory`}>
             Esplora le attività
           </Link>
+          {city.events.length ? (
+            <Link className="text-link" href={`/${city.slug}#events`}>
+              Vedi gli eventi
+            </Link>
+          ) : null}
           <Link className="text-link" href="/#citycore-city-search">
             Cambia città
           </Link>
@@ -132,6 +138,12 @@ export function CityUtilityHome({ surface }: { surface: PublicCitySurfaceData })
             ))}
           </div>
         </section>
+
+        <CityEventsSection
+          events={city.events}
+          total={eventsTotal}
+          unavailable={eventsUnavailable}
+        />
 
         {featuredBusinesses.length ? (
           <section aria-labelledby="city-featured-title">

@@ -240,6 +240,7 @@ model City {
   mediaAssets          MediaAsset[]     @relation("CityMediaAssets")
   categories           CityCategory[]
   collections          CityCollection[]
+  events               CityEvent[]
   accessGrants         AccessGrant[]
   auditLogs            AuditLog[]
   createdAt            DateTime         @default(now()) @map("created_at")
@@ -297,7 +298,7 @@ model PlatformModule {
   publicEnabled Boolean    @default(true) @map("public_enabled")
   adminEnabled  Boolean    @default(true) @map("admin_enabled")
   sortOrder     Int        @default(0) @map("sort_order")
-  settingsJson Json?      @map("settings_json")
+  settingsJson  Json?      @map("settings_json")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
@@ -411,6 +412,7 @@ model Business {
   orderingSettings    BusinessOrderingSettings?
   pickupOrders        PickupOrder[]
   collectionItems     CityCollectionItem[]
+  organizedEvents     CityEvent[]                  @relation("CityEventOrganizer")
   accessGrants        AccessGrant[]
   auditLogs           AuditLog[]
   createdAt           DateTime                     @default(now()) @map("created_at")
@@ -425,22 +427,22 @@ model Business {
 }
 
 model BusinessService {
-  id                String            @id @default(cuid())
-  businessId        String            @map("business_id")
-  name              String            @db.VarChar(160)
-  slug              String            @db.VarChar(160)
-  shortDescription  String?           @map("short_description") @db.VarChar(280)
-  description       String?
-  priceLabel        String?           @map("price_label") @db.VarChar(80)
-  priceCents        Int?              @map("price_cents")
-  durationMinutes   Int?              @map("duration_minutes")
-  pickupEnabled     Boolean           @default(false) @map("pickup_enabled")
-  status            PublicationStatus @default(draft)
-  sortOrder         Int               @default(0) @map("sort_order")
-  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  pickupOrderItems  PickupOrderItem[]
-  createdAt         DateTime          @default(now()) @map("created_at")
-  updatedAt         DateTime          @updatedAt @map("updated_at")
+  id               String            @id @default(cuid())
+  businessId       String            @map("business_id")
+  name             String            @db.VarChar(160)
+  slug             String            @db.VarChar(160)
+  shortDescription String?           @map("short_description") @db.VarChar(280)
+  description      String?
+  priceLabel       String?           @map("price_label") @db.VarChar(80)
+  priceCents       Int?              @map("price_cents")
+  durationMinutes  Int?              @map("duration_minutes")
+  pickupEnabled    Boolean           @default(false) @map("pickup_enabled")
+  status           PublicationStatus @default(draft)
+  sortOrder        Int               @default(0) @map("sort_order")
+  business         Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  pickupOrderItems PickupOrderItem[]
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
 
   @@unique([businessId, slug], map: "business_services_business_id_slug_key")
   @@index([businessId, status, sortOrder], map: "business_services_business_status_sort_order_idx")
@@ -464,14 +466,14 @@ model BusinessOpeningDay {
 }
 
 model BusinessOpeningInterval {
-  id           String              @id @default(cuid())
-  openingDayId String              @map("opening_day_id")
-  opensAt      String              @map("opens_at") @db.VarChar(5)
-  closesAt     String              @map("closes_at") @db.VarChar(5)
-  sortOrder    Int                 @default(0) @map("sort_order")
-  openingDay   BusinessOpeningDay  @relation(fields: [openingDayId], references: [id], onDelete: Cascade)
-  createdAt    DateTime            @default(now()) @map("created_at")
-  updatedAt    DateTime            @updatedAt @map("updated_at")
+  id           String             @id @default(cuid())
+  openingDayId String             @map("opening_day_id")
+  opensAt      String             @map("opens_at") @db.VarChar(5)
+  closesAt     String             @map("closes_at") @db.VarChar(5)
+  sortOrder    Int                @default(0) @map("sort_order")
+  openingDay   BusinessOpeningDay @relation(fields: [openingDayId], references: [id], onDelete: Cascade)
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
 
   @@index([openingDayId, sortOrder], map: "business_opening_intervals_day_sort_order_idx")
   @@map("business_opening_intervals")
@@ -497,16 +499,16 @@ model BusinessInquiry {
 }
 
 model BusinessOrderingSettings {
-  id                  String   @id @default(cuid())
-  businessId          String   @unique @map("business_id")
-  enabled             Boolean  @default(false)
-  pickupLeadMinutes   Int      @default(30) @map("pickup_lead_minutes")
-  slotMinutes         Int      @default(15) @map("slot_minutes")
-  slotCapacity        Int      @default(4) @map("slot_capacity")
-  minimumOrderCents   Int      @default(0) @map("minimum_order_cents")
-  business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(cuid())
+  businessId        String   @unique @map("business_id")
+  enabled           Boolean  @default(false)
+  pickupLeadMinutes Int      @default(30) @map("pickup_lead_minutes")
+  slotMinutes       Int      @default(15) @map("slot_minutes")
+  slotCapacity      Int      @default(4) @map("slot_capacity")
+  minimumOrderCents Int      @default(0) @map("minimum_order_cents")
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("business_ordering_settings")
 }
@@ -697,6 +699,34 @@ model CityCollectionItem {
   @@index([pageId], map: "city_collection_items_page_id_idx")
   @@index([imageAssetId], map: "city_collection_items_image_asset_id_idx")
   @@map("city_collection_items")
+}
+
+model CityEvent {
+  id                  String            @id @default(cuid())
+  cityId              String            @map("city_id")
+  organizerBusinessId String?           @map("organizer_business_id")
+  title               String            @db.VarChar(160)
+  slug                String            @db.VarChar(160)
+  summary             String            @db.VarChar(280)
+  description         String?
+  organizerName       String            @map("organizer_name") @db.VarChar(160)
+  venueName           String            @map("venue_name") @db.VarChar(160)
+  addressLine1        String?           @map("address_line_1") @db.VarChar(200)
+  startsAt            DateTime          @map("starts_at")
+  endsAt              DateTime?         @map("ends_at")
+  timezone            String            @default("Europe/Rome") @db.VarChar(80)
+  status              PublicationStatus @default(draft)
+  active              Boolean           @default(true)
+  publishedAt         DateTime?         @map("published_at")
+  city                City              @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  organizerBusiness   Business?         @relation("CityEventOrganizer", fields: [organizerBusinessId], references: [id], onDelete: SetNull)
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  @@unique([cityId, slug], map: "city_events_city_id_slug_key")
+  @@index([cityId, status, active, startsAt], map: "city_events_city_status_active_starts_at_idx")
+  @@index([organizerBusinessId, startsAt], map: "city_events_organizer_starts_at_idx")
+  @@map("city_events")
 }
 
 model AuditLog {

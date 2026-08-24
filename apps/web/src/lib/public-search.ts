@@ -20,6 +20,19 @@ export type PublicBusinessSection<TBusiness> = {
   businesses: TBusiness[];
 };
 
+export type PublicBusinessSearchIndex<TBusiness extends CategorizedPublicBusiness> = {
+  businesses: readonly TBusiness[];
+  normalizedValues: readonly (readonly string[])[];
+  trigramPostings: ReadonlyMap<string, readonly number[]>;
+  categoryPostings: ReadonlyMap<string, readonly number[]>;
+  stats: {
+    itemCount: number;
+    normalizedFieldCount: number;
+    trigramCount: number;
+    postingCount: number;
+  };
+};
+
 const categoryLabels: Record<string, string> = {
   commerce: "Attività locali",
   service: "Servizi",
@@ -185,6 +198,167 @@ export function findMatchingCitySlug(
   return resolution.status === "match" ? resolution.slug : null;
 }
 
+function getNormalizedBusinessSearchValues(business: SearchableBusiness) {
+  return [
+    business.name,
+    business.summary,
+    business.categoryLabel,
+    business.area,
+    ...(business.categories?.map((category) => category.name) ?? []),
+    ...(business.searchTerms ?? []),
+  ].map(normalizeSearchText);
+}
+
+function getUniqueTrigrams(value: string) {
+  const symbols = Array.from(value);
+  const trigrams = new Set<string>();
+
+  for (let index = 0; index <= symbols.length - 3; index += 1) {
+    trigrams.add(symbols.slice(index, index + 3).join(""));
+  }
+
+  return trigrams;
+}
+
+function intersectSortedIndices(left: readonly number[], right: readonly number[]): number[] {
+  const result: number[] = [];
+  let leftIndex = 0;
+  let rightIndex = 0;
+
+  while (leftIndex < left.length && rightIndex < right.length) {
+    const leftValue = left[leftIndex];
+    const rightValue = right[rightIndex];
+
+    if (leftValue === rightValue) {
+      if (leftValue !== undefined) result.push(leftValue);
+      leftIndex += 1;
+      rightIndex += 1;
+    } else if ((leftValue ?? Number.POSITIVE_INFINITY) < (rightValue ?? Number.POSITIVE_INFINITY)) {
+      leftIndex += 1;
+    } else {
+      rightIndex += 1;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Builds an immutable in-memory inverted index for repeated directory queries.
+ *
+ * Trigram posting lists narrow substring candidates while a final `includes` check preserves the
+ * exact semantics of the linear baseline. Queries shorter than three normalized characters use the
+ * pre-normalized documents directly because they cannot be represented by a trigram.
+ */
+export function createPublicBusinessSearchIndex<TBusiness extends CategorizedPublicBusiness>(
+  businesses: readonly TBusiness[],
+): PublicBusinessSearchIndex<TBusiness> {
+  const trigramPostings = new Map<string, number[]>();
+  const categoryPostings = new Map<string, number[]>();
+  let normalizedFieldCount = 0;
+
+  const normalizedValues = businesses.map((business, businessIndex) => {
+    const values = getNormalizedBusinessSearchValues(business);
+    normalizedFieldCount += values.length;
+
+    const businessTrigrams = new Set<string>();
+    for (const value of values) {
+      for (const trigram of getUniqueTrigrams(value)) businessTrigrams.add(trigram);
+    }
+    for (const trigram of businessTrigrams) {
+      const posting = trigramPostings.get(trigram);
+      if (posting) posting.push(businessIndex);
+      else trigramPostings.set(trigram, [businessIndex]);
+    }
+
+    const categoryIds = new Set(
+      getPublicBusinessCategories(business).map((category) => category.id),
+    );
+    for (const categoryId of categoryIds) {
+      const posting = categoryPostings.get(categoryId);
+      if (posting) posting.push(businessIndex);
+      else categoryPostings.set(categoryId, [businessIndex]);
+    }
+
+    return values;
+  });
+  const postingCount = [...trigramPostings.values()].reduce(
+    (total, posting) => total + posting.length,
+    0,
+  );
+
+  return {
+    businesses: [...businesses],
+    normalizedValues,
+    trigramPostings,
+    categoryPostings,
+    stats: {
+      itemCount: businesses.length,
+      normalizedFieldCount,
+      trigramCount: trigramPostings.size,
+      postingCount,
+    },
+  };
+}
+
+function getIndexedTextCandidates<TBusiness extends CategorizedPublicBusiness>(
+  index: PublicBusinessSearchIndex<TBusiness>,
+  normalizedQuery: string,
+) {
+  if (!normalizedQuery) {
+    return index.businesses.map((_, businessIndex) => businessIndex);
+  }
+
+  const trigrams = [...getUniqueTrigrams(normalizedQuery)];
+  if (trigrams.length === 0) {
+    return index.normalizedValues.flatMap((values, businessIndex) =>
+      values.some((value) => value.includes(normalizedQuery)) ? [businessIndex] : [],
+    );
+  }
+
+  const postings = trigrams
+    .map((trigram) => index.trigramPostings.get(trigram))
+    .filter((posting): posting is readonly number[] => Boolean(posting))
+    .sort((left, right) => left.length - right.length);
+
+  if (postings.length !== trigrams.length || !postings[0]) return [];
+
+  let candidates = [...postings[0]];
+  for (const posting of postings.slice(1)) {
+    candidates = intersectSortedIndices(candidates, posting);
+    if (candidates.length === 0) return [];
+  }
+
+  return candidates.filter((businessIndex) =>
+    index.normalizedValues[businessIndex]?.some((value) => value.includes(normalizedQuery)),
+  );
+}
+
+export function searchPublicBusinesses<TBusiness extends CategorizedPublicBusiness>(
+  index: PublicBusinessSearchIndex<TBusiness>,
+  query: string,
+  sectionId = "all",
+) {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery && sectionId !== "all") {
+    return (index.categoryPostings.get(sectionId) ?? []).flatMap((businessIndex) => {
+      const business = index.businesses[businessIndex];
+      return business ? [business] : [];
+    });
+  }
+
+  const textCandidates = getIndexedTextCandidates(index, normalizedQuery);
+  const selectedIndices =
+    sectionId === "all"
+      ? textCandidates
+      : intersectSortedIndices(textCandidates, index.categoryPostings.get(sectionId) ?? []);
+
+  return selectedIndices.flatMap((businessIndex) => {
+    const business = index.businesses[businessIndex];
+    return business ? [business] : [];
+  });
+}
+
 export function filterPublicBusinesses<TBusiness extends SearchableBusiness>(
   businesses: readonly TBusiness[],
   query: string,
@@ -193,18 +367,9 @@ export function filterPublicBusinesses<TBusiness extends SearchableBusiness>(
 
   if (!normalizedQuery) return [...businesses];
 
-  return businesses.filter((business) => {
-    const values = [
-      business.name,
-      business.summary,
-      business.categoryLabel,
-      business.area,
-      ...(business.categories?.map((category) => category.name) ?? []),
-      ...(business.searchTerms ?? []),
-    ];
-
-    return values.some((value) => normalizeSearchText(value).includes(normalizedQuery));
-  });
+  return businesses.filter((business) =>
+    getNormalizedBusinessSearchValues(business).some((value) => value.includes(normalizedQuery)),
+  );
 }
 
 export function groupPublicBusinessesByCategory<TBusiness extends CategorizedPublicBusiness>(
@@ -214,7 +379,9 @@ export function groupPublicBusinessesByCategory<TBusiness extends CategorizedPub
 
   for (const business of businesses) {
     for (const category of getPublicBusinessCategories(business)) {
-      groups.set(category.id, [...(groups.get(category.id) ?? []), business]);
+      const group = groups.get(category.id);
+      if (group) group.push(business);
+      else groups.set(category.id, [business]);
     }
   }
 

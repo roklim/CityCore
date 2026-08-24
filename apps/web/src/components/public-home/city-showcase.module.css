@@ -277,6 +277,75 @@
   inset: 0;
 }
 
+.eventGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.eventCard {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid var(--cc-border);
+  border-radius: 18px;
+  background: var(--cc-surface);
+  box-shadow: var(--cc-shadow-sm);
+}
+
+.eventCard h3,
+.eventCard p {
+  margin: 0;
+}
+
+.eventCard h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.eventCard p {
+  color: var(--cc-text-secondary);
+  line-height: 1.55;
+}
+
+.eventDate {
+  color: var(--cc-accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: capitalize;
+}
+
+.eventVenue {
+  display: grid;
+  gap: 3px;
+  padding-top: 4px;
+  border-top: 1px solid var(--cc-border);
+  color: var(--cc-text-secondary);
+  font-size: 13px;
+}
+
+.eventVenue strong {
+  color: var(--cc-text);
+}
+
+.eventOrganizer {
+  width: fit-content;
+  color: var(--cc-text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.eventNotice {
+  padding: 14px 16px;
+  border: 1px dashed var(--cc-border-strong);
+  border-radius: 14px;
+  background: var(--cc-surface-soft);
+}
+
 .directoryVisual {
   min-height: 164px;
   margin: -1px -1px 4px;
@@ -337,7 +406,8 @@
   }
 
   .editorialGrid,
-  .featuredGrid {
+  .featuredGrid,
+  .eventGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -349,7 +419,8 @@
 
   .heroSecondaryStack,
   .editorialGrid,
-  .featuredGrid {
+  .featuredGrid,
+  .eventGrid {
     grid-template-columns: 1fr;
   }
 

@@ -5,11 +5,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { PublicCityBusinessCard } from "../../lib/public-runtime";
 import {
-  filterPublicBusinessesBySection,
+  createPublicBusinessSearchIndex,
   getPublicBusinessCategories,
   groupPublicBusinessesByCategory,
   minimumPublicSearchSuggestionQueryLength,
   normalizeSearchText,
+  searchPublicBusinesses,
 } from "../../lib/public-search";
 import {
   readPublicDirectoryFilters,
@@ -101,6 +102,10 @@ export function CityBusinessDirectory({
   const searchParamsKey = searchParams.toString();
   const listboxId = `${useId().replaceAll(":", "")}-directory-suggestions`;
   const sections = useMemo(() => groupPublicBusinessesByCategory(businesses), [businesses]);
+  const businessSearchIndex = useMemo(
+    () => createPublicBusinessSearchIndex(businesses),
+    [businesses],
+  );
   const urlFilters = useMemo(
     () => readPublicDirectoryFilters(new URLSearchParams(searchParamsKey)),
     [searchParamsKey],
@@ -115,8 +120,8 @@ export function CityBusinessDirectory({
   const blurFrameRef = useRef<number | null>(null);
   const pointerSelectingRef = useRef(false);
   const visibleBusinesses = useMemo(
-    () => filterPublicBusinessesBySection(businesses, query, activeSection),
-    [activeSection, businesses, query],
+    () => searchPublicBusinesses(businessSearchIndex, query, activeSection),
+    [activeSection, businessSearchIndex, query],
   );
   const normalizedQuery = normalizeSearchText(query);
   const hasQuery = normalizedQuery.length > 0;
@@ -168,11 +173,11 @@ export function CityBusinessDirectory({
       const next = updatePublicDirectorySearchParams(new URLSearchParams(searchParamsKey), {
         query,
       });
-      router.replace(directoryHref(pathname, next), { scroll: false });
+      window.history.replaceState(null, "", directoryHref(pathname, next));
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [pathname, query, router, searchParamsKey]);
+  }, [pathname, query, searchParamsKey]);
 
   useEffect(
     () => () => {
@@ -184,8 +189,8 @@ export function CityBusinessDirectory({
   function updateUrl(changes: Partial<PublicDirectoryFilters>, mode: "push" | "replace") {
     const next = updatePublicDirectorySearchParams(new URLSearchParams(searchParamsKey), changes);
     const href = directoryHref(pathname, next);
-    if (mode === "push") router.push(href, { scroll: false });
-    else router.replace(href, { scroll: false });
+    if (mode === "push") window.history.pushState(null, "", href);
+    else window.history.replaceState(null, "", href);
   }
 
   function closeSuggestions() {

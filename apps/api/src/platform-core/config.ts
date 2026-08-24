@@ -219,6 +219,18 @@ export const publicListBusinessesQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(24).default(12),
 });
 
+export const publicListEventsQuerySchema = z
+  .object({
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional(),
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(24).default(6),
+  })
+  .refine((value) => !value.from || !value.to || value.from <= value.to, {
+    message: "The event date range is invalid.",
+    path: ["to"],
+  });
+
 export const publicBusinessParamsSchema = z.object({
   citySlug: optionalTrimmedString.max(120),
   businessSlug: optionalTrimmedString.max(160),

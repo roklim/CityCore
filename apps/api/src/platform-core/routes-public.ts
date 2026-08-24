@@ -6,8 +6,9 @@ import {
   publicCityParamsSchema,
   publicListBusinessesQuerySchema,
   publicListCitiesQuerySchema,
+  publicListEventsQuerySchema,
 } from "./config.js";
-import { mapPublicBusiness, mapPublicCity } from "./mappers.js";
+import { mapPublicBusiness, mapPublicCity, mapPublicEvent } from "./mappers.js";
 import { parsePayload } from "./utils.js";
 
 export function registerPublicPlatformRoutes(app: FastifyInstance) {
@@ -21,6 +22,7 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
         "/api/v2/public/cities/:citySlug/businesses",
         "/api/v2/public/cities/:citySlug/businesses/:businessSlug",
       ],
+      events: ["/api/v2/public/cities/:citySlug/events"],
     },
   }));
 
@@ -96,6 +98,65 @@ export function registerPublicPlatformRoutes(app: FastifyInstance) {
     return reply.send({
       status: "ok",
       item: mapPublicCity(city),
+    });
+  });
+
+  app.get("/api/v2/public/cities/:citySlug/events", async (request, reply) => {
+    const paramsParsed = parsePayload(publicCityParamsSchema, request.params);
+    const queryParsed = parsePayload(publicListEventsQuerySchema, request.query);
+
+    if (!paramsParsed.success) {
+      return reply.code(paramsParsed.response.statusCode).send(paramsParsed.response.body);
+    }
+    if (!queryParsed.success) {
+      return reply.code(queryParsed.response.statusCode).send(queryParsed.response.body);
+    }
+
+    const from = queryParsed.data.from ?? new Date();
+    if (queryParsed.data.to && from > queryParsed.data.to) {
+      return reply.code(400).send({ status: "error", error: "Invalid event date range" });
+    }
+
+    const city = await prisma.city.findFirst({
+      where: { slug: paramsParsed.data.citySlug, active: true, status: "active" },
+      select: { id: true },
+    });
+    if (!city) {
+      return reply.code(404).send({ status: "error", error: "City not found" });
+    }
+
+    const where = {
+      cityId: city.id,
+      status: "published" as const,
+      active: true,
+      AND: [
+        {
+          OR: [{ endsAt: { gte: from } }, { endsAt: null, startsAt: { gte: from } }],
+        },
+        ...(queryParsed.data.to ? [{ startsAt: { lte: queryParsed.data.to } }] : []),
+      ],
+    };
+    const [events, total] = await prisma.$transaction([
+      prisma.cityEvent.findMany({
+        where,
+        orderBy: [{ startsAt: "asc" }, { title: "asc" }, { slug: "asc" }],
+        skip: (queryParsed.data.page - 1) * queryParsed.data.limit,
+        take: queryParsed.data.limit,
+        include: {
+          organizerBusiness: {
+            select: { cityId: true, name: true, slug: true, status: true },
+          },
+        },
+      }),
+      prisma.cityEvent.count({ where }),
+    ]);
+
+    return reply.send({
+      status: "ok",
+      items: events.map(mapPublicEvent),
+      page: queryParsed.data.page,
+      limit: queryParsed.data.limit,
+      total,
     });
   });
 

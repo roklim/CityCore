@@ -54,6 +54,8 @@ Responsabilita:
 
 - home piattaforma
 - home citta
+- directory e ricerca dei business della citta
+- agenda pubblica degli eventi cittadini
 - pagina business
 - fallback editoriali coerenti con il runtime
 
@@ -97,6 +99,10 @@ API, mantenute sotto un namespace HTTP versionato:
 - `/api/v2/platform-core/*`
 - `/api/v2/public/*`
 
+La lista eventi e esposta da
+`GET /api/v2/public/cities/:citySlug/events`; non introduce una nuova gerarchia
+di routing pubblico, ma alimenta l'agenda nella pagina della citta.
+
 ## Layout API Core
 
 Il core API e diviso per responsabilita per evitare un router monolitico:
@@ -126,8 +132,10 @@ Moduli core/scaffold:
 - `directory`
 - `events`
 
-Questi moduli oggi vanno letti come struttura e lessico condiviso del sistema,
-non come verticali completi gia implementati.
+Questi moduli vanno letti come struttura e lessico condiviso del sistema, non
+come verticali completi. In particolare, la presenza del modulo `events` nel
+catalogo non equivale a un prodotto eventi completo: il prototipo implementa
+soltanto l'entita `CityEvent`, il seed e la consultazione pubblica read-only.
 
 ## Data Model Core
 
@@ -147,10 +155,41 @@ pubbliche e admin reali senza introdurre verticali:
 - `CityCategory` per directory, filtri e navigazione cittadina
 - `BusinessCategoryAssignment` per associare business a categorie locali
 - `CityCollection` e `CityCollectionItem` per featured, quartieri, stagionalita e contenuti editoriali
+- `CityEvent` per un evento appartenente a una citta, con intervallo temporale,
+  luogo, stato di pubblicazione e organizzatore testuale; il collegamento
+  opzionale a `Business` usa `SET NULL`, mentre lo snapshot
+  `organizerName` preserva l'attribuzione visualizzata
 - `PublicationStatus`, `publishedAt`, `publishedByUserId` e `version` per pagine e sezioni
 
 Le colonne asset legacy su city/business ora diventano foreign key verso
 `MediaAsset`, evitando riferimenti liberi non verificabili.
+
+`CityEvent` e vincolato da slug univoco nella citta e da un controllo che vieta
+una fine precedente all'inizio. L'indice relazionale
+`(city_id, status, active, starts_at)` serve la lista pubblica ordinata; gli
+eventi ricorrenti, ticketing, prenotazioni, pagamenti e CRUD admin restano fuori
+dal perimetro della tesi.
+
+## Ricerca Della Directory
+
+La pagina citta recupera i Business pubblici tramite API paginata. Sul catalogo
+gia caricato il client costruisce una volta un indice invertito in memoria:
+
+- posting list ordinate per trigramma, per restringere i candidati testuali;
+- posting list per categoria;
+- campi pre-normalizzati e controllo finale di sottostringa, per mantenere la
+  stessa semantica della scansione lineare.
+
+Le query inferiori a tre caratteri usano i documenti pre-normalizzati senza
+trigrammi. Il costo di costruzione e memoria viene quindi sostenuto una volta e
+riusato nelle query successive. La scansione lineare resta disponibile come
+baseline verificabile; metodo e risultati sono in
+`SEARCH_EFFICIENCY_EVALUATION.md`.
+
+Questo indice non cambia il livello di persistenza: non e un indice PostgreSQL,
+non riduce il payload ricevuto e non rimuove il limite difensivo del fetch
+paginato. Un rollout nazionale richiederebbe ricerca e filtri server-side,
+indici e query plan sul database, ranking e test di carico end-to-end.
 
 ## Template
 

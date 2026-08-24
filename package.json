@@ -43,7 +43,8 @@
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" \"tools/**/*.mjs\"",
     "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,md}\" \"packages/**/*.{ts,tsx,json,md}\" \"tools/**/*.mjs\" \"package.json\" \"tsconfig.json\" \"tsconfig.base.json\" \"compose.yml\" \"render.yaml\" \"render.staging.yaml\" \".github/**/*.yml\" \".vscode/*.json\" \"docs/**/*.md\"",
     "check": "npm run db:generate && npm run lint && npm run format:check && npm run typecheck && npm run build",
-    "verify:platform": "node tools/verify-platform.mjs"
+    "verify:platform": "node tools/verify-platform.mjs",
+    "benchmark:search": "node --expose-gc --import tsx tools/benchmark-public-search.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

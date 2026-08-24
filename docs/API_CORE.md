@@ -14,6 +14,7 @@ Tutte le route admin richiedono JWT Bearer e rispettano l'access grant attivo.
 | GET/PATCH        | `.../inquiries`, `.../inquiries/:inquiryId`                                  | businesses.read/manage          |
 | GET              | `/api/v2/public/cities/:citySlug/businesses/:businessSlug/services`          | pubblico                        |
 | GET              | `.../businesses/:businessSlug/opening-hours`                                 | pubblico                        |
+| GET              | `/api/v2/public/cities/:citySlug/events`                                     | pubblico                        |
 | POST             | `/api/v2/public/cities/:citySlug/businesses/:businessSlug/inquiries`         | pubblico                        |
 
 I body sono validati con Zod. Errori attesi: `400` input non valido, `404`
@@ -22,11 +23,32 @@ locale inquiry. L'invio pubblico richiede privacy consent e usa honeypot più
 limite in-memory (5 richieste/IP/10 minuti); la sostituzione con Redis resta
 un lavoro futuro.
 
+## Eventi pubblici del prototipo
+
+`GET /api/v2/public/cities/:citySlug/events` espone il vertical slice minimo
+degli eventi cittadini. Accetta `from`, `to`, `page` e `limit`; le date sono
+interpretate come istanti ISO, `from` non può essere successivo a `to` e il
+limite predefinito è 6, fino a un massimo di 24 elementi. Se `from` è omesso
+viene usato l'istante della richiesta.
+
+La risposta contiene esclusivamente eventi attivi e pubblicati di una città
+attiva, ordinati per data di inizio e titolo. Il filtro temporale usa la
+sovrapposizione dell'intervallo: include quindi anche un evento già iniziato ma
+non ancora concluso. Il nome dell'organizzatore è uno snapshot persistito;
+`businessSlug` è restituito solo quando il Business collegato è attivo e
+appartiene alla stessa città.
+
+Questa API è volutamente di sola lettura. Il dataset pilota di Cagli viene
+popolato dal seed idempotente; creazione e modifica da pannello, ricorrenze,
+ticketing, prenotazioni e pagamenti non fanno parte del vertical slice della
+tesi.
+
 ## Health e test
 
 `GET /health` restituisce lo stato del servizio e delle dipendenze senza
 segreti. Il dataset `npm run db:seed` include city attive/non attive, business
-pubblicati/in bozza e inquiry nei tre stati; è adatto a smoke test locali.
+pubblicati/in bozza, eventi pubblicati e inquiry nei tre stati; è adatto a smoke
+test locali.
 
 ### Integrazione locale
 

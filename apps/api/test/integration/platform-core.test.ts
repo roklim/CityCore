@@ -64,7 +64,7 @@ beforeAll(async () => app.ready());
 afterAll(async () => app.close());
 beforeEach(async () => {
   await prisma.$executeRawUnsafe(
-    "TRUNCATE TABLE pickup_order_items, pickup_orders, business_ordering_settings, business_inquiries, business_opening_intervals, business_opening_days, business_services, business_category_assignments, city_categories, access_grants, businesses, business_templates, cities, city_registry, users CASCADE",
+    "TRUNCATE TABLE city_events, pickup_order_items, pickup_orders, business_ordering_settings, business_inquiries, business_opening_intervals, business_opening_days, business_services, business_category_assignments, city_categories, access_grants, businesses, business_templates, cities, city_registry, users CASCADE",
   );
   const template = await prisma.businessTemplate.create({
     data: { code: "test-local", name: "Test", category: "service", primaryModule: "catalog" },
@@ -881,6 +881,145 @@ describe("platform core integration", () => {
         )
       ).statusCode,
     ).toBe(409);
+  });
+
+  it("lists only published city events that overlap the requested date range", async () => {
+    await prisma.business.update({ where: { id: businessId }, data: { status: "active" } });
+    await prisma.cityEvent.createMany({
+      data: [
+        {
+          cityId,
+          organizerBusinessId: businessId,
+          organizerName: "Test Business",
+          title: "Evento già iniziato",
+          slug: "evento-iniziato",
+          summary: "Evento sovrapposto all'inizio dell'intervallo.",
+          venueName: "Piazza Test",
+          startsAt: new Date("2029-12-31T20:00:00.000Z"),
+          endsAt: new Date("2030-01-01T02:00:00.000Z"),
+          status: "published",
+          publishedAt: new Date("2029-12-01T00:00:00.000Z"),
+        },
+        {
+          cityId,
+          organizerName: "Comune Test",
+          title: "Evento futuro",
+          slug: "evento-futuro",
+          summary: "Evento pubblico incluso nell'intervallo.",
+          venueName: "Teatro Test",
+          startsAt: new Date("2030-06-01T18:00:00.000Z"),
+          endsAt: new Date("2030-06-01T20:00:00.000Z"),
+          status: "published",
+          publishedAt: new Date("2029-12-01T00:00:00.000Z"),
+        },
+        {
+          cityId,
+          organizerName: "Comune Test",
+          title: "Evento futuro",
+          slug: "evento-futuro-b",
+          summary: "Secondo evento con le stesse chiavi temporali e titolo.",
+          venueName: "Teatro Test",
+          startsAt: new Date("2030-06-01T18:00:00.000Z"),
+          endsAt: new Date("2030-06-01T20:00:00.000Z"),
+          status: "published",
+          publishedAt: new Date("2029-12-01T00:00:00.000Z"),
+        },
+        {
+          cityId,
+          organizerName: "Comune Test",
+          title: "Evento in bozza",
+          slug: "evento-bozza",
+          summary: "Non deve essere esposto.",
+          venueName: "Teatro Test",
+          startsAt: new Date("2030-07-01T18:00:00.000Z"),
+          status: "draft",
+        },
+        {
+          cityId,
+          organizerName: "Comune Test",
+          title: "Evento archiviato",
+          slug: "evento-archiviato",
+          summary: "Non deve essere esposto.",
+          venueName: "Teatro Test",
+          startsAt: new Date("2030-07-15T18:00:00.000Z"),
+          status: "archived",
+        },
+        {
+          cityId,
+          organizerName: "Comune Test",
+          title: "Evento disattivato",
+          slug: "evento-disattivato",
+          summary: "Non deve essere esposto.",
+          venueName: "Teatro Test",
+          startsAt: new Date("2030-08-01T18:00:00.000Z"),
+          status: "published",
+          active: false,
+          publishedAt: new Date("2029-12-01T00:00:00.000Z"),
+        },
+      ],
+    });
+
+    const response = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/events?from=2030-01-01T00%3A00%3A00.000Z&to=2030-12-31T23%3A59%3A59.000Z&limit=10",
+      undefined,
+      "",
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual(expect.objectContaining({ page: 1, limit: 10, total: 3 }));
+    expect(response.json().items.map((item: { slug: string }) => item.slug)).toEqual([
+      "evento-iniziato",
+      "evento-futuro",
+      "evento-futuro-b",
+    ]);
+    expect(response.json().items[0]).toEqual(
+      expect.objectContaining({
+        status: "published",
+        organizer: { name: "Test Business", businessSlug: "test-business" },
+      }),
+    );
+
+    const secondPage = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/events?from=2030-01-01T00%3A00%3A00.000Z&to=2030-12-31T23%3A59%3A59.000Z&page=2&limit=1",
+      undefined,
+      "",
+    );
+    expect(secondPage.statusCode).toBe(200);
+    expect(secondPage.json()).toEqual(
+      expect.objectContaining({
+        page: 2,
+        limit: 1,
+        total: 3,
+        items: [expect.objectContaining({ title: "Evento futuro" })],
+      }),
+    );
+
+    const invalidRange = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/events?from=2030-12-31&to=2030-01-01",
+      undefined,
+      "",
+    );
+    expect(invalidRange.statusCode).toBe(400);
+
+    const implicitInvalidRange = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/events?to=2000-01-01",
+      undefined,
+      "",
+    );
+    expect(implicitInvalidRange.statusCode).toBe(400);
+
+    await prisma.city.update({ where: { id: cityId }, data: { active: false } });
+    const disabledCity = await request(
+      "GET",
+      "/api/v2/public/cities/test-city/events?from=2030-01-01T00%3A00%3A00.000Z",
+      undefined,
+      "",
+    );
+    expect(disabledCity.statusCode).toBe(404);
   });
 
   it("rejects invalid public inquiries and applies the per-IP rate limit", async () => {

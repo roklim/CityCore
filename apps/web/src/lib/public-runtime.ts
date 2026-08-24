@@ -6,6 +6,8 @@ import {
   type PublicBusinessResponse,
   type PublicBusinessCategory,
   type PublicBusinessServicesResponse,
+  type PublicCityEvent,
+  type PublicCityEventsResponse,
   type PublicPickupOrderMenuResponse,
   type PublicOpeningHoursResponse,
   type PublicCityResponse,
@@ -13,6 +15,7 @@ import {
   type PublicPlatformCity,
   PlatformApiError,
 } from "./platform-api";
+import { mapPublicCityEvent, type PublicCityEventCard } from "./public-events";
 import { normalizeExternalUrl } from "./public-links";
 import { shouldUseEditorialFallback } from "./public-runtime-policy";
 import {
@@ -94,6 +97,7 @@ export type PublicCitySurfaceData = {
     country: string;
     businessCount: number;
     businesses: PublicCityBusinessCard[];
+    events: PublicCityEventCard[];
     publicHeroTitle: string | null;
     publicHeroDescription: string | null;
     seoTitle: string | null;
@@ -101,6 +105,8 @@ export type PublicCitySurfaceData = {
   };
   degraded: boolean;
   live: boolean;
+  eventsTotal: number;
+  eventsUnavailable: boolean;
 };
 
 export type PublicBusinessSurfaceData = {
@@ -163,6 +169,23 @@ async function fetchAllPublicPages<TItem>(path: string) {
   }
 
   return items;
+}
+
+// The home surface only ever renders a preview: `limit=6` caps the fetched page at the
+// same size CityEventsSection renders, and `total` is threaded through so the UI can
+// say "N of total" instead of silently truncating. Raise this limit only alongside the
+// UI copy that describes the preview.
+export async function fetchPublicCityEvents(citySlug: string, from = new Date()) {
+  try {
+    const response = await fetchPlatformApi<PublicCityEventsResponse>(
+      `/api/v2/public/cities/${encodeURIComponent(citySlug)}/events?from=${encodeURIComponent(
+        from.toISOString(),
+      )}&page=1&limit=6`,
+    );
+    return { items: response.items, total: response.total, unavailable: false };
+  } catch {
+    return { items: [] as PublicCityEvent[], total: 0, unavailable: true };
+  }
 }
 
 export async function getPublicSitemapData() {
@@ -351,7 +374,7 @@ function mergeRuntimeCityWithEditorial(
   editorialCity: PublicCityProfile,
   searchTermsByBusiness = new Map<string, string[]>(),
   serviceNamesByBusiness = new Map<string, string[]>(),
-): PublicCitySurfaceData["city"] {
+): Omit<PublicCitySurfaceData["city"], "events"> {
   return {
     ...editorialCity,
     name: city.name,
@@ -507,11 +530,12 @@ export async function getPublicCitySurfaceData(
 
     for (const candidateSlug of buildCityCandidates(citySlug)) {
       try {
-        const [runtimeCity, businesses] = await Promise.all([
+        const [runtimeCity, businesses, eventsResult] = await Promise.all([
           fetchPublicCityItem(candidateSlug),
           fetchAllPublicPages<PublicPlatformBusiness>(
             `/api/v2/public/cities/${candidateSlug}/businesses`,
           ),
+          fetchPublicCityEvents(candidateSlug),
         ]);
         const runtimeBusinesses = businesses.map(normalizeRuntimeBusiness);
         const searchTermsByBusiness = new Map(
@@ -521,16 +545,25 @@ export async function getPublicCitySurfaceData(
           runtimeBusinesses.map((business) => [business.id, business.serviceNames]),
         );
 
+        const runtimeEvents = eventsResult.items.map((event) =>
+          mapPublicCityEvent(event, runtimeCity.slug),
+        );
+
         return {
-          city: mergeRuntimeCityWithEditorial(
-            runtimeCity,
-            runtimeBusinesses,
-            editorialCity,
-            searchTermsByBusiness,
-            serviceNamesByBusiness,
-          ),
+          city: {
+            ...mergeRuntimeCityWithEditorial(
+              runtimeCity,
+              runtimeBusinesses,
+              editorialCity,
+              searchTermsByBusiness,
+              serviceNamesByBusiness,
+            ),
+            events: runtimeEvents,
+          },
           degraded: false,
           live: true,
+          eventsTotal: eventsResult.total,
+          eventsUnavailable: eventsResult.unavailable,
         };
       } catch (error) {
         lastError = error;
@@ -578,9 +611,12 @@ export async function getPublicCitySurfaceData(
           searchTerms: [],
           services: [],
         })),
+        events: [],
       },
       degraded: true,
       live: false,
+      eventsTotal: 0,
+      eventsUnavailable: true,
     };
   }
 }

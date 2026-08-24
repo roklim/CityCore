@@ -30,11 +30,14 @@ Il repo rappresenta solo il core city-first della piattaforma.
 ## Stato Della Tesi
 
 Il core MVP della tesi e implementato sul caso pilota di Cagli. La demo copre il flusso
-`admin -> owner -> pubblicazione -> visitatore -> inquiry -> inbox`; il pickup ordering di Mucho
-Gusto e una sola estensione dimostrativa. Il repository non va presentato come una produzione
+`admin -> owner -> pubblicazione -> visitatore -> inquiry -> inbox`, una agenda pubblica minima
+basata su `CityEvent` e la ricerca della directory con indice invertito a trigrammi. Il confronto
+riproducibile tra indice e scansione lineare e documentato separatamente; il pickup ordering di
+Mucho Gusto e una sola estensione dimostrativa. Il repository non va presentato come una produzione
 nazionale gia operativa.
 
-La preparazione riproducibile e la sequenza della discussione sono descritte in
+Il perimetro verificato, la valutazione della ricerca e la sequenza della discussione sono descritti
+rispettivamente in `docs/THESIS_MVP_SCOPE.md`, `docs/SEARCH_EFFICIENCY_EVALUATION.md` e
 `docs/THESIS_DEMO_RUNBOOK.md`.
 
 ## Shape Del Repo
@@ -184,6 +187,7 @@ npm run db:validate
 npm run db:migrate:status
 npm run db:migrate:deploy
 npm run db:generate
+npm run benchmark:search
 ```
 
 ## Documenti Canonici
