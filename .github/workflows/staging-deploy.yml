@@ -13,25 +13,191 @@ on:
         required: true
         type: boolean
         default: true
+      commit_sha:
+        description: Full 40-character SHA of the reviewed commit to deploy
+        required: true
+        type: string
+      confirm_staging:
+        description: Type citycore-staging to confirm this is not a production deploy
+        required: true
+        type: string
+
+permissions:
+  checks: read
+  contents: read
+  pull-requests: read
+  statuses: read
+
+concurrency:
+  group: citycore-staging-deploy
+  cancel-in-progress: false
 
 jobs:
   staging:
     name: Staging Gate And Deploy
     runs-on: ubuntu-latest
+    environment: staging
 
     env:
-      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-      NEXT_PUBLIC_API_BASE_URL: https://citycore-api-staging.onrender.com
+      NEXT_PUBLIC_API_BASE_URL: https://citycore-api-thesis-staging.onrender.com
       NEXT_PUBLIC_SITE_URL: https://citycore-web-staging.vercel.app
       CITYCORE_ENABLE_EDITORIAL_FALLBACK: "false"
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      RENDER_API_DEPLOY_HOOK_URL: ${{ secrets.RENDER_API_STAGING_DEPLOY_HOOK_URL }}
 
     steps:
+      - name: Require main branch
+        if: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          echo "Staging deploys must be dispatched from the main branch"
+          exit 1
+
+      - name: Validate dispatch request
+        shell: bash
+        env:
+          CONFIRM_STAGING: ${{ inputs.confirm_staging }}
+          DEPLOY_SHA: ${{ inputs.commit_sha }}
+          DEPLOY_WEB: ${{ inputs.deploy_web }}
+          DEPLOY_BACKEND_HOOKS: ${{ inputs.deploy_backend_hooks }}
+        run: |
+          if [ "$CONFIRM_STAGING" != "citycore-staging" ]; then
+            echo "Confirmation must exactly match citycore-staging"
+            exit 1
+          fi
+
+          if [ "$DEPLOY_WEB" != "true" ] && [ "$DEPLOY_BACKEND_HOOKS" != "true" ]; then
+            echo "Select at least one staging deploy target"
+            exit 1
+          fi
+
+          if [[ ! "$DEPLOY_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "commit_sha must be a full 40-character Git commit SHA"
+            exit 1
+          fi
+
+      - name: Verify reviewed pull request and remote gates
+        uses: actions/github-script@v9
+        env:
+          DEPLOY_SHA: ${{ inputs.commit_sha }}
+        with:
+          script: |
+            const sha = process.env.DEPLOY_SHA.toLowerCase();
+            const { owner, repo } = context.repo;
+
+            const { data: pulls } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner,
+              repo,
+              commit_sha: sha,
+            });
+            const pull = pulls.find(
+              (candidate) =>
+                candidate.state === "open" &&
+                candidate.base.ref === "main" &&
+                candidate.head.repo?.full_name.toLowerCase() ===
+                  `${owner}/${repo}`.toLowerCase() &&
+                candidate.head.sha.toLowerCase() === sha,
+            );
+
+            if (!pull) {
+              core.setFailed("commit_sha must be the head of an open pull request targeting main");
+              return;
+            }
+            if (pull.draft) {
+              core.setFailed(`Pull request #${pull.number} is still a draft`);
+              return;
+            }
+
+            const { data: checks } = await github.rest.checks.listForRef({ owner, repo, ref: sha });
+            const qualityChecks = checks.check_runs.filter(
+              (check) => check.name === "Quality Gate" && check.app?.slug === "github-actions",
+            );
+            if (
+              qualityChecks.length === 0 ||
+              qualityChecks.some(
+                (check) => check.status !== "completed" || check.conclusion !== "success",
+              )
+            ) {
+              core.setFailed("Every GitHub Actions Quality Gate for commit_sha must pass");
+              return;
+            }
+
+            const { data: combinedStatus } = await github.rest.repos.getCombinedStatusForRef({
+              owner,
+              repo,
+              ref: sha,
+            });
+            const vercelStatus = combinedStatus.statuses.find(
+              (status) => status.context === "Vercel",
+            );
+            if (!vercelStatus || vercelStatus.state !== "success") {
+              core.setFailed("The Vercel preview status for commit_sha must pass");
+              return;
+            }
+
+            core.info(`Verified pull request #${pull.number} and remote gates for ${sha}`);
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.commit_sha }}
+
+      - name: Verify checked out commit
+        shell: bash
+        env:
+          DEPLOY_SHA: ${{ inputs.commit_sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" != "${DEPLOY_SHA,,}" ]; then
+            echo "Checked out commit does not match commit_sha"
+            exit 1
+          fi
+
+      - name: Validate requested staging credentials
+        shell: bash
+        env:
+          DEPLOY_WEB: ${{ inputs.deploy_web }}
+          DEPLOY_BACKEND_HOOKS: ${{ inputs.deploy_backend_hooks }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          STAGING_DATABASE_HOST: ${{ vars.STAGING_DATABASE_HOST }}
+          STAGING_DATABASE_NAME: ${{ vars.STAGING_DATABASE_NAME }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          RENDER_API_DEPLOY_HOOK_URL: ${{ secrets.RENDER_API_STAGING_DEPLOY_HOOK_URL }}
+          RENDER_API_STAGING_SERVICE_ID: ${{ vars.RENDER_API_STAGING_SERVICE_ID }}
+        run: |
+          missing=()
+
+          [ -n "$DATABASE_URL" ] || missing+=("STAGING_DATABASE_URL")
+          [ -n "$STAGING_DATABASE_HOST" ] || missing+=("STAGING_DATABASE_HOST variable")
+          [ -n "$STAGING_DATABASE_NAME" ] || missing+=("STAGING_DATABASE_NAME variable")
+
+          if [ "$DEPLOY_WEB" = "true" ]; then
+            [ -n "$VERCEL_TOKEN" ] || missing+=("VERCEL_TOKEN")
+            [ -n "$VERCEL_ORG_ID" ] || missing+=("VERCEL_ORG_ID")
+            [ -n "$VERCEL_PROJECT_ID" ] || missing+=("VERCEL_WEB_STAGING_PROJECT_ID")
+          fi
+
+          if [ "$DEPLOY_BACKEND_HOOKS" = "true" ]; then
+            [ -n "$RENDER_API_DEPLOY_HOOK_URL" ] || missing+=("RENDER_API_STAGING_DEPLOY_HOOK_URL")
+            [ -n "$RENDER_API_STAGING_SERVICE_ID" ] || missing+=("RENDER_API_STAGING_SERVICE_ID variable")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required staging secret: %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+          node -e "try{const url=new URL(process.env.DATABASE_URL);const name=decodeURIComponent(url.pathname.replace(/^\\/+/,''));const protocolOk=url.protocol==='postgres:'||url.protocol==='postgresql:';if(!protocolOk||url.hostname.toLowerCase()!==process.env.STAGING_DATABASE_HOST.toLowerCase()||name!==process.env.STAGING_DATABASE_NAME)throw new Error()}catch{console.error('STAGING_DATABASE_URL does not match the configured staging database identity');process.exit(1)}"
+
+          if [ "$DEPLOY_BACKEND_HOOKS" = "true" ]; then
+            expected_render_prefix="https://api.render.com/deploy/${RENDER_API_STAGING_SERVICE_ID}?key="
+            case "$RENDER_API_DEPLOY_HOOK_URL" in
+              "$expected_render_prefix"*) ;;
+              *)
+                echo "Render deploy hook does not match the configured staging service ID"
+                exit 1
+                ;;
+            esac
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -45,35 +211,37 @@ jobs:
       - name: Quality gate
         run: npm run check
 
-      - name: Verify staging database secret
+      - name: Link and verify the Vercel staging project
+        if: ${{ inputs.deploy_web }}
+        working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "Missing STAGING_DATABASE_URL secret"
-            exit 1
-          fi
+          node -e "(async()=>{try{const endpoint='https://api.vercel.com/v9/projects/'+encodeURIComponent(process.env.VERCEL_PROJECT_ID)+'?teamId='+encodeURIComponent(process.env.VERCEL_ORG_ID);const response=await fetch(endpoint,{headers:{Authorization:'Bearer '+process.env.VERCEL_TOKEN}});if(!response.ok)throw new Error();const project=await response.json();if(project.name!=='citycore-web-staging'||project.id!==process.env.VERCEL_PROJECT_ID)throw new Error()}catch{console.error('Refusing deploy: Vercel project identity is not citycore-web-staging');process.exit(1)}})()"
+          npx --yes vercel@59.1.4 pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Apply staging migrations
         run: npm run db:migrate:deploy
         env:
           NODE_ENV: production
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
 
       - name: Deploy web staging to Vercel
         if: ${{ inputs.deploy_web }}
         working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "Missing Vercel staging secrets"
-            exit 1
-          fi
-          npx --yes vercel@59.1.4 pull --yes --environment=production --token="$VERCEL_TOKEN"
           npx --yes vercel@59.1.4 build --prod --token="$VERCEL_TOKEN"
           npx --yes vercel@59.1.4 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 
       - name: Trigger Render staging deploy hooks
         if: ${{ inputs.deploy_backend_hooks }}
-        run: |
-          if [ -n "$RENDER_API_DEPLOY_HOOK_URL" ]; then
-            curl -fsS -X POST "$RENDER_API_DEPLOY_HOOK_URL"
-          else
-            echo "RENDER_API_STAGING_DEPLOY_HOOK_URL not configured; skipping API deploy hook"
-          fi
+        env:
+          DEPLOY_SHA: ${{ inputs.commit_sha }}
+          RENDER_API_DEPLOY_HOOK_URL: ${{ secrets.RENDER_API_STAGING_DEPLOY_HOOK_URL }}
+        run: curl -fsS --connect-timeout 10 --max-time 30 -X POST "${RENDER_API_DEPLOY_HOOK_URL}&ref=${DEPLOY_SHA}"
