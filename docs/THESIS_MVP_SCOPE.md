@@ -85,3 +85,7 @@ Il percorso core è implementato e ha superato lo STEP 4: installazione pulita,
 controlli Prisma e qualità, test frontend/backend/integration, build e verifica
 runtime del flusso owner → visitatore → inbox. Il pickup ordering resta
 un'estensione dimostrativa opzionale e non condiziona il risultato del core.
+
+La consegna viene classificata come MVP accademico su città pilota, non come
+produzione nazionale. Preparazione, credenziali locali, sequenza della demo e
+quality gate sono definiti in `THESIS_DEMO_RUNBOOK.md`.

@@ -27,11 +27,21 @@ La gerarchia canonica del prodotto e:
 
 Il repo rappresenta solo il core city-first della piattaforma.
 
+## Stato Della Tesi
+
+Il core MVP della tesi e implementato sul caso pilota di Cagli. La demo copre il flusso
+`admin -> owner -> pubblicazione -> visitatore -> inquiry -> inbox`; il pickup ordering di Mucho
+Gusto e una sola estensione dimostrativa. Il repository non va presentato come una produzione
+nazionale gia operativa.
+
+La preparazione riproducibile e la sequenza della discussione sono descritte in
+`docs/THESIS_DEMO_RUNBOOK.md`.
+
 ## Shape Del Repo
 
 - `apps/web`: Next.js App Router per home piattaforma, pagine citta, pagine business e shell admin
 - `apps/api`: Fastify + Prisma per auth, registry citta, businesses, templates, access grants e surface pubblica
-- `packages/*`: moduli condivisi (`config`, `database`, `domain`, `permissions`, `shared`, `templates`, `ui`)
+- `packages/*`: moduli condivisi (`config`, `database`, `domain`, `templates`, `ui`)
 - `docs/*`: documentazione canonica di prodotto, architettura e workflow
 - `tools/*`: script operativi coerenti con il core piattaforma
 
@@ -60,8 +70,9 @@ API principali, mantenute sotto un namespace HTTP versionato:
 
 ## Local Development
 
-Requisiti: Node.js `>=20.9`, npm `>=10`, Docker Desktop avviato (PostgreSQL e
-Redis). Non sono necessari segreti nel repository: partire sempre dai file
+Requisiti: Node.js `24.14.1` per riprodurre CI e Render (il manifest accetta le linee compatibili
+20.19+, 22.13+ e 24+), npm `>=10`, Docker Desktop avviato (PostgreSQL e Redis). Non sono necessari
+segreti nel repository: partire sempre dai file
 `.env.example` e usare valori locali solo sul proprio computer.
 
 1. Installa le dipendenze da una working tree pulita:
@@ -79,7 +90,8 @@ cp apps/web/.env.example apps/web/.env.local
 
 Variabili minime:
 
-- `apps/web/.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SITE_URL`
+- `apps/web/.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SITE_URL` e
+  `CITYCORE_ENABLE_EDITORIAL_FALLBACK` solo per la demo locale
 - `apps/api/.env`: `NODE_ENV`, `PORT`, `DATABASE_URL`, `REDIS_URL`, `AUTH_SECRET`;
   in produzione anche `AUTH_BOOTSTRAP_SECRET`, `WEB_ORIGINS` e
   `TRUST_PROXY_HOPS`
@@ -184,3 +196,5 @@ npm run db:generate
 - `docs/CITY_REGISTRY.md`
 - `docs/ADMIN_ONBOARDING_FLOW.md`
 - `docs/STAGING_RUNBOOK.md`
+- `docs/THESIS_DEMO_RUNBOOK.md`
+- `docs/LEGACY_DEMO_DATA_MIGRATIONS.md`

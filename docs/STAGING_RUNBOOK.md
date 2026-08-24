@@ -11,11 +11,11 @@ Define one concrete staging shape for the current CityCore platform.
 | Web      | Vercel                        | `citycore-web-staging`      | `apps/web`          | Dedicated Vercel project; its production deployment is staging. |
 | API      | Render or equivalent app host | `citycore-api-staging`      | `apps/api`          | HTTP service with `/health`.                                    |
 | Database | Managed Postgres              | `citycore-postgres-staging` | `packages/database` | Runs Prisma migrations before deploy.                           |
-| Cache    | Managed Redis                 | `citycore-redis-staging`    | `apps/api`          | Shared cache/session dependency for API.                        |
+| Cache    | Managed Redis                 | `citycore-redis-staging`    | `apps/api`          | Required readiness dependency; distributed use is future work.  |
 
 ## Branch And Environment Policy
 
-- Staging branch: `staging`
+- Staging deploy source: an explicitly selected, quality-gated commit from `main`.
 - Web staging uses a dedicated Vercel project for `apps/web`.
 - The Vercel staging project's Production environment represents staging.
 - API staging must never use production Postgres, Redis or auth secrets.
@@ -38,10 +38,12 @@ Tracked config:
 - `apps/web/vercel.json`
 - `apps/web/.env.staging.example`
 
-Required Vercel environment variable:
+Required Vercel environment variables:
 
 ```txt
 NEXT_PUBLIC_API_BASE_URL=https://citycore-api-staging.onrender.com
+NEXT_PUBLIC_SITE_URL=https://citycore-web-staging.vercel.app
+CITYCORE_ENABLE_EDITORIAL_FALLBACK=false
 ```
 
 ## API Service
@@ -91,13 +93,15 @@ The Render deploy hook secret is optional when deploying API manually.
 
 ## Manual Migration Fallback
 
-Use this only from a trusted machine with staging credentials:
+Use this only from a trusted machine with staging credentials. The CityCore wrapper is mandatory
+because it runs the legacy demo-data preflight:
 
 ```bash
-DATABASE_URL="<staging-postgres-url>" npx prisma migrate deploy --schema packages/database/prisma/schema.prisma
+NODE_ENV=production DATABASE_URL="<staging-postgres-url>" npm run db:migrate:deploy
 ```
 
-Do not run destructive reset commands against staging.
+Do not call `prisma migrate deploy` directly and do not run destructive reset commands against
+staging. If the preflight blocks the deploy, follow `LEGACY_DEMO_DATA_MIGRATIONS.md`.
 
 ## Post Deploy Checks
 
@@ -120,6 +124,9 @@ Expected result:
 - web health returns `status: ok`
 - API health returns `status: ok`
 - API reports database, Redis and auth as configured
+
+The web URLs must be provisioned and verified before using staging for the thesis. A documented URL
+that returns `DEPLOYMENT_NOT_FOUND` is a failed staging gate, not a valid fallback.
 
 ## Admin Seed
 

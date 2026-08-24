@@ -1,100 +1,131 @@
 # Stato corrente di CityCore
 
-Data dell'analisi: 2026-08-05. Questo documento descrive il codice presente,
-non il prodotto pianificato.
+Data dell'analisi: 2026-08-24. Baseline verificata: `origin/main` `225389c`.
 
-## Struttura e tecnologie
+Questo documento descrive il codice realmente implementato. La visione di lungo periodo resta in
+`MASTER_PRODUCT_MAP.md`; il perimetro della tesi resta in `THESIS_MVP_SCOPE.md`.
 
-CityCore e un monorepo npm workspaces. `apps/web` e un frontend Next.js 16 con
-App Router; `apps/api` e un'API Fastify 5 con Zod e Prisma Client; PostgreSQL
-e Redis sono descritti in `compose.yml`. I package `domain`, `shared`,
-`permissions`, `templates`, `ui`, `config` e `database` raccolgono tipi,
-cataloghi e integrazione Prisma.
+## Sintesi
 
-Lo schema Prisma ha due migrazioni: baseline del core e consolidamento di
-pubblicazione, media, categorie, collezioni e catalogo moduli.
+CityCore è un MVP city-first funzionante e adatto a una dimostrazione accademica controllata. Il
+caso pilota persistito è Cagli; Mucho Gusto mostra anche un'estensione pickup dimostrativa. Il
+repository non rappresenta ancora una produzione nazionale e non deve essere presentato come tale.
 
-## Funzionalita realmente operative nel codice
+Il flusso core disponibile è:
 
-- Autenticazione tramite password scrypt e JWT HMAC a 8 ore, con cookie web
-  `httpOnly` e selezione dell'access grant attivo.
-- Bootstrap una tantum del primo global admin, login, `me` e cambio scope.
-- API amministrative per registry dei comuni, cities, business, access grant e
-  audit log; city e business supportano create/list/update.
-- Creazione business con template persistito, owner opzionale, grant business
-  opzionale e moduli iniziali.
-- Letture pubbliche di city e business attivi, sotto `/api/v2/public`.
-- Filtri di tenant per city/business nelle letture amministrative e nelle
-  modifiche; il grant business e limitato al proprio `businessId`.
-- Shell web per login, scelta accesso, dashboard globale in sola lettura e
-  dashboard business in sola lettura.
+```text
+Platform -> City -> Business
+-> profilo, categorie, servizi e orari
+-> readiness e pubblicazione
+-> directory e ricerca
+-> inquiry
+-> inbox owner
+```
 
-## Funzionalita parziali o solo rappresentate
+## Struttura e runtime
 
-- La dashboard globale legge l'API ma non offre form/UI per attivare una city,
-  creare business o assegnare owner/grant: le operazioni esistono solo via API.
-- Business admin visualizza dati reali, ma non modifica profilo, moduli,
-  contenuti, pubblicazione o utenti.
-- Pagine e sezioni Prisma esistono ma non hanno route API; non sono usate dal
-  runtime pubblico.
-- Categorie, assegnazioni, collezioni, media asset e platform module sono nel
-  database ma non dispongono di CRUD/API o UI.
-- `status: active` rende pubblico un business; `publishedAt` e gli stati di
-  pubblicazione di pagine/sezioni non vengono applicati al runtime.
-- La ricerca pubblica e un semplice elenco ordinato con limite: non supporta
-  query testuale, categoria, servizi, orari o altri filtri.
-- Non esistono modelli, API o inbox per richieste di contatto. Le CTA aprono
-  telefono, sito esterno o email.
-- Non esistono servizi, orari, benchmark di ricerca, test automatici o
-  assistente IA.
+- monorepo npm workspaces;
+- `apps/web`: Next.js 16 App Router e React 19;
+- `apps/api`: Fastify 5, Zod e Prisma Client;
+- PostgreSQL come database applicativo;
+- Redis dichiarato come dipendenza di health, non ancora usato per cache o rate limit distribuito;
+- package condivisi reali: `config`, `database`, `domain`, `templates`, `ui`;
+- Vercel per il web e Render per l'API staging.
 
-## Dati simulati e fallback
+La runtime CI e Render è fissata a Node.js `24.14.1`. `.gitattributes` e Prettier definiscono una
+policy EOL riproducibile tra Windows e Linux.
 
-`apps/web/src/lib/public-marketplace.ts` contiene i profili editoriali usati
-solo come fallback degraded. Se l'API non e raggiungibile, homepage, city page
-e business page segnalano chiaramente lo stato; sulla scheda business richieste
-e ordini restano disattivati. Le superfici live mostrano i dati pubblici
-disponibili senza presentare copy editoriale come informazione dell'attività.
+## Funzionalità operative
 
-## Modello Prisma e uso effettivo
+### Platform e accessi
 
-| Modello                                                                                                              | Uso corrente                      |
-| -------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `User`, `AccessGrant`, `AuditLog`                                                                                    | Autenticazione, grant e audit API |
-| `CityRegistry`, `City`, `BusinessTemplate`, `Business`, `BusinessModule`                                             | CRUD/parziale API e letture web   |
-| `BusinessPage`, `BusinessSection`                                                                                    | Solo schema/migrazione            |
-| `MediaAsset`, `PlatformModule`, `CityCategory`, `BusinessCategoryAssignment`, `CityCollection`, `CityCollectionItem` | Solo schema/migrazione            |
+- bootstrap controllato del primo global admin;
+- login, logout logico tramite `authVersion` e selezione access grant;
+- ruoli `global_admin`, `city_admin`, `local_admin`, `staff`;
+- scope platform, city e business;
+- creazione e modifica di City, Business e grant;
+- filtri tenant applicativi e test cross-city/cross-business;
+- audit log per autenticazione e operazioni amministrative principali.
 
-I moduli `content`, `catalog`, `forms_inbox`, `booking`, `hospitality`,
-`listings`, `directory` ed `events` sono catalogo/scaffold; non implementano
-i relativi flussi verticali.
+### Business MVP
 
-## Coerenza, sicurezza e debito tecnico
+- gestione profilo e contatti pubblici;
+- categorie cittadine e assegnazione al business;
+- servizi con stato, descrizione, prezzo e durata;
+- orari settimanali e calcolo stato aperto/chiuso nel timezone del business;
+- readiness, publish e unpublish;
+- inquiry pubblica e inbox owner;
+- pickup ordering dimostrativo con capacità e transazione serializzabile.
 
-- La discrepanza `customer` nei package condivisi rispetto a Prisma/API e
-  stata eliminata in questa sessione. I soli ruoli sono `global_admin`,
-  `city_admin`, `local_admin`, `staff`.
-- Il token JWT era passato come hidden input nella pagina di scelta accesso;
-  ora l'action server legge esclusivamente il cookie `httpOnly`.
-- Le permission map esistono sia in `apps/api/src/auth.ts` sia in
-  `packages/permissions`: oggi hanno valori equivalenti ma la duplicazione e
-  un rischio di divergenza.
-- Template e moduli sono duplicati tra API e `packages/templates`; stessa
-  osservazione per enum/tipi API e package domain.
-- `routes.ts` supera 1.600 righe e accorpa registry, city, business, grant e
-  audit: e la prima candidata a separazione per resource quando l'MVP cresce.
-- Il seed global admin richiede ora `GLOBAL_ADMIN_PASSWORD` e non stampa mai
-  la password; non esistono credenziali demo sicure committate.
+### Superficie pubblica
 
-## Dipendenze e rischi
+- home piattaforma;
+- pagina città e directory filtrabile;
+- pagina business con servizi, orari, contatti e azione primaria;
+- metadata, canonical e JSON-LD `LocalBusiness`;
+- sitemap e robots;
+- pagine provvisorie Privacy e Termini/Nota demo;
+- disclaimer persistente che identifica il prodotto come prototipo di tesi;
+- aree admin e access selector impostate `noindex,nofollow`.
 
-Dipendenze principali: Next.js, React, Fastify, Prisma, Zod, TypeScript,
-ESLint, Prettier e Docker Compose. Al momento dell'analisi `npm ls --depth=0`
-segnala workspace invalidi e pacchetti estranei: occorre un `npm ci` locale
-con rete disponibile prima dell'avvio affidabile. Docker Desktop non era
-disponibile, quindi database, migrazioni, seed e health runtime non sono stati
-verificati. Il wrapper Prisma non ha potuto generare un processo figlio in
-questo ambiente, quindi lo schema non puo essere dichiarato validato qui.
+In produzione le build web richiedono URL API e origine canonica validi. I fallback editoriali
+sono disabilitati per default in produzione e possono essere abilitati soltanto esplicitamente in
+un ambiente demo. Le chiamate web verso l'API hanno un timeout finito.
 
-Elementi riutilizzabili: schema multi-tenant, mappers, validazioni Zod,
-cataloghi template/moduli, auth con grant e filtri di scope, shell web e CI.
+## Dati e migrazioni
+
+Lo schema dispone di undici migrazioni condivise. Quattro migrazioni storiche del 17 agosto 2026
+contengono aggiornamenti specifici per il caso demo Cagli/Mucho Gusto. Non devono essere cancellate
+o riscritte se risultano già applicate.
+
+Il repository include:
+
+- seed demo separati e idempotenti;
+- blocco dei seed demo con `NODE_ENV=production`, salvo acknowledgement esplicito e puntuale;
+- preflight read-only prima di un `migrate deploy` production;
+- audit read-only degli artefatti demo legacy;
+- procedura operativa in `LEGACY_DEMO_DATA_MIGRATIONS.md`.
+
+La pipeline autorevole ISTAT per tutti i comuni italiani non è ancora implementata. Il registry
+globale compatto serve soltanto a dimostrare ricerca, normalizzazione e timezone; non equivale a
+copertura nazionale.
+
+## Qualità verificata
+
+La baseline aggiornata e le correzioni per la tesi hanno superato:
+
+- schema Prisma, typecheck globale, lint, format e build web/API;
+- 4 test del guard migrazioni legacy;
+- 17 unit test API;
+- 115 test web;
+- 28 integration test su PostgreSQL isolato.
+
+Il quality gate GitHub include schema e migrazioni Prisma, seed idempotente, unit test API/web,
+integration test su database isolato, lint, format, typecheck e build. La verifica completa locale
+va rieseguita prima della consegna seguendo `THESIS_DEMO_RUNBOOK.md`.
+
+## Limiti noti
+
+- catalogo live dimostrativo, non dataset nazionale;
+- ricerca pubblica e sitemap ancora basate su fetch paginati e non dimensionate per grandi volumi;
+- cache CDN/ISR e invalidazione non implementate;
+- rate limit per-processo, non distribuito;
+- autenticazione senza MFA, recovery self-service o rotazione chiavi completa;
+- nessuna pipeline email, queue/outbox o object storage media;
+- backup, PITR, restore drill, SLO, tracing, alert e on-call non dimostrati dal repository;
+- privacy demo non sostitutiva di documentazione e processi validati per utenti reali;
+- `npm audit --omit=dev` segnala tre vulnerabilità high nella catena di configurazione/CLI Prisma
+  (`@prisma/config` -> `deepmerge-ts`); npm propone soltanto una variazione forzata e breaking, da
+  valutare con una migrazione Prisma dedicata prima di un'apertura pubblica;
+- booking, hospitality, listing, eventi, billing, domini e analytics restano scaffold o roadmap;
+- copertura test ancora concentrata su helper e API, senza suite browser E2E automatizzata.
+
+## Classificazione corretta del risultato
+
+Il risultato può essere descritto come:
+
+> MVP verificato di piattaforma modulare city-first, dimostrato su una città pilota e progettato
+> per un'estensione progressiva.
+
+Non va descritto come servizio nazionale production-ready. Il passaggio a produzione richiede la
+roadmap tecnica, operativa, legale e dati riportata nei documenti di audit e nel blueprint.
