@@ -41,6 +41,65 @@ associazioni trigramma-documento. Una query selettiva visita invece le posting l
 candidati sopravvissuti. Nel caso peggiore, con termini presenti in quasi tutti i documenti, il costo
 resta lineare; l'indice non cambia quindi il limite asintotico di ogni possibile query.
 
+## Complessità asintotica
+
+Siano `D` il numero di Business nel catalogo cittadino già caricato, `L` la lunghezza media in
+caratteri dei campi indicizzati per documento e `Q` la lunghezza della query.
+
+### Scansione lineare
+
+Ogni query normalizza e confronta tutti i `D` documenti: costo per query `O(D·L)` nel caso peggiore,
+senza interruzione anticipata. Non richiede fase di costruzione né memoria oltre al catalogo stesso:
+spazio `O(1)` aggiuntivo.
+
+### Indice invertito a trigrammi
+
+**Costruzione**: per ciascun documento si estraggono `O(L)` trigrammi, popolando le posting list in
+tempo complessivo `O(D·L)` e spazio `O(D·L)` nel caso peggiore, limitato in pratica dal numero di
+trigrammi distinti effettivamente presenti nel vocabolario, come osservato nei risultati (la tabella
+di costruzione mostra i trigrammi stabilizzarsi mentre le posting crescono).
+
+**Query**: si estraggono `O(Q)` trigrammi dalla query, si recuperano le posting list corrispondenti e
+si intersecano a partire dalla più corta, in tempo proporzionale alla somma delle loro lunghezze; la
+verifica finale per sottostringa costa `O(c·L)`, dove `c` è il numero di candidati sopravvissuti
+all'intersezione. Nel caso peggiore — una query i cui trigrammi compaiono in quasi tutti i documenti
+— `c` tende a `D` e il costo torna `O(D·L)`: l'indice non abbassa la complessità del caso peggiore di
+una singola query, sposta il lavoro medio dalla query alla costruzione, ammortizzandolo su tutte le
+query successive sullo stesso catalogo. Le query di una o due lettere restano `O(D)` perché non
+generano trigrammi e riusano soltanto i campi pre-normalizzati.
+
+Questa analisi prevede esattamente il comportamento empirico della sezione Risultati: speed-up molto
+elevati sugli scenari selettivi (`rara`, `assente`, dove `c` è piccolo o nullo) e speed-up modesti su
+`solo categoria`, dove entrambe le strategie svolgono già un lavoro ridotto e il vantaggio si riduce
+al solo costo evitato di attraversare l'intero catalogo.
+
+## Strutture alternative considerate
+
+Prima di adottare l'indice a trigrammi sono state valutate, e scartate per questo prototipo, tre
+alternative:
+
+- **Tabella hash su token esatti**: costo atteso `O(1)` per query di corrispondenza esatta su un
+  intero campo, ma inadatta a sottostringhe parziali. La ricerca pubblica deve trovare "gust" dentro
+  "Mucho Gusto", non solo l'intero token: una tabella hash da sola non risolve il problema posto.
+- **Trie o albero dei suffissi sui campi indicizzati**: garantirebbe query di sottostringa in tempo
+  proporzionale alla sola lunghezza del pattern più il numero di occorrenze trovate, asintoticamente
+  migliore dell'intersezione di posting list nel caso peggiore. Scartato per la complessità
+  implementativa e di manutenzione sproporzionata rispetto alla scala del prototipo, non perché
+  inferiore in teoria: resta l'estensione naturale se il catalogo crescesse di ordini di grandezza.
+- **Full-text search o `pg_trgm` lato PostgreSQL**: sposterebbe l'indicizzazione dal client al
+  database, risolvendo anche il limite del fetch paginato discusso in "Limiti applicativi". Non è
+  stato scelto per questo esperimento perché l'obiettivo dichiarato era isolare e misurare l'effetto
+  della struttura dati lato applicazione, non sostituire l'architettura di recupero dati; resta la
+  strada più realistica per un'evoluzione oltre il prototipo cittadino.
+
+Il criterio di scelta finale è stato quindi il rapporto fra beneficio atteso e costo di
+implementazione entro il perimetro della tesi, non l'assunto che i trigrammi siano la struttura
+ottimale in assoluto. La stessa piattaforma usa del resto una struttura diversa dove il problema è
+diverso: l'indice B-tree composito `(city_id, status, active, starts_at)` su `CityEvent` (vedi
+`ARCHITECTURE.md`) risolve un ordinamento per intervallo su una tabella persistita, non
+un'appartenenza per sottostringa su un catalogo già in memoria — due strutture per due problemi,
+scelte con lo stesso criterio.
+
 ## Correttezza
 
 La suite `apps/web/src/lib/public-search.test.ts` verifica la parità con la scansione lineare per:
