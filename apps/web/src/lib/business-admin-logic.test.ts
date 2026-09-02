@@ -4,6 +4,7 @@ import {
   buildSocialLinksFromForm,
   nextReadinessAction,
   readinessAction,
+  readinessGuidance,
   readinessReasonLabel,
   validateOpeningWeek,
 } from "./business-admin-logic";
@@ -95,5 +96,31 @@ describe("business admin form logic", () => {
         true,
       ),
     ).toEqual({ label: "Scegli una categoria", href: "/cagli/forno/admin/categories" });
+  });
+
+  it("keeps readiness guidance consistent with the publication state", () => {
+    expect(
+      readinessGuidance({
+        canPublish: false,
+        missingRequirements: ["description", "public_contact"],
+        warnings: ["No direct public phone or email is configured."],
+      }),
+    ).toBe(
+      "La pubblicazione resta bloccata: aggiungi almeno un telefono, un’email o un sito web pubblico.",
+    );
+    expect(
+      readinessGuidance({
+        canPublish: false,
+        missingRequirements: ["active_category"],
+        warnings: ["No direct public phone or email is configured."],
+      }),
+    ).toContain("La pubblicazione resta bloccata");
+    expect(
+      readinessGuidance({
+        canPublish: true,
+        missingRequirements: [],
+        warnings: ["No direct public phone or email is configured."],
+      }),
+    ).toContain("La scheda è pubblicabile");
   });
 });

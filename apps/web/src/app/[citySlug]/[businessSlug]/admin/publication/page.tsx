@@ -11,6 +11,7 @@ import {
 } from "../../../../../lib/business-admin-server";
 import {
   readinessAction,
+  readinessGuidance,
   readinessReasonLabel,
   readinessRequirements,
   readinessSummary,
@@ -113,10 +114,7 @@ export default async function BusinessPublicationPage({
             {readiness.data.item.warnings.length ? (
               <div className="admin-state-card admin-state-inline">
                 <strong>Indicazioni utili</strong>
-                <p>
-                  La scheda è pubblicabile, ma un telefono o un’email pubblica rende il contatto più
-                  immediato.
-                </p>
+                <p>{readinessGuidance(readiness.data.item)}</p>
                 {canManage ? (
                   <Link
                     className="admin-button ghost-button"

@@ -155,3 +155,13 @@ export function readinessReasonLabel(reason: string) {
 export function readinessSummary(readiness: PlatformPublishReadiness) {
   return readiness.canPublish ? "Pronto per la pubblicazione" : "Non ancora pronto";
 }
+
+export function readinessGuidance(readiness: PlatformPublishReadiness) {
+  if (readiness.canPublish) {
+    return "La scheda è pubblicabile; un telefono o un’email pubblica renderebbe il contatto più immediato.";
+  }
+  if (readiness.missingRequirements.includes("public_contact")) {
+    return "La pubblicazione resta bloccata: aggiungi almeno un telefono, un’email o un sito web pubblico.";
+  }
+  return "La pubblicazione resta bloccata finché non completi i requisiti evidenziati. Un telefono o un’email pubblica renderebbe inoltre il contatto più immediato.";
+}
