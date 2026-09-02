@@ -30,7 +30,7 @@ const rootVariables = createCssVariables() as CSSProperties;
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="it">
+    <html data-scroll-behavior="smooth" lang="it">
       <body className="app-body" style={rootVariables}>
         <a className="skip-link" href="#main-content">
           Vai al contenuto principale

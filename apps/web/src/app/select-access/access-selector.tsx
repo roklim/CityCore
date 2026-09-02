@@ -107,15 +107,15 @@ export function AccessSelector({
                 {accessMark(access)}
               </span>
               <div className="selector-copy">
-                <span className="selector-context">{accessContext(access)}</span>
-                <strong>{adminRoleLabel(access.role)}</strong>
+                <span className="selector-context">
+                  {adminScopeLabel(access.scopeType)}
+                  {access.city && access.scopeType === "business" ? ` · ${access.city.name}` : ""}
+                </span>
+                <strong>{accessContext(access)}</strong>
                 <p id={descriptionId}>{describeAccess(access)}</p>
                 <div className="pill-row">
                   {isCurrent ? <span className="pill">In uso</span> : null}
-                  <span className="pill">{adminScopeLabel(access.scopeType)}</span>
-                  {access.city && access.scopeType === "business" ? (
-                    <span className="pill">{access.city.name}</span>
-                  ) : null}
+                  <span className="pill">{adminRoleLabel(access.role)}</span>
                 </div>
               </div>
               <span className="selector-check" aria-hidden="true">
