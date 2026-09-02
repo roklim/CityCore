@@ -20,18 +20,26 @@ export type PublicBusinessSection<TBusiness> = {
   businesses: TBusiness[];
 };
 
-export type PublicBusinessSearchIndex<TBusiness extends CategorizedPublicBusiness> = {
+export type PublicBusinessNormalizedCorpus<TBusiness extends CategorizedPublicBusiness> = {
   businesses: readonly TBusiness[];
   normalizedValues: readonly (readonly string[])[];
-  trigramPostings: ReadonlyMap<string, readonly number[]>;
   categoryPostings: ReadonlyMap<string, readonly number[]>;
   stats: {
     itemCount: number;
     normalizedFieldCount: number;
-    trigramCount: number;
-    postingCount: number;
   };
 };
+
+export type PublicBusinessSearchIndex<TBusiness extends CategorizedPublicBusiness> =
+  PublicBusinessNormalizedCorpus<TBusiness> & {
+    trigramPostings: ReadonlyMap<string, readonly number[]>;
+    stats: {
+      itemCount: number;
+      normalizedFieldCount: number;
+      trigramCount: number;
+      postingCount: number;
+    };
+  };
 
 const categoryLabels: Record<string, string> = {
   commerce: "Attività locali",
@@ -250,26 +258,15 @@ function intersectSortedIndices(left: readonly number[], right: readonly number[
  * exact semantics of the linear baseline. Queries shorter than three normalized characters use the
  * pre-normalized documents directly because they cannot be represented by a trigram.
  */
-export function createPublicBusinessSearchIndex<TBusiness extends CategorizedPublicBusiness>(
+export function createPublicBusinessNormalizedCorpus<TBusiness extends CategorizedPublicBusiness>(
   businesses: readonly TBusiness[],
-): PublicBusinessSearchIndex<TBusiness> {
-  const trigramPostings = new Map<string, number[]>();
+): PublicBusinessNormalizedCorpus<TBusiness> {
   const categoryPostings = new Map<string, number[]>();
   let normalizedFieldCount = 0;
 
   const normalizedValues = businesses.map((business, businessIndex) => {
     const values = getNormalizedBusinessSearchValues(business);
     normalizedFieldCount += values.length;
-
-    const businessTrigrams = new Set<string>();
-    for (const value of values) {
-      for (const trigram of getUniqueTrigrams(value)) businessTrigrams.add(trigram);
-    }
-    for (const trigram of businessTrigrams) {
-      const posting = trigramPostings.get(trigram);
-      if (posting) posting.push(businessIndex);
-      else trigramPostings.set(trigram, [businessIndex]);
-    }
 
     const categoryIds = new Set(
       getPublicBusinessCategories(business).map((category) => category.id),
@@ -282,23 +279,60 @@ export function createPublicBusinessSearchIndex<TBusiness extends CategorizedPub
 
     return values;
   });
+
+  return {
+    businesses: [...businesses],
+    normalizedValues,
+    categoryPostings,
+    stats: {
+      itemCount: businesses.length,
+      normalizedFieldCount,
+    },
+  };
+}
+
+export function createPublicBusinessSearchIndexFromCorpus<
+  TBusiness extends CategorizedPublicBusiness,
+>(corpus: PublicBusinessNormalizedCorpus<TBusiness>): PublicBusinessSearchIndex<TBusiness> {
+  const trigramPostings = new Map<string, number[]>();
+
+  corpus.normalizedValues.forEach((values, businessIndex) => {
+    const businessTrigrams = new Set<string>();
+    for (const value of values) {
+      for (const trigram of getUniqueTrigrams(value)) businessTrigrams.add(trigram);
+    }
+    for (const trigram of businessTrigrams) {
+      const posting = trigramPostings.get(trigram);
+      if (posting) posting.push(businessIndex);
+      else trigramPostings.set(trigram, [businessIndex]);
+    }
+  });
+
   const postingCount = [...trigramPostings.values()].reduce(
     (total, posting) => total + posting.length,
     0,
   );
 
   return {
-    businesses: [...businesses],
-    normalizedValues,
+    businesses: corpus.businesses,
+    normalizedValues: corpus.normalizedValues,
     trigramPostings,
-    categoryPostings,
+    categoryPostings: corpus.categoryPostings,
     stats: {
-      itemCount: businesses.length,
-      normalizedFieldCount,
+      itemCount: corpus.stats.itemCount,
+      normalizedFieldCount: corpus.stats.normalizedFieldCount,
       trigramCount: trigramPostings.size,
       postingCount,
     },
   };
+}
+
+export function createPublicBusinessSearchIndex<TBusiness extends CategorizedPublicBusiness>(
+  businesses: readonly TBusiness[],
+): PublicBusinessSearchIndex<TBusiness> {
+  return createPublicBusinessSearchIndexFromCorpus(
+    createPublicBusinessNormalizedCorpus(businesses),
+  );
 }
 
 function getIndexedTextCandidates<TBusiness extends CategorizedPublicBusiness>(
@@ -332,6 +366,34 @@ function getIndexedTextCandidates<TBusiness extends CategorizedPublicBusiness>(
   return candidates.filter((businessIndex) =>
     index.normalizedValues[businessIndex]?.some((value) => value.includes(normalizedQuery)),
   );
+}
+
+/**
+ * Scans the pre-normalized corpus without trigram postings. This strategy isolates the benefit of
+ * normalization reuse from the candidate reduction performed by the inverted index.
+ */
+export function searchPreNormalizedPublicBusinesses<TBusiness extends CategorizedPublicBusiness>(
+  corpus: PublicBusinessNormalizedCorpus<TBusiness>,
+  query: string,
+  sectionId = "all",
+) {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery && sectionId !== "all") {
+    return (corpus.categoryPostings.get(sectionId) ?? []).flatMap((businessIndex) => {
+      const business = corpus.businesses[businessIndex];
+      return business ? [business] : [];
+    });
+  }
+
+  const categoryIndices =
+    sectionId === "all" ? null : new Set(corpus.categoryPostings.get(sectionId) ?? []);
+
+  return corpus.normalizedValues.flatMap((values, businessIndex) => {
+    if (categoryIndices && !categoryIndices.has(businessIndex)) return [];
+    if (normalizedQuery && !values.some((value) => value.includes(normalizedQuery))) return [];
+    const business = corpus.businesses[businessIndex];
+    return business ? [business] : [];
+  });
 }
 
 export function searchPublicBusinesses<TBusiness extends CategorizedPublicBusiness>(

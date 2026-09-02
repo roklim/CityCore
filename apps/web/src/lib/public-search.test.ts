@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  createPublicBusinessNormalizedCorpus,
   createPublicBusinessSearchIndex,
+  createPublicBusinessSearchIndexFromCorpus,
   filterPublicBusinesses,
   filterPublicBusinessesBySection,
   findMatchingCitySlug,
@@ -10,6 +12,7 @@ import {
   groupPublicBusinessesForDisplay,
   normalizeSearchText,
   resolveCitySearch,
+  searchPreNormalizedPublicBusinesses,
   searchPublicBusinesses,
 } from "./public-search";
 
@@ -454,7 +457,7 @@ describe("public search", () => {
     ]);
   });
 
-  it("keeps indexed trigram search equivalent to the linear baseline", () => {
+  it("keeps pre-normalized and trigram searches equivalent to the linear baseline", () => {
     const businesses = [
       {
         name: "Forno Civico",
@@ -484,19 +487,32 @@ describe("public search", () => {
         searchTerms: ["Richiesta soggiorno"],
       },
     ];
-    const index = createPublicBusinessSearchIndex(businesses);
+    const corpus = createPublicBusinessNormalizedCorpus(businesses);
+    const index = createPublicBusinessSearchIndexFromCorpus(corpus);
 
-    for (const query of ["", "p", "pi", "pizza", "PIZZERIA", "aurora", "porta mass", "zz"])
+    for (const query of ["", "p", "pi", "pizza", "PIZZERIA", "aurora", "porta mass", "zz"]) {
+      expect(searchPreNormalizedPublicBusinesses(corpus, query)).toEqual(
+        filterPublicBusinessesBySection(businesses, query, "all"),
+      );
       expect(searchPublicBusinesses(index, query)).toEqual(
         filterPublicBusinessesBySection(businesses, query, "all"),
       );
+    }
 
-    for (const sectionId of ["pizza", "professionisti", "hospitality", "missing"])
+    for (const sectionId of ["pizza", "professionisti", "hospitality", "missing"]) {
+      expect(searchPreNormalizedPublicBusinesses(corpus, "", sectionId)).toEqual(
+        filterPublicBusinessesBySection(businesses, "", sectionId),
+      );
       expect(searchPublicBusinesses(index, "", sectionId)).toEqual(
         filterPublicBusinessesBySection(businesses, "", sectionId),
       );
+    }
 
+    expect(searchPreNormalizedPublicBusinesses(corpus, "margherita", "pizza")).toEqual([
+      businesses[0],
+    ]);
     expect(searchPublicBusinesses(index, "margherita", "pizza")).toEqual([businesses[0]]);
+    expect(searchPreNormalizedPublicBusinesses(corpus, "margherita", "professionisti")).toEqual([]);
     expect(searchPublicBusinesses(index, "margherita", "professionisti")).toEqual([]);
   });
 

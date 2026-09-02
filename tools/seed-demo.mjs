@@ -342,6 +342,164 @@ const cagliBusinessSpecs = [
   },
 ];
 
+const additionalCagliBusinessSpecs = [
+  {
+    name: "Bistrot Quercia Demo",
+    slug: "bistrot-quercia-demo",
+    templateCode: "local_business",
+    cityCategorySlug: "ristorazione",
+    moduleCodes: ["catalog", "forms_inbox"],
+    serviceName: "Menu del giorno demo",
+  },
+  {
+    name: "Caffè Tramonto Demo",
+    slug: "caffe-tramonto-demo",
+    templateCode: "local_business",
+    cityCategorySlug: "ristorazione",
+    moduleCodes: ["catalog", "forms_inbox"],
+    serviceName: "Degustazione demo",
+  },
+  {
+    name: "Panificio Girasole Demo",
+    slug: "panificio-girasole-demo",
+    templateCode: "local_business",
+    cityCategorySlug: "ristorazione",
+    moduleCodes: ["catalog", "forms_inbox"],
+    serviceName: "Prodotti da forno demo",
+  },
+  {
+    name: "Emporio Sapori Demo",
+    slug: "emporio-sapori-demo",
+    templateCode: "local_business",
+    cityCategorySlug: "ristorazione",
+    moduleCodes: ["catalog", "forms_inbox"],
+    serviceName: "Selezione locale demo",
+  },
+  {
+    name: "Laboratorio Civico Demo",
+    slug: "laboratorio-civico-demo",
+    templateCode: "studio_service",
+    cityCategorySlug: "servizi",
+    moduleCodes: ["booking", "forms_inbox"],
+    serviceName: "Consulenza iniziale demo",
+  },
+  {
+    name: "Riparazioni Beta Demo",
+    slug: "riparazioni-beta-demo",
+    templateCode: "studio_service",
+    cityCategorySlug: "servizi",
+    moduleCodes: ["booking", "forms_inbox"],
+    serviceName: "Valutazione intervento demo",
+  },
+  {
+    name: "Servizi Arco Demo",
+    slug: "servizi-arco-demo",
+    templateCode: "studio_service",
+    cityCategorySlug: "servizi",
+    moduleCodes: ["booking", "forms_inbox"],
+    serviceName: "Richiesta programmata demo",
+  },
+  {
+    name: "Ciclofficina Urbana Demo",
+    slug: "ciclofficina-urbana-demo",
+    templateCode: "studio_service",
+    cityCategorySlug: "servizi",
+    moduleCodes: ["booking", "forms_inbox"],
+    serviceName: "Controllo bicicletta demo",
+  },
+  {
+    name: "Locanda Aurora Demo",
+    slug: "locanda-aurora-demo",
+    templateCode: "hospitality",
+    cityCategorySlug: "ospitalita",
+    moduleCodes: ["hospitality", "forms_inbox"],
+    serviceName: "Richiesta soggiorno demo",
+  },
+  {
+    name: "Ospitalità Rovere Demo",
+    slug: "ospitalita-rovere-demo",
+    templateCode: "hospitality",
+    cityCategorySlug: "ospitalita",
+    moduleCodes: ["hospitality", "forms_inbox"],
+    serviceName: "Informazioni ospitalità demo",
+  },
+  {
+    name: "Casa Panorama Demo",
+    slug: "casa-panorama-demo",
+    templateCode: "hospitality",
+    cityCategorySlug: "ospitalita",
+    moduleCodes: ["hospitality", "forms_inbox"],
+    serviceName: "Contatto struttura demo",
+  },
+  {
+    name: "Foresteria Lume Demo",
+    slug: "foresteria-lume-demo",
+    templateCode: "hospitality",
+    cityCategorySlug: "ospitalita",
+    moduleCodes: ["hospitality", "forms_inbox"],
+    serviceName: "Richiesta disponibilità demo",
+  },
+  {
+    name: "Bacheca Cagli Demo",
+    slug: "bacheca-cagli-demo",
+    templateCode: "events_listings",
+    cityCategorySlug: "eventi",
+    moduleCodes: ["listings", "events", "forms_inbox"],
+    serviceName: "Segnalazione evento demo",
+  },
+  {
+    name: "Spazio Delta Demo",
+    slug: "spazio-delta-demo",
+    templateCode: "events_listings",
+    cityCategorySlug: "eventi",
+    moduleCodes: ["listings", "events", "forms_inbox"],
+    serviceName: "Proposta culturale demo",
+  },
+  {
+    name: "Agenda Borgo Demo",
+    slug: "agenda-borgo-demo",
+    templateCode: "events_listings",
+    cityCategorySlug: "eventi",
+    moduleCodes: ["listings", "events", "forms_inbox"],
+    serviceName: "Invio annuncio demo",
+  },
+  {
+    name: "Laboratorio Eventi Demo",
+    slug: "laboratorio-eventi-demo",
+    templateCode: "events_listings",
+    cityCategorySlug: "eventi",
+    moduleCodes: ["listings", "events", "forms_inbox"],
+    serviceName: "Richiesta organizzativa demo",
+  },
+].map((spec, index) => ({
+  ...spec,
+  ownerKey: index % 2 === 0 ? "one" : "two",
+  publicTitle: `${spec.name}: scheda dimostrativa della directory cittadina.`,
+  publicSubtitle: "Attività fittizia usata per verificare ricerca, categorie e pubblicazione.",
+  publicDescription:
+    "Scheda generata dal seed di CityCore con dati esclusivamente dimostrativi e contatti non reali.",
+  publicEmail: `contatti@${spec.slug}.citycore.example`,
+  publicPhone: `+39 0721 ${String(index + 201).padStart(6, "0")}`,
+  website: `https://citycore.example/demo/${spec.slug}`,
+  addressLine1: `Via Dimostrativa ${index + 1}`,
+  locality: "Cagli",
+  province: "PU",
+  services: [
+    {
+      slug: `servizio-${spec.slug}`,
+      name: spec.serviceName,
+      shortDescription: "Servizio fittizio del dataset dimostrativo.",
+      description: "Voce usata per verificare ricerca e visualizzazione del catalogo.",
+      sortOrder: 10,
+    },
+  ],
+  openingHours: {
+    weekdays: [{ opensAt: "09:00", closesAt: "18:00" }],
+    saturday: [{ opensAt: "09:00", closesAt: "13:00" }],
+    sunday: [],
+  },
+}));
+
 const cagliEventSpecs = [
   {
     slug: "mercato-dei-produttori-locali",
@@ -487,6 +645,58 @@ async function ensureCityEvents(city, businesses, publishedAt) {
   }
 }
 
+async function ensureDemoInquiries(businesses) {
+  const business = businesses.get("forno-civico");
+  if (!business) throw new Error("Missing Forno Civico for demo inquiries.");
+
+  const inquirySpecs = [
+    {
+      email: "nuova-richiesta@citycore.example",
+      name: "Visitatrice Demo",
+      phone: "+39 0721 000301",
+      message: "Vorrei informazioni sugli orari disponibili per sabato sera.",
+      status: "new",
+      readAt: null,
+      internalNote: null,
+    },
+    {
+      email: "richiesta-letta@citycore.example",
+      name: "Cliente Dimostrativo",
+      phone: "+39 0721 000302",
+      message: "La proposta vegetariana e disponibile anche nel fine settimana?",
+      status: "read",
+      readAt: new Date("2026-08-06T09:15:00.000Z"),
+      internalNote: "Richiesta letta; risposta da preparare.",
+    },
+    {
+      email: "richiesta-chiusa@citycore.example",
+      name: "Utente Esempio",
+      phone: "+39 0721 000303",
+      message: "Chiedo conferma della fascia di ritiro indicata nella scheda.",
+      status: "closed",
+      readAt: new Date("2026-08-05T14:30:00.000Z"),
+      internalNote: "Richiesta gestita e chiusa nel dataset dimostrativo.",
+    },
+  ];
+
+  for (const [index, spec] of inquirySpecs.entries()) {
+    const existing = await prisma.businessInquiry.findFirst({
+      where: { businessId: business.id, email: spec.email },
+    });
+    const data = {
+      ...spec,
+      privacyAccepted: true,
+      createdAt: new Date(`2026-08-0${7 - index}T10:00:00.000Z`),
+    };
+
+    if (existing) {
+      await prisma.businessInquiry.update({ where: { id: existing.id }, data });
+    } else {
+      await prisma.businessInquiry.create({ data: { businessId: business.id, ...data } });
+    }
+  }
+}
+
 async function ensureBusiness({ city, templates, categories, owner, spec }) {
   const template = templates.get(spec.templateCode);
   const category = categories.get(spec.cityCategorySlug);
@@ -579,6 +789,70 @@ async function ensureBusiness({ city, templates, categories, owner, spec }) {
   return business;
 }
 
+async function ensureReadinessDemoBusiness({ city, templates, owner }) {
+  const template = templates.get("local_business");
+  if (!template) throw new Error("Missing local_business template.");
+
+  const business = await prisma.business.upsert({
+    where: { cityId_slug: { cityId: city.id, slug: "bottega-in-allestimento-demo" } },
+    update: {
+      templateId: template.id,
+      ownerUserId: owner.id,
+      name: "Bottega in allestimento Demo",
+      category: template.category,
+      status: "draft",
+      subscriptionStatus: "active",
+      publicTitle: "Bottega in allestimento Demo",
+      publicSubtitle: null,
+      publicDescription: null,
+      publicEmail: null,
+      publicPhone: null,
+      website: null,
+      addressLine1: "Via Dimostrativa 99",
+      locality: "Cagli",
+      province: "PU",
+      publishedAt: null,
+    },
+    create: {
+      cityId: city.id,
+      templateId: template.id,
+      ownerUserId: owner.id,
+      name: "Bottega in allestimento Demo",
+      slug: "bottega-in-allestimento-demo",
+      category: template.category,
+      status: "draft",
+      subscriptionStatus: "active",
+      publicTitle: "Bottega in allestimento Demo",
+      addressLine1: "Via Dimostrativa 99",
+      locality: "Cagli",
+      province: "PU",
+    },
+  });
+
+  await prisma.businessCategoryAssignment.deleteMany({ where: { businessId: business.id } });
+  await prisma.businessService.deleteMany({ where: { businessId: business.id } });
+
+  const accessGrant = await prisma.accessGrant.findFirst({
+    where: { userId: owner.id, businessId: business.id, role: "local_admin" },
+  });
+  if (!accessGrant) {
+    await prisma.accessGrant.create({
+      data: {
+        userId: owner.id,
+        role: "local_admin",
+        scopeType: "business",
+        cityId: city.id,
+        businessId: business.id,
+      },
+    });
+  } else if (!accessGrant.active) {
+    await prisma.accessGrant.update({
+      where: { id: accessGrant.id },
+      data: { active: true, scopeType: "business", cityId: city.id },
+    });
+  }
+}
+
 async function main() {
   if (!password) throw new Error("DEMO_SEED_PASSWORD is required.");
 
@@ -639,7 +913,7 @@ async function main() {
   const businesses = new Map(
     (
       await Promise.all(
-        cagliBusinessSpecs.map((spec) =>
+        [...cagliBusinessSpecs, ...additionalCagliBusinessSpecs].map((spec) =>
           ensureBusiness({
             city,
             templates,
@@ -651,7 +925,9 @@ async function main() {
       )
     ).map((business) => [business.slug, business]),
   );
+  await ensureReadinessDemoBusiness({ city, templates, owner: ownerOne });
   await ensureCityEvents(city, businesses, publishedAt);
+  await ensureDemoInquiries(businesses);
 
   const globalGrant = await prisma.accessGrant.findFirst({
     where: { userId: admin.id, role: "global_admin", scopeType: "platform" },
