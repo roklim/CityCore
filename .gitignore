@@ -14,6 +14,10 @@ apps/*/coverage/
 # not project-authored content. The real repo guide is the root AGENTS.md.
 apps/web/AGENTS.md
 apps/web/CLAUDE.md
+# Local AI coding-assistant configuration: machine-specific, never authored
+# repo content, must never be committed.
+/CLAUDE.md
+/.claude/
 *.tsbuildinfo
 .env
 .env.local
